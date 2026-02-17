@@ -12,6 +12,8 @@ import MCQPage from "./pages/MCQPage";
 import CQPage from "./pages/CQPage";
 import ShortPage from "./pages/ShortPage";
 import DescriptivePage from "./pages/DescriptivePage";
+import PricingPage from "./pages/PricingPage";
+import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/questions/cq" element={<CQPage />} />
             <Route path="/questions/short" element={<ShortPage />} />
             <Route path="/questions/descriptive" element={<DescriptivePage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/demo" element={<DemoPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
