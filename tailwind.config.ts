@@ -9,7 +9,7 @@ export default {
       center: true,
       padding: "1.5rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1280px",
       },
     },
     extend: {
@@ -51,18 +51,19 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        purple: {
-          DEFAULT: "hsl(var(--purple))",
-          deep: "hsl(var(--purple-deep))",
+        navy: {
+          DEFAULT: "hsl(var(--navy))",
+          deep: "hsl(var(--navy-deep))",
+          light: "hsl(var(--navy-light))",
         },
-        yellow: {
-          DEFAULT: "hsl(var(--yellow))",
-          deep: "hsl(var(--yellow-deep))",
+        green: {
+          DEFAULT: "hsl(var(--green))",
+          deep: "hsl(var(--green-deep))",
+          light: "hsl(var(--green-light))",
         },
-        beige: {
-          DEFAULT: "hsl(var(--beige))",
-          dark: "hsl(var(--beige-dark))",
-        },
+        "yellow-badge": "hsl(var(--yellow-badge))",
+        "slate-bg": "hsl(var(--slate-bg))",
+        "slate-alt": "hsl(var(--slate-alt))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -78,6 +79,8 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
       },
       keyframes: {
         "accordion-down": {
@@ -93,8 +96,12 @@ export default {
           "50%": { transform: "translateY(-10px)" },
         },
         "fade-in-up": {
-          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "0%": { opacity: "0", transform: "translateY(24px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.7" },
         },
       },
       animation: {
@@ -102,6 +109,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "float": "float 3s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.6s ease-out",
+        "pulse-soft": "pulse-soft 4s ease-in-out infinite",
       },
     },
   },
