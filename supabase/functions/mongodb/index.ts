@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { MongoClient } from "https://deno.land/x/mongo@v0.33.0/mod.ts";
+import { MongoClient } from "npm:mongodb@6.12.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,8 +13,8 @@ async function getClient(): Promise<MongoClient> {
   if (!client) {
     const uri = Deno.env.get("MONGODB_URI");
     if (!uri) throw new Error("MONGODB_URI not configured");
-    client = new MongoClient();
-    await client.connect(uri);
+    client = new MongoClient(uri);
+    await client.connect();
   }
   return client;
 }
@@ -36,17 +36,17 @@ serve(async (req) => {
     }
 
     const mongo = await getClient();
-    const db = mongo.database(database);
+    const db = mongo.db(database);
     const coll = db.collection(collection);
 
     let result: unknown;
 
     switch (action) {
       case "find": {
-        const cursor = coll.find(filter || {});
-        if (sort) cursor.sort(sort);
-        if (skip) cursor.skip(skip);
-        if (limit) cursor.limit(limit);
+        let cursor = coll.find(filter || {});
+        if (sort) cursor = cursor.sort(sort);
+        if (skip) cursor = cursor.skip(skip);
+        if (limit) cursor = cursor.limit(limit);
         result = { documents: await cursor.toArray() };
         break;
       }
@@ -55,13 +55,13 @@ serve(async (req) => {
         break;
       }
       case "insertOne": {
-        const id = await coll.insertOne(document);
-        result = { insertedId: id };
+        const ir = await coll.insertOne(document);
+        result = { insertedId: ir.insertedId };
         break;
       }
       case "insertMany": {
-        const ids = await coll.insertMany(documents);
-        result = { insertedIds: ids };
+        const imr = await coll.insertMany(documents);
+        result = { insertedIds: imr.insertedIds };
         break;
       }
       case "updateOne": {
@@ -75,13 +75,13 @@ serve(async (req) => {
         break;
       }
       case "deleteOne": {
-        const dc = await coll.deleteOne(filter || {});
-        result = { deletedCount: dc };
+        const dr = await coll.deleteOne(filter || {});
+        result = { deletedCount: dr.deletedCount };
         break;
       }
       case "deleteMany": {
-        const dmc = await coll.deleteMany(filter || {});
-        result = { deletedCount: dmc };
+        const dmr = await coll.deleteMany(filter || {});
+        result = { deletedCount: dmr.deletedCount };
         break;
       }
       case "aggregate": {
