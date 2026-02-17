@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { MongoClient } from "https://deno.land/x/mongo@v0.33.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MONGODB_DATA_API = "https://data.mongodb-api.com/app/data-federated-database/endpoint/data/v1";
+let client: MongoClient | null = null;
+
+async function getClient(): Promise<MongoClient> {
+  if (!client) {
+    const uri = Deno.env.get("MONGODB_URI");
+    if (!uri) throw new Error("MONGODB_URI not configured");
+    client = new MongoClient();
+    await client.connect(uri);
+  }
+  return client;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,14 +25,6 @@ serve(async (req) => {
   }
 
   try {
-    const mongoUri = Deno.env.get("MONGODB_URI");
-    if (!mongoUri) {
-      return new Response(JSON.stringify({ error: "MONGODB_URI not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const body = await req.json();
     const { action, collection, database, filter, document, documents, update, pipeline, sort, limit, skip } = body;
 
@@ -32,59 +35,59 @@ serve(async (req) => {
       );
     }
 
-    // Parse MongoDB URI to extract cluster info for Data API
-    // The edge function acts as a proxy to MongoDB Data API
-    const apiKey = Deno.env.get("MONGODB_API_KEY") || "";
-    
-    let endpoint = "";
-    let payload: Record<string, unknown> = {
-      dataSource: body.dataSource || "Cluster0",
-      database,
-      collection,
-    };
+    const mongo = await getClient();
+    const db = mongo.database(database);
+    const coll = db.collection(collection);
+
+    let result: unknown;
 
     switch (action) {
-      case "find":
-        endpoint = "/action/find";
-        if (filter) payload.filter = filter;
-        if (sort) payload.sort = sort;
-        if (limit) payload.limit = limit;
-        if (skip) payload.skip = skip;
+      case "find": {
+        const cursor = coll.find(filter || {});
+        if (sort) cursor.sort(sort);
+        if (skip) cursor.skip(skip);
+        if (limit) cursor.limit(limit);
+        result = { documents: await cursor.toArray() };
         break;
-      case "findOne":
-        endpoint = "/action/findOne";
-        if (filter) payload.filter = filter;
+      }
+      case "findOne": {
+        result = { document: await coll.findOne(filter || {}) };
         break;
-      case "insertOne":
-        endpoint = "/action/insertOne";
-        payload.document = document;
+      }
+      case "insertOne": {
+        const id = await coll.insertOne(document);
+        result = { insertedId: id };
         break;
-      case "insertMany":
-        endpoint = "/action/insertMany";
-        payload.documents = documents;
+      }
+      case "insertMany": {
+        const ids = await coll.insertMany(documents);
+        result = { insertedIds: ids };
         break;
-      case "updateOne":
-        endpoint = "/action/updateOne";
-        payload.filter = filter;
-        payload.update = update;
+      }
+      case "updateOne": {
+        const ur = await coll.updateOne(filter || {}, update);
+        result = { matchedCount: ur.matchedCount, modifiedCount: ur.modifiedCount };
         break;
-      case "updateMany":
-        endpoint = "/action/updateMany";
-        payload.filter = filter;
-        payload.update = update;
+      }
+      case "updateMany": {
+        const umr = await coll.updateMany(filter || {}, update);
+        result = { matchedCount: umr.matchedCount, modifiedCount: umr.modifiedCount };
         break;
-      case "deleteOne":
-        endpoint = "/action/deleteOne";
-        payload.filter = filter;
+      }
+      case "deleteOne": {
+        const dc = await coll.deleteOne(filter || {});
+        result = { deletedCount: dc };
         break;
-      case "deleteMany":
-        endpoint = "/action/deleteMany";
-        payload.filter = filter;
+      }
+      case "deleteMany": {
+        const dmc = await coll.deleteMany(filter || {});
+        result = { deletedCount: dmc };
         break;
-      case "aggregate":
-        endpoint = "/action/aggregate";
-        payload.pipeline = pipeline;
+      }
+      case "aggregate": {
+        result = { documents: await coll.aggregate(pipeline || []).toArray() };
         break;
+      }
       default:
         return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
           status: 400,
@@ -92,19 +95,7 @@ serve(async (req) => {
         });
     }
 
-    const mongoRes = await fetch(`${MONGODB_DATA_API}${endpoint}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": apiKey,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await mongoRes.json();
-
-    return new Response(JSON.stringify(data), {
-      status: mongoRes.status,
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
