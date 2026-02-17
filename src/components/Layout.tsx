@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, BookOpen, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoImg from "@/assets/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -42,9 +43,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
         <div className="container flex items-center justify-between h-16 lg:h-[72px]">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg gradient-green flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
             <span className={cn("font-heading font-bold text-xl tracking-tight", textColor)}>
               eExam<span className="text-gradient-green">app</span>
             </span>
@@ -126,9 +125,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-lg gradient-green flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-white" />
-                </div>
+                <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
                 <span className="font-heading font-bold text-xl">eExamapp</span>
               </div>
               <p className="text-white/60 text-sm leading-relaxed">
