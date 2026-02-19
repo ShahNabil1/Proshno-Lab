@@ -68,6 +68,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ))}
             {user ? (
               <div className="flex items-center gap-2 ml-3">
+                <Link to="/dashboard">
+                  <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
+                    ড্যাশবোর্ড
+                  </Button>
+                </Link>
                 <Link to="/profile">
                   <Button variant="ghost" size="sm" className={cn("gap-2", mutedTextColor)}>
                     <User className="w-4 h-4" />
@@ -123,15 +128,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                 ))}
                 {user ? (
-                  <div className="flex gap-2 mt-2">
-                    <Link to="/profile" className="flex-1">
-                      <Button variant="outline" className="w-full gap-2 rounded-lg">
-                        <User className="w-4 h-4" /> প্রোফাইল
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Link to="/dashboard">
+                      <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
+                        ড্যাশবোর্ড
                       </Button>
                     </Link>
-                    <Button variant="outline" onClick={signOut} className="gap-2 rounded-lg">
-                      <LogOut className="w-4 h-4" /> লগআউট
-                    </Button>
+                    <div className="flex gap-2">
+                      <Link to="/profile" className="flex-1">
+                        <Button variant="outline" className="w-full gap-2 rounded-lg">
+                          <User className="w-4 h-4" /> প্রোফাইল
+                        </Button>
+                      </Link>
+                      <Button variant="outline" onClick={signOut} className="gap-2 rounded-lg">
+                        <LogOut className="w-4 h-4" /> লগআউট
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <Link to="/login" className="mt-2">
