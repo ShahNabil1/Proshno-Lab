@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, AlignLeft, ArrowRight,
@@ -6,6 +6,7 @@ import {
   Zap, Shield, BarChart3, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
 const fadeUp = {
@@ -71,7 +72,10 @@ const testimonials = [
 ];
 
 export default function Index() {
+  const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  if (!loading && user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="overflow-hidden">
