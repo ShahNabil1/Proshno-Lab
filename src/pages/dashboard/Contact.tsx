@@ -1,0 +1,37 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Phone, MessageCircle, Mail } from "lucide-react";
+
+export default function Contact() {
+  return (
+    <div className="max-w-lg mx-auto space-y-6">
+      <h1 className="font-heading text-2xl font-bold text-center">যোগাযোগ</h1>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <Button variant="outline" className="w-full gap-2 justify-start" asChild>
+            <a href="tel:+8801711476706">
+              <Phone className="w-4 h-4" /> +880 1711-476706
+            </a>
+          </Button>
+          <Button className="w-full gap-2 justify-start bg-green-600 hover:bg-green-700 text-white border-0" asChild>
+            <a href="https://wa.me/8801711476706" target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="w-4 h-4" /> Open WhatsApp
+            </a>
+          </Button>
+          <Button variant="outline" className="w-full gap-2 justify-start" asChild>
+            <a href="https://m.me/eexamapp" target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="w-4 h-4" /> Open Messenger
+            </a>
+          </Button>
+          <div className="text-center text-sm text-muted-foreground pt-2">
+            <p>OR</p>
+            <a href="mailto:hello@eexamapp.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
+              <Mail className="w-4 h-4" /> hello@eexamapp.com
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
