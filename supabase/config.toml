@@ -2,6 +2,3 @@ project_id = "dskkoqswztcerihagqnl"
 
 [functions.mongodb]
 verify_jwt = false
-
-[functions.import_mongo_raw]
-verify_jwt = false

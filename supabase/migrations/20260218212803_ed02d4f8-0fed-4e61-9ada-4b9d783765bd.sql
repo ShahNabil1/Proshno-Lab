@@ -1,1 +1,0 @@
-ALTER TABLE public.mongo_raw ADD CONSTRAINT mongo_raw_collection_id_unique UNIQUE (mongo_collection, mongo_id);
