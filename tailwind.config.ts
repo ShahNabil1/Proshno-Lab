@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         heading: ['Montserrat', 'sans-serif'],
-        body: ['Hind Siliguri', 'sans-serif'],
+        body: ['Anek Bangla', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
