@@ -14,30 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      mongo_raw: {
-        Row: {
-          created_at: string | null
-          doc: Json | null
-          id: number
-          mongo_collection: string | null
-          mongo_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          doc?: Json | null
-          id?: number
-          mongo_collection?: string | null
-          mongo_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          doc?: Json | null
-          id?: number
-          mongo_collection?: string | null
-          mongo_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
