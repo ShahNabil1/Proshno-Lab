@@ -7,7 +7,7 @@ export default function Login() {
   const { signInWithGoogle, user, loading } = useAuth();
 
   if (loading) return null;
-  if (user) return <Navigate to="/profile" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center py-12 px-4">
