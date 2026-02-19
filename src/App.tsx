@@ -16,6 +16,9 @@ import DescriptivePage from "./pages/DescriptivePage";
 import PricingPage from "./pages/PricingPage";
 import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import RefundPage from "./pages/RefundPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +41,9 @@ const App = () => (
               <Route path="/questions/descriptive" element={<DescriptivePage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/demo" element={<DemoPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/refund" element={<RefundPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

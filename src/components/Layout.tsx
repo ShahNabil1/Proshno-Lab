@@ -165,9 +165,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h4 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/40 mb-4">কোম্পানি</h4>
               <ul className="space-y-2.5">
-                {["টার্মস এন্ড কন্ডিশন", "প্রাইভেসি পলিসি", "রিফান্ড পলিসি"].map(t => (
-                  <li key={t}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{t}</a></li>
-                ))}
+                <li><Link to="/terms" className="text-white/60 hover:text-white text-sm transition-colors">টার্মস এন্ড কন্ডিশন</Link></li>
+                <li><Link to="/privacy" className="text-white/60 hover:text-white text-sm transition-colors">প্রাইভেসি পলিসি</Link></li>
+                <li><Link to="/refund" className="text-white/60 hover:text-white text-sm transition-colors">রিফান্ড পলিসি</Link></li>
               </ul>
             </div>
 
