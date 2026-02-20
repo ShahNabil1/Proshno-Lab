@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mongoQuery } from "@/hooks/useMongo";
 import { toast } from "sonner";
 
-const classOptions = ["৩য়", "৪র্থ", "৫ম", "৬ষ্ঠ", "৭ম", "৮ম", "৯ম", "১০ম", "১১শ", "১২শ"];
+const classOptions = ["এইচএসসি", "নবম/দশম", "অষ্টম শ্রেণী", "সপ্তম শ্রেণী", "ষষ্ঠ শ্রেণী", "পঞ্চম শ্রেণী", "চতুর্থ শ্রেণী", "তৃতীয় শ্রেণী"];
 const typeOptions = ["MCQ", "সংক্ষিপ্ত", "সৃজনশীল", "বর্ণনামূলক"];
 
 export default function QuestionCreate() {
