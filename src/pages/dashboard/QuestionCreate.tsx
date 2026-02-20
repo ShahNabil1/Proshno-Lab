@@ -4,12 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { mongoQuery } from "@/hooks/useMongo";
 import { toast } from "sonner";
 
 const classOptions = ["এইচএসসি", "নবম/দশম", "অষ্টম শ্রেণী", "সপ্তম শ্রেণী", "ষষ্ঠ শ্রেণী", "পঞ্চম শ্রেণী", "চতুর্থ শ্রেণী", "তৃতীয় শ্রেণী"];
 const typeOptions = ["MCQ", "সংক্ষিপ্ত", "সৃজনশীল", "বর্ণনামূলক"];
+
+type WarningField = "subject" | "chapter" | "topic" | null;
+
+const warningMessages: Record<string, { title: string; prerequisite: string }> = {
+  subject: { title: "বিষয় সিলেক্ট করুন", prerequisite: "বিষয় সিলেক্ট করার জন্য আগে শ্রেণী সিলেক্ট করুন !" },
+  chapter: { title: "অধ্যায় সিলেক্ট করুন", prerequisite: "অধ্যায় সিলেক্ট করার জন্য আগে বিষয় সিলেক্ট করুন !" },
+  topic: { title: "টপিক সিলেক্ট করুন", prerequisite: "টপিক সিলেক্ট করার জন্য আগে অধ্যায় সিলেক্ট করুন !" },
+};
 
 export default function QuestionCreate() {
   const { user } = useAuth();
@@ -18,16 +27,19 @@ export default function QuestionCreate() {
     classLevel: "",
     subject: "",
     chapter: "",
+    topic: "",
     type: "MCQ",
     count: "10",
   });
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [chapters, setChapters] = useState<string[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
+  const [warningDialog, setWarningDialog] = useState<WarningField>(null);
 
   // Load subjects when class changes
   useEffect(() => {
-    if (!form.classLevel) return;
+    if (!form.classLevel) { setSubjects([]); return; }
     mongoQuery({
       action: "aggregate",
       collection: "mcq",
@@ -42,7 +54,7 @@ export default function QuestionCreate() {
 
   // Load chapters when subject changes
   useEffect(() => {
-    if (!form.classLevel || !form.subject) return;
+    if (!form.classLevel || !form.subject) { setChapters([]); return; }
     mongoQuery({
       action: "aggregate",
       collection: "mcq",
@@ -55,6 +67,33 @@ export default function QuestionCreate() {
     }).catch(() => {});
   }, [form.classLevel, form.subject]);
 
+  // Load topics when chapter changes
+  useEffect(() => {
+    if (!form.classLevel || !form.subject || !form.chapter) { setTopics([]); return; }
+    mongoQuery({
+      action: "aggregate",
+      collection: "mcq",
+      pipeline: [
+        { $match: { class: form.classLevel, subject: form.subject, chapter: form.chapter } },
+        { $group: { _id: "$topic" } },
+      ],
+    }).then((r) => {
+      setTopics(r?.documents?.map((d: any) => d._id).filter(Boolean) || []);
+    }).catch(() => {});
+  }, [form.classLevel, form.subject, form.chapter]);
+
+  const handleSubjectClick = () => {
+    if (!form.classLevel) { setWarningDialog("subject"); return; }
+  };
+
+  const handleChapterClick = () => {
+    if (!form.subject) { setWarningDialog("chapter"); return; }
+  };
+
+  const handleTopicClick = () => {
+    if (!form.chapter) { setWarningDialog("topic"); return; }
+  };
+
   const handleSubmit = async () => {
     if (!form.classLevel || !form.subject) {
       toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
@@ -62,7 +101,6 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      // For now, just fetch random questions matching criteria
       const collectionMap: Record<string, string> = {
         MCQ: "mcq",
         "সংক্ষিপ্ত": "short",
@@ -72,6 +110,7 @@ export default function QuestionCreate() {
       const coll = collectionMap[form.type] || "mcq";
       const filter: Record<string, unknown> = { class: form.classLevel, subject: form.subject };
       if (form.chapter) filter.chapter = form.chapter;
+      if (form.topic) filter.topic = form.topic;
 
       const result = await mongoQuery({
         action: "find",
@@ -117,9 +156,10 @@ export default function QuestionCreate() {
               />
             </div>
 
+            {/* শ্রেণী */}
             <div>
               <Label>শ্রেণী</Label>
-              <Select value={form.classLevel} onValueChange={(v) => setForm({ ...form, classLevel: v, subject: "", chapter: "" })}>
+              <Select value={form.classLevel} onValueChange={(v) => setForm({ ...form, classLevel: v, subject: "", chapter: "", topic: "" })}>
                 <SelectTrigger><SelectValue placeholder="শ্রেণী" /></SelectTrigger>
                 <SelectContent>
                   {classOptions.map((c) => (
@@ -127,32 +167,58 @@ export default function QuestionCreate() {
                   ))}
                 </SelectContent>
               </Select>
+              {!form.classLevel && (
+                <p className="text-xs text-destructive mt-1">শ্রেণী সিলেক্ট করুন</p>
+              )}
             </div>
 
-            <div>
+            {/* বিষয় */}
+            <div onClick={!form.classLevel ? handleSubjectClick : undefined}>
               <Label>বিষয়</Label>
-              <Select value={form.subject} onValueChange={(v) => setForm({ ...form, subject: v, chapter: "" })}>
+              <Select
+                value={form.subject}
+                onValueChange={(v) => setForm({ ...form, subject: v, chapter: "", topic: "" })}
+                disabled={!form.classLevel}
+              >
                 <SelectTrigger><SelectValue placeholder="বিষয়" /></SelectTrigger>
                 <SelectContent>
-                  {subjects.length > 0 ? subjects.map((s) => (
+                  {subjects.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
-                  )) : (
-                    <SelectItem value="_" disabled>প্রথমে শ্রেণী নির্বাচন করুন</SelectItem>
-                  )}
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
+            {/* অধ্যায় */}
+            <div onClick={!form.subject ? handleChapterClick : undefined}>
               <Label>অধ্যায়</Label>
-              <Select value={form.chapter} onValueChange={(v) => setForm({ ...form, chapter: v })}>
+              <Select
+                value={form.chapter}
+                onValueChange={(v) => setForm({ ...form, chapter: v, topic: "" })}
+                disabled={!form.subject}
+              >
                 <SelectTrigger><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
                 <SelectContent>
-                  {chapters.length > 0 ? chapters.map((c) => (
+                  {chapters.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
-                  )) : (
-                    <SelectItem value="_" disabled>প্রথমে বিষয় নির্বাচন করুন</SelectItem>
-                  )}
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* টপিক */}
+            <div onClick={!form.chapter ? handleTopicClick : undefined}>
+              <Label>টপিক</Label>
+              <Select
+                value={form.topic}
+                onValueChange={(v) => setForm({ ...form, topic: v })}
+                disabled={!form.chapter}
+              >
+                <SelectTrigger><SelectValue placeholder="টপিক" /></SelectTrigger>
+                <SelectContent>
+                  {topics.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -189,6 +255,36 @@ export default function QuestionCreate() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Warning Dialog */}
+      <Dialog open={!!warningDialog} onOpenChange={() => setWarningDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {warningDialog && warningMessages[warningDialog].title}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-center text-sm py-2">
+            {warningDialog && warningMessages[warningDialog].prerequisite}
+          </p>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 bg-accent/50 hover:bg-accent border-accent"
+              onClick={() => setWarningDialog(null)}
+            >
+              সিলেক্ট করুন
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 bg-destructive/10 hover:bg-destructive/20 border-destructive/30"
+              onClick={() => setWarningDialog(null)}
+            >
+              বন্ধ করুন
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
