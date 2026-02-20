@@ -9,24 +9,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mongoQuery } from "@/hooks/useMongo";
 import { toast } from "sonner";
 
-const classOptions = [
-  { label: "এইচএসসি", value: "১১" },
-  { label: "নবম/দশম", value: "৯" },
-  { label: "অষ্টম শ্রেণী", value: "৮" },
-  { label: "সপ্তম শ্রেণী", value: "৭" },
-  { label: "ষষ্ঠ শ্রেণী", value: "৬" },
-  { label: "পঞ্চম শ্রেণী", value: "৫" },
-  { label: "চতুর্থ শ্রেণী", value: "৪" },
-  { label: "তৃতীয় শ্রেণী", value: "৩" },
-];
 const typeOptions = ["MCQ", "সংক্ষিপ্ত", "সৃজনশীল", "বর্ণনামূলক"];
 
-type WarningField = "subject" | "chapter" | "topic" | null;
+const collectionMap: Record<string, string> = {
+  MCQ: "mcq",
+  "সংক্ষিপ্ত": "short",
+  "সৃজনশীল": "cq",
+  "বর্ণনামূলক": "descriptive",
+};
+
+// Map DB class values (Bengali numerals) to display labels
+const classLabelMap: Record<string, string> = {
+  "৩": "তৃতীয় শ্রেণী",
+  "৪": "চতুর্থ শ্রেণী",
+  "৫": "পঞ্চম শ্রেণী",
+  "৬": "ষষ্ঠ শ্রেণী",
+  "৭": "সপ্তম শ্রেণী",
+  "৮": "অষ্টম শ্রেণী",
+  "৯": "নবম/দশম",
+  "১০": "দশম শ্রেণী",
+  "১১": "এইচএসসি",
+};
+
+type WarningField = "subject" | "chapter" | null;
 
 const warningMessages: Record<string, { title: string; prerequisite: string }> = {
   subject: { title: "বিষয় সিলেক্ট করুন", prerequisite: "বিষয় সিলেক্ট করার জন্য আগে শ্রেণী সিলেক্ট করুন !" },
   chapter: { title: "অধ্যায় সিলেক্ট করুন", prerequisite: "অধ্যায় সিলেক্ট করার জন্য আগে বিষয় সিলেক্ট করুন !" },
-  topic: { title: "টপিক সিলেক্ট করুন", prerequisite: "টপিক সিলেক্ট করার জন্য আগে অধ্যায় সিলেক্ট করুন !" },
 };
 
 export default function QuestionCreate() {
@@ -36,71 +45,75 @@ export default function QuestionCreate() {
     classLevel: "",
     subject: "",
     chapter: "",
-    topic: "",
     type: "MCQ",
     count: "10",
   });
   const [loading, setLoading] = useState(false);
+  const [classes, setClasses] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [chapters, setChapters] = useState<string[]>([]);
-  const [topics, setTopics] = useState<string[]>([]);
   const [warningDialog, setWarningDialog] = useState<WarningField>(null);
+
+  const currentCollection = collectionMap[form.type] || "mcq";
+
+  // Load classes dynamically from the selected type's collection
+  useEffect(() => {
+    mongoQuery({
+      action: "aggregate",
+      collection: currentCollection,
+      pipeline: [
+        { $group: { _id: "$class" } },
+        { $sort: { _id: 1 } },
+      ],
+    }).then((r) => {
+      const vals = (r?.documents?.map((d: any) => d._id).filter(Boolean) as string[]) || [];
+      setClasses(vals);
+    }).catch(() => setClasses([]));
+    // Reset downstream selections when type changes
+    setForm((prev) => ({ ...prev, classLevel: "", subject: "", chapter: "" }));
+    setSubjects([]);
+    setChapters([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCollection]);
 
   // Load subjects when class changes
   useEffect(() => {
     if (!form.classLevel) { setSubjects([]); return; }
     mongoQuery({
       action: "aggregate",
-      collection: "mcq",
+      collection: currentCollection,
       pipeline: [
         { $match: { class: form.classLevel } },
         { $group: { _id: "$subject" } },
+        { $sort: { _id: 1 } },
       ],
     }).then((r) => {
-      setSubjects(r?.documents?.map((d: any) => d._id).filter(Boolean) || []);
-    }).catch(() => {});
-  }, [form.classLevel]);
+      setSubjects((r?.documents?.map((d: any) => d._id).filter(Boolean) as string[]) || []);
+    }).catch(() => setSubjects([]));
+  }, [form.classLevel, currentCollection]);
 
   // Load chapters when subject changes
   useEffect(() => {
     if (!form.classLevel || !form.subject) { setChapters([]); return; }
     mongoQuery({
       action: "aggregate",
-      collection: "mcq",
+      collection: currentCollection,
       pipeline: [
         { $match: { class: form.classLevel, subject: form.subject } },
         { $group: { _id: "$chapter" } },
+        { $sort: { _id: 1 } },
       ],
     }).then((r) => {
-      setChapters(r?.documents?.map((d: any) => d._id).filter(Boolean) || []);
-    }).catch(() => {});
-  }, [form.classLevel, form.subject]);
-
-  // Load topics when chapter changes
-  useEffect(() => {
-    if (!form.classLevel || !form.subject || !form.chapter) { setTopics([]); return; }
-    mongoQuery({
-      action: "aggregate",
-      collection: "mcq",
-      pipeline: [
-        { $match: { class: form.classLevel, subject: form.subject, chapter: form.chapter } },
-        { $group: { _id: "$topic" } },
-      ],
-    }).then((r) => {
-      setTopics(r?.documents?.map((d: any) => d._id).filter(Boolean) || []);
-    }).catch(() => {});
-  }, [form.classLevel, form.subject, form.chapter]);
+      setChapters((r?.documents?.map((d: any) => d._id).filter(Boolean) as string[]) || []);
+    }).catch(() => setChapters([]));
+  }, [form.classLevel, form.subject, currentCollection]);
 
   const handleSubjectClick = () => {
-    if (!form.classLevel) { setWarningDialog("subject"); return; }
+    if (!form.classLevel) { setWarningDialog("subject"); }
   };
 
   const handleChapterClick = () => {
-    if (!form.subject) { setWarningDialog("chapter"); return; }
-  };
-
-  const handleTopicClick = () => {
-    if (!form.chapter) { setWarningDialog("topic"); return; }
+    if (!form.subject) { setWarningDialog("chapter"); }
   };
 
   const handleSubmit = async () => {
@@ -110,20 +123,12 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      const collectionMap: Record<string, string> = {
-        MCQ: "mcq",
-        "সংক্ষিপ্ত": "short",
-        "সৃজনশীল": "cq",
-        "বর্ণনামূলক": "descriptive",
-      };
-      const coll = collectionMap[form.type] || "mcq";
       const filter: Record<string, unknown> = { class: form.classLevel, subject: form.subject };
       if (form.chapter) filter.chapter = form.chapter;
-      if (form.topic) filter.topic = form.topic;
 
       const result = await mongoQuery({
         action: "find",
-        collection: coll,
+        collection: currentCollection,
         filter,
         limit: parseInt(form.count) || 10,
       });
@@ -165,14 +170,32 @@ export default function QuestionCreate() {
               />
             </div>
 
-            {/* শ্রেণী */}
+            {/* টাইপ — moved before class so collection is selected first */}
+            <div>
+              <Label>টাইপ</Label>
+              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {typeOptions.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* শ্রেণী — dynamically loaded */}
             <div>
               <Label>শ্রেণী</Label>
-              <Select value={form.classLevel} onValueChange={(v) => setForm({ ...form, classLevel: v, subject: "", chapter: "", topic: "" })}>
-                <SelectTrigger><SelectValue placeholder="শ্রেণী" /></SelectTrigger>
+              <Select
+                value={form.classLevel}
+                onValueChange={(v) => setForm({ ...form, classLevel: v, subject: "", chapter: "" })}
+              >
+                <SelectTrigger><SelectValue placeholder="শ্রেণী সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
-                  {classOptions.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  {classes.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {classLabelMap[c] || `${c} শ্রেণী`}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -186,10 +209,10 @@ export default function QuestionCreate() {
               <Label>বিষয়</Label>
               <Select
                 value={form.subject}
-                onValueChange={(v) => setForm({ ...form, subject: v, chapter: "", topic: "" })}
+                onValueChange={(v) => setForm({ ...form, subject: v, chapter: "" })}
                 disabled={!form.classLevel}
               >
-                <SelectTrigger><SelectValue placeholder="বিষয়" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="বিষয় সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
                   {subjects.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -203,10 +226,10 @@ export default function QuestionCreate() {
               <Label>অধ্যায়</Label>
               <Select
                 value={form.chapter}
-                onValueChange={(v) => setForm({ ...form, chapter: v, topic: "" })}
+                onValueChange={(v) => setForm({ ...form, chapter: v })}
                 disabled={!form.subject}
               >
-                <SelectTrigger><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="অধ্যায় সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
                   {chapters.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -215,43 +238,13 @@ export default function QuestionCreate() {
               </Select>
             </div>
 
-            {/* টপিক */}
-            <div onClick={!form.chapter ? handleTopicClick : undefined}>
-              <Label>টপিক</Label>
-              <Select
-                value={form.topic}
-                onValueChange={(v) => setForm({ ...form, topic: v })}
-                disabled={!form.chapter}
-              >
-                <SelectTrigger><SelectValue placeholder="টপিক" /></SelectTrigger>
-                <SelectContent>
-                  {topics.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>টাইপ</Label>
-                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {typeOptions.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>সংখ্যা</Label>
-                <Input
-                  type="number"
-                  value={form.count}
-                  onChange={(e) => setForm({ ...form, count: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label>সংখ্যা</Label>
+              <Input
+                type="number"
+                value={form.count}
+                onChange={(e) => setForm({ ...form, count: e.target.value })}
+              />
             </div>
 
             <Button
