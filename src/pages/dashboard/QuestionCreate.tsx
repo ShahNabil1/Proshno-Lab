@@ -9,7 +9,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mongoQuery } from "@/hooks/useMongo";
 import { toast } from "sonner";
 
-const classOptions = ["এইচএসসি", "নবম/দশম", "অষ্টম শ্রেণী", "সপ্তম শ্রেণী", "ষষ্ঠ শ্রেণী", "পঞ্চম শ্রেণী", "চতুর্থ শ্রেণী", "তৃতীয় শ্রেণী"];
+const classOptions = [
+  { label: "এইচএসসি", value: "১১" },
+  { label: "নবম/দশম", value: "৯" },
+  { label: "অষ্টম শ্রেণী", value: "৮" },
+  { label: "সপ্তম শ্রেণী", value: "৭" },
+  { label: "ষষ্ঠ শ্রেণী", value: "৬" },
+  { label: "পঞ্চম শ্রেণী", value: "৫" },
+  { label: "চতুর্থ শ্রেণী", value: "৪" },
+  { label: "তৃতীয় শ্রেণী", value: "৩" },
+];
 const typeOptions = ["MCQ", "সংক্ষিপ্ত", "সৃজনশীল", "বর্ণনামূলক"];
 
 type WarningField = "subject" | "chapter" | "topic" | null;
@@ -163,7 +172,7 @@ export default function QuestionCreate() {
                 <SelectTrigger><SelectValue placeholder="শ্রেণী" /></SelectTrigger>
                 <SelectContent>
                   {classOptions.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
