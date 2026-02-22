@@ -14,123 +14,322 @@ export type Database = {
   }
   public: {
     Tables: {
+      chapters: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          subject_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          subject_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          subject_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           category: string
           created_at: string
           details: string
-          id: string
+          id: number
           priority: string
           subject: string
-          user_id: string
+          teacher_id: string
         }
         Insert: {
           category?: string
           created_at?: string
           details?: string
-          id?: string
+          id?: number
           priority?: string
           subject?: string
-          user_id: string
+          teacher_id: string
         }
         Update: {
           category?: string
           created_at?: string
           details?: string
-          id?: string
+          id?: number
           priority?: string
           subject?: string
-          user_id?: string
+          teacher_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       institutes: {
         Row: {
+          created_at: string
           district: string | null
           division: string | null
-          id: string
-          joined_at: string
+          id: number
           name: string
+          owner_id: string
           upazila: string | null
-          updated_at: string
-          user_id: string
         }
         Insert: {
+          created_at?: string
           district?: string | null
           division?: string | null
-          id?: string
-          joined_at?: string
+          id?: number
           name?: string
+          owner_id: string
           upazila?: string | null
-          updated_at?: string
-          user_id: string
         }
         Update: {
+          created_at?: string
           district?: string | null
           division?: string | null
-          id?: string
-          joined_at?: string
+          id?: number
           name?: string
+          owner_id?: string
           upazila?: string | null
-          updated_at?: string
-          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institutes_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_categories: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
         }
         Relationships: []
       }
-      mongo_raw: {
+      questions: {
         Row: {
-          created_at: string | null
-          doc: Json | null
+          category_id: number | null
+          chapter_id: number
+          class_id: number
+          correct_answer: string | null
+          created_at: string
+          explanation: string | null
           id: number
-          mongo_collection: string | null
-          mongo_id: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question: string
+          subject_id: number
+          teacher_id: string
+          type: string
         }
         Insert: {
-          created_at?: string | null
-          doc?: Json | null
+          category_id?: number | null
+          chapter_id: number
+          class_id: number
+          correct_answer?: string | null
+          created_at?: string
+          explanation?: string | null
           id?: number
-          mongo_collection?: string | null
-          mongo_id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question: string
+          subject_id: number
+          teacher_id: string
+          type?: string
         }
         Update: {
-          created_at?: string | null
-          doc?: Json | null
+          category_id?: number | null
+          chapter_id?: number
+          class_id?: number
+          correct_answer?: string | null
+          created_at?: string
+          explanation?: string | null
           id?: number
-          mongo_collection?: string | null
-          mongo_id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question?: string
+          subject_id?: number
+          teacher_id?: string
+          type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "question_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          class_id: number
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          class_id: number
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          class_id?: number
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
           created_at: string
-          expires_at: string | null
-          id: string
+          ends_at: string | null
+          id: number
           plan: string
-          started_at: string | null
+          starts_at: string | null
           status: string
-          updated_at: string
-          user_id: string
+          teacher_id: string
         }
         Insert: {
           created_at?: string
-          expires_at?: string | null
-          id?: string
+          ends_at?: string | null
+          id?: number
           plan?: string
-          started_at?: string | null
+          starts_at?: string | null
           status?: string
-          updated_at?: string
-          user_id: string
+          teacher_id: string
         }
         Update: {
           created_at?: string
-          expires_at?: string | null
-          id?: string
+          ends_at?: string | null
+          id?: number
           plan?: string
-          started_at?: string | null
+          starts_at?: string | null
           status?: string
-          updated_at?: string
-          user_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teachers: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
         }
         Relationships: []
       }

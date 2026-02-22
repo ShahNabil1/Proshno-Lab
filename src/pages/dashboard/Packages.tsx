@@ -14,7 +14,7 @@ export default function Packages() {
     supabase
       .from("subscriptions")
       .select("status")
-      .eq("user_id", user.id)
+      .eq("teacher_id", user.id)
       .eq("status", "active")
       .maybeSingle()
       .then(({ data }) => setHasSubscription(!!data));

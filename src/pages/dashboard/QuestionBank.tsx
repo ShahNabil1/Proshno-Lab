@@ -1,49 +1,45 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { mongoQuery } from "@/hooks/useMongo";
+import { supabase } from "@/integrations/supabase/client";
 
-interface Category {
-  _id: string;
+interface ClassCount {
+  id: number;
+  name: string;
   count: number;
-  type: string;
 }
 
 export default function QuestionBank() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [classCounts, setClassCounts] = useState<ClassCount[]>([]);
 
   useEffect(() => {
-    // Get categories grouped by class from all collections
-    mongoQuery({
-      action: "aggregate",
-      collection: "mcq",
-      pipeline: [
-        { $group: { _id: "$class", count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ],
-    }).then((r) => {
-      setCategories(r?.documents?.map((d: any) => ({ ...d, type: "MCQ" })) || []);
-    }).catch(() => {});
+    // Get all classes and count questions per class
+    Promise.all([
+      supabase.from("classes").select("id, name").order("name"),
+      supabase.from("questions").select("class_id"),
+    ]).then(([classRes, qRes]) => {
+      const classes = classRes.data || [];
+      const questions = qRes.data || [];
+      const countMap: Record<number, number> = {};
+      questions.forEach((q: any) => { countMap[q.class_id] = (countMap[q.class_id] || 0) + 1; });
+      setClassCounts(classes.map(c => ({ id: c.id, name: c.name, count: countMap[c.id] || 0 })));
+    });
   }, []);
 
-  const colors = [
-    "bg-accent/60 border-primary/20",
-    "bg-secondary border-border",
-  ];
+  const colors = ["bg-accent/60 border-primary/20", "bg-secondary border-border"];
 
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold text-center mb-6">প্রশ্নব্যাংক</h1>
-
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {categories.map((cat, i) => (
-          <Card key={cat._id} className={`hover-lift cursor-pointer ${colors[i % 2]}`}>
+        {classCounts.map((cat, i) => (
+          <Card key={cat.id} className={`hover-lift cursor-pointer ${colors[i % 2]}`}>
             <CardContent className="p-6 text-center">
-              <h3 className="font-heading font-bold text-lg">{cat._id}</h3>
+              <h3 className="font-heading font-bold text-lg">{cat.name}</h3>
               <p className="text-sm text-muted-foreground mt-1">{cat.count} প্রশ্ন</p>
             </CardContent>
           </Card>
         ))}
-        {categories.length === 0 && (
+        {classCounts.length === 0 && (
           <p className="col-span-full text-center text-muted-foreground py-10">ক্যাটাগরি লোড হচ্ছে...</p>
         )}
       </div>

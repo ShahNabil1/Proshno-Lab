@@ -12,7 +12,7 @@ export default function Subscription() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle()
+    supabase.from("subscriptions").select("*").eq("teacher_id", user.id).maybeSingle()
       .then(({ data }) => { setSub(data); setLoading(false); });
   }, [user]);
 
@@ -36,9 +36,9 @@ export default function Subscription() {
         <h2 className="font-heading text-xl font-bold mb-2">আপনার সাবস্ক্রিপশন</h2>
         <p className="text-sm text-muted-foreground capitalize">প্ল্যান: {sub.plan}</p>
         <p className="text-sm text-muted-foreground">স্ট্যাটাস: সক্রিয়</p>
-        {sub.expires_at && (
+        {sub.ends_at && (
           <p className="text-sm text-muted-foreground">
-            মেয়াদ শেষ: {new Date(sub.expires_at).toLocaleDateString("bn-BD")}
+            মেয়াদ শেষ: {new Date(sub.ends_at).toLocaleDateString("bn-BD")}
           </p>
         )}
       </CardContent>
