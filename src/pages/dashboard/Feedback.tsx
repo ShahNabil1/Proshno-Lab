@@ -28,7 +28,7 @@ export default function Feedback() {
     }
     setLoading(true);
     const { error } = await supabase.from("feedback").insert({
-      user_id: user.id,
+      teacher_id: user.id,
       category: form.category,
       subject: form.subject,
       details: form.details,
@@ -46,7 +46,6 @@ export default function Feedback() {
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="font-heading text-2xl font-bold mb-6">মতামত জানান !</h1>
-
       <Card>
         <CardContent className="p-6 space-y-4">
           <div>
@@ -58,26 +57,14 @@ export default function Feedback() {
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <Label>মতামতের বিষয়</Label>
-            <Input
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              placeholder="বিষয় লিখুন"
-            />
+            <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="বিষয় লিখুন" />
           </div>
-
           <div>
             <Label>বিস্তারিত লিখুন</Label>
-            <Textarea
-              value={form.details}
-              onChange={(e) => setForm({ ...form, details: e.target.value })}
-              placeholder="বিস্তারিত..."
-              rows={5}
-            />
+            <Textarea value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} placeholder="বিস্তারিত..." rows={5} />
           </div>
-
           <div>
             <Label>গুরুত্বের স্তর</Label>
             <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
@@ -87,12 +74,7 @@ export default function Feedback() {
               </SelectContent>
             </Select>
           </div>
-
-          <Button
-            className="w-full gradient-hero text-white border-0 font-heading font-semibold"
-            onClick={handleSubmit}
-            disabled={loading}
-          >
+          <Button className="w-full gradient-hero text-white border-0 font-heading font-semibold" onClick={handleSubmit} disabled={loading}>
             {loading ? "সাবমিট হচ্ছে..." : "সাবমিট"}
           </Button>
         </CardContent>

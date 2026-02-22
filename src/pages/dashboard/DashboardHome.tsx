@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, PlusCircle, Package, BookOpen, MessageSquare, Phone } from "lucide-react";
+import { FileText, PlusCircle, Package, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { mongoQuery } from "@/hooks/useMongo";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function DashboardHome() {
@@ -18,39 +17,23 @@ export default function DashboardHome() {
   useEffect(() => {
     if (!user) return;
 
-    // Fetch question count from Mongo
-    mongoQuery({
-      action: "aggregate",
-      collection: "mcq",
-      pipeline: [
-        { $match: { teacher_id: user.id } },
-        { $count: "total" },
-      ],
-    }).then((r) => {
-      setStats({ totalQuestions: r?.documents?.[0]?.total || 0 });
-    }).catch(() => {});
+    // Question count from Supabase
+    supabase.from("questions").select("id", { count: "exact", head: true }).eq("teacher_id", user.id)
+      .then(({ count }) => setStats({ totalQuestions: count || 0 }));
 
-    // Recent questions from Mongo
-    mongoQuery({
-      action: "find",
-      collection: "mcq",
-      filter: { teacher_id: user.id },
-      sort: { _id: -1 },
-      limit: 3,
-    }).then((r) => {
-      setRecentQuestions(r?.documents || []);
-    }).catch(() => {});
+    // Recent questions from Supabase
+    supabase.from("questions").select("id, question, type, class_id, classes(name), subjects(name)")
+      .eq("teacher_id", user.id).order("created_at", { ascending: false }).limit(3)
+      .then(({ data }) => setRecentQuestions(data || []));
 
     // Institute from Supabase
-    supabase.from("institutes").select("*").eq("user_id", user.id).maybeSingle()
+    supabase.from("institutes").select("*").eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => setInstitute(data));
 
     // Subscription from Supabase
-    supabase.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle()
+    supabase.from("subscriptions").select("*").eq("teacher_id", user.id).maybeSingle()
       .then(({ data }) => setSubscription(data));
   }, [user]);
-
-  const fullName = user?.user_metadata?.full_name || "শিক্ষক";
 
   return (
     <div className="space-y-6">
@@ -104,12 +87,8 @@ export default function DashboardHome() {
 
       {/* Quick Actions + Updates + Feedback */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick Actions */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <Badge variant="outline" className="text-xs">জে-১২শ</Badge>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <Link to="/dashboard/create" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:bg-muted transition-colors">
                 <PlusCircle className="w-6 h-6 text-foreground" />
@@ -123,7 +102,6 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        {/* Updates */}
         <Card className="bg-accent/30 border-accent">
           <CardContent className="p-6">
             <h3 className="font-heading font-bold text-center mb-3">📢 ইপ্রশ্নব্যাংক আপডেটস</h3>
@@ -136,7 +114,6 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        {/* Feedback CTA */}
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-6 text-center">
             <h3 className="font-heading font-bold mb-2">💬 মতামত জানান !</h3>
@@ -159,14 +136,14 @@ export default function DashboardHome() {
               <p className="text-sm text-muted-foreground">এখনো কোনো প্রশ্ন তৈরি হয়নি।</p>
             ) : (
               <div className="space-y-2">
-                {recentQuestions.map((q: any, i: number) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                {recentQuestions.map((q: any) => (
+                  <div key={q.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
                     <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{q.question || "প্রশ্ন"}</p>
-                      <p className="text-xs text-muted-foreground">{q.class} • {q.subject}</p>
+                      <p className="text-xs text-muted-foreground">{(q as any).classes?.name} • {(q as any).subjects?.name}</p>
                     </div>
-                    <Badge variant="secondary" className="text-[10px] shrink-0">MCQ</Badge>
+                    <Badge variant="secondary" className="text-[10px] shrink-0 uppercase">{q.type}</Badge>
                   </div>
                 ))}
                 <Link to="/dashboard/my-questions" className="text-sm text-primary font-medium flex items-center gap-1 mt-2">
@@ -177,7 +154,6 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        {/* Live Chat CTA */}
         <Card>
           <CardContent className="p-6 text-center">
             <h3 className="font-heading font-bold mb-2">লাইভ চ্যাট</h3>

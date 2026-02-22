@@ -16,7 +16,7 @@ export default function Institute() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("institutes").select("*").eq("user_id", user.id).maybeSingle()
+    supabase.from("institutes").select("*").eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setInstitute(data);
@@ -32,7 +32,7 @@ export default function Institute() {
       if (error) { toast.error("আপডেট ব্যর্থ"); return; }
       setInstitute({ ...institute, ...form });
     } else {
-      const { data, error } = await supabase.from("institutes").insert({ ...form, user_id: user.id }).select().single();
+      const { data, error } = await supabase.from("institutes").insert({ ...form, owner_id: user.id }).select().single();
       if (error) { toast.error("সংরক্ষণ ব্যর্থ"); return; }
       setInstitute(data);
     }
@@ -46,19 +46,10 @@ export default function Institute() {
 
   return (
     <div className="space-y-6">
-      {/* Institute Banner */}
       <div className="gradient-hero rounded-2xl p-8 text-center text-white">
-        <h1 className="font-heading text-2xl font-bold">
-          {institute?.name || "আপনার প্রতিষ্ঠান"}
-        </h1>
-        {institute?.joined_at && (
-          <p className="text-white/60 text-sm mt-1">
-            Joined: {new Date(institute.joined_at).toLocaleDateString("bn-BD")}
-          </p>
-        )}
+        <h1 className="font-heading text-2xl font-bold">{institute?.name || "আপনার প্রতিষ্ঠান"}</h1>
       </div>
 
-      {/* Teacher Card */}
       <div>
         <h2 className="font-heading text-xl font-bold text-center mb-4">আমাদের শিক্ষকবৃন্দ</h2>
         <Card className="max-w-xs mx-auto">
@@ -77,7 +68,6 @@ export default function Institute() {
         </Card>
       </div>
 
-      {/* Address */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -86,42 +76,20 @@ export default function Institute() {
               <Pencil className="w-4 h-4" />
             </Button>
           </div>
-
           {editing ? (
             <div className="space-y-3">
-              <div>
-                <Label>প্রতিষ্ঠানের নাম</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div>
-                <Label>উপজেলা</Label>
-                <Input value={form.upazila} onChange={(e) => setForm({ ...form, upazila: e.target.value })} />
-              </div>
-              <div>
-                <Label>জেলা</Label>
-                <Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
-              </div>
-              <div>
-                <Label>বিভাগ</Label>
-                <Input value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} />
-              </div>
+              <div><Label>প্রতিষ্ঠানের নাম</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label>উপজেলা</Label><Input value={form.upazila} onChange={(e) => setForm({ ...form, upazila: e.target.value })} /></div>
+              <div><Label>জেলা</Label><Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
+              <div><Label>বিভাগ</Label><Input value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} /></div>
               <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">সংরক্ষণ করুন</Button>
             </div>
           ) : (
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-border">
-                  <td className="py-2.5 text-muted-foreground w-28">উপজেলা</td>
-                  <td className="py-2.5 font-medium">{institute?.upazila || "—"}</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="py-2.5 text-muted-foreground">জেলা</td>
-                  <td className="py-2.5 font-medium">{institute?.district || "—"}</td>
-                </tr>
-                <tr>
-                  <td className="py-2.5 text-muted-foreground">বিভাগ</td>
-                  <td className="py-2.5 font-medium">{institute?.division || "—"}</td>
-                </tr>
+                <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground w-28">উপজেলা</td><td className="py-2.5 font-medium">{institute?.upazila || "—"}</td></tr>
+                <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">জেলা</td><td className="py-2.5 font-medium">{institute?.district || "—"}</td></tr>
+                <tr><td className="py-2.5 text-muted-foreground">বিভাগ</td><td className="py-2.5 font-medium">{institute?.division || "—"}</td></tr>
               </tbody>
             </table>
           )}

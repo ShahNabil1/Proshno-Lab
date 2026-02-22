@@ -32,6 +32,16 @@ import Subscription from "./pages/dashboard/Subscription";
 import Contact from "./pages/dashboard/Contact";
 import Feedback from "./pages/dashboard/Feedback";
 
+// Admin
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminHome from "./pages/admin/AdminHome";
+import AdminCrudPage from "./pages/admin/AdminCrudPage";
+import AdminTeachers from "./pages/admin/AdminTeachers";
+import AdminQuestions from "./pages/admin/AdminQuestions";
+import AdminInstitutes from "./pages/admin/AdminInstitutes";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminFeedback from "./pages/admin/AdminFeedback";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,7 +52,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public pages with main layout */}
+            {/* Public pages */}
             <Route element={<Layout><Index /></Layout>} path="/" />
             <Route element={<Layout><Login /></Layout>} path="/login" />
             <Route element={<Layout><Register /></Layout>} path="/register" />
@@ -57,7 +67,7 @@ const App = () => (
             <Route element={<Layout><PrivacyPage /></Layout>} path="/privacy" />
             <Route element={<Layout><RefundPage /></Layout>} path="/refund" />
 
-            {/* Dashboard pages with sidebar layout */}
+            {/* Dashboard */}
             <Route path="/dashboard" element={<DashboardLayout><DashboardHome /></DashboardLayout>} />
             <Route path="/dashboard/create" element={<DashboardLayout><QuestionCreate /></DashboardLayout>} />
             <Route path="/dashboard/question-bank" element={<DashboardLayout><QuestionBank /></DashboardLayout>} />
@@ -67,6 +77,18 @@ const App = () => (
             <Route path="/dashboard/subscription" element={<DashboardLayout><Subscription /></DashboardLayout>} />
             <Route path="/dashboard/contact" element={<DashboardLayout><Contact /></DashboardLayout>} />
             <Route path="/dashboard/feedback" element={<DashboardLayout><Feedback /></DashboardLayout>} />
+
+            {/* Admin */}
+            <Route path="/admin" element={<AdminLayout><AdminHome /></AdminLayout>} />
+            <Route path="/admin/classes" element={<AdminLayout><AdminCrudPage title="শ্রেণী ম্যানেজমেন্ট" table="classes" /></AdminLayout>} />
+            <Route path="/admin/subjects" element={<AdminLayout><AdminCrudPage title="বিষয় ম্যানেজমেন্ট" table="subjects" parentTable="classes" parentLabel="শ্রেণী" parentKey="class_id" /></AdminLayout>} />
+            <Route path="/admin/chapters" element={<AdminLayout><AdminCrudPage title="অধ্যায় ম্যানেজমেন্ট" table="chapters" parentTable="subjects" parentLabel="বিষয়" parentKey="subject_id" /></AdminLayout>} />
+            <Route path="/admin/categories" element={<AdminLayout><AdminCrudPage title="প্রশ্নের ক্যাটাগরি" table="question_categories" /></AdminLayout>} />
+            <Route path="/admin/questions" element={<AdminLayout><AdminQuestions /></AdminLayout>} />
+            <Route path="/admin/teachers" element={<AdminLayout><AdminTeachers /></AdminLayout>} />
+            <Route path="/admin/institutes" element={<AdminLayout><AdminInstitutes /></AdminLayout>} />
+            <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
+            <Route path="/admin/feedback" element={<AdminLayout><AdminFeedback /></AdminLayout>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
