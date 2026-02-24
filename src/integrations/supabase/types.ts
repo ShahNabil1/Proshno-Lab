@@ -171,6 +171,7 @@ export type Database = {
           question: string
           subject_id: number
           teacher_id: string
+          topic_id: number | null
           type: string
         }
         Insert: {
@@ -188,6 +189,7 @@ export type Database = {
           question: string
           subject_id: number
           teacher_id: string
+          topic_id?: number | null
           type?: string
         }
         Update: {
@@ -205,6 +207,7 @@ export type Database = {
           question?: string
           subject_id?: number
           teacher_id?: string
+          topic_id?: number | null
           type?: string
         }
         Relationships: [
@@ -241,6 +244,13 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -332,6 +342,35 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      topics: {
+        Row: {
+          chapter_id: number
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          chapter_id: number
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          chapter_id?: number
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topics_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

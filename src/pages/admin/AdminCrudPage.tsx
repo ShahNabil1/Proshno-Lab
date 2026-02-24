@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AdminCrudPageProps {
   title: string;
@@ -17,6 +18,7 @@ interface AdminCrudPageProps {
 }
 
 export default function AdminCrudPage({ title, table, parentTable, parentLabel, parentKey }: AdminCrudPageProps) {
+  const navigate = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [parents, setParents] = useState<{ id: number; name: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -104,7 +106,17 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
                   {parentLabel && parentTable && (
                     <TableCell>{item[parentTable]?.name || "—"}</TableCell>
                   )}
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
+                    {table === "chapters" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => navigate(`/admin/topics?chapter_id=${item.id}&chapter_name=${encodeURIComponent(item.name)}`)}
+                      >
+                        <BookOpen className="w-3.5 h-3.5" /> টপিক ম্যানেজমেন্ট
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                   </TableCell>
