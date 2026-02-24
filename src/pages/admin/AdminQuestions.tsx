@@ -24,6 +24,8 @@ export default function AdminQuestions() {
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
+    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
+    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
   });
 
   const fetchItems = async () => {
@@ -53,33 +55,55 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "" });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (item: any) => {
     setEditItem(item);
+    const cd = item.creative_data || {};
     setForm({
       class_id: String(item.class_id), subject_id: String(item.subject_id),
       chapter_id: String(item.chapter_id), category_id: item.category_id ? String(item.category_id) : "",
       type: item.type, question: item.question, option_a: item.option_a || "", option_b: item.option_b || "",
       option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: item.correct_answer || "",
       explanation: item.explanation || "",
+      cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
+      cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.question || !form.class_id || !form.subject_id || !form.chapter_id) {
-      toast.error("প্রশ্ন, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
-      return;
+    if (form.type === "cq") {
+      if (!form.cq_stem || !form.class_id || !form.subject_id || !form.chapter_id) {
+        toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
+        return;
+      }
+    } else {
+      if (!form.question || !form.class_id || !form.subject_id || !form.chapter_id) {
+        toast.error("প্রশ্ন, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
+        return;
+      }
     }
+
     const payload: any = {
       class_id: Number(form.class_id), subject_id: Number(form.subject_id), chapter_id: Number(form.chapter_id),
-      type: form.type, question: form.question, option_a: form.option_a || null, option_b: form.option_b || null,
+      type: form.type,
+      question: form.type === "cq" ? (form.cq_stem.substring(0, 100) + (form.cq_stem.length > 100 ? "..." : "")) : form.question,
+      option_a: form.option_a || null, option_b: form.option_b || null,
       option_c: form.option_c || null, option_d: form.option_d || null, correct_answer: form.correct_answer || null,
       explanation: form.explanation || null,
     };
+
+    if (form.type === "cq") {
+      payload.creative_data = {
+        stem: form.cq_stem,
+        q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
+        ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
+      };
+    }
+
     if (form.category_id) payload.category_id = Number(form.category_id);
 
     if (editItem) {
@@ -183,20 +207,47 @@ export default function AdminQuestions() {
                 </select>
               </div>
             </div>
-            <div>
-              <Label>প্রশ্ন</Label>
-              <Textarea value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} rows={3} />
-            </div>
-            {form.type === "mcq" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>অপশন ক</Label><Input value={form.option_a} onChange={(e) => setForm({ ...form, option_a: e.target.value })} /></div>
-                <div><Label>অপশন খ</Label><Input value={form.option_b} onChange={(e) => setForm({ ...form, option_b: e.target.value })} /></div>
-                <div><Label>অপশন গ</Label><Input value={form.option_c} onChange={(e) => setForm({ ...form, option_c: e.target.value })} /></div>
-                <div><Label>অপশন ঘ</Label><Input value={form.option_d} onChange={(e) => setForm({ ...form, option_d: e.target.value })} /></div>
+            {/* === CQ Form === */}
+            {form.type === "cq" ? (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
+                  <Textarea value={form.cq_stem} onChange={(e) => setForm({ ...form, cq_stem: e.target.value })} rows={5} placeholder="উদ্দীপকটি এখানে লিখুন..." />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
+                  <div><Label>ক) জ্ঞানমূলক</Label><Input value={form.cq_q_ka} onChange={(e) => setForm({ ...form, cq_q_ka: e.target.value })} placeholder="প্রশ্ন ক" /></div>
+                  <div><Label>খ) অনুধাবনমূলক</Label><Input value={form.cq_q_kha} onChange={(e) => setForm({ ...form, cq_q_kha: e.target.value })} placeholder="প্রশ্ন খ" /></div>
+                  <div><Label>গ) প্রয়োগমূলক</Label><Input value={form.cq_q_ga} onChange={(e) => setForm({ ...form, cq_q_ga: e.target.value })} placeholder="প্রশ্ন গ" /></div>
+                  <div><Label>ঘ) উচ্চতর দক্ষতামূলক</Label><Input value={form.cq_q_gha} onChange={(e) => setForm({ ...form, cq_q_gha: e.target.value })} placeholder="প্রশ্ন ঘ" /></div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
+                  <div><Label>উত্তর ক</Label><Textarea value={form.cq_ans_ka} onChange={(e) => setForm({ ...form, cq_ans_ka: e.target.value })} rows={2} /></div>
+                  <div><Label>উত্তর খ</Label><Textarea value={form.cq_ans_kha} onChange={(e) => setForm({ ...form, cq_ans_kha: e.target.value })} rows={2} /></div>
+                  <div><Label>উত্তর গ</Label><Textarea value={form.cq_ans_ga} onChange={(e) => setForm({ ...form, cq_ans_ga: e.target.value })} rows={2} /></div>
+                  <div><Label>উত্তর ঘ</Label><Textarea value={form.cq_ans_gha} onChange={(e) => setForm({ ...form, cq_ans_gha: e.target.value })} rows={2} /></div>
+                </div>
               </div>
+            ) : (
+              <>
+                {/* === Non-CQ Form === */}
+                <div>
+                  <Label>প্রশ্ন</Label>
+                  <Textarea value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} rows={3} />
+                </div>
+                {form.type === "mcq" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>অপশন ক</Label><Input value={form.option_a} onChange={(e) => setForm({ ...form, option_a: e.target.value })} /></div>
+                    <div><Label>অপশন খ</Label><Input value={form.option_b} onChange={(e) => setForm({ ...form, option_b: e.target.value })} /></div>
+                    <div><Label>অপশন গ</Label><Input value={form.option_c} onChange={(e) => setForm({ ...form, option_c: e.target.value })} /></div>
+                    <div><Label>অপশন ঘ</Label><Input value={form.option_d} onChange={(e) => setForm({ ...form, option_d: e.target.value })} /></div>
+                  </div>
+                )}
+                <div><Label>সঠিক উত্তর</Label><Input value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })} /></div>
+                <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><Textarea value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={2} /></div>
+              </>
             )}
-            <div><Label>সঠিক উত্তর</Label><Input value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })} /></div>
-            <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><Textarea value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={2} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
