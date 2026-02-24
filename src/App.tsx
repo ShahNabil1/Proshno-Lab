@@ -31,6 +31,7 @@ import Institute from "./pages/dashboard/Institute";
 import Subscription from "./pages/dashboard/Subscription";
 import Contact from "./pages/dashboard/Contact";
 import Feedback from "./pages/dashboard/Feedback";
+import QuestionPaperView from "./pages/dashboard/QuestionPaperView";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/dashboard/subscription" element={<DashboardLayout><Subscription /></DashboardLayout>} />
             <Route path="/dashboard/contact" element={<DashboardLayout><Contact /></DashboardLayout>} />
             <Route path="/dashboard/feedback" element={<DashboardLayout><Feedback /></DashboardLayout>} />
+            <Route path="/dashboard/view-paper" element={<DashboardLayout><QuestionPaperView /></DashboardLayout>} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminLayout><AdminHome /></AdminLayout>} />
