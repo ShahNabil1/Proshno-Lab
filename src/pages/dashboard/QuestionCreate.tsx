@@ -11,8 +11,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, MessageSquare } from "lucide-react";
 
-const typeOptions = ["mcq", "short", "cq", "descriptive"];
-const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
+const typeOptions = ["mcq", "short", "cq", "mcq_short", "mcq_short_cq"];
+const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল" };
+const typeDbValues: Record<string, string[]> = {
+  mcq: ["mcq"], short: ["short"], cq: ["cq"],
+  mcq_short: ["mcq", "short"],
+  mcq_short_cq: ["mcq", "short", "cq"],
+};
 
 type WarningField = "subject" | "chapter" | null;
 const warningMessages: Record<string, { title: string; prerequisite: string }> = {
@@ -91,10 +96,11 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
+      const dbTypes = typeDbValues[form.type] || [form.type];
       let query = supabase.from("questions").select("*")
         .eq("class_id", Number(form.classId))
         .eq("subject_id", Number(form.subjectId))
-        .eq("type", form.type);
+        .in("type", dbTypes);
       if (form.chapterId) query = query.eq("chapter_id", Number(form.chapterId));
       query = query.limit(parseInt(form.count) || 10);
 

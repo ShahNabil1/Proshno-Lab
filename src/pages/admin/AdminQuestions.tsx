@@ -14,7 +14,7 @@ import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 
-const typeOptions = ["mcq", "short", "cq", "descriptive"];
+const typeOptions = ["mcq", "short", "cq"];
 
 export default function AdminQuestions() {
   const [items, setItems] = useState<any[]>([]);

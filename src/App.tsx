@@ -12,7 +12,7 @@ import Profile from "./pages/Profile";
 import MCQPage from "./pages/MCQPage";
 import CQPage from "./pages/CQPage";
 import ShortPage from "./pages/ShortPage";
-import DescriptivePage from "./pages/DescriptivePage";
+
 import PricingPage from "./pages/PricingPage";
 import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
@@ -62,7 +62,7 @@ const App = () => (
             <Route element={<Layout><MCQPage /></Layout>} path="/questions/mcq" />
             <Route element={<Layout><CQPage /></Layout>} path="/questions/cq" />
             <Route element={<Layout><ShortPage /></Layout>} path="/questions/short" />
-            <Route element={<Layout><DescriptivePage /></Layout>} path="/questions/descriptive" />
+            
             <Route element={<Layout><PricingPage /></Layout>} path="/pricing" />
             <Route element={<Layout><DemoPage /></Layout>} path="/demo" />
             <Route element={<Layout><TermsPage /></Layout>} path="/terms" />
