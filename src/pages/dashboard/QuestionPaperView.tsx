@@ -208,7 +208,7 @@ export default function QuestionPaperView() {
     return refs.length > 0 ? `[${refs.join(", ")}]` : "";
   };
 
-  const editableClass = "outline-none transition-all hover:bg-primary/5 focus:ring-1 focus:ring-primary/40 focus:bg-primary/5 cursor-text rounded-sm";
+  const editableClass = "outline-none cursor-text";
 
   if (!meta) {
     return (
@@ -251,23 +251,24 @@ export default function QuestionPaperView() {
         </div>
 
         <div
-          className="bg-white mx-auto font-paper"
+          className="mx-auto font-paper"
           ref={paperRef}
           style={{
-            maxWidth: "800px",
+            maxWidth: "780px",
             fontSize: `${settings.fontSize}px`,
-            lineHeight: 1.45,
-            padding: "36px 48px",
+            lineHeight: 1.35,
+            padding: "28px 44px",
             color: "#000",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.08), 0 4px 24px rgba(0,0,0,0.10)",
+            background: "#fff",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
           }}
         >
           {/* ===== HEADER ===== */}
-          <div className="text-center" style={{ marginBottom: "2px" }}>
+          <div style={{ textAlign: "center", marginBottom: "0" }}>
             <h1
               className={editableClass}
-              style={{ fontSize: "1.5em", fontWeight: 800, letterSpacing: "-0.01em", marginBottom: "1px" }}
+              style={{ fontSize: "1.35em", fontWeight: 800, lineHeight: 1.3, margin: 0 }}
               data-editable="institute"
               onClick={handleEditableClick}
               suppressContentEditableWarning
@@ -277,7 +278,7 @@ export default function QuestionPaperView() {
             {settings.showProgramName && meta.programName && (
               <p
                 className={editableClass}
-                style={{ fontSize: "1.15em", fontWeight: 700, marginBottom: "1px" }}
+                style={{ fontSize: "1.05em", fontWeight: 700, margin: "1px 0 0" }}
                 data-editable="program"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -288,7 +289,7 @@ export default function QuestionPaperView() {
             {(settings.showClassName || settings.showSubjectName) && (
               <p
                 className={editableClass}
-                style={{ fontSize: "1em" }}
+                style={{ fontSize: "0.95em", margin: "1px 0 0" }}
                 data-editable="classSubject"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -301,7 +302,7 @@ export default function QuestionPaperView() {
             {settings.showChapterName && meta.chapterNames.length > 0 && (
               <p
                 className={editableClass}
-                style={{ fontSize: "0.92em" }}
+                style={{ fontSize: "0.85em", margin: "1px 0 0" }}
                 data-editable="chapters"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -312,14 +313,14 @@ export default function QuestionPaperView() {
           </div>
 
           {settings.showSetCode && (
-            <div style={{ textAlign: "right", marginBottom: "2px" }}>
+            <div style={{ textAlign: "right", margin: "2px 0" }}>
               <span
                 className={editableClass}
                 data-editable="setCode"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
               >
-                সেট: <span style={{ border: "1.5px solid #000", padding: "0 6px", fontWeight: 700 }}>ক</span>
+                সেট: <span style={{ border: "1.5px solid #000", padding: "0 5px", fontWeight: 700 }}>ক</span>
               </span>
             </div>
           )}
@@ -331,10 +332,11 @@ export default function QuestionPaperView() {
               justifyContent: "space-between",
               alignItems: "center",
               fontWeight: 600,
-              borderTop: "2px solid #000",
-              borderBottom: "2px solid #000",
-              padding: "3px 0",
-              margin: "4px 0",
+              fontSize: "0.95em",
+              borderTop: "1.5px solid #000",
+              borderBottom: "1.5px solid #000",
+              padding: "2px 0",
+              margin: "4px 0 2px",
             }}
           >
             <span
@@ -359,7 +361,7 @@ export default function QuestionPaperView() {
           {settings.showInstruction && (
             <p
               className={editableClass}
-              style={{ textAlign: "center", fontSize: "0.85em", margin: "4px 0", fontStyle: "italic" }}
+              style={{ textAlign: "center", fontSize: "0.8em", margin: "2px 0", fontStyle: "italic" }}
               data-editable="instruction"
               onClick={handleEditableClick}
               suppressContentEditableWarning
@@ -370,9 +372,9 @@ export default function QuestionPaperView() {
 
           {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (
-            <div style={{ marginTop: "8px", marginBottom: "12px" }}>
-              {/* Section header centered with dashes */}
-              <div style={{ textAlign: "center", fontWeight: 700, margin: "6px 0", borderBottom: "1px solid #000", paddingBottom: "3px" }}>
+            <div style={{ marginTop: "6px", marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
+                <span>—</span>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
@@ -381,15 +383,17 @@ export default function QuestionPaperView() {
                 >
                   বহুনির্বাচনী অংশ
                 </span>
-                <span style={{ float: "right", fontWeight: 400, fontSize: "0.9em" }}>{mcqMarksLine}</span>
+                <span>—</span>
+                <span style={{ fontWeight: 400, fontSize: "0.9em" }}>{mcqMarksLine}</span>
               </div>
 
-              {/* MCQ 2-column grid */}
+              {/* MCQ 2-column grid with central divider */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: settings.columns >= 2 ? "1fr 1fr" : "1fr",
-                  gap: "0",
+                  columnGap: "0",
+                  rowGap: "0",
                 }}
               >
                 {mcqQuestions.map((q, idx) => {
@@ -400,26 +404,24 @@ export default function QuestionPaperView() {
                       key={q.id}
                       className={editableClass}
                       style={{
-                        padding: "3px 0",
-                        paddingLeft: isRightCol ? "12px" : "0",
-                        paddingRight: !isRightCol && settings.columns >= 2 ? "12px" : "0",
-                        borderLeft: isRightCol && settings.columnDivider ? "1px solid #000" : "none",
+                        padding: "1px 0",
+                        paddingLeft: isRightCol ? "10px" : "0",
+                        paddingRight: !isRightCol && settings.columns >= 2 ? "10px" : "0",
+                        borderLeft: isRightCol && settings.columnDivider ? "0.5px solid #555" : "none",
                       }}
                       data-editable={`mcq-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
                     >
-                      {/* Question line */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "4px" }}>
-                        <span>
-                          <LatexRenderer text={`${padBangla(idx + 1)}।  ${q.question}`} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                        <span style={{ flex: 1 }}>
+                          <LatexRenderer text={`${padBangla(idx + 1)}। ${q.question}`} />
                         </span>
                         {refStr && (
-                          <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.7 }}>{refStr}</span>
+                          <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>
                         )}
                       </div>
-                      {/* Options in horizontal line */}
-                      <div style={{ marginLeft: "18px", marginTop: "1px", display: "flex", flexWrap: "wrap", gap: "4px 14px", fontSize: "0.92em", lineHeight: 1.35 }}>
+                      <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
                         {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                           const val = q[key];
                           if (!val) return null;
@@ -440,8 +442,9 @@ export default function QuestionPaperView() {
 
           {/* ===== SHORT SECTION ===== */}
           {shortQuestions.length > 0 && (
-            <div style={{ marginBottom: "12px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, margin: "6px 0", borderBottom: "1px solid #000", paddingBottom: "3px" }}>
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "3px" }}>
+                <span>—</span>
                 <span
                   className={editableClass}
                   data-editable="short-title"
@@ -450,8 +453,9 @@ export default function QuestionPaperView() {
                 >
                   সংক্ষিপ্ত প্রশ্ন
                 </span>
+                <span>—</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                 {shortQuestions.map((q, idx) => {
                   const num = mcqQuestions.length + idx + 1;
                   const refStr = formatRefs(q);
@@ -459,15 +463,15 @@ export default function QuestionPaperView() {
                     <div
                       key={q.id}
                       className={editableClass}
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}
                       data-editable={`short-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
                     >
                       <span>
-                        <LatexRenderer text={`${padBangla(num)}।  ${q.question}`} />
+                        <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
-                      {refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.7 }}>{refStr}</span>}
+                      {refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                     </div>
                   );
                 })}
@@ -477,9 +481,9 @@ export default function QuestionPaperView() {
 
           {/* ===== CREATIVE QUESTION (CQ) SECTION ===== */}
           {cqQuestions.length > 0 && (
-            <div style={{ marginBottom: "12px" }}>
-              {/* Section header */}
-              <div style={{ textAlign: "center", fontWeight: 700, margin: "6px 0", borderBottom: "1px solid #000", paddingBottom: "3px" }}>
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
+                <span>—</span>
                 <span
                   className={editableClass}
                   data-editable="cq-title"
@@ -488,10 +492,11 @@ export default function QuestionPaperView() {
                 >
                   সৃজনশীল অংশ
                 </span>
-                <span style={{ float: "right", fontWeight: 400, fontSize: "0.9em" }}>{cqMarksLine}</span>
+                <span>—</span>
+                <span style={{ fontWeight: 400, fontSize: "0.9em" }}>{cqMarksLine}</span>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {cqQuestions.map((q, idx) => {
                   const num = mcqQuestions.length + shortQuestions.length + idx + 1;
                   const refStr = formatRefs(q);
@@ -507,44 +512,42 @@ export default function QuestionPaperView() {
                       suppressContentEditableWarning
                     >
                       {/* Stem */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "3px" }}>
-                        <span style={{ fontWeight: 600 }}>
-                          <LatexRenderer text={`${padBangla(num)}।  ${q.question}`} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
+                        <span style={{ fontWeight: 600, flex: 1 }}>
+                          <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                         </span>
-                        {refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.7 }}>{refStr}</span>}
+                        {refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                       </div>
 
-                      {/* Sub-questions with marks far right */}
+                      {/* Sub-questions with marks pinned far right */}
                       {subQuestions.length > 0 && (
-                        <div style={{ marginLeft: "20px", display: "flex", flexDirection: "column", gap: "1px" }}>
+                        <div style={{ marginLeft: "18px" }}>
                           {subQuestions.map((sq: any, si: number) => {
                             const subLabel = ["ক", "খ", "গ", "ঘ"][si] || "";
                             const subMarks = [1, 2, 3, 4][si] || "";
                             return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                <span>
-                                  ({subLabel}) <LatexRenderer text={sq.question || sq.text || ""} />
-                                </span>
-                                <span style={{ flexShrink: 0, marginLeft: "8px", fontWeight: 500 }}>{toBanglaNum(Number(subMarks))}</span>
+                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4 }}>
+                                <span>({subLabel}) <LatexRenderer text={sq.question || sq.text || ""} /></span>
+                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(subMarks))}</span>
                               </div>
                             );
                           })}
                         </div>
                       )}
 
-                      {/* Fallback */}
+                      {/* Fallback for stem-based CQ */}
                       {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
-                        <div style={{ marginLeft: "20px" }}>
-                          <p style={{ fontStyle: "italic", marginBottom: "3px" }}><LatexRenderer text={cData.stem} /></p>
+                        <div style={{ marginLeft: "18px" }}>
+                          <p style={{ fontStyle: "italic", marginBottom: "2px" }}><LatexRenderer text={cData.stem} /></p>
                           {["ক", "খ", "গ", "ঘ"].map((label, si) => {
                             const key = `sub_${si + 1}` as string;
                             const text = cData[key];
                             if (!text) return null;
                             const marks = [1, 2, 3, 4][si];
                             return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4 }}>
                                 <span>({label}) <LatexRenderer text={text} /></span>
-                                <span style={{ flexShrink: 0, marginLeft: "8px", fontWeight: 500 }}>{toBanglaNum(marks)}</span>
+                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(marks)}</span>
                               </div>
                             );
                           })}
