@@ -1,0 +1,163 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
+  Minus, Plus, Trash2, RefreshCw, Palette
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface FloatingToolbarProps {
+  targetEl: HTMLElement | null;
+  onDelete?: () => void;
+  onExchange?: () => void;
+  onClose: () => void;
+}
+
+const COLORS = [
+  "#000000", "#333333", "#666666",
+  "#10b981", "#059669", "#047857",
+  "#ef4444", "#3b82f6", "#8b5cf6",
+  "#f59e0b", "#ec4899", "#14b8a6",
+];
+
+export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClose }: FloatingToolbarProps) {
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [fontSize, setFontSize] = useState(14);
+
+  // Position toolbar above the target element
+  useEffect(() => {
+    if (!targetEl || !toolbarRef.current) return;
+    const rect = targetEl.getBoundingClientRect();
+    const tbRect = toolbarRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY;
+
+    let top = rect.top + scrollY - tbRect.height - 8;
+    if (top < scrollY + 10) top = rect.bottom + scrollY + 8;
+    let left = rect.left + rect.width / 2 - tbRect.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tbRect.width - 8));
+
+    setPos({ top, left });
+
+    // Read current font size
+    const computed = window.getComputedStyle(targetEl);
+    setFontSize(Math.round(parseFloat(computed.fontSize)));
+  }, [targetEl]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        toolbarRef.current && !toolbarRef.current.contains(e.target as Node) &&
+        targetEl && !targetEl.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [targetEl, onClose]);
+
+  const exec = useCallback((cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+    targetEl?.focus();
+  }, [targetEl]);
+
+  const changeFontSize = (delta: number) => {
+    if (!targetEl) return;
+    const newSize = Math.max(10, Math.min(28, fontSize + delta));
+    setFontSize(newSize);
+    targetEl.style.fontSize = `${newSize}px`;
+  };
+
+  const setAlign = (align: string) => {
+    if (!targetEl) return;
+    targetEl.style.textAlign = align;
+  };
+
+  const setColor = (color: string) => {
+    exec("foreColor", color);
+  };
+
+  if (!targetEl) return null;
+
+  return (
+    <div
+      ref={toolbarRef}
+      className="fixed z-[100] flex items-center gap-0.5 rounded-lg border border-emerald-300 bg-white dark:bg-card shadow-xl px-1.5 py-1 font-paper"
+      style={{ top: pos.top, left: pos.left }}
+    >
+      {/* Font size */}
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeFontSize(-1)}>
+        <Minus className="h-3 w-3" />
+      </Button>
+      <span className="text-xs font-medium w-6 text-center select-none">{fontSize}</span>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeFontSize(1)}>
+        <Plus className="h-3 w-3" />
+      </Button>
+
+      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+
+      {/* Formatting */}
+      <Button variant="ghost" size="icon" className="h-7 w-7 font-bold" onClick={() => exec("bold")}>
+        <Bold className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => exec("italic")}>
+        <Italic className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => exec("underline")}>
+        <Underline className="h-3.5 w-3.5" />
+      </Button>
+
+      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+
+      {/* Alignment */}
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("left")}>
+        <AlignLeft className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("center")}>
+        <AlignCenter className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("right")}>
+        <AlignRight className="h-3.5 w-3.5" />
+      </Button>
+
+      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+
+      {/* Color */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600">
+            <Palette className="h-3.5 w-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2" side="bottom" align="center">
+          <div className="grid grid-cols-4 gap-1.5">
+            {COLORS.map(c => (
+              <button
+                key={c}
+                className="h-6 w-6 rounded-full border border-border hover:scale-110 transition-transform"
+                style={{ backgroundColor: c }}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+
+      {/* Exchange & Delete */}
+      {onExchange && (
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:text-emerald-700" onClick={onExchange} title="বদলান">
+          <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      {onDelete && (
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete} title="মুছুন">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
