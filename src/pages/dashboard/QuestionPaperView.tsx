@@ -252,6 +252,40 @@ export default function QuestionPaperView() {
 
   const editableClass = "outline-none cursor-text";
 
+  /* Paper size widths for preview */
+  const paperPreviewWidths: Record<PaperSize, string> = {
+    A4: "780px", Letter: "800px", Legal: "800px", A5: "560px",
+  };
+
+  /* Detect duplicate questions */
+  const duplicateIds = new Set<number>();
+  if (settings.showDuplicateMarker) {
+    const seen = new Map<string, number[]>();
+    questions.forEach(q => {
+      const key = q.question.trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, []);
+      seen.get(key)!.push(q.id);
+    });
+    seen.forEach(ids => { if (ids.length > 1) ids.forEach(id => duplicateIds.add(id)); });
+  }
+
+  /* Shuffle questions for set code */
+  const handleShuffle = useCallback(() => {
+    setQuestions(prev => {
+      const mcq = prev.filter(q => q.type === "mcq");
+      const rest = prev.filter(q => q.type !== "mcq");
+      // Fisher-Yates shuffle
+      const shuffled = [...mcq];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return [...shuffled, ...rest];
+    });
+    updateSetting("showSetCode", true);
+    toast.success("প্রশ্ন শাফল করা হয়েছে — নতুন সেট তৈরী!");
+  }, []);
+
   if (!meta) {
     return (
       <div className="text-center py-12">
@@ -296,7 +330,7 @@ export default function QuestionPaperView() {
           className="mx-auto font-paper"
           ref={paperRef}
           style={{
-            maxWidth: "780px",
+            maxWidth: paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
             lineHeight: 1.35,
             userSelect: "none",
@@ -306,10 +340,32 @@ export default function QuestionPaperView() {
             background: "#fff",
             boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
+            textAlign: settings.textAlign,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* ===== WATERMARK ===== */}
+          {settings.showWatermark && meta.instituteName && (
+            <div style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%) rotate(-35deg)",
+              fontSize: "3.5em",
+              fontWeight: 900,
+              opacity: 0.06,
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              zIndex: 0,
+              color: "#000",
+            }}>
+              {meta.instituteName}
+            </div>
+          )}
+
           {/* ===== HEADER with optional Marks Box ===== */}
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", zIndex: 1 }}>
             {/* Marks Box - simple label + box, top left */}
             {settings.showMarksBox && (
               <div style={{
@@ -506,23 +562,27 @@ export default function QuestionPaperView() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: settings.columns >= 2 ? "1fr 1fr" : "1fr",
+                  gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
                   columnGap: "0",
                   rowGap: "0",
                 }}
               >
                 {mcqQuestions.map((q, idx) => {
+                  const isDuplicate = duplicateIds.has(q.id);
                   const refStr = formatRefs(q);
-                  const isRightCol = settings.columns >= 2 && idx % 2 === 1;
+                  const colIdx = idx % settings.columns;
+                  const showLeftBorder = colIdx > 0 && settings.columnDivider;
                   return (
                     <div
                       key={q.id}
                       className={editableClass}
                       style={{
                         padding: "1px 0",
-                        paddingLeft: isRightCol ? "10px" : "0",
-                        paddingRight: !isRightCol && settings.columns >= 2 ? "10px" : "0",
-                        borderLeft: isRightCol && settings.columnDivider ? "0.5px solid #555" : "none",
+                        paddingLeft: colIdx > 0 ? "10px" : "0",
+                        paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
+                        borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
+                        background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                        borderRadius: isDuplicate ? "2px" : undefined,
                       }}
                       data-editable={`mcq-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
@@ -675,6 +735,27 @@ export default function QuestionPaperView() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* ===== ADDRESS ===== */}
+          {settings.showAddress && (
+            <div style={{
+              marginTop: "16px",
+              paddingTop: "6px",
+              borderTop: "1px solid #000",
+              textAlign: "center",
+              fontSize: "0.8em",
+              opacity: 0.7,
+            }}>
+              <p
+                className={editableClass}
+                data-editable="address"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.instituteName} — ঠিকানা এখানে লিখুন
+              </p>
             </div>
           )}
         </div>
@@ -832,7 +913,7 @@ export default function QuestionPaperView() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">শাফল (সেট কোড তৈরী)</span>
-                    <span className="text-muted-foreground">⇆</span>
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={handleShuffle}>⇆</Button>
                   </div>
                 </div>
               </div>
