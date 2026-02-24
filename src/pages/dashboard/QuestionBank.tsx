@@ -29,7 +29,7 @@ export default function QuestionBank() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold text-center mb-6">প্রশ্নব্যাংক</h1>
+      <h1 className="font-heading text-2xl font-bold text-center mb-6">eExamapp</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {classCounts.map((cat, i) => (
           <Card key={cat.id} className={`hover-lift cursor-pointer ${colors[i % 2]}`}>
