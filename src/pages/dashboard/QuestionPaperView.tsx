@@ -400,6 +400,28 @@ export default function QuestionPaperView() {
             </span>
           </div>
 
+          {/* ===== STUDENT INFO ===== */}
+          {settings.showStudentInfo && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "8px",
+                fontSize: "0.88em",
+                padding: "3px 0",
+                borderBottom: "1px solid #000",
+                fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
+              }}
+            >
+              <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>শিক্ষার্থীর নাম:</span>
+              <span style={{ flex: 1, borderBottom: "1.5px dotted #000", minWidth: "80px" }}>&nbsp;</span>
+              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>শাখা:</span>
+              <span style={{ borderBottom: "1.5px dotted #000", minWidth: "80px", width: "120px" }}>&nbsp;</span>
+              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>রোল:</span>
+              <span style={{ borderBottom: "1.5px dotted #000", minWidth: "60px", width: "100px" }}>&nbsp;</span>
+            </div>
+          )}
+
           {/* ===== INSTRUCTION ===== */}
           {settings.showInstruction && (
             <p
