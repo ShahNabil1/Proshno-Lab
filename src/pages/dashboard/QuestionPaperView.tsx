@@ -307,8 +307,69 @@ export default function QuestionPaperView() {
             fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
           }}
         >
-          {/* ===== HEADER ===== */}
-          <div style={{ textAlign: "center", marginBottom: "0" }}>
+          {/* ===== HEADER with optional Marks Box ===== */}
+          <div style={{ position: "relative" }}>
+            {/* Marks Box - top right */}
+            {settings.showMarksBox && (
+              <div style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                border: "1.5px solid #000",
+                fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
+                fontSize: "0.75em",
+                lineHeight: 1.3,
+                zIndex: 1,
+              }}>
+                <table style={{ borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 700, textAlign: "center" }}>বিভাগ</th>
+                      {mcqQuestions.length > 0 && (
+                        <th style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 700, textAlign: "center" }}>ক</th>
+                      )}
+                      {shortQuestions.length > 0 && (
+                        <th style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 700, textAlign: "center" }}>খ</th>
+                      )}
+                      {cqQuestions.length > 0 && (
+                        <th style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 700, textAlign: "center" }}>গ</th>
+                      )}
+                      <th style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 700, textAlign: "center" }}>মোট</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 600, textAlign: "center" }}>পূর্ণমান</td>
+                      {mcqQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", textAlign: "center" }}>{toBanglaNum(mcqQuestions.length)}</td>
+                      )}
+                      {shortQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", textAlign: "center" }}>{toBanglaNum(shortQuestions.length * 2)}</td>
+                      )}
+                      {cqQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", textAlign: "center" }}>{toBanglaNum(cqQuestions.length * 10)}</td>
+                      )}
+                      <td style={{ border: "1px solid #000", padding: "2px 6px", textAlign: "center", fontWeight: 700 }}>{toBanglaNum(totalMarks)}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ border: "1px solid #000", padding: "2px 6px", fontWeight: 600, textAlign: "center" }}>প্রাপ্ত নম্বর</td>
+                      {mcqQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", minWidth: "30px" }}>&nbsp;</td>
+                      )}
+                      {shortQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", minWidth: "30px" }}>&nbsp;</td>
+                      )}
+                      {cqQuestions.length > 0 && (
+                        <td style={{ border: "1px solid #000", padding: "2px 6px", minWidth: "30px" }}>&nbsp;</td>
+                      )}
+                      <td style={{ border: "1px solid #000", padding: "2px 6px", minWidth: "30px" }}>&nbsp;</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{ textAlign: "center", marginBottom: "0" }}>
             <h1
               className={editableClass}
               style={{ fontSize: "1.35em", fontWeight: 800, lineHeight: 1.3, margin: 0 }}
@@ -353,6 +414,7 @@ export default function QuestionPaperView() {
                 ({meta.chapterNames.join(", ")})
               </p>
             )}
+          </div>
           </div>
 
           {settings.showSetCode && (
