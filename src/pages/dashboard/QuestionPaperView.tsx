@@ -102,9 +102,9 @@ export default function QuestionPaperView() {
           <title>প্রশ্নপত্র</title>
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.33/dist/katex.min.css">
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@300;400;500;600;700&display=swap');
+            @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Anek Bangla', sans-serif; font-size: ${settings.fontSize}px; }
+            body { font-family: 'SolaimanLipi', 'Arial', sans-serif; font-size: ${settings.fontSize}px; }
             @page { size: ${paperWidths[settings.paperSize]} auto; margin: 15mm; }
             .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; padding: 20px; }
             .paper-header { text-align: center; margin-bottom: 16px; }
@@ -168,7 +168,7 @@ export default function QuestionPaperView() {
           </Button>
         </div>
 
-        <div className="bg-white dark:bg-card border border-border rounded-lg shadow-sm p-6 md:p-10" ref={paperRef}>
+        <div className="bg-white dark:bg-card border border-border rounded-lg shadow-sm p-6 md:p-10 font-paper" ref={paperRef}>
           {/* Header */}
           <div className="text-center mb-4 space-y-0.5">
             <h1 className="text-xl font-bold font-heading">{meta.instituteName}</h1>
