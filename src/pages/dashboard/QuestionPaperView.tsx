@@ -29,6 +29,9 @@ interface QuestionRow {
 
 interface PaperMeta {
   instituteName: string;
+  instituteUpazila?: string;
+  instituteDistrict?: string;
+  instituteDivision?: string;
   className: string;
   subjectName: string;
   chapterNames: string[];
@@ -87,6 +90,11 @@ export default function QuestionPaperView() {
     showSheet: false,
     showShuffle: false,
     showAddress: false,
+    showAddressSpecific: true,
+    showAddressUpazila: true,
+    showAddressDistrict: true,
+    showAddressDivision: false,
+    addressText: "",
     showWatermark: false,
     watermarkOpacity: 40,
     watermarkSize: 30,
@@ -407,6 +415,26 @@ export default function QuestionPaperView() {
             >
               {meta.instituteName}
             </h1>
+            {/* Address below institute name */}
+            {settings.showAddress && (() => {
+              const parts: string[] = [];
+              if (settings.showAddressSpecific && settings.addressText) parts.push(settings.addressText);
+              if (settings.showAddressUpazila && meta.instituteUpazila) parts.push(meta.instituteUpazila);
+              if (settings.showAddressDistrict && meta.instituteDistrict) parts.push(meta.instituteDistrict);
+              if (settings.showAddressDivision && meta.instituteDivision) parts.push(meta.instituteDivision);
+              const addressStr = parts.join(", ");
+              return addressStr ? (
+                <p
+                  className={editableClass}
+                  style={{ fontSize: "0.85em", margin: "0", fontWeight: 600 }}
+                  data-editable="address"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                >
+                  {addressStr}
+                </p>
+              ) : null;
+            })()}
             {settings.showProgramName && meta.programName && (
               <p
                 className={editableClass}
@@ -743,26 +771,7 @@ export default function QuestionPaperView() {
             </div>
           )}
 
-          {/* ===== ADDRESS ===== */}
-          {settings.showAddress && (
-            <div style={{
-              marginTop: "16px",
-              paddingTop: "6px",
-              borderTop: "1px solid #000",
-              textAlign: "center",
-              fontSize: "0.8em",
-              opacity: 0.7,
-            }}>
-              <p
-                className={editableClass}
-                data-editable="address"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                {meta.instituteName} — ঠিকানা এখানে লিখুন
-              </p>
-            </div>
-          )}
+          {/* Address moved to header */}
         </div>
       </div>
 
@@ -931,6 +940,34 @@ export default function QuestionPaperView() {
                     <span className="text-sm">ঠিকানা</span>
                     <Switch checked={settings.showAddress} onCheckedChange={(v) => updateSetting("showAddress", v)} />
                   </div>
+                  {settings.showAddress && (
+                    <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">স্পেসিফিক ঠিকানা</span>
+                        <Switch checked={settings.showAddressSpecific} onCheckedChange={(v) => updateSetting("showAddressSpecific", v)} />
+                      </div>
+                      {settings.showAddressSpecific && (
+                        <Input
+                          className="text-xs h-7"
+                          placeholder="স্পেসিফিক ঠিকানা লিখুন"
+                          value={settings.addressText}
+                          onChange={(e) => updateSetting("addressText", e.target.value)}
+                        />
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">উপজেলা</span>
+                        <Switch checked={settings.showAddressUpazila} onCheckedChange={(v) => updateSetting("showAddressUpazila", v)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">জেলা</span>
+                        <Switch checked={settings.showAddressDistrict} onCheckedChange={(v) => updateSetting("showAddressDistrict", v)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">বিভাগ</span>
+                        <Switch checked={settings.showAddressDivision} onCheckedChange={(v) => updateSetting("showAddressDivision", v)} />
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm">জলছাপ</span>
                     <Switch checked={settings.showWatermark} onCheckedChange={(v) => updateSetting("showWatermark", v)} />
