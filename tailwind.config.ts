@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Montserrat', 'sans-serif'],
-        body: ['Anek Bangla', 'sans-serif'],
+        heading: ['Montserrat', 'SolaimanLipi', 'Arial', 'sans-serif'],
+        body: ['SolaimanLipi', 'Arial', 'sans-serif'],
+        paper: ['SolaimanLipi', 'Arial', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
