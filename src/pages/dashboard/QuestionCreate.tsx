@@ -93,12 +93,12 @@ export default function QuestionCreate() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<Set<string>>(new Set());
 
-  const [institute, setInstitute] = useState<{ name: string } | null>(null);
+  const [institute, setInstitute] = useState<{ name: string; upazila?: string | null; district?: string | null; division?: string | null } | null>(null);
 
   // Fetch institute
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from("institutes").select("name").eq("owner_id", user.id).maybeSingle()
+    supabase.from("institutes").select("name, upazila, district, division").eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => { if (data) setInstitute(data); });
   }, [user?.id]);
 
@@ -254,6 +254,9 @@ export default function QuestionCreate() {
     sessionStorage.setItem("viewPaperQuestions", JSON.stringify(selected));
     sessionStorage.setItem("viewPaperMeta", JSON.stringify({
       instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
+      instituteUpazila: institute?.upazila || "",
+      instituteDistrict: institute?.district || "",
+      instituteDivision: institute?.division || "",
       className,
       subjectName,
       subjectCode,
