@@ -37,6 +37,16 @@ interface QuestionForm {
   option_d: string;
   correct_answer: string;
   explanation: string;
+  // Creative (CQ) specific
+  cq_stem: string;
+  cq_q_ka: string;
+  cq_q_kha: string;
+  cq_q_ga: string;
+  cq_q_gha: string;
+  cq_ans_ka: string;
+  cq_ans_kha: string;
+  cq_ans_ga: string;
+  cq_ans_gha: string;
 }
 
 const emptyForm: QuestionForm = {
@@ -48,6 +58,15 @@ const emptyForm: QuestionForm = {
   option_d: "",
   correct_answer: "",
   explanation: "",
+  cq_stem: "",
+  cq_q_ka: "",
+  cq_q_kha: "",
+  cq_q_ga: "",
+  cq_q_gha: "",
+  cq_ans_ka: "",
+  cq_ans_kha: "",
+  cq_ans_ga: "",
+  cq_ans_gha: "",
 };
 
 export default function AdminTopicQuestions() {
@@ -96,6 +115,7 @@ export default function AdminTopicQuestions() {
 
   const openEdit = (item: any) => {
     setEditItem(item);
+    const cd = item.creative_data || {};
     setForm({
       type: item.type || "mcq",
       question: item.question || "",
@@ -105,23 +125,50 @@ export default function AdminTopicQuestions() {
       option_d: item.option_d || "",
       correct_answer: item.correct_answer || "",
       explanation: item.explanation || "",
+      cq_stem: cd.stem || "",
+      cq_q_ka: cd.q_ka || "",
+      cq_q_kha: cd.q_kha || "",
+      cq_q_ga: cd.q_ga || "",
+      cq_q_gha: cd.q_gha || "",
+      cq_ans_ka: cd.ans_ka || "",
+      cq_ans_kha: cd.ans_kha || "",
+      cq_ans_ga: cd.ans_ga || "",
+      cq_ans_gha: cd.ans_gha || "",
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.question.trim()) { toast.error("প্রশ্ন লিখুন"); return; }
+    if (form.type === "creative") {
+      if (!form.cq_stem.trim()) { toast.error("উদ্দীপক লিখুন"); return; }
+      if (!form.cq_q_ka.trim()) { toast.error("প্রশ্ন (ক) লিখুন"); return; }
+    } else {
+      if (!form.question.trim()) { toast.error("প্রশ্ন লিখুন"); return; }
+    }
     if (!meta || !user) { toast.error("মেটাডাটা লোড হয়নি"); return; }
+
+    const creativeData = form.type === "creative" ? {
+      stem: form.cq_stem,
+      q_ka: form.cq_q_ka,
+      q_kha: form.cq_q_kha,
+      q_ga: form.cq_q_ga,
+      q_gha: form.cq_q_gha,
+      ans_ka: form.cq_ans_ka,
+      ans_kha: form.cq_ans_kha,
+      ans_ga: form.cq_ans_ga,
+      ans_gha: form.cq_ans_gha,
+    } : null;
 
     const payload: any = {
       type: form.type,
-      question: form.question.trim(),
+      question: form.type === "creative" ? form.cq_stem.trim().substring(0, 100) + "..." : form.question.trim(),
       option_a: form.type === "mcq" ? form.option_a : null,
       option_b: form.type === "mcq" ? form.option_b : null,
       option_c: form.type === "mcq" ? form.option_c : null,
       option_d: form.type === "mcq" ? form.option_d : null,
       correct_answer: ["mcq", "short"].includes(form.type) ? form.correct_answer : null,
-      explanation: form.type === "creative" ? form.explanation : (form.type === "descriptive" ? form.explanation : null),
+      explanation: form.type === "descriptive" ? form.explanation : null,
+      creative_data: creativeData,
       topic_id: topicId,
       class_id: meta.class_id,
       subject_id: meta.subject_id,
@@ -256,16 +303,50 @@ export default function AdminTopicQuestions() {
             </TabsContent>
 
             {/* Creative / CQ */}
-            <TabsContent value="creative" className="space-y-3 mt-4">
+            <TabsContent value="creative" className="space-y-4 mt-4">
               <div>
-                <Label>উদ্দীপক (Stem)</Label>
-                <Textarea value={form.question} onChange={(e) => setField("question", e.target.value)} placeholder="উদ্দীপক লিখুন" rows={4} />
+                <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
+                <Textarea value={form.cq_stem} onChange={(e) => setField("cq_stem", e.target.value)} placeholder="উদ্দীপক / প্যাসেজ লিখুন..." rows={5} className="mt-1" />
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div><Label>প্রশ্ন (ক)</Label><Input value={form.option_a} onChange={(e) => setField("option_a", e.target.value)} placeholder="জ্ঞানমূলক প্রশ্ন" /></div>
-                <div><Label>প্রশ্ন (খ)</Label><Input value={form.option_b} onChange={(e) => setField("option_b", e.target.value)} placeholder="অনুধাবনমূলক প্রশ্ন" /></div>
-                <div><Label>প্রশ্ন (গ)</Label><Input value={form.option_c} onChange={(e) => setField("option_c", e.target.value)} placeholder="প্রয়োগমূলক প্রশ্ন" /></div>
-                <div><Label>প্রশ্ন (ঘ)</Label><Input value={form.option_d} onChange={(e) => setField("option_d", e.target.value)} placeholder="উচ্চতর দক্ষতামূলক প্রশ্ন" /></div>
+
+              <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                <p className="text-sm font-semibold text-muted-foreground">উপ-প্রশ্নসমূহ</p>
+                <div>
+                  <Label>প্রশ্ন (ক) — জ্ঞানমূলক</Label>
+                  <Textarea value={form.cq_q_ka} onChange={(e) => setField("cq_q_ka", e.target.value)} placeholder="জ্ঞানমূলক প্রশ্ন লিখুন" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>প্রশ্ন (খ) — অনুধাবনমূলক</Label>
+                  <Textarea value={form.cq_q_kha} onChange={(e) => setField("cq_q_kha", e.target.value)} placeholder="অনুধাবনমূলক প্রশ্ন লিখুন" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>প্রশ্ন (গ) — প্রয়োগমূলক</Label>
+                  <Textarea value={form.cq_q_ga} onChange={(e) => setField("cq_q_ga", e.target.value)} placeholder="প্রয়োগমূলক প্রশ্ন লিখুন" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>প্রশ্ন (ঘ) — উচ্চতর দক্ষতামূলক</Label>
+                  <Textarea value={form.cq_q_gha} onChange={(e) => setField("cq_q_gha", e.target.value)} placeholder="উচ্চতর দক্ষতামূলক প্রশ্ন লিখুন" rows={2} className="mt-1" />
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+                <p className="text-sm font-semibold text-muted-foreground">নমুনা উত্তর (ঐচ্ছিক)</p>
+                <div>
+                  <Label>উত্তর (ক)</Label>
+                  <Textarea value={form.cq_ans_ka} onChange={(e) => setField("cq_ans_ka", e.target.value)} placeholder="ঐচ্ছিক নমুনা উত্তর" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>উত্তর (খ)</Label>
+                  <Textarea value={form.cq_ans_kha} onChange={(e) => setField("cq_ans_kha", e.target.value)} placeholder="ঐচ্ছিক নমুনা উত্তর" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>উত্তর (গ)</Label>
+                  <Textarea value={form.cq_ans_ga} onChange={(e) => setField("cq_ans_ga", e.target.value)} placeholder="ঐচ্ছিক নমুনা উত্তর" rows={2} className="mt-1" />
+                </div>
+                <div>
+                  <Label>উত্তর (ঘ)</Label>
+                  <Textarea value={form.cq_ans_gha} onChange={(e) => setField("cq_ans_gha", e.target.value)} placeholder="ঐচ্ছিক নমুনা উত্তর" rows={2} className="mt-1" />
+                </div>
               </div>
             </TabsContent>
 
