@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Download, Settings, Plus, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -86,6 +88,9 @@ export default function QuestionPaperView() {
     showShuffle: false,
     showAddress: false,
     showWatermark: false,
+    watermarkOpacity: 40,
+    watermarkSize: 30,
+    watermarkText: "",
   });
 
   useEffect(() => {
@@ -346,21 +351,21 @@ export default function QuestionPaperView() {
           }}
         >
           {/* ===== WATERMARK ===== */}
-          {settings.showWatermark && meta.instituteName && (
+          {settings.showWatermark && (settings.watermarkText || meta.instituteName) && (
             <div style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%) rotate(-35deg)",
-              fontSize: "3.5em",
+              fontSize: `${settings.watermarkSize || 30}px`,
               fontWeight: 900,
-              opacity: 0.06,
+              opacity: (settings.watermarkOpacity || 40) / 100,
               whiteSpace: "nowrap",
               pointerEvents: "none",
               zIndex: 0,
               color: "#000",
             }}>
-              {meta.instituteName}
+              {settings.watermarkText || meta.instituteName}
             </div>
           )}
 
@@ -930,6 +935,42 @@ export default function QuestionPaperView() {
                     <span className="text-sm">জলছাপ</span>
                     <Switch checked={settings.showWatermark} onCheckedChange={(v) => updateSetting("showWatermark", v)} />
                   </div>
+                  {settings.showWatermark && (
+                    <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Opacity</span>
+                          <span className="text-xs font-medium">{settings.watermarkOpacity}</span>
+                        </div>
+                        <Slider
+                          value={[settings.watermarkOpacity]}
+                          min={5}
+                          max={100}
+                          step={5}
+                          onValueChange={([v]) => updateSetting("watermarkOpacity", v)}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-muted-foreground">Size</span>
+                          <span className="text-xs font-medium">{settings.watermarkSize}</span>
+                        </div>
+                        <Slider
+                          value={[settings.watermarkSize]}
+                          min={12}
+                          max={80}
+                          step={2}
+                          onValueChange={([v]) => updateSetting("watermarkSize", v)}
+                        />
+                      </div>
+                      <Input
+                        className="text-xs h-8"
+                        placeholder={meta.instituteName || "জলছাপ টেক্সট লিখুন"}
+                        value={settings.watermarkText}
+                        onChange={(e) => updateSetting("watermarkText", e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
