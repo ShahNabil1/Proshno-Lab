@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, MessageSquare } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const typeOptions = ["mcq", "short", "cq", "mcq_short", "mcq_short_cq"];
 const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল" };
@@ -46,7 +47,7 @@ export default function QuestionCreate() {
     programName: "",
     classId: "",
     subjectId: "",
-    chapterId: "",
+    chapterIds: [] as string[],
     type: "mcq",
     count: "10",
   });
@@ -89,6 +90,18 @@ export default function QuestionCreate() {
       .then(({ data }) => setChapters(data || []));
   }, [form.subjectId]);
 
+  const toggleChapter = (chapterId: string) => {
+    setForm(prev => {
+      const exists = prev.chapterIds.includes(chapterId);
+      return {
+        ...prev,
+        chapterIds: exists
+          ? prev.chapterIds.filter(id => id !== chapterId)
+          : [...prev.chapterIds, chapterId],
+      };
+    });
+  };
+
   const handleCreateQuestionSet = async () => {
     if (!form.classId || !form.subjectId) {
       toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
@@ -101,7 +114,9 @@ export default function QuestionCreate() {
         .eq("class_id", Number(form.classId))
         .eq("subject_id", Number(form.subjectId))
         .in("type", dbTypes);
-      if (form.chapterId) query = query.eq("chapter_id", Number(form.chapterId));
+      if (form.chapterIds.length > 0) {
+        query = query.in("chapter_id", form.chapterIds.map(Number));
+      }
       query = query.limit(parseInt(form.count) || 10);
 
       const { data, error } = await query;
@@ -110,8 +125,10 @@ export default function QuestionCreate() {
         toast.info("এই ফিল্টারে কোনো প্রশ্ন পাওয়া যায়নি");
         return;
       }
-      setQuestions(data);
-      toast.success(`${data.length}টি প্রশ্ন পাওয়া গেছে!`);
+      // Shuffle randomly
+      const shuffled = data.sort(() => Math.random() - 0.5);
+      setQuestions(shuffled);
+      toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
       setStep("questionSet");
     } catch {
       toast.error("প্রশ্ন আনতে সমস্যা হয়েছে");
@@ -137,7 +154,9 @@ export default function QuestionCreate() {
 
   const className = classes.find(c => String(c.id) === form.classId)?.name || "";
   const subjectName = subjects.find(s => String(s.id) === form.subjectId)?.name || "";
-  const chapterName = chapters.find(c => String(c.id) === form.chapterId)?.name || "";
+  const selectedChapterNames = chapters
+    .filter(c => form.chapterIds.includes(String(c.id)))
+    .map(c => c.name);
 
   const filteredQuestions = searchQuery
     ? questions.filter((q) => q.question?.includes(searchQuery))
@@ -153,7 +172,9 @@ export default function QuestionCreate() {
               <h2 className="text-xl font-bold font-heading">{institute?.name || "আপনার প্রতিষ্ঠানের নাম"}</h2>
               <p className="text-sm">{className}</p>
               <p className="text-sm">{subjectName}</p>
-              {chapterName && <p className="text-sm">{chapterName}</p>}
+              {selectedChapterNames.length > 0 && (
+                <p className="text-sm">{selectedChapterNames.join(", ")}</p>
+              )}
             </div>
             <div className="flex justify-between text-sm mb-4 border-t border-b border-border py-2">
               <span>সময়: ১০ মিনিট</span>
@@ -251,17 +272,8 @@ export default function QuestionCreate() {
               <Input placeholder="প্রোগ্রাম/পরীক্ষার নাম" value={form.programName} onChange={(e) => setForm({ ...form, programName: e.target.value })} />
             </div>
             <div>
-              <Label>টাইপ</Label>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {typeOptions.map((t) => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>শ্রেণী</Label>
-              <Select value={form.classId} onValueChange={(v) => setForm({ ...form, classId: v, subjectId: "", chapterId: "" })}>
+              <Select value={form.classId} onValueChange={(v) => setForm({ ...form, classId: v, subjectId: "", chapterIds: [] })}>
                 <SelectTrigger><SelectValue placeholder="শ্রেণী সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
@@ -270,19 +282,60 @@ export default function QuestionCreate() {
             </div>
             <div onClick={!form.classId ? () => setWarningDialog("subject") : undefined}>
               <Label>বিষয়</Label>
-              <Select value={form.subjectId} onValueChange={(v) => setForm({ ...form, subjectId: v, chapterId: "" })} disabled={!form.classId}>
+              <Select value={form.subjectId} onValueChange={(v) => setForm({ ...form, subjectId: v, chapterIds: [] })} disabled={!form.classId}>
                 <SelectTrigger><SelectValue placeholder="বিষয় সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
                   {subjects.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Multi-select chapter list */}
             <div onClick={!form.subjectId ? () => setWarningDialog("chapter") : undefined}>
-              <Label>অধ্যায়</Label>
-              <Select value={form.chapterId} onValueChange={(v) => setForm({ ...form, chapterId: v })} disabled={!form.subjectId}>
-                <SelectTrigger><SelectValue placeholder="অধ্যায় সিলেক্ট করুন" /></SelectTrigger>
+              <div className="flex items-center justify-between mb-1">
+                <Label>অধ্যায় সিলেক্ট করুন</Label>
+                {form.chapterIds.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{form.chapterIds.length}টি সিলেক্টেড</span>
+                )}
+              </div>
+              {!form.subjectId ? (
+                <div className="border border-input rounded-md p-3 text-sm text-muted-foreground bg-muted/30 cursor-not-allowed">
+                  আগে বিষয় সিলেক্ট করুন
+                </div>
+              ) : (
+                <ScrollArea className="border border-input rounded-md h-52">
+                  <div className="p-2 space-y-1">
+                    {chapters.map((c) => {
+                      const isSelected = form.chapterIds.includes(String(c.id));
+                      return (
+                        <label
+                          key={c.id}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors text-sm ${
+                            isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleChapter(String(c.id))}
+                          />
+                          <span>{c.name}</span>
+                        </label>
+                      );
+                    })}
+                    {chapters.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">কোনো অধ্যায় পাওয়া যায়নি</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
+            <div>
+              <Label>টাইপ</Label>
+              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                  {typeOptions.map((t) => <SelectItem key={t} value={t}>{typeLabels[t]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
