@@ -20,14 +20,12 @@ const QUESTION_TYPES = [
   { value: "mcq", label: "বহুনির্বাচনী (MCQ)" },
   { value: "short", label: "সংক্ষিপ্ত প্রশ্ন" },
   { value: "creative", label: "সৃজনশীল (CQ)" },
-  { value: "descriptive", label: "রচনামূলক" },
 ];
 
 const TYPE_BADGE: Record<string, string> = {
   mcq: "bg-primary/10 text-primary",
   short: "bg-accent text-accent-foreground",
   creative: "bg-secondary text-secondary-foreground",
-  descriptive: "bg-muted text-muted-foreground",
 };
 
 interface QuestionForm {
@@ -139,7 +137,7 @@ export default function AdminTopicQuestions() {
       option_c: form.type === "mcq" ? form.option_c : null,
       option_d: form.type === "mcq" ? form.option_d : null,
       correct_answer: ["mcq", "short"].includes(form.type) ? form.correct_answer : null,
-      explanation: form.type === "descriptive" ? form.explanation : null,
+      explanation: form.explanation || null,
       creative_data: creativeData,
       board_references: form.board_references.length > 0 ? form.board_references : [],
       university_references: form.university_references.length > 0 ? form.university_references : [],
@@ -227,7 +225,7 @@ export default function AdminTopicQuestions() {
           </DialogHeader>
 
           <Tabs value={form.type} onValueChange={(v) => setField("type", v)} className="mt-2">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               {QUESTION_TYPES.map((t) => (
                 <TabsTrigger key={t.value} value={t.value} className="text-xs">{t.label}</TabsTrigger>
               ))}
@@ -289,17 +287,6 @@ export default function AdminTopicQuestions() {
               </div>
             </TabsContent>
 
-            {/* Descriptive */}
-            <TabsContent value="descriptive" className="space-y-3 mt-4">
-              <div>
-                <Label>প্রশ্ন</Label>
-                <MathInput value={form.question} onChange={(v) => setField("question", v)} placeholder="রচনামূলক প্রশ্নটি লিখুন" rows={5} />
-              </div>
-              <div>
-                <Label>ব্যাখ্যা / নোট (ঐচ্ছিক)</Label>
-                <MathInput value={form.explanation} onChange={(v) => setField("explanation", v)} placeholder="ঐচ্ছিক ব্যাখ্যা" />
-              </div>
-            </TabsContent>
           </Tabs>
 
           {/* References & Metadata Section */}
