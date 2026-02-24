@@ -1,5 +1,6 @@
 import QuestionPageLayout from "@/components/QuestionPageLayout";
 import { Badge } from "@/components/ui/badge";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const mockShort = [
   { id: 1, question: "সালোকসংশ্লেষণ কী? এর সমীকরণ লিখ।", class: "৮ম", subject: "জীববিজ্ঞান", marks: 2 },
@@ -17,7 +18,7 @@ export default function ShortPage() {
           <div key={q.id} className="bg-card rounded-xl shadow-sm p-5 border border-border flex items-start justify-between gap-4">
             <p className="text-foreground font-body">
               <span className="text-primary font-bold mr-2">{idx + 1}.</span>
-              {q.question}
+              <LatexRenderer text={q.question} />
             </p>
             <div className="flex gap-2 shrink-0">
               <Badge variant="secondary">{q.class} • {q.subject}</Badge>
