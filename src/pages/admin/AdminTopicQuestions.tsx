@@ -13,6 +13,8 @@ import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import MathInput from "@/components/MathInput";
 import LatexRenderer from "@/components/LatexRenderer";
+import ReferenceInput from "@/components/ReferenceInput";
+import ReferenceBadges from "@/components/ReferenceBadges";
 
 const QUESTION_TYPES = [
   { value: "mcq", label: "বহুনির্বাচনী (MCQ)" },
@@ -46,6 +48,8 @@ interface QuestionForm {
   cq_ans_kha: string;
   cq_ans_ga: string;
   cq_ans_gha: string;
+  board_references: Array<{ board: string; year: string }>;
+  university_references: Array<{ name: string; year: string }>;
 }
 
 const emptyForm: QuestionForm = {
@@ -53,6 +57,7 @@ const emptyForm: QuestionForm = {
   correct_answer: "", explanation: "",
   cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
   cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
+  board_references: [], university_references: [],
 };
 
 export default function AdminTopicQuestions() {
@@ -104,6 +109,8 @@ export default function AdminTopicQuestions() {
       cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
       cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "",
       cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
+      board_references: Array.isArray(item.board_references) ? item.board_references : [],
+      university_references: Array.isArray(item.university_references) ? item.university_references : [],
     });
     setDialogOpen(true);
   };
@@ -134,6 +141,8 @@ export default function AdminTopicQuestions() {
       correct_answer: ["mcq", "short"].includes(form.type) ? form.correct_answer : null,
       explanation: form.type === "descriptive" ? form.explanation : null,
       creative_data: creativeData,
+      board_references: form.board_references.length > 0 ? form.board_references : [],
+      university_references: form.university_references.length > 0 ? form.university_references : [],
       topic_id: topicId, class_id: meta.class_id, subject_id: meta.subject_id,
       chapter_id: meta.chapter_id, teacher_id: user.id,
     };
@@ -159,7 +168,7 @@ export default function AdminTopicQuestions() {
     fetchQuestions();
   };
 
-  const setField = (key: keyof QuestionForm, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+  const setField = (key: keyof QuestionForm, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
   const typeLabel = (t: string) => QUESTION_TYPES.find((q) => q.value === t)?.label || t;
 
   return (
@@ -292,6 +301,27 @@ export default function AdminTopicQuestions() {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* References & Metadata Section */}
+          <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+            <p className="text-sm font-semibold text-muted-foreground">রেফারেন্স এবং মেটাডাটা</p>
+            <ReferenceInput
+              label="বোর্ড রেফারেন্স"
+              nameLabel="বোর্ড"
+              namePlaceholder="যেমন: কু. বো."
+              nameKey="board"
+              value={form.board_references}
+              onChange={(refs) => setField("board_references" as any, refs as any)}
+            />
+            <ReferenceInput
+              label="বিশ্ববিদ্যালয় রেফারেন্স"
+              nameLabel="বিশ্ববিদ্যালয়"
+              namePlaceholder="যেমন: ঢাকা বিশ্ববিদ্যালয়"
+              nameKey="name"
+              value={form.university_references}
+              onChange={(refs) => setField("university_references" as any, refs as any)}
+            />
+          </div>
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>

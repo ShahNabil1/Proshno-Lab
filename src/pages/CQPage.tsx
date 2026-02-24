@@ -1,6 +1,8 @@
 import QuestionPageLayout from "@/components/QuestionPageLayout";
 import { Badge } from "@/components/ui/badge";
 import LatexRenderer from "@/components/LatexRenderer";
+import ReferenceBadges from "@/components/ReferenceBadges";
+import ExplanationToggle from "@/components/ExplanationToggle";
 
 const mockCQs = [
   {
@@ -11,9 +13,9 @@ const mockCQs = [
       { label: "খ", question: "লাভের শতকরা হার নির্ণয় কর।", marks: 4 },
       { label: "গ", question: "যদি ১৫% ক্ষতি হতো তবে বিক্রয়মূল্য কত হতো?", marks: 4 },
     ],
-    class: "৯ম",
-    subject: "গণিত",
-    totalMarks: 10,
+    class: "৯ম", subject: "গণিত", totalMarks: 10,
+    board_references: [{ board: "কু. বো.", year: "২০২৩" }], university_references: [],
+    explanation: "লাভ = বিক্রয়মূল্য - ক্রয়মূল্য = ১২০ - ১০০ = ২০ টাকা।"
   },
   {
     id: 2,
@@ -24,9 +26,10 @@ const mockCQs = [
       { label: "গ", question: "বাংলা সাহিত্যে গীতাঞ্জলির প্রভাব বিশ্লেষণ কর।", marks: 3 },
       { label: "ঘ", question: "রবীন্দ্রনাথের সাহিত্যিক অবদান মূল্যায়ন কর।", marks: 4 },
     ],
-    class: "১০ম",
-    subject: "বাংলা",
-    totalMarks: 10,
+    class: "১০ম", subject: "বাংলা", totalMarks: 10,
+    board_references: [{ board: "ঢা. বো.", year: "২০২২" }, { board: "রা. বো.", year: "২০২৩" }],
+    university_references: [{ name: "ঢাকা বিশ্ববিদ্যালয়", year: "১৭" }],
+    explanation: ""
   },
 ];
 
@@ -44,7 +47,10 @@ export default function CQPage() {
                   <LatexRenderer text={q.stimulus} />
                 </p>
               </div>
-              <Badge className="shrink-0">মোট {q.totalMarks}</Badge>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <ReferenceBadges boardRefs={q.board_references} uniRefs={q.university_references} />
+                <Badge className="shrink-0">মোট {q.totalMarks}</Badge>
+              </div>
             </div>
             <div className="space-y-2 ml-4">
               {q.parts.map((p) => (
@@ -55,6 +61,7 @@ export default function CQPage() {
                 </div>
               ))}
             </div>
+            <ExplanationToggle explanation={q.explanation} />
           </div>
         ))}
       </div>

@@ -157,6 +157,7 @@ export type Database = {
       }
       questions: {
         Row: {
+          board_references: Json | null
           category_id: number | null
           chapter_id: number
           class_id: number
@@ -174,8 +175,10 @@ export type Database = {
           teacher_id: string
           topic_id: number | null
           type: string
+          university_references: Json | null
         }
         Insert: {
+          board_references?: Json | null
           category_id?: number | null
           chapter_id: number
           class_id: number
@@ -193,8 +196,10 @@ export type Database = {
           teacher_id: string
           topic_id?: number | null
           type?: string
+          university_references?: Json | null
         }
         Update: {
+          board_references?: Json | null
           category_id?: number | null
           chapter_id?: number
           class_id?: number
@@ -212,6 +217,7 @@ export type Database = {
           teacher_id?: string
           topic_id?: number | null
           type?: string
+          university_references?: Json | null
         }
         Relationships: [
           {

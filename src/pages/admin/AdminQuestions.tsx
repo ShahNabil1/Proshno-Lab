@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import MathInput from "@/components/MathInput";
 import LatexRenderer from "@/components/LatexRenderer";
+import ReferenceInput from "@/components/ReferenceInput";
+import ReferenceBadges from "@/components/ReferenceBadges";
+import ExplanationToggle from "@/components/ExplanationToggle";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
 
@@ -26,6 +29,8 @@ export default function AdminQuestions() {
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
     cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
     cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
+    board_references: [] as Array<{ board: string; year: string }>,
+    university_references: [] as Array<{ name: string; year: string }>,
   });
 
   const fetchItems = async () => {
@@ -55,7 +60,7 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "" });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
@@ -70,6 +75,8 @@ export default function AdminQuestions() {
       explanation: item.explanation || "",
       cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
       cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
+      board_references: Array.isArray(item.board_references) ? item.board_references : [],
+      university_references: Array.isArray(item.university_references) ? item.university_references : [],
     });
     setDialogOpen(true);
   };
@@ -94,6 +101,8 @@ export default function AdminQuestions() {
       option_a: form.option_a || null, option_b: form.option_b || null,
       option_c: form.option_c || null, option_d: form.option_d || null, correct_answer: form.correct_answer || null,
       explanation: form.explanation || null,
+      board_references: form.board_references.length > 0 ? form.board_references : [],
+      university_references: form.university_references.length > 0 ? form.university_references : [],
     };
 
     if (form.type === "cq") {
@@ -249,6 +258,27 @@ export default function AdminQuestions() {
                 <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
               </>
             )}
+
+            {/* References & Metadata Section */}
+            <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+              <p className="text-sm font-semibold text-muted-foreground">রেফারেন্স এবং মেটাডাটা</p>
+              <ReferenceInput
+                label="বোর্ড রেফারেন্স"
+                nameLabel="বোর্ড"
+                namePlaceholder="যেমন: কু. বো."
+                nameKey="board"
+                value={form.board_references}
+                onChange={(refs) => setForm({ ...form, board_references: refs as any })}
+              />
+              <ReferenceInput
+                label="বিশ্ববিদ্যালয় রেফারেন্স"
+                nameLabel="বিশ্ববিদ্যালয়"
+                namePlaceholder="যেমন: ঢাকা বিশ্ববিদ্যালয়"
+                nameKey="name"
+                value={form.university_references}
+                onChange={(refs) => setForm({ ...form, university_references: refs as any })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
