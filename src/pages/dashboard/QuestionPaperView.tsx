@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +8,7 @@ import { Download, Settings, Plus, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
+import FloatingToolbar from "@/components/FloatingToolbar";
 
 interface QuestionRow {
   id: number;
@@ -40,6 +41,10 @@ export default function QuestionPaperView() {
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
 
+  // Inline editing state
+  const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
+  const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
+
   // Settings
   const [settings, setSettings] = useState({
     showAnswerSheet: false,
@@ -48,14 +53,12 @@ export default function QuestionPaperView() {
     showStudentInfo: false,
     showMarksBox: false,
     showSubjectCode: false,
-    // Header metadata
     showClassName: true,
     showSubjectName: true,
     showChapterName: true,
     showSetCode: false,
     showProgramName: true,
     showInstruction: true,
-    // Document customization
     paperSize: "A4" as PaperSize,
     optionStyle: "bracket" as OptionStyle,
     fontLang: "bangla",
@@ -63,11 +66,9 @@ export default function QuestionPaperView() {
     columns: 2 as ColumnCount,
     columnDivider: true,
     textAlign: "justify" as TextAlign,
-    // Helpers
     showDuplicateMarker: false,
     showSheet: false,
     showShuffle: false,
-    // Branding
     showAddress: false,
     showWatermark: false,
   });
@@ -79,10 +80,46 @@ export default function QuestionPaperView() {
     if (mData) setMeta(JSON.parse(mData));
   }, []);
 
+  const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
+    e.stopPropagation();
+    const el = e.currentTarget;
+    el.contentEditable = "true";
+    el.focus();
+    setActiveEditEl(el);
+    setActiveQuestionId(questionId ?? null);
+  }, []);
+
+  const handleCloseToolbar = useCallback(() => {
+    if (activeEditEl) {
+      activeEditEl.contentEditable = "false";
+    }
+    setActiveEditEl(null);
+    setActiveQuestionId(null);
+  }, [activeEditEl]);
+
+  const handleDeleteQuestion = useCallback(() => {
+    if (activeQuestionId !== null) {
+      setQuestions(prev => prev.filter(q => q.id !== activeQuestionId));
+      handleCloseToolbar();
+      toast.success("প্রশ্ন মুছে ফেলা হয়েছে");
+    }
+  }, [activeQuestionId, handleCloseToolbar]);
+
+  const handleExchangeQuestion = useCallback(() => {
+    toast.info("প্রশ্ন বদলাতে '+ আরও প্রশ্ন যুক্ত করুন' থেকে নতুন প্রশ্ন যোগ করুন।");
+    handleCloseToolbar();
+  }, [handleCloseToolbar]);
+
   const handleDownload = async () => {
     if (!paperRef.current) return;
     toast.info("ডাউনলোড শুরু হচ্ছে...");
-    
+
+    // Remove contentEditable before printing
+    paperRef.current.querySelectorAll("[contenteditable]").forEach(el => {
+      (el as HTMLElement).contentEditable = "false";
+    });
+    handleCloseToolbar();
+
     try {
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
@@ -117,12 +154,13 @@ export default function QuestionPaperView() {
             .question-text { font-weight: 500; margin-bottom: 4px; }
             .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; margin-left: 20px; }
             .option-item { font-size: 0.9em; }
+            [data-editable] { outline: none; }
             @media print { body { -webkit-print-color-adjust: exact; } }
           </style>
         </head>
         <body>
           <div class="paper-content">${content}</div>
-          <script>window.onload = function() { window.print(); }</script>
+          <script>window.onload = function() { window.print(); }<\/script>
         </body>
         </html>
       `);
@@ -149,6 +187,9 @@ export default function QuestionPaperView() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  // Editable wrapper styles
+  const editableClass = "outline-none rounded px-0.5 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-900/20 focus:ring-2 focus:ring-emerald-400 focus:bg-emerald-50 dark:focus:bg-emerald-900/30 cursor-text";
+
   if (!meta) {
     return (
       <div className="text-center py-12">
@@ -160,35 +201,97 @@ export default function QuestionPaperView() {
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
+      {/* Floating Toolbar */}
+      <FloatingToolbar
+        targetEl={activeEditEl}
+        onDelete={activeQuestionId !== null ? handleDeleteQuestion : undefined}
+        onExchange={activeQuestionId !== null ? handleExchangeQuestion : undefined}
+        onClose={handleCloseToolbar}
+      />
+
       {/* Paper preview */}
       <div>
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
             <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
           </Button>
+          <span className="text-xs text-muted-foreground">💡 যেকোনো টেক্সটে ক্লিক করে সরাসরি এডিট করুন</span>
         </div>
 
-        <div className="bg-white dark:bg-card border border-border rounded-lg shadow-sm p-6 md:p-10 font-paper" ref={paperRef}>
+        <div
+          className="bg-white dark:bg-card border border-border rounded-lg shadow-sm p-6 md:p-10 font-paper"
+          ref={paperRef}
+          style={{ fontSize: `${settings.fontSize}px` }}
+        >
           {/* Header */}
           <div className="text-center mb-4 space-y-0.5">
-            <h1 className="text-xl font-bold font-heading">{meta.instituteName}</h1>
-            {settings.showClassName && <p className="text-sm">{meta.className}</p>}
-            {settings.showSubjectName && <p className="text-sm">{meta.subjectName} ১ম পত্র</p>}
+            <h1
+              className={`text-xl font-bold font-heading ${editableClass}`}
+              data-editable="institute"
+              onClick={handleEditableClick}
+              suppressContentEditableWarning
+            >
+              {meta.instituteName}
+            </h1>
+            {settings.showClassName && (
+              <p
+                className={`text-sm ${editableClass}`}
+                data-editable="className"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.className}
+              </p>
+            )}
+            {settings.showSubjectName && (
+              <p
+                className={`text-sm ${editableClass}`}
+                data-editable="subjectName"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.subjectName} ১ম পত্র
+              </p>
+            )}
             {settings.showChapterName && meta.chapterNames.length > 0 && (
-              <p className="text-sm">{meta.chapterNames.join(", ")}</p>
+              <p
+                className={`text-sm ${editableClass}`}
+                data-editable="chapters"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.chapterNames.join(", ")}
+              </p>
             )}
             {settings.showProgramName && meta.programName && (
-              <p className="text-sm font-medium">{meta.programName}</p>
+              <p
+                className={`text-sm font-medium ${editableClass}`}
+                data-editable="program"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.programName}
+              </p>
             )}
           </div>
 
-          <div className="flex justify-between text-sm border-t border-b border-foreground/30 py-1 mb-3">
+          <div
+            className={`flex justify-between text-sm border-t border-b border-foreground/30 py-1 mb-3 ${editableClass}`}
+            data-editable="meta-row"
+            onClick={handleEditableClick}
+            suppressContentEditableWarning
+          >
             <span>সময়— ৫ মিনিট</span>
             <span>পূর্ণমান— {questions.length}</span>
           </div>
 
           {settings.showInstruction && (
-            <p className="text-center text-sm italic text-muted-foreground mb-4">
+            <p
+              className={`text-center text-sm italic text-muted-foreground mb-4 ${editableClass}`}
+              data-editable="instruction"
+              onClick={handleEditableClick}
+              suppressContentEditableWarning
+            >
               প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবেনা ।
             </p>
           )}
@@ -196,10 +299,23 @@ export default function QuestionPaperView() {
           {/* MCQ Section */}
           {mcqQuestions.length > 0 && (
             <div className="mb-6">
-              <p className="font-bold mb-3">বহুনির্বাচনী অংশ:</p>
+              <p
+                className={`font-bold mb-3 ${editableClass}`}
+                data-editable="mcq-title"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                বহুনির্বাচনী অংশ:
+              </p>
               <div className={settings.columns === 2 ? "grid grid-cols-2 gap-x-6 gap-y-3" : settings.columns === 3 ? "grid grid-cols-3 gap-x-4 gap-y-3" : "space-y-3"}>
                 {mcqQuestions.map((q, idx) => (
-                  <div key={q.id} className="text-sm">
+                  <div
+                    key={q.id}
+                    className={`text-sm rounded p-1 ${editableClass}`}
+                    data-editable={`mcq-${q.id}`}
+                    onClick={(e) => handleEditableClick(e, q.id)}
+                    suppressContentEditableWarning
+                  >
                     <p className="font-medium mb-1">
                       <LatexRenderer text={`${String(idx + 1).padStart(2, "0")}। ${q.question}`} />
                     </p>
@@ -224,10 +340,23 @@ export default function QuestionPaperView() {
           {/* Short Section */}
           {shortQuestions.length > 0 && (
             <div className="mb-6">
-              <p className="font-bold mb-3">সংক্ষিপ্ত প্রশ্ন:</p>
+              <p
+                className={`font-bold mb-3 ${editableClass}`}
+                data-editable="short-title"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                সংক্ষিপ্ত প্রশ্ন:
+              </p>
               <div className="space-y-2">
                 {shortQuestions.map((q, idx) => (
-                  <p key={q.id} className="text-sm">
+                  <p
+                    key={q.id}
+                    className={`text-sm ${editableClass}`}
+                    data-editable={`short-${q.id}`}
+                    onClick={(e) => handleEditableClick(e, q.id)}
+                    suppressContentEditableWarning
+                  >
                     <LatexRenderer text={`${String(mcqQuestions.length + idx + 1).padStart(2, "0")}। ${q.question}`} />
                   </p>
                 ))}
@@ -238,10 +367,23 @@ export default function QuestionPaperView() {
           {/* CQ Section */}
           {cqQuestions.length > 0 && (
             <div className="mb-6">
-              <p className="font-bold mb-3">সৃজনশীল প্রশ্ন:</p>
+              <p
+                className={`font-bold mb-3 ${editableClass}`}
+                data-editable="cq-title"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                সৃজনশীল প্রশ্ন:
+              </p>
               <div className="space-y-4">
                 {cqQuestions.map((q, idx) => (
-                  <div key={q.id} className="text-sm">
+                  <div
+                    key={q.id}
+                    className={`text-sm ${editableClass}`}
+                    data-editable={`cq-${q.id}`}
+                    onClick={(e) => handleEditableClick(e, q.id)}
+                    suppressContentEditableWarning
+                  >
                     <p className="font-medium">
                       <LatexRenderer text={`${String(mcqQuestions.length + shortQuestions.length + idx + 1).padStart(2, "0")}। ${q.question}`} />
                     </p>
@@ -270,20 +412,17 @@ export default function QuestionPaperView() {
               <div className="border-b border-border pb-3 mb-3">
                 <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নে সংযুক্তি</h4>
                 <div className="space-y-2">
-                  {[
+                  {([
                     { key: "showAnswerSheet" as const, label: "উত্তরপত্র" },
                     { key: "showImportantQ" as const, label: "গুরুত্বপূর্ণ প্রশ্ন" },
                     { key: "showQuestionInfo" as const, label: "প্রশ্নের তথ্য" },
                     { key: "showStudentInfo" as const, label: "শিক্ষার্থীর তথ্য" },
                     { key: "showMarksBox" as const, label: "প্রাপ্ত নম্বর ঘর" },
                     { key: "showSubjectCode" as const, label: "বিষয় কোড" },
-                  ].map(item => (
+                  ]).map(item => (
                     <div key={item.key} className="flex items-center justify-between">
                       <span className="text-sm">{item.label}</span>
-                      <Switch
-                        checked={settings[item.key]}
-                        onCheckedChange={(v) => updateSetting(item.key, v)}
-                      />
+                      <Switch checked={settings[item.key]} onCheckedChange={(v) => updateSetting(item.key, v)} />
                     </div>
                   ))}
                 </div>
@@ -293,20 +432,17 @@ export default function QuestionPaperView() {
               <div className="border-b border-border pb-3 mb-3">
                 <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নের মেটাডাটা (হেডার)</h4>
                 <div className="space-y-2">
-                  {[
+                  {([
                     { key: "showClassName" as const, label: "শ্রেণির নাম" },
                     { key: "showSubjectName" as const, label: "বিষয়ের নাম" },
                     { key: "showChapterName" as const, label: "অধ্যায়ের নাম" },
                     { key: "showSetCode" as const, label: "সেট কোড" },
                     { key: "showProgramName" as const, label: "প্রোগ্রাম/পরীক্ষার নাম" },
                     { key: "showInstruction" as const, label: "নির্দেশনা" },
-                  ].map(item => (
+                  ]).map(item => (
                     <div key={item.key} className="flex items-center justify-between">
                       <span className="text-sm">{item.label}</span>
-                      <Switch
-                        checked={settings[item.key]}
-                        onCheckedChange={(v) => updateSetting(item.key, v)}
-                      />
+                      <Switch checked={settings[item.key]} onCheckedChange={(v) => updateSetting(item.key, v)} />
                     </div>
                   ))}
                 </div>
@@ -316,43 +452,28 @@ export default function QuestionPaperView() {
               <div className="border-b border-border pb-3 mb-3">
                 <h4 className="font-heading font-bold text-sm mb-2">ডকুমেন্ট কাস্টমাইজেশন</h4>
 
-                {/* Text Align */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">টেক্সট এলাইনমেন্ট</Label>
                   <div className="flex gap-1 mt-1">
                     {(["left", "center", "right", "justify"] as TextAlign[]).map(a => (
-                      <Button
-                        key={a}
-                        size="sm"
-                        variant={settings.textAlign === a ? "default" : "outline"}
-                        className="flex-1 text-xs px-2"
-                        onClick={() => updateSetting("textAlign", a)}
-                      >
+                      <Button key={a} size="sm" variant={settings.textAlign === a ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("textAlign", a)}>
                         {a === "left" ? "≡←" : a === "center" ? "≡↔" : a === "right" ? "≡→" : "≡≡"}
                       </Button>
                     ))}
                   </div>
                 </div>
 
-                {/* Paper Size */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">পেপার সাইজ</Label>
                   <div className="flex gap-1 mt-1">
                     {(["A4", "Letter", "Legal", "A5"] as PaperSize[]).map(s => (
-                      <Button
-                        key={s}
-                        size="sm"
-                        variant={settings.paperSize === s ? "default" : "outline"}
-                        className="flex-1 text-xs px-2"
-                        onClick={() => updateSetting("paperSize", s)}
-                      >
+                      <Button key={s} size="sm" variant={settings.paperSize === s ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("paperSize", s)}>
                         {s}
                       </Button>
                     ))}
                   </div>
                 </div>
 
-                {/* Option Style */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">অপশন স্টাইল</Label>
                   <div className="flex gap-1 mt-1">
@@ -362,20 +483,13 @@ export default function QuestionPaperView() {
                       { v: "dot" as OptionStyle, l: "." },
                       { v: "paren" as OptionStyle, l: ")" },
                     ]).map(s => (
-                      <Button
-                        key={s.v}
-                        size="sm"
-                        variant={settings.optionStyle === s.v ? "default" : "outline"}
-                        className="flex-1 text-xs px-2"
-                        onClick={() => updateSetting("optionStyle", s.v)}
-                      >
+                      <Button key={s.v} size="sm" variant={settings.optionStyle === s.v ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("optionStyle", s.v)}>
                         {s.l}
                       </Button>
                     ))}
                   </div>
                 </div>
 
-                {/* Font */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">ফন্ট পরিবর্তন</Label>
                   <Select value={settings.fontLang} onValueChange={(v) => updateSetting("fontLang", v)}>
@@ -387,7 +501,6 @@ export default function QuestionPaperView() {
                   </Select>
                 </div>
 
-                {/* Font Size */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">ফন্ট সাইজ</Label>
                   <div className="flex items-center gap-2 mt-1">
@@ -401,18 +514,11 @@ export default function QuestionPaperView() {
                   </div>
                 </div>
 
-                {/* Columns */}
                 <div className="mb-3">
                   <Label className="text-xs text-muted-foreground">কলাম</Label>
                   <div className="flex gap-1 mt-1">
                     {([1, 2, 3] as ColumnCount[]).map(c => (
-                      <Button
-                        key={c}
-                        size="sm"
-                        variant={settings.columns === c ? "default" : "outline"}
-                        className="flex-1 text-xs"
-                        onClick={() => updateSetting("columns", c)}
-                      >
+                      <Button key={c} size="sm" variant={settings.columns === c ? "default" : "outline"} className="flex-1 text-xs" onClick={() => updateSetting("columns", c)}>
                         {c === 1 ? "█" : c === 2 ? "█ █" : "█ █ █"}
                       </Button>
                     ))}
