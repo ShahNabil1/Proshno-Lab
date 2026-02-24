@@ -270,18 +270,21 @@ export type Database = {
           created_at: string
           id: number
           name: string
+          subject_code: string | null
         }
         Insert: {
           class_id: number
           created_at?: string
           id?: number
           name: string
+          subject_code?: string | null
         }
         Update: {
           class_id?: number
           created_at?: string
           id?: number
           name?: string
+          subject_code?: string | null
         }
         Relationships: [
           {

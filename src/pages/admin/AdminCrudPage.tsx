@@ -25,6 +25,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   const [editItem, setEditItem] = useState<any>(null);
   const [formName, setFormName] = useState("");
   const [formParentId, setFormParentId] = useState("");
+  const [formSubjectCode, setFormSubjectCode] = useState("");
 
   const fetchItems = async () => {
     let query: any;
@@ -46,11 +47,12 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table]);
 
-  const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setDialogOpen(true); };
+  const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditItem(item);
     setFormName(item.name);
     setFormParentId(parentKey ? String(item[parentKey]) : "");
+    setFormSubjectCode(item.subject_code || "");
     setDialogOpen(true);
   };
 
@@ -58,6 +60,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
     if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
     const payload: any = { name: formName.trim() };
     if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
+    if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
 
     if (editItem) {
       const { error } = await (supabase.from(table) as any).update(payload).eq("id", editItem.id);
@@ -94,6 +97,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>নাম</TableHead>
+                {table === "subjects" && <TableHead>বিষয় কোড</TableHead>}
                 {parentLabel && <TableHead>{parentLabel}</TableHead>}
                 <TableHead className="text-right">অ্যাকশন</TableHead>
               </TableRow>
@@ -103,6 +107,9 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
+                  {table === "subjects" && (
+                    <TableCell>{item.subject_code || "—"}</TableCell>
+                  )}
                   {parentLabel && parentTable && (
                     <TableCell>{item[parentTable]?.name || "—"}</TableCell>
                   )}
@@ -135,6 +142,9 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
           <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন যোগ করুন"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <Input placeholder="নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+            {table === "subjects" && (
+              <Input placeholder="বিষয় কোড (যেমন: ১৭৮)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
+            )}
             {parentKey && parents.length > 0 && (
               <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
                 value={formParentId} onChange={(e) => setFormParentId(e.target.value)}>

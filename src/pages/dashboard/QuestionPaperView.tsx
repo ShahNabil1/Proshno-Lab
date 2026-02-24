@@ -31,6 +31,7 @@ interface PaperMeta {
   subjectName: string;
   chapterNames: string[];
   programName: string;
+  subjectCode?: string;
 }
 
 type PaperSize = "A4" | "Letter" | "Legal" | "A5";
@@ -357,17 +358,38 @@ export default function QuestionPaperView() {
               </p>
             )}
             {(settings.showClassName || settings.showSubjectName) && (
-              <p
-                className={editableClass}
-                style={{ fontSize: "0.95em", margin: "1px 0 0" }}
-                data-editable="classSubject"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                {settings.showClassName && meta.className}
-                {settings.showClassName && settings.showSubjectName && " — "}
-                {settings.showSubjectName && `${meta.subjectName} ১ম পত্র`}
-              </p>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "16px", fontSize: "0.95em", margin: "1px 0 0" }}>
+                <p
+                  className={editableClass}
+                  data-editable="classSubject"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                  style={{ margin: 0 }}
+                >
+                  {settings.showClassName && meta.className}
+                  {settings.showClassName && settings.showSubjectName && " — "}
+                  {settings.showSubjectName && `${meta.subjectName} ১ম পত্র`}
+                </p>
+                {settings.showSubjectCode && meta.subjectCode && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                    বিষয় কোড :
+                    <span style={{ display: "inline-flex", gap: "0" }}>
+                      {meta.subjectCode.split("").map((digit, i) => (
+                        <span key={i} style={{
+                          border: "1.5px solid #000",
+                          borderLeft: i === 0 ? "1.5px solid #000" : "none",
+                          padding: "1px 6px",
+                          fontWeight: 700,
+                          fontSize: "1em",
+                          lineHeight: 1.3,
+                          minWidth: "22px",
+                          textAlign: "center",
+                        }}>{digit}</span>
+                      ))}
+                    </span>
+                  </span>
+                )}
+              </div>
             )}
             {settings.showChapterName && meta.chapterNames.length > 0 && (
               <p
