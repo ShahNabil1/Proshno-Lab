@@ -162,6 +162,7 @@ export type Database = {
           class_id: number
           correct_answer: string | null
           created_at: string
+          creative_data: Json | null
           explanation: string | null
           id: number
           option_a: string | null
@@ -180,6 +181,7 @@ export type Database = {
           class_id: number
           correct_answer?: string | null
           created_at?: string
+          creative_data?: Json | null
           explanation?: string | null
           id?: number
           option_a?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           class_id?: number
           correct_answer?: string | null
           created_at?: string
+          creative_data?: Json | null
           explanation?: string | null
           id?: number
           option_a?: string | null
