@@ -104,7 +104,7 @@ export default function DashboardHome() {
 
         <Card className="bg-accent/30 border-accent">
           <CardContent className="p-6">
-            <h3 className="font-heading font-bold text-center mb-3">📢 ইপ্রশ্নব্যাংক আপডেটস</h3>
+            <h3 className="font-heading font-bold text-center mb-3">📢 eExamapp আপডেটস</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               সফট ওয়্যারের নতুন ফিচার, জরুরি আপডেট এবং নির্দেশনা — সবই আগে পাবেন আমাদের মেসেঞ্জার ব্রডকাস্ট চ্যানেলে।
             </p>

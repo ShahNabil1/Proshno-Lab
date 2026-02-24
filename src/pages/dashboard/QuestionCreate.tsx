@@ -342,7 +342,7 @@ export default function QuestionCreate() {
           </div>
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
-            প্রশ্নে ভুল পেলে রিপোর্ট করে প্রশ্নব্যাংককে সমৃদ্ধ করুন ।
+            প্রশ্নে ভুল পেলে রিপোর্ট করে eExamapp কে সমৃদ্ধ করুন ।
           </div>
 
           {/* Mobile filter search */}
@@ -416,7 +416,7 @@ export default function QuestionCreate() {
 
                 {/* Special search */}
                 <div className="border border-border rounded-lg p-3 mb-4">
-                  <h4 className="font-heading font-bold text-sm mb-2">ইপ্রশ্নব্যাংক স্পেশাল সার্চ</h4>
+                  <h4 className="font-heading font-bold text-sm mb-2">eExamapp স্পেশাল সার্চ</h4>
                   <div className="space-y-2">
                     {specialSearchOptions.map(opt => (
                       <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">

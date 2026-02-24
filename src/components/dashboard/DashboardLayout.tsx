@@ -16,7 +16,7 @@ const sidebarGroups = [
     items: [
       { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
       { path: "/dashboard/create", label: "১ ক্লিকে প্রশ্ন তৈরি", icon: PlusCircle },
-      { path: "/dashboard/question-bank", label: "প্রশ্নব্যাংক", icon: BookOpen },
+      { path: "/dashboard/question-bank", label: "eExamapp", icon: BookOpen },
     ],
   },
   {
@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0">
           <img src={logoImg} alt="eExamapp" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">
-            ই<span className="text-gradient-green">প্রশ্নব্যাংক</span>
+            e<span className="text-gradient-green">Examapp</span>
           </span>
         </div>
 
