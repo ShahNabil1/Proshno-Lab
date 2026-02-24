@@ -124,6 +124,47 @@ export default function QuestionPaperView() {
     handleCloseToolbar();
   }, [handleCloseToolbar]);
 
+  // Content protection: disable right-click, copy, cut, print-screen shortcuts on paper area
+  useEffect(() => {
+    const paperEl = paperRef.current;
+    if (!paperEl) return;
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      toast.error("কপি করা নিষেধ");
+    };
+
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      toast.error("কপি করা নিষেধ");
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        ["c", "v", "x", "u", "s", "p"].includes(e.key.toLowerCase())
+      ) {
+        e.preventDefault();
+        toast.error("কপি করা নিষেধ");
+      }
+      if (e.key === "PrintScreen") {
+        e.preventDefault();
+      }
+    };
+
+    paperEl.addEventListener("contextmenu", handleContextMenu);
+    paperEl.addEventListener("copy", handleCopy);
+    paperEl.addEventListener("cut", handleCopy);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      paperEl.removeEventListener("contextmenu", handleContextMenu);
+      paperEl.removeEventListener("copy", handleCopy);
+      paperEl.removeEventListener("cut", handleCopy);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const handleDownload = async () => {
     if (!paperRef.current) return;
     toast.info("ডাউনলোড শুরু হচ্ছে...");
@@ -257,6 +298,8 @@ export default function QuestionPaperView() {
             maxWidth: "780px",
             fontSize: `${settings.fontSize}px`,
             lineHeight: 1.35,
+            userSelect: "none",
+            WebkitUserSelect: "none",
             padding: "28px 44px",
             color: "#000",
             background: "#fff",
