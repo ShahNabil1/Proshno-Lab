@@ -352,10 +352,10 @@ export default function QuestionCreate() {
 
           <div className="space-y-4">
             {filteredQuestions.map((q, idx) => (
-              <Card key={q.id} className={`transition-colors ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`}>
+              <Card key={q.id} className={`transition-colors cursor-pointer ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`} onClick={() => toggleQuestion(q.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleQuestion(q.id)} />
+                    <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleQuestion(q.id)} onClick={(e) => e.stopPropagation()} />
                     <div className="flex items-center gap-2">
                       <ReferenceBadges
                         boardRefs={q.board_references as any}
