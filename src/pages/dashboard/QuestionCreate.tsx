@@ -252,6 +252,10 @@ export default function QuestionCreate() {
     const selected = questions.filter(q => selectedIds.has(q.id));
     // Store in sessionStorage for the view page
     sessionStorage.setItem("viewPaperQuestions", JSON.stringify(selected));
+    // Build topic names map for selected questions
+    const selectedTopicIds = new Set(selected.map(q => q.topic_id).filter(Boolean));
+    const topicNamesForPaper = topics.filter(t => selectedTopicIds.has(t.id)).map(t => t.name);
+
     sessionStorage.setItem("viewPaperMeta", JSON.stringify({
       instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
       instituteUpazila: institute?.upazila || "",
@@ -262,6 +266,8 @@ export default function QuestionCreate() {
       subjectCode,
       chapterNames: selectedChapterNames,
       programName: form.programName,
+      teacherName: user?.user_metadata?.full_name || user?.email || "",
+      topicNames: topicNamesForPaper,
     }));
     toast.success(`${selectedIds.size}টি প্রশ্ন সংরক্ষিত হয়েছে!`);
   };

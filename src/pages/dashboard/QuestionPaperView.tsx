@@ -37,6 +37,8 @@ interface PaperMeta {
   chapterNames: string[];
   programName: string;
   subjectCode?: string;
+  teacherName?: string;
+  topicNames?: string[];
 }
 
 type PaperSize = "A4" | "Letter" | "Legal" | "A5";
@@ -88,6 +90,16 @@ export default function QuestionPaperView() {
     textAlign: "justify" as TextAlign,
     showDuplicateMarker: false,
     showSheet: false,
+    sheetInstructorName: true,
+    sheetInstructorProfile: false,
+    sheetInstructorProfileText: "",
+    sheetLectureNumber: false,
+    sheetLectureNumberText: "",
+    sheetTopic: false,
+    sheetDate: false,
+    sheetColoredBg: false,
+    sheetBgColor: "#dc2626",
+    sheetTextColor: "#ffffff",
     showShuffle: false,
     showAddress: false,
     showAddressSpecific: true,
@@ -405,7 +417,16 @@ export default function QuestionPaperView() {
               </div>
             )}
 
-            <div style={{ textAlign: "center", marginBottom: "0" }}>
+            <div style={{
+              textAlign: "center",
+              marginBottom: "0",
+              ...(settings.showSheet && settings.sheetColoredBg ? {
+                backgroundColor: settings.sheetBgColor,
+                color: settings.sheetTextColor,
+                padding: "8px 12px",
+                margin: "0 -44px",
+              } : {}),
+            }}>
             <h1
               className={editableClass}
               style={{ fontSize: "1.35em", fontWeight: 800, lineHeight: 1.3, margin: 0 }}
@@ -491,8 +512,53 @@ export default function QuestionPaperView() {
                 ({meta.chapterNames.join(", ")})
               </p>
             )}
+            {/* ===== SHEET: Instructor, Profile, Topic inside header ===== */}
+            {settings.showSheet && settings.sheetInstructorName && meta.teacherName && (
+              <p style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }}>
+                ইন্সট্রাক্টর: {meta.teacherName}
+              </p>
+            )}
+            {settings.showSheet && settings.sheetInstructorProfile && (
+              <p
+                className={editableClass}
+                style={{ fontSize: "0.85em", margin: "0", color: settings.sheetColoredBg ? settings.sheetTextColor : "#0066cc" }}
+                data-editable="instructor-profile"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {settings.sheetInstructorProfileText || "+ Write Your Profile Here"}
+              </p>
+            )}
+            {settings.showSheet && settings.sheetTopic && meta.topicNames && meta.topicNames.length > 0 && (
+              <p style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }}>
+                লেকচার টপিক: {meta.topicNames.join(", ")}
+              </p>
+            )}
           </div>
           </div>
+          {/* Lecture number & date row outside colored bg */}
+          {settings.showSheet && (settings.sheetLectureNumber || settings.sheetDate) && (
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "0.85em",
+              margin: "2px 0 0",
+              zIndex: 1,
+              position: "relative",
+            }}>
+              {settings.sheetLectureNumber && (
+                <span style={{ fontWeight: 600 }}>
+                  লেকচার নম্বরঃ {settings.sheetLectureNumberText || "১"}
+                </span>
+              )}
+              {settings.sheetDate && (
+                <span style={{ fontWeight: 600, marginLeft: "auto" }}>
+                  Date: {new Date().toLocaleDateString("en-US", { timeZone: "Asia/Dhaka", month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+            </div>
+          )}
 
           {settings.showSetCode && (
             <div style={{ textAlign: "right", margin: "2px 0" }}>
@@ -921,10 +987,79 @@ export default function QuestionPaperView() {
                     </div>
                     <p className="text-[10px] text-muted-foreground">একই প্রশ্ন একাধিকবার নির্বাচিত হলে সহজে শনাক্ত ও পরিবর্তন করা যাবে।</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">শীট</span>
-                    <Switch checked={settings.showSheet} onCheckedChange={(v) => updateSetting("showSheet", v)} />
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">শীট</span>
+                      <Switch checked={settings.showSheet} onCheckedChange={(v) => updateSetting("showSheet", v)} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">শীট তৈরী সেটিংগুলো অটোমেটিক সেট থাকবে সবসময়।</p>
                   </div>
+                  {settings.showSheet && (
+                    <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">ইন্সট্রাক্টর নেম</span>
+                        <Switch checked={settings.sheetInstructorName} onCheckedChange={(v) => updateSetting("sheetInstructorName", v)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">ইন্সট্রাক্টর প্রোফাইল</span>
+                        <Switch checked={settings.sheetInstructorProfile} onCheckedChange={(v) => updateSetting("sheetInstructorProfile", v)} />
+                      </div>
+                      {settings.sheetInstructorProfile && (
+                        <Input
+                          className="text-xs h-7"
+                          placeholder="প্রোফাইল লিখুন (e.g. Teacher)"
+                          value={settings.sheetInstructorProfileText}
+                          onChange={(e) => updateSetting("sheetInstructorProfileText", e.target.value)}
+                        />
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">লেকচার নম্বর</span>
+                        <Switch checked={settings.sheetLectureNumber} onCheckedChange={(v) => updateSetting("sheetLectureNumber", v)} />
+                      </div>
+                      {settings.sheetLectureNumber && (
+                        <Input
+                          className="text-xs h-7"
+                          placeholder="লেকচার নম্বর লিখুন"
+                          value={settings.sheetLectureNumberText}
+                          onChange={(e) => updateSetting("sheetLectureNumberText", e.target.value)}
+                        />
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">লেকচার টপিক</span>
+                        <Switch checked={settings.sheetTopic} onCheckedChange={(v) => updateSetting("sheetTopic", v)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">তারিখ</span>
+                        <Switch checked={settings.sheetDate} onCheckedChange={(v) => updateSetting("sheetDate", v)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">রঙিন ব্যাকগ্রাউন্ড</span>
+                        <Switch checked={settings.sheetColoredBg} onCheckedChange={(v) => updateSetting("sheetColoredBg", v)} />
+                      </div>
+                      {settings.sheetColoredBg && (
+                        <div className="space-y-2">
+                          <div>
+                            <label className="text-[10px] text-muted-foreground">ব্যাকগ্রাউন্ড কালার পছন্দ করুন ↕</label>
+                            <input
+                              type="color"
+                              value={settings.sheetBgColor}
+                              onChange={(e) => updateSetting("sheetBgColor", e.target.value)}
+                              className="w-full h-8 rounded cursor-pointer border-0"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-muted-foreground">টেক্সট কালার পছন্দ করুন ↕</label>
+                            <input
+                              type="color"
+                              value={settings.sheetTextColor}
+                              onChange={(e) => updateSetting("sheetTextColor", e.target.value)}
+                              className="w-full h-8 rounded cursor-pointer border-0"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm">শাফল (সেট কোড তৈরী)</span>
                     <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={handleShuffle}>⇆</Button>
