@@ -220,8 +220,15 @@ export default function QuestionPaperView() {
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.33/dist/katex.min.css">
           <style>
             @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
+            @import url('https://fonts.maateen.me/kalpurush/font.css');
+            @import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@300;400;500;600;700;800&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'SolaimanLipi', 'Arial', sans-serif; font-size: ${settings.fontSize}px; color: #000; background: #fff; }
+            body { font-family: ${
+              settings.fontLang === "solaimanlipi" ? "'SolaimanLipi', 'Arial', sans-serif"
+              : settings.fontLang === "kalpurush" ? "'Kalpurush', 'Arial', sans-serif"
+              : settings.fontLang === "timesnewroman" ? "'Times New Roman', 'Georgia', serif"
+              : "'Anek Bangla', 'SolaimanLipi', 'Arial', sans-serif"
+            }; font-size: ${settings.fontSize}px; color: #000; background: #fff; }
             @page { size: ${paperWidths[settings.paperSize]} auto; margin: 12mm 15mm; }
             .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; }
             [data-editable] { outline: none; }
@@ -364,7 +371,13 @@ export default function QuestionPaperView() {
             color: "#000",
             background: "#fff",
             boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-            fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
+            fontFamily: settings.fontLang === "solaimanlipi"
+              ? "'SolaimanLipi', 'Arial', sans-serif"
+              : settings.fontLang === "kalpurush"
+              ? "'Kalpurush', 'Arial', sans-serif"
+              : settings.fontLang === "timesnewroman"
+              ? "'Times New Roman', 'Georgia', serif"
+              : "'Anek Bangla', 'SolaimanLipi', 'Arial', sans-serif",
             textAlign: settings.textAlign,
             position: "relative",
             overflow: "hidden",
@@ -942,7 +955,9 @@ export default function QuestionPaperView() {
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="bangla">বাংলা</SelectItem>
-                      <SelectItem value="english">English</SelectItem>
+                      <SelectItem value="solaimanlipi">সোলাইমান লিপি</SelectItem>
+                      <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
+                      <SelectItem value="timesnewroman">Times New Roman</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
