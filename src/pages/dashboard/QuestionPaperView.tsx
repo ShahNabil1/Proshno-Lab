@@ -251,15 +251,15 @@ export default function QuestionPaperView() {
         </div>
 
         <div
-          className="bg-white border rounded shadow-sm font-paper text-black"
+          className="bg-white border rounded shadow-sm font-paper"
           ref={paperRef}
-          style={{ fontSize: `${settings.fontSize}px`, lineHeight: 1.7, padding: "40px 48px" }}
+          style={{ fontSize: `${settings.fontSize}px`, lineHeight: 1.55, padding: "32px 40px", color: "#000" }}
         >
           {/* ===== HEADER ===== */}
-          <div className="text-center mb-1" style={{ lineHeight: 1.5 }}>
+          <div className="text-center mb-0" style={{ lineHeight: 1.4 }}>
             <h1
-              className={`text-lg font-bold ${editableClass}`}
-              style={{ fontSize: "1.25em" }}
+              className={`font-bold ${editableClass}`}
+              style={{ fontSize: "1.3em", letterSpacing: "-0.01em" }}
               data-editable="institute"
               onClick={handleEditableClick}
               suppressContentEditableWarning
@@ -321,8 +321,8 @@ export default function QuestionPaperView() {
 
           {/* ===== TIME / MARKS ROW ===== */}
           <div
-            className="flex justify-between items-center border-t border-b border-black py-1 my-2"
-            style={{ fontWeight: 500 }}
+            className="flex justify-between items-center py-0.5 my-1.5"
+            style={{ fontWeight: 600, borderTop: "1.5px solid #000", borderBottom: "1.5px solid #000" }}
           >
             <span
               className={editableClass}
@@ -345,8 +345,8 @@ export default function QuestionPaperView() {
           {/* ===== INSTRUCTION ===== */}
           {settings.showInstruction && (
             <p
-              className={`text-center my-2 ${editableClass}`}
-              style={{ fontSize: "0.9em" }}
+              className={`text-center my-1 ${editableClass}`}
+              style={{ fontSize: "0.88em" }}
               data-editable="instruction"
               onClick={handleEditableClick}
               suppressContentEditableWarning
@@ -357,9 +357,9 @@ export default function QuestionPaperView() {
 
           {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (
-            <div className="mt-3 mb-4">
+            <div className="mt-2 mb-3">
               {/* Section header */}
-              <div className="flex justify-between items-baseline mb-2">
+              <div className="flex justify-between items-baseline mb-1.5">
                 <p
                   className={`font-bold ${editableClass}`}
                   data-editable="mcq-title"
@@ -375,8 +375,8 @@ export default function QuestionPaperView() {
               <div
                 className={
                   settings.columns >= 2
-                    ? `grid grid-cols-2 gap-x-8 gap-y-2 ${settings.columnDivider ? "divide-x divide-black/20" : ""}`
-                    : "space-y-2"
+                    ? `grid grid-cols-2 gap-x-6 gap-y-1 ${settings.columnDivider ? "divide-x divide-black/15" : ""}`
+                    : "space-y-1"
                 }
               >
                 {mcqQuestions.map((q, idx) => {
@@ -384,7 +384,7 @@ export default function QuestionPaperView() {
                   return (
                     <div
                       key={q.id}
-                      className={`${editableClass} px-1 py-0.5 ${settings.columns >= 2 && idx % 2 === 1 ? "pl-4" : ""}`}
+                      className={`${editableClass} px-0 py-0 ${settings.columns >= 2 && idx % 2 === 1 ? "pl-3" : ""}`}
                       data-editable={`mcq-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
@@ -399,13 +399,13 @@ export default function QuestionPaperView() {
                         )}
                       </div>
                       {/* Options 2x2 */}
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0 ml-5 mt-0.5">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0 ml-5 mt-0">
                         {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                           const val = q[key];
                           if (!val) return null;
                           const label = ["ক", "খ", "গ", "ঘ"][oi];
                           return (
-                            <span key={key} style={{ fontSize: "0.92em" }}>
+                            <span key={key} style={{ fontSize: "0.9em", lineHeight: 1.4 }}>
                               {getOptionLabel(label)} <LatexRenderer text={val} />
                             </span>
                           );
@@ -429,7 +429,7 @@ export default function QuestionPaperView() {
               >
                 সংক্ষিপ্ত প্রশ্ন:
               </p>
-              <div className="space-y-1.5">
+              <div className="space-y-0.5">
                 {shortQuestions.map((q, idx) => {
                   const num = mcqQuestions.length + idx + 1;
                   const refStr = formatRefs(q);
@@ -456,7 +456,7 @@ export default function QuestionPaperView() {
           {cqQuestions.length > 0 && (
             <div className="mb-4">
               {/* Section header */}
-              <div className="flex justify-between items-baseline mb-2 border-b border-black/30 pb-1">
+              <div className="flex justify-between items-baseline mb-1.5">
                 <p
                   className={`font-bold ${editableClass}`}
                   data-editable="cq-title"
@@ -468,7 +468,7 @@ export default function QuestionPaperView() {
                 <span className="text-sm">{cqMarksLine}</span>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-3">
                 {cqQuestions.map((q, idx) => {
                   const num = mcqQuestions.length + shortQuestions.length + idx + 1;
                   const refStr = formatRefs(q);
