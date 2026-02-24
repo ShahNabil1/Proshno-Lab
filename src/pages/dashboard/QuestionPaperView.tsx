@@ -244,7 +244,7 @@ export default function QuestionPaperView() {
     }
     if (q.university_references && Array.isArray(q.university_references)) {
       q.university_references.forEach((r: any) => {
-        if (r.university && r.year) refs.push(`${r.university} '${r.year}`);
+        if ((r.name || r.university) && r.year) refs.push(`${r.name || r.university} '${r.year}`);
       });
     }
     return refs.length > 0 ? `[${refs.join(", ")}]` : "";
@@ -532,7 +532,7 @@ export default function QuestionPaperView() {
                         <span style={{ flex: 1 }}>
                           <LatexRenderer text={`${padBangla(idx + 1)}। ${q.question}`} />
                         </span>
-                        {refStr && (
+                        {settings.showQuestionInfo && refStr && (
                           <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>
                         )}
                       </div>
@@ -586,7 +586,7 @@ export default function QuestionPaperView() {
                       <span>
                         <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
-                      {refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                     </div>
                   );
                 })}
@@ -631,7 +631,7 @@ export default function QuestionPaperView() {
                         <span style={{ fontWeight: 600, flex: 1 }}>
                           <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                         </span>
-                        {refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                       </div>
 
                       {/* Sub-questions with marks pinned far right */}
