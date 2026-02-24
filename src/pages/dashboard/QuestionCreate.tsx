@@ -111,7 +111,7 @@ export default function QuestionCreate() {
   // Load subjects when class changes
   useEffect(() => {
     if (!form.classId) { setSubjects([]); return; }
-    supabase.from("subjects").select("id, name").eq("class_id", Number(form.classId)).order("name")
+    supabase.from("subjects").select("id, name, subject_code").eq("class_id", Number(form.classId)).order("name")
       .then(({ data }) => setSubjects(data || []));
   }, [form.classId]);
 
@@ -197,7 +197,9 @@ export default function QuestionCreate() {
   };
 
   const className = classes.find(c => String(c.id) === form.classId)?.name || "";
-  const subjectName = subjects.find(s => String(s.id) === form.subjectId)?.name || "";
+  const selectedSubject = subjects.find(s => String(s.id) === form.subjectId);
+  const subjectName = selectedSubject?.name || "";
+  const subjectCode = (selectedSubject as any)?.subject_code || "";
   const selectedChapterNames = chapters
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
@@ -254,6 +256,7 @@ export default function QuestionCreate() {
       instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
       className,
       subjectName,
+      subjectCode,
       chapterNames: selectedChapterNames,
       programName: form.programName,
     }));
