@@ -1,5 +1,6 @@
 import QuestionPageLayout from "@/components/QuestionPageLayout";
 import { Badge } from "@/components/ui/badge";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const mockDescriptive = [
   { id: 1, question: "বাংলাদেশের মুক্তিযুদ্ধের পটভূমি ও গুরুত্ব বিশদভাবে আলোচনা কর।", class: "১০ম", subject: "ইতিহাস", marks: 10 },
@@ -16,7 +17,7 @@ export default function DescriptivePage() {
             <div className="flex items-start justify-between gap-4">
               <p className="text-foreground font-body text-lg">
                 <span className="text-primary font-bold mr-2">{idx + 1}.</span>
-                {q.question}
+                <LatexRenderer text={q.question} />
               </p>
               <div className="flex gap-2 shrink-0">
                 <Badge variant="secondary">{q.class} • {q.subject}</Badge>

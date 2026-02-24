@@ -1,5 +1,6 @@
 import QuestionPageLayout from "@/components/QuestionPageLayout";
 import { Badge } from "@/components/ui/badge";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const mockMCQs = [
   { id: 1, question: "বাংলাদেশের রাজধানী কোথায়?", options: ["চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট"], correct: 1, class: "৯ম", subject: "সামাজিক বিজ্ঞান", chapter: "অধ্যায় ১" },
@@ -19,7 +20,7 @@ export default function MCQPage() {
             <div className="flex items-start justify-between gap-4 mb-3">
               <h3 className="font-body font-medium text-foreground">
                 <span className="text-primary font-bold mr-2">{idx + 1}.</span>
-                {q.question}
+                <LatexRenderer text={q.question} />
               </h3>
               <Badge variant="secondary" className="shrink-0">{q.class} • {q.subject}</Badge>
             </div>
@@ -33,7 +34,7 @@ export default function MCQPage() {
                   }`}
                 >
                   <span className="font-bold mr-2">{optionLabels[oi]}.</span>
-                  {opt}
+                  <LatexRenderer text={opt} />
                 </div>
               ))}
             </div>

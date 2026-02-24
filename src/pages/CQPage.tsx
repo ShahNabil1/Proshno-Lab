@@ -1,5 +1,6 @@
 import QuestionPageLayout from "@/components/QuestionPageLayout";
 import { Badge } from "@/components/ui/badge";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const mockCQs = [
   {
@@ -40,7 +41,7 @@ export default function CQPage() {
                 <Badge variant="secondary" className="mb-2">{q.class} • {q.subject}</Badge>
                 <p className="text-foreground font-body font-medium">
                   <span className="text-primary font-bold mr-2">{idx + 1}.</span>
-                  {q.stimulus}
+                  <LatexRenderer text={q.stimulus} />
                 </p>
               </div>
               <Badge className="shrink-0">মোট {q.totalMarks}</Badge>
@@ -49,7 +50,7 @@ export default function CQPage() {
               {q.parts.map((p) => (
                 <div key={p.label} className="flex items-start gap-3 bg-muted/50 rounded-lg px-4 py-3">
                   <span className="font-heading font-bold text-primary shrink-0">{p.label}.</span>
-                  <span className="text-foreground font-body flex-1">{p.question}</span>
+                  <span className="text-foreground font-body flex-1"><LatexRenderer text={p.question} /></span>
                   <Badge variant="outline" className="shrink-0">{p.marks}</Badge>
                 </div>
               ))}
