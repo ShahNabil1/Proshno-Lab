@@ -254,7 +254,20 @@ export default function AdminQuestions() {
                     <div><Label>অপশন ঘ</Label><MathInput value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} singleLine /></div>
                   </div>
                 )}
-                <div><Label>সঠিক উত্তর</Label><MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine /></div>
+                <div>
+                  <Label>সঠিক উত্তর</Label>
+                  {form.type === "mcq" ? (
+                    <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
+                      <option value="">নির্বাচন করুন</option>
+                      <option value="ক">ক</option>
+                      <option value="খ">খ</option>
+                      <option value="গ">গ</option>
+                      <option value="ঘ">ঘ</option>
+                    </select>
+                  ) : (
+                    <MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine />
+                  )}
+                </div>
                 <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
               </>
             )}

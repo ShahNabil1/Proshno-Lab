@@ -541,9 +541,12 @@ export default function QuestionPaperView() {
                           const val = q[key];
                           if (!val) return null;
                           const label = ["ক", "খ", "গ", "ঘ"][oi];
+                          const answerKey = ["ক", "খ", "গ", "ঘ"][oi];
+                          const isCorrect = settings.showAnswerSheet && q.correct_answer && q.correct_answer === answerKey;
                           return (
-                            <span key={key}>
+                            <span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>
                               {getOptionLabel(label)} <LatexRenderer text={val} />
+                              {isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}
                             </span>
                           );
                         })}
