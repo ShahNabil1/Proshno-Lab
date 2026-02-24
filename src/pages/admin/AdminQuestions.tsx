@@ -3,13 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import MathInput from "@/components/MathInput";
+import LatexRenderer from "@/components/LatexRenderer";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
 
@@ -111,7 +111,6 @@ export default function AdminQuestions() {
       if (error) { toast.error("আপডেট ব্যর্থ: " + error.message); return; }
       toast.success("আপডেট হয়েছে");
     } else {
-      // Admin inserts need a teacher_id - use current user
       const { data: { user } } = await supabase.auth.getUser();
       payload.teacher_id = user?.id;
       const { error } = await supabase.from("questions").insert(payload);
@@ -155,7 +154,9 @@ export default function AdminQuestions() {
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{item.question}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    <LatexRenderer text={item.question} />
+                  </TableCell>
                   <TableCell className="uppercase">{item.type}</TableCell>
                   <TableCell>{item.classes?.name}</TableCell>
                   <TableCell>{item.subjects?.name}</TableCell>
@@ -212,21 +213,21 @@ export default function AdminQuestions() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
-                  <Textarea value={form.cq_stem} onChange={(e) => setForm({ ...form, cq_stem: e.target.value })} rows={5} placeholder="উদ্দীপকটি এখানে লিখুন..." />
+                  <MathInput value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} rows={5} placeholder="উদ্দীপকটি এখানে লিখুন... (LaTeX: $\\\\\\\\vec{P}$)" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
-                  <div><Label>ক) জ্ঞানমূলক</Label><Input value={form.cq_q_ka} onChange={(e) => setForm({ ...form, cq_q_ka: e.target.value })} placeholder="প্রশ্ন ক" /></div>
-                  <div><Label>খ) অনুধাবনমূলক</Label><Input value={form.cq_q_kha} onChange={(e) => setForm({ ...form, cq_q_kha: e.target.value })} placeholder="প্রশ্ন খ" /></div>
-                  <div><Label>গ) প্রয়োগমূলক</Label><Input value={form.cq_q_ga} onChange={(e) => setForm({ ...form, cq_q_ga: e.target.value })} placeholder="প্রশ্ন গ" /></div>
-                  <div><Label>ঘ) উচ্চতর দক্ষতামূলক</Label><Input value={form.cq_q_gha} onChange={(e) => setForm({ ...form, cq_q_gha: e.target.value })} placeholder="প্রশ্ন ঘ" /></div>
+                  <div><Label>ক) জ্ঞানমূলক</Label><MathInput value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} singleLine placeholder="প্রশ্ন ক" /></div>
+                  <div><Label>খ) অনুধাবনমূলক</Label><MathInput value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} singleLine placeholder="প্রশ্ন খ" /></div>
+                  <div><Label>গ) প্রয়োগমূলক</Label><MathInput value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} singleLine placeholder="প্রশ্ন গ" /></div>
+                  <div><Label>ঘ) উচ্চতর দক্ষতামূলক</Label><MathInput value={form.cq_q_gha} onChange={(v) => setForm({ ...form, cq_q_gha: v })} singleLine placeholder="প্রশ্ন ঘ" /></div>
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
-                  <div><Label>উত্তর ক</Label><Textarea value={form.cq_ans_ka} onChange={(e) => setForm({ ...form, cq_ans_ka: e.target.value })} rows={2} /></div>
-                  <div><Label>উত্তর খ</Label><Textarea value={form.cq_ans_kha} onChange={(e) => setForm({ ...form, cq_ans_kha: e.target.value })} rows={2} /></div>
-                  <div><Label>উত্তর গ</Label><Textarea value={form.cq_ans_ga} onChange={(e) => setForm({ ...form, cq_ans_ga: e.target.value })} rows={2} /></div>
-                  <div><Label>উত্তর ঘ</Label><Textarea value={form.cq_ans_gha} onChange={(e) => setForm({ ...form, cq_ans_gha: e.target.value })} rows={2} /></div>
+                  <div><Label>উত্তর ক</Label><MathInput value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} rows={2} /></div>
+                  <div><Label>উত্তর খ</Label><MathInput value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} rows={2} /></div>
+                  <div><Label>উত্তর গ</Label><MathInput value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} rows={2} /></div>
+                  <div><Label>উত্তর ঘ</Label><MathInput value={form.cq_ans_gha} onChange={(v) => setForm({ ...form, cq_ans_gha: v })} rows={2} /></div>
                 </div>
               </div>
             ) : (
@@ -234,18 +235,18 @@ export default function AdminQuestions() {
                 {/* === Non-CQ Form === */}
                 <div>
                   <Label>প্রশ্ন</Label>
-                  <Textarea value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} rows={3} />
+                  <MathInput value={form.question} onChange={(v) => setForm({ ...form, question: v })} rows={3} placeholder="প্রশ্নটি লিখুন... (LaTeX: $\\\\\\\\sqrt{x}$)" />
                 </div>
                 {form.type === "mcq" && (
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>অপশন ক</Label><Input value={form.option_a} onChange={(e) => setForm({ ...form, option_a: e.target.value })} /></div>
-                    <div><Label>অপশন খ</Label><Input value={form.option_b} onChange={(e) => setForm({ ...form, option_b: e.target.value })} /></div>
-                    <div><Label>অপশন গ</Label><Input value={form.option_c} onChange={(e) => setForm({ ...form, option_c: e.target.value })} /></div>
-                    <div><Label>অপশন ঘ</Label><Input value={form.option_d} onChange={(e) => setForm({ ...form, option_d: e.target.value })} /></div>
+                    <div><Label>অপশন ক</Label><MathInput value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} singleLine /></div>
+                    <div><Label>অপশন খ</Label><MathInput value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} singleLine /></div>
+                    <div><Label>অপশন গ</Label><MathInput value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} singleLine /></div>
+                    <div><Label>অপশন ঘ</Label><MathInput value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} singleLine /></div>
                   </div>
                 )}
-                <div><Label>সঠিক উত্তর</Label><Input value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })} /></div>
-                <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><Textarea value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} rows={2} /></div>
+                <div><Label>সঠিক উত্তর</Label><MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine /></div>
+                <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
               </>
             )}
           </div>
