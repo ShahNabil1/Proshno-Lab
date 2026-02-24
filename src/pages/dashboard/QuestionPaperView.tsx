@@ -20,6 +20,9 @@ interface QuestionRow {
   correct_answer?: string | null;
   type: string;
   explanation?: string | null;
+  board_references?: any[] | null;
+  university_references?: any[] | null;
+  creative_data?: any | null;
 }
 
 interface PaperMeta {
@@ -34,6 +37,17 @@ type PaperSize = "A4" | "Letter" | "Legal" | "A5";
 type OptionStyle = "none" | "bracket" | "dot" | "paren";
 type ColumnCount = 1 | 2 | 3;
 type TextAlign = "left" | "center" | "right" | "justify";
+
+/* Convert index to Bangla numeral */
+const toBanglaNum = (n: number): string => {
+  const digits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return String(n).split("").map(d => digits[parseInt(d)] ?? d).join("");
+};
+
+const padBangla = (n: number): string => {
+  const s = toBanglaNum(n);
+  return s.length < 2 ? "০" + s : s;
+};
 
 export default function QuestionPaperView() {
   const navigate = useNavigate();
@@ -114,7 +128,6 @@ export default function QuestionPaperView() {
     if (!paperRef.current) return;
     toast.info("ডাউনলোড শুরু হচ্ছে...");
 
-    // Remove contentEditable before printing
     paperRef.current.querySelectorAll("[contenteditable]").forEach(el => {
       (el as HTMLElement).contentEditable = "false";
     });
@@ -141,19 +154,9 @@ export default function QuestionPaperView() {
           <style>
             @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'SolaimanLipi', 'Arial', sans-serif; font-size: ${settings.fontSize}px; }
-            @page { size: ${paperWidths[settings.paperSize]} auto; margin: 15mm; }
-            .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; padding: 20px; }
-            .paper-header { text-align: center; margin-bottom: 16px; }
-            .paper-header h1 { font-size: 1.4em; font-weight: 700; }
-            .paper-header p { font-size: 0.9em; }
-            .meta-row { display: flex; justify-content: space-between; border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 4px 0; margin-bottom: 12px; font-size: 0.85em; }
-            .instruction { text-align: center; font-size: 0.85em; margin-bottom: 16px; font-style: italic; }
-            .section-title { font-weight: 700; margin: 12px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-            .question { margin-bottom: 10px; }
-            .question-text { font-weight: 500; margin-bottom: 4px; }
-            .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; margin-left: 20px; }
-            .option-item { font-size: 0.9em; }
+            body { font-family: 'SolaimanLipi', 'Arial', sans-serif; font-size: ${settings.fontSize}px; color: #000; background: #fff; }
+            @page { size: ${paperWidths[settings.paperSize]} auto; margin: 12mm 15mm; }
+            .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; }
             [data-editable] { outline: none; }
             @media print { body { -webkit-print-color-adjust: exact; } }
           </style>
@@ -174,6 +177,8 @@ export default function QuestionPaperView() {
   const shortQuestions = questions.filter(q => q.type === "short");
   const cqQuestions = questions.filter(q => q.type === "cq");
 
+  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqQuestions.length * 10;
+
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
       case "bracket": return `(${label})`;
@@ -187,8 +192,23 @@ export default function QuestionPaperView() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  // Editable wrapper styles
-  const editableClass = "outline-none rounded px-0.5 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-900/20 focus:ring-2 focus:ring-emerald-400 focus:bg-emerald-50 dark:focus:bg-emerald-900/30 cursor-text";
+  /* Format board references as badge string */
+  const formatRefs = (q: QuestionRow): string => {
+    const refs: string[] = [];
+    if (q.board_references && Array.isArray(q.board_references)) {
+      q.board_references.forEach((r: any) => {
+        if (r.board && r.year) refs.push(`${r.board} '${r.year}`);
+      });
+    }
+    if (q.university_references && Array.isArray(q.university_references)) {
+      q.university_references.forEach((r: any) => {
+        if (r.university && r.year) refs.push(`${r.university} '${r.year}`);
+      });
+    }
+    return refs.length > 0 ? `[${refs.join(", ")}]` : "";
+  };
+
+  const editableClass = "outline-none transition-all hover:bg-primary/5 focus:ring-1 focus:ring-primary/40 focus:bg-primary/5 cursor-text rounded-sm";
 
   if (!meta) {
     return (
@@ -198,6 +218,18 @@ export default function QuestionPaperView() {
       </div>
     );
   }
+
+  /* MCQ marks line */
+  const mcqTotalMarks = mcqQuestions.length;
+  const mcqMarksLine = mcqQuestions.length > 0
+    ? `${toBanglaNum(mcqQuestions.length)} x ${toBanglaNum(1)} = ${toBanglaNum(mcqTotalMarks)}`
+    : "";
+
+  /* CQ marks line */
+  const cqTotalMarks = cqQuestions.length * 10;
+  const cqMarksLine = cqQuestions.length > 0
+    ? `${toBanglaNum(cqQuestions.length)} x ${toBanglaNum(10)} = ${toBanglaNum(cqTotalMarks)}`
+    : "";
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
@@ -219,23 +251,35 @@ export default function QuestionPaperView() {
         </div>
 
         <div
-          className="bg-white dark:bg-card border border-border rounded-lg shadow-sm p-6 md:p-10 font-paper"
+          className="bg-white border rounded shadow-sm font-paper text-black"
           ref={paperRef}
-          style={{ fontSize: `${settings.fontSize}px` }}
+          style={{ fontSize: `${settings.fontSize}px`, lineHeight: 1.7, padding: "40px 48px" }}
         >
-          {/* Header */}
-          <div className="text-center mb-4 space-y-0.5">
+          {/* ===== HEADER ===== */}
+          <div className="text-center mb-1" style={{ lineHeight: 1.5 }}>
             <h1
-              className={`text-xl font-bold font-heading ${editableClass}`}
+              className={`text-lg font-bold ${editableClass}`}
+              style={{ fontSize: "1.25em" }}
               data-editable="institute"
               onClick={handleEditableClick}
               suppressContentEditableWarning
             >
               {meta.instituteName}
             </h1>
+            {settings.showProgramName && meta.programName && (
+              <p
+                className={`font-bold ${editableClass}`}
+                style={{ fontSize: "1.1em" }}
+                data-editable="program"
+                onClick={handleEditableClick}
+                suppressContentEditableWarning
+              >
+                {meta.programName}
+              </p>
+            )}
             {settings.showClassName && (
               <p
-                className={`text-sm ${editableClass}`}
+                className={editableClass}
                 data-editable="className"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -245,7 +289,7 @@ export default function QuestionPaperView() {
             )}
             {settings.showSubjectName && (
               <p
-                className={`text-sm ${editableClass}`}
+                className={editableClass}
                 data-editable="subjectName"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -255,7 +299,7 @@ export default function QuestionPaperView() {
             )}
             {settings.showChapterName && meta.chapterNames.length > 0 && (
               <p
-                className={`text-sm ${editableClass}`}
+                className={editableClass}
                 data-editable="chapters"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
@@ -263,31 +307,46 @@ export default function QuestionPaperView() {
                 {meta.chapterNames.join(", ")}
               </p>
             )}
-            {settings.showProgramName && meta.programName && (
+            {settings.showSetCode && (
               <p
-                className={`text-sm font-medium ${editableClass}`}
-                data-editable="program"
+                className={`text-right ${editableClass}`}
+                data-editable="setCode"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
               >
-                {meta.programName}
+                সেট: <span className="border border-black px-2 py-0.5 font-bold">ক</span>
               </p>
             )}
           </div>
 
+          {/* ===== TIME / MARKS ROW ===== */}
           <div
-            className={`flex justify-between text-sm border-t border-b border-foreground/30 py-1 mb-3 ${editableClass}`}
-            data-editable="meta-row"
-            onClick={handleEditableClick}
-            suppressContentEditableWarning
+            className="flex justify-between items-center border-t border-b border-black py-1 my-2"
+            style={{ fontWeight: 500 }}
           >
-            <span>সময়— ৫ মিনিট</span>
-            <span>পূর্ণমান— {questions.length}</span>
+            <span
+              className={editableClass}
+              data-editable="time"
+              onClick={handleEditableClick}
+              suppressContentEditableWarning
+            >
+              সময়— ৫৫ মিনিট
+            </span>
+            <span
+              className={editableClass}
+              data-editable="marks"
+              onClick={handleEditableClick}
+              suppressContentEditableWarning
+            >
+              পূর্ণমান— {toBanglaNum(totalMarks)}
+            </span>
           </div>
 
+          {/* ===== INSTRUCTION ===== */}
           {settings.showInstruction && (
             <p
-              className={`text-center text-sm italic text-muted-foreground mb-4 ${editableClass}`}
+              className={`text-center my-2 ${editableClass}`}
+              style={{ fontSize: "0.9em" }}
               data-editable="instruction"
               onClick={handleEditableClick}
               suppressContentEditableWarning
@@ -296,106 +355,188 @@ export default function QuestionPaperView() {
             </p>
           )}
 
-          {/* MCQ Section */}
+          {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (
-            <div className="mb-6">
-              <p
-                className={`font-bold mb-3 ${editableClass}`}
-                data-editable="mcq-title"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
+            <div className="mt-3 mb-4">
+              {/* Section header */}
+              <div className="flex justify-between items-baseline mb-2">
+                <p
+                  className={`font-bold ${editableClass}`}
+                  data-editable="mcq-title"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                >
+                  বহুনির্বাচনী অংশ:
+                </p>
+                <span className="text-sm">{mcqMarksLine}</span>
+              </div>
+
+              {/* MCQ Grid */}
+              <div
+                className={
+                  settings.columns >= 2
+                    ? `grid grid-cols-2 gap-x-8 gap-y-2 ${settings.columnDivider ? "divide-x divide-black/20" : ""}`
+                    : "space-y-2"
+                }
               >
-                বহুনির্বাচনী অংশ:
-              </p>
-              <div className={settings.columns === 2 ? "grid grid-cols-2 gap-x-6 gap-y-3" : settings.columns === 3 ? "grid grid-cols-3 gap-x-4 gap-y-3" : "space-y-3"}>
-                {mcqQuestions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    className={`text-sm rounded p-1 ${editableClass}`}
-                    data-editable={`mcq-${q.id}`}
-                    onClick={(e) => handleEditableClick(e, q.id)}
-                    suppressContentEditableWarning
-                  >
-                    <p className="font-medium mb-1">
-                      <LatexRenderer text={`${String(idx + 1).padStart(2, "0")}। ${q.question}`} />
-                    </p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 ml-4">
-                      {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
-                        const val = (q as any)[key];
-                        if (!val) return null;
-                        const label = ["ক", "খ", "গ", "ঘ"][oi];
-                        return (
-                          <span key={key} className="text-xs">
-                            {getOptionLabel(label)} <LatexRenderer text={val} />
-                          </span>
-                        );
-                      })}
+                {mcqQuestions.map((q, idx) => {
+                  const refStr = formatRefs(q);
+                  return (
+                    <div
+                      key={q.id}
+                      className={`${editableClass} px-1 py-0.5 ${settings.columns >= 2 && idx % 2 === 1 ? "pl-4" : ""}`}
+                      data-editable={`mcq-${q.id}`}
+                      onClick={(e) => handleEditableClick(e, q.id)}
+                      suppressContentEditableWarning
+                    >
+                      {/* Question line with ref on right */}
+                      <div className="flex justify-between items-start gap-1">
+                        <p style={{ fontWeight: 500 }}>
+                          <LatexRenderer text={`${padBangla(idx + 1)}।  ${q.question}`} />
+                        </p>
+                        {refStr && (
+                          <span className="text-xs whitespace-nowrap shrink-0 opacity-70">{refStr}</span>
+                        )}
+                      </div>
+                      {/* Options 2x2 */}
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0 ml-5 mt-0.5">
+                        {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                          const val = q[key];
+                          if (!val) return null;
+                          const label = ["ক", "খ", "গ", "ঘ"][oi];
+                          return (
+                            <span key={key} style={{ fontSize: "0.92em" }}>
+                              {getOptionLabel(label)} <LatexRenderer text={val} />
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Short Section */}
+          {/* ===== SHORT SECTION ===== */}
           {shortQuestions.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-4">
               <p
-                className={`font-bold mb-3 ${editableClass}`}
+                className={`font-bold mb-2 ${editableClass}`}
                 data-editable="short-title"
                 onClick={handleEditableClick}
                 suppressContentEditableWarning
               >
                 সংক্ষিপ্ত প্রশ্ন:
               </p>
-              <div className="space-y-2">
-                {shortQuestions.map((q, idx) => (
-                  <p
-                    key={q.id}
-                    className={`text-sm ${editableClass}`}
-                    data-editable={`short-${q.id}`}
-                    onClick={(e) => handleEditableClick(e, q.id)}
-                    suppressContentEditableWarning
-                  >
-                    <LatexRenderer text={`${String(mcqQuestions.length + idx + 1).padStart(2, "0")}। ${q.question}`} />
-                  </p>
-                ))}
+              <div className="space-y-1.5">
+                {shortQuestions.map((q, idx) => {
+                  const num = mcqQuestions.length + idx + 1;
+                  const refStr = formatRefs(q);
+                  return (
+                    <div
+                      key={q.id}
+                      className={`flex justify-between items-start gap-2 ${editableClass}`}
+                      data-editable={`short-${q.id}`}
+                      onClick={(e) => handleEditableClick(e, q.id)}
+                      suppressContentEditableWarning
+                    >
+                      <p>
+                        <LatexRenderer text={`${padBangla(num)}।  ${q.question}`} />
+                      </p>
+                      {refStr && <span className="text-xs whitespace-nowrap shrink-0 opacity-70">{refStr}</span>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* CQ Section */}
+          {/* ===== CREATIVE QUESTION (CQ) SECTION ===== */}
           {cqQuestions.length > 0 && (
-            <div className="mb-6">
-              <p
-                className={`font-bold mb-3 ${editableClass}`}
-                data-editable="cq-title"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                সৃজনশীল প্রশ্ন:
-              </p>
-              <div className="space-y-4">
-                {cqQuestions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    className={`text-sm ${editableClass}`}
-                    data-editable={`cq-${q.id}`}
-                    onClick={(e) => handleEditableClick(e, q.id)}
-                    suppressContentEditableWarning
-                  >
-                    <p className="font-medium">
-                      <LatexRenderer text={`${String(mcqQuestions.length + shortQuestions.length + idx + 1).padStart(2, "0")}। ${q.question}`} />
-                    </p>
-                  </div>
-                ))}
+            <div className="mb-4">
+              {/* Section header */}
+              <div className="flex justify-between items-baseline mb-2 border-b border-black/30 pb-1">
+                <p
+                  className={`font-bold ${editableClass}`}
+                  data-editable="cq-title"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                >
+                  সৃজনশীল অংশ:
+                </p>
+                <span className="text-sm">{cqMarksLine}</span>
+              </div>
+
+              <div className="space-y-5">
+                {cqQuestions.map((q, idx) => {
+                  const num = mcqQuestions.length + shortQuestions.length + idx + 1;
+                  const refStr = formatRefs(q);
+                  const cData = q.creative_data;
+                  const subQuestions = cData?.sub_questions || [];
+
+                  return (
+                    <div
+                      key={q.id}
+                      className={editableClass}
+                      data-editable={`cq-${q.id}`}
+                      onClick={(e) => handleEditableClick(e, q.id)}
+                      suppressContentEditableWarning
+                    >
+                      {/* Stem number + text */}
+                      <div className="flex justify-between items-start gap-2 mb-1">
+                        <p style={{ fontWeight: 500 }}>
+                          <LatexRenderer text={`${padBangla(num)}।  ${q.question}`} />
+                        </p>
+                        {refStr && <span className="text-xs whitespace-nowrap shrink-0 opacity-70">{refStr}</span>}
+                      </div>
+
+                      {/* Sub-questions with marks on right */}
+                      {subQuestions.length > 0 && (
+                        <div className="ml-5 mt-1 space-y-0.5">
+                          {subQuestions.map((sq: any, si: number) => {
+                            const subLabel = ["ক", "খ", "গ", "ঘ"][si] || "";
+                            const subMarks = [1, 2, 3, 4][si] || "";
+                            return (
+                              <div key={si} className="flex justify-between items-start">
+                                <p>
+                                  ({subLabel}) <LatexRenderer text={sq.question || sq.text || ""} />
+                                </p>
+                                <span className="shrink-0 ml-2">{toBanglaNum(Number(subMarks))}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Fallback if no creative_data sub_questions */}
+                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
+                        <div className="ml-5 mt-1">
+                          <p className="italic mb-1"><LatexRenderer text={cData.stem} /></p>
+                          {["ক", "খ", "গ", "ঘ"].map((label, si) => {
+                            const key = `sub_${si + 1}` as string;
+                            const text = cData[key];
+                            if (!text) return null;
+                            const marks = [1, 2, 3, 4][si];
+                            return (
+                              <div key={si} className="flex justify-between items-start">
+                                <p>({label}) <LatexRenderer text={text} /></p>
+                                <span className="shrink-0 ml-2">{toBanglaNum(marks)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Settings sidebar */}
+      {/* ===== SETTINGS SIDEBAR ===== */}
       <aside className="hidden lg:block">
         <div className="sticky top-24 space-y-4">
           <Card>
@@ -515,7 +656,7 @@ export default function QuestionPaperView() {
                 </div>
 
                 <div className="mb-3">
-                  <Label className="text-xs text-muted-foreground">কলাম</Label>
+                  <Label className="text-xs text-muted-foreground">কলাম (MCQ)</Label>
                   <div className="flex gap-1 mt-1">
                     {([1, 2, 3] as ColumnCount[]).map(c => (
                       <Button key={c} size="sm" variant={settings.columns === c ? "default" : "outline"} className="flex-1 text-xs" onClick={() => updateSetting("columns", c)}>
