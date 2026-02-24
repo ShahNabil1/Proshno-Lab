@@ -41,6 +41,8 @@ import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminTopics from "./pages/admin/AdminTopics";
+import AdminTopicQuestions from "./pages/admin/AdminTopicQuestions";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +90,8 @@ const App = () => (
             <Route path="/admin/teachers" element={<AdminLayout><AdminTeachers /></AdminLayout>} />
             <Route path="/admin/institutes" element={<AdminLayout><AdminInstitutes /></AdminLayout>} />
             <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
+            <Route path="/admin/topics" element={<AdminLayout><AdminTopics /></AdminLayout>} />
+            <Route path="/admin/topic-questions" element={<AdminLayout><AdminTopicQuestions /></AdminLayout>} />
             <Route path="/admin/feedback" element={<AdminLayout><AdminFeedback /></AdminLayout>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
