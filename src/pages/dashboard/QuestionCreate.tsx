@@ -261,6 +261,8 @@ export default function QuestionCreate() {
       instituteUpazila: institute?.upazila || "",
       instituteDistrict: institute?.district || "",
       instituteDivision: institute?.division || "",
+      institutePhone: (institute as any)?.phone || "",
+      instituteSpecificAddress: (institute as any)?.specific_address || "",
       className,
       subjectName,
       subjectCode,

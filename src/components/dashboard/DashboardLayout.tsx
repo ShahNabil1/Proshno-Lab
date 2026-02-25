@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
+import OnboardingModal from "@/components/OnboardingModal";
 
 const sidebarGroups = [
   {
@@ -51,12 +52,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, loading, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
   const location = useLocation();
 
   useEffect(() => {
     if (!user) return;
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
+    
+    supabase.from("institutes").select("id").eq("owner_id", user.id).maybeSingle()
+      .then(({ data }) => setHasInstitute(!!data));
   }, [user]);
 
   if (loading) return null;
@@ -140,6 +145,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
+
+      {/* Onboarding modal - blocks dashboard until institute is registered */}
+      <OnboardingModal
+        open={hasInstitute === false}
+        onComplete={() => setHasInstitute(true)}
+      />
     </div>
   );
 }
