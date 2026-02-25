@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, PlusCircle, Package, Phone } from "lucide-react";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,8 +165,10 @@ export default function DashboardHome() {
               <Button variant="outline" className="w-full gap-2" size="sm">
                 <Phone className="w-4 h-4" /> +880 1711-476706
               </Button>
-              <Button className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white border-0" size="sm">
-                Open WhatsApp
+              <Button className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white border-0" size="sm" asChild>
+                <a href="https://wa.me/8801711476706" target="_blank" rel="noopener noreferrer">
+                  <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
+                </a>
               </Button>
             </div>
           </CardContent>

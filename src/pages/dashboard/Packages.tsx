@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
+import MessengerIcon from "@/components/icons/MessengerIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,7 +34,11 @@ export default function Packages() {
           <p className="text-sm text-muted-foreground mb-4">
             প্যাকেজ ক্রয় করুন, অথবা ক্রয় করার পরেও এই মেসেজ দেখে থাকলে আমাদের মেসেজ দিন
           </p>
-          <Button variant="outline">Messenger</Button>
+          <Button variant="outline" className="gap-2" asChild>
+            <a href="https://m.me/eexamapp" target="_blank" rel="noopener noreferrer">
+              <MessengerIcon className="w-4 h-4" /> Messenger
+            </a>
+          </Button>
         </CardContent>
       </Card>
     );
