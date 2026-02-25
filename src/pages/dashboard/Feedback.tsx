@@ -21,12 +21,32 @@ export default function Feedback() {
   const [form, setForm] = useState({ category: "সাধারণ", subject: "", details: "", priority: "low" });
   const [loading, setLoading] = useState(false);
 
+  const ensureTeacherExists = async () => {
+    if (!user) return false;
+    const { data } = await supabase.from("teachers").select("id").eq("id", user.id).maybeSingle();
+    if (!data) {
+      const { error } = await supabase.from("teachers").insert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+        email: user.email || "",
+      });
+      if (error) return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
     if (!user || !form.subject || !form.details) {
       toast.error("সব ফিল্ড পূরণ করুন");
       return;
     }
     setLoading(true);
+    const teacherReady = await ensureTeacherExists();
+    if (!teacherReady) {
+      toast.error("ইউজার ভেরিফিকেশন ব্যর্থ হয়েছে");
+      setLoading(false);
+      return;
+    }
     const { error } = await supabase.from("feedback").insert({
       teacher_id: user.id,
       category: form.category,
