@@ -3,16 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getDivisions, getDistricts, getUpazilas } from "@/data/bangladeshGeo";
 
 export default function Institute() {
   const { user } = useAuth();
   const [institute, setInstitute] = useState<any>(null);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "" });
+  const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "", phone: "", specific_address: "" });
 
   useEffect(() => {
     if (!user) return;
@@ -20,10 +23,29 @@ export default function Institute() {
       .then(({ data }) => {
         if (data) {
           setInstitute(data);
-          setForm({ name: data.name, upazila: data.upazila || "", district: data.district || "", division: data.division || "" });
+          setForm({
+            name: data.name,
+            upazila: data.upazila || "",
+            district: data.district || "",
+            division: data.division || "",
+            phone: (data as any).phone || "",
+            specific_address: (data as any).specific_address || "",
+          });
         }
       });
   }, [user]);
+
+  const divisions = getDivisions();
+  const districts = form.division ? getDistricts(form.division) : [];
+  const upazilas = form.division && form.district ? getUpazilas(form.division, form.district) : [];
+
+  const handleDivisionChange = (val: string) => {
+    setForm(prev => ({ ...prev, division: val, district: "", upazila: "" }));
+  };
+
+  const handleDistrictChange = (val: string) => {
+    setForm(prev => ({ ...prev, district: val, upazila: "" }));
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -79,9 +101,29 @@ export default function Institute() {
           {editing ? (
             <div className="space-y-3">
               <div><Label>প্রতিষ্ঠানের নাম</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>উপজেলা</Label><Input value={form.upazila} onChange={(e) => setForm({ ...form, upazila: e.target.value })} /></div>
-              <div><Label>জেলা</Label><Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
-              <div><Label>বিভাগ</Label><Input value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} /></div>
+              <div>
+                <Label>বিভাগ</Label>
+                <Select value={form.division} onValueChange={handleDivisionChange}>
+                  <SelectTrigger><SelectValue placeholder="বিভাগ" /></SelectTrigger>
+                  <SelectContent>{divisions.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>জেলা</Label>
+                <Select value={form.district} onValueChange={handleDistrictChange} disabled={!form.division}>
+                  <SelectTrigger><SelectValue placeholder="জেলা" /></SelectTrigger>
+                  <SelectContent>{districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>উপজেলা</Label>
+                <Select value={form.upazila} onValueChange={(val) => setForm({ ...form, upazila: val })} disabled={!form.district}>
+                  <SelectTrigger><SelectValue placeholder="উপজেলা" /></SelectTrigger>
+                  <SelectContent>{upazilas.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>ফোন নম্বর</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label>নির্দিষ্ট ঠিকানা</Label><Textarea value={form.specific_address} onChange={(e) => setForm({ ...form, specific_address: e.target.value })} rows={2} /></div>
               <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">সংরক্ষণ করুন</Button>
             </div>
           ) : (
@@ -89,7 +131,9 @@ export default function Institute() {
               <tbody>
                 <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground w-28">উপজেলা</td><td className="py-2.5 font-medium">{institute?.upazila || "—"}</td></tr>
                 <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">জেলা</td><td className="py-2.5 font-medium">{institute?.district || "—"}</td></tr>
-                <tr><td className="py-2.5 text-muted-foreground">বিভাগ</td><td className="py-2.5 font-medium">{institute?.division || "—"}</td></tr>
+                <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">বিভাগ</td><td className="py-2.5 font-medium">{institute?.division || "—"}</td></tr>
+                <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">ফোন</td><td className="py-2.5 font-medium">{(institute as any)?.phone || "—"}</td></tr>
+                <tr><td className="py-2.5 text-muted-foreground">ঠিকানা</td><td className="py-2.5 font-medium">{(institute as any)?.specific_address || "—"}</td></tr>
               </tbody>
             </table>
           )}

@@ -32,6 +32,8 @@ interface PaperMeta {
   instituteUpazila?: string;
   instituteDistrict?: string;
   instituteDivision?: string;
+  institutePhone?: string;
+  instituteSpecificAddress?: string;
   className: string;
   subjectName: string;
   chapterNames: string[];
@@ -451,7 +453,7 @@ export default function QuestionPaperView() {
             {/* Address below institute name */}
             {settings.showAddress && (() => {
               const parts: string[] = [];
-              if (settings.showAddressSpecific && settings.addressText) parts.push(settings.addressText);
+              if (settings.showAddressSpecific && (settings.addressText || meta.instituteSpecificAddress)) parts.push(settings.addressText || meta.instituteSpecificAddress || "");
               if (settings.showAddressUpazila && meta.instituteUpazila) parts.push(meta.instituteUpazila);
               if (settings.showAddressDistrict && meta.instituteDistrict) parts.push(meta.instituteDistrict);
               if (settings.showAddressDivision && meta.instituteDivision) parts.push(meta.instituteDivision);
