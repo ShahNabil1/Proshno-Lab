@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, Navigate, Outlet } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Building2,
-  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, User, Settings
+  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,42 +10,24 @@ import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 
-const sidebarGroups = [
-  {
-    label: "ওভারভিউ",
-    items: [
-      { path: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: "একাডেমিক ম্যানেজমেন্ট",
-    items: [
-      { path: "/admin/classes", label: "শ্রেণী", icon: GraduationCap },
-      { path: "/admin/subjects", label: "বিষয়", icon: BookOpen },
-      { path: "/admin/chapters", label: "অধ্যায়", icon: Layers },
-      { path: "/admin/categories", label: "প্রশ্নের ক্যাটাগরি", icon: Settings },
-    ],
-  },
-  {
-    label: "কন্টেন্ট ম্যানেজমেন্ট",
-    items: [
-      { path: "/admin/questions", label: "প্রশ্ন", icon: FileText },
-    ],
-  },
-  {
-    label: "ইউজার ম্যানেজমেন্ট",
-    items: [
-      { path: "/admin/teachers", label: "শিক্ষক", icon: Users },
-      { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2 },
-      { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard },
-      { path: "/admin/feedback", label: "মতামত", icon: MessageSquare },
-    ],
-  },
+const allSidebarItems = [
+  { path: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard, group: "ওভারভিউ" },
+  { path: "/admin/classes", label: "শ্রেণী", icon: GraduationCap, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/subjects", label: "বিষয়", icon: BookOpen, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/chapters", label: "অধ্যায়", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/categories", label: "প্রশ্নের ক্যাটাগরি", icon: Settings, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/questions", label: "প্রশ্ন", icon: FileText, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/teachers", label: "শিক্ষক", icon: Users, group: "ইউজার ম্যানেজমেন্ট" },
+  { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2, group: "ইউজার ম্যানেজমেন্ট" },
+  { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
+  { path: "/admin/topics", label: "টপিক", icon: Layers, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/feedback", label: "মতামত", icon: MessageSquare, group: "ইউজার ম্যানেজমেন্ট" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -53,11 +35,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!user) return;
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
+    
+    supabase.from("user_roles").select("allowed_pages").eq("user_id", user.id).eq("role", "admin").maybeSingle()
+      .then(({ data }) => {
+        setAllowedPages((data as any)?.allowed_pages || null);
+      });
   }, [user]);
 
   if (loading || isAdmin === null) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  // Filter sidebar items based on allowed_pages (null = full access for super admin)
+  const visibleItems = allowedPages
+    ? allSidebarItems.filter(item => allowedPages.includes(item.path))
+    : allSidebarItems;
+
+  // Check if current route is allowed
+  const currentPath = location.pathname;
+  const isRouteAllowed = !allowedPages || allowedPages.some(p => currentPath === p || currentPath.startsWith(p + "/"));
+  
+  if (!isRouteAllowed && currentPath !== "/admin") {
+    // Redirect to first allowed page
+    const firstAllowed = allowedPages?.[0] || "/admin";
+    return <Navigate to={firstAllowed} replace />;
+  }
+
+  // Group visible items
+  const groups: Record<string, typeof allSidebarItems> = {};
+  visibleItems.forEach(item => {
+    if (!groups[item.group]) groups[item.group] = [];
+    groups[item.group].push(item);
+  });
 
   const fullName = user.user_metadata?.full_name || "Admin";
 
@@ -74,11 +83,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="font-heading font-bold text-lg text-foreground">Admin Panel</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-          {sidebarGroups.map((group) => (
-            <div key={group.label}>
-              <p className="text-[11px] font-heading font-semibold uppercase tracking-wider text-muted-foreground px-3 mb-1.5">{group.label}</p>
+          {Object.entries(groups).map(([groupLabel, items]) => (
+            <div key={groupLabel}>
+              <p className="text-[11px] font-heading font-semibold uppercase tracking-wider text-muted-foreground px-3 mb-1.5">{groupLabel}</p>
               <div className="space-y-0.5">
-                {group.items.map((item) => {
+                {items.map((item) => {
                   const active = location.pathname === item.path;
                   return (
                     <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}

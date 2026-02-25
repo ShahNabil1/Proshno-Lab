@@ -401,18 +401,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          allowed_pages: string[] | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          allowed_pages?: string[] | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          allowed_pages?: string[] | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
