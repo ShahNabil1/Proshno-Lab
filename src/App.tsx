@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import MCQPage from "./pages/MCQPage";
@@ -58,6 +59,7 @@ const App = () => (
             {/* Public pages */}
             <Route element={<Layout><Index /></Layout>} path="/" />
             <Route element={<Layout><Login /></Layout>} path="/login" />
+            <Route element={<AuthCallback />} path="/auth/callback" />
             <Route element={<Layout><Register /></Layout>} path="/register" />
             <Route element={<Layout><Profile /></Layout>} path="/profile" />
             <Route element={<Layout><MCQPage /></Layout>} path="/questions/mcq" />
