@@ -1,12 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
-@font-face {
-  font-family: 'SutonnyMJ';
-  src: url('/fonts/SutonnyMJ.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
 @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
 @import url('https://fonts.maateen.me/kalpurush/font.css');
 
@@ -67,7 +60,7 @@
     --slate-alt: 0 0% 100%;
 
     --font-heading: 'Montserrat', sans-serif;
-    --font-body: 'SutonnyMJ', 'SolaimanLipi', 'Arial', sans-serif;
+    --font-body: 'SolaimanLipi', 'Kalpurush', 'Arial', sans-serif;
 
     --shadow-sm: 0 1px 3px 0 hsl(207 60% 15% / 0.04), 0 1px 2px -1px hsl(207 60% 15% / 0.04);
     --shadow-md: 0 4px 16px -2px hsl(207 60% 15% / 0.08), 0 2px 6px -2px hsl(207 60% 15% / 0.04);
