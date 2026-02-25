@@ -195,7 +195,7 @@ export default function QuestionPaperView() {
 
   const handleDownload = async () => {
     if (!paperRef.current) return;
-    toast.info("ডাউনলোড শুরু হচ্ছে...");
+    toast.info("পিডিএফ তৈরি হচ্ছে...");
 
     paperRef.current.querySelectorAll("[contenteditable]").forEach(el => {
       (el as HTMLElement).contentEditable = "false";
@@ -203,48 +203,30 @@ export default function QuestionPaperView() {
     handleCloseToolbar();
 
     try {
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        toast.error("পপআপ ব্লক হয়েছে। অনুগ্রহ করে পপআপ অনুমতি দিন।");
-        return;
-      }
+      const html2pdf = (await import("html2pdf.js")).default;
 
-      const paperWidths: Record<PaperSize, string> = {
-        A4: "210mm", Letter: "216mm", Legal: "216mm", A5: "148mm",
+      const paperWidths: Record<PaperSize, [number, number]> = {
+        A4: [210, 297], Letter: [216, 279], Legal: [216, 356], A5: [148, 210],
       };
 
-      const content = paperRef.current.innerHTML;
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>প্রশ্নপত্র</title>
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.33/dist/katex.min.css">
-          <style>
-            @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
-            @import url('https://fonts.maateen.me/kalpurush/font.css');
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: ${
-              settings.fontLang === "solaimanlipi" ? "'SolaimanLipi', 'Arial', sans-serif"
-              : settings.fontLang === "kalpurush" ? "'Kalpurush', 'Arial', sans-serif"
-              : settings.fontLang === "timesnewroman" ? "'Times New Roman', 'Georgia', serif"
-              : "'SolaimanLipi', 'Arial', sans-serif"
-            }; font-size: ${settings.fontSize}px; color: #000; background: #fff; }
-            @page { size: ${paperWidths[settings.paperSize]} auto; margin: 12mm 15mm; }
-            .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; }
-            [data-editable] { outline: none; }
-            @media print { body { -webkit-print-color-adjust: exact; } }
-          </style>
-        </head>
-        <body>
-          <div class="paper-content">${content}</div>
-          <script>window.onload = function() { window.print(); }<\/script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
+      const [w, h] = paperWidths[settings.paperSize];
+
+      const opt = {
+        margin: [12, 15, 12, 15],
+        filename: "প্রশ্নপত্র.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: [w, h], orientation: "portrait" as const },
+      };
+
+      await html2pdf().set(opt).from(paperRef.current).save();
+      toast.success("পিডিএফ ডাউনলোড হয়েছে!");
     } catch {
-      toast.error("ডাউনলোড করতে সমস্যা হয়েছে");
+      toast.error("পিডিএফ তৈরি করতে সমস্যা হয়েছে");
+    } finally {
+      paperRef.current?.querySelectorAll("[data-editable]").forEach(el => {
+        (el as HTMLElement).contentEditable = "true";
+      });
     }
   };
 
