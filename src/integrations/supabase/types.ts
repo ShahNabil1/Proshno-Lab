@@ -355,18 +355,21 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_banned: boolean
         }
         Insert: {
           created_at?: string
           email?: string
           full_name?: string
           id: string
+          is_banned?: boolean
         }
         Update: {
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          is_banned?: boolean
         }
         Relationships: []
       }
@@ -428,6 +431,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
