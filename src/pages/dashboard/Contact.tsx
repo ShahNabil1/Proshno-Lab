@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Phone, MessageCircle, Mail } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import MessengerIcon from "@/components/icons/MessengerIcon";
 
 export default function Contact() {
   return (
@@ -16,12 +18,12 @@ export default function Contact() {
           </Button>
           <Button className="w-full gap-2 justify-start bg-green-600 hover:bg-green-700 text-white border-0" asChild>
             <a href="https://wa.me/8801711476706" target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="w-4 h-4" /> Open WhatsApp
+              <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
             </a>
           </Button>
           <Button variant="outline" className="w-full gap-2 justify-start" asChild>
             <a href="https://m.me/eexamapp" target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="w-4 h-4" /> Open Messenger
+              <MessengerIcon className="w-4 h-4" /> Open Messenger
             </a>
           </Button>
           <div className="text-center text-sm text-muted-foreground pt-2">
