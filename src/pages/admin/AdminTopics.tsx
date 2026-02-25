@@ -1,57 +1,153 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, BookOpen, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
 
 export default function AdminTopics() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const chapterId = Number(searchParams.get("chapter_id"));
-  const chapterName = searchParams.get("chapter_name") || "";
 
+  // Filter states
+  const [filterClassId, setFilterClassId] = useState("");
+  const [filterSubjectId, setFilterSubjectId] = useState("");
+  const [filterChapterId, setFilterChapterId] = useState("");
+
+  // Data for filters
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [chapters, setChapters] = useState<any[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [loadingChapters, setLoadingChapters] = useState(false);
+
+  // Topics
   const [topics, setTopics] = useState<any[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+
+  // Dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [formName, setFormName] = useState("");
+  // Modal hierarchy
+  const [modalClassId, setModalClassId] = useState("");
+  const [modalSubjectId, setModalSubjectId] = useState("");
+  const [modalChapterId, setModalChapterId] = useState("");
+  const [modalSubjects, setModalSubjects] = useState<any[]>([]);
+  const [modalChapters, setModalChapters] = useState<any[]>([]);
+  const [modalLoadingSub, setModalLoadingSub] = useState(false);
+  const [modalLoadingCh, setModalLoadingCh] = useState(false);
 
-  const fetchTopics = async () => {
-    if (!chapterId) return;
-    const { data } = await supabase
-      .from("topics")
-      .select("*")
-      .eq("chapter_id", chapterId)
-      .order("created_at", { ascending: false });
-    setTopics(data || []);
+  // Load classes once
+  useEffect(() => {
+    supabase.from("classes").select("id, name").order("name")
+      .then(({ data }) => setClasses(data || []));
+  }, []);
+
+  // Filter: load subjects when class changes
+  useEffect(() => {
+    if (!filterClassId) { setSubjects([]); setFilterSubjectId(""); return; }
+    setLoadingSubjects(true);
+    setFilterSubjectId("");
+    setFilterChapterId("");
+    supabase.from("subjects").select("id, name").eq("class_id", Number(filterClassId)).order("name")
+      .then(({ data }) => { setSubjects(data || []); setLoadingSubjects(false); });
+  }, [filterClassId]);
+
+  // Filter: load chapters when subject changes
+  useEffect(() => {
+    if (!filterSubjectId) { setChapters([]); setFilterChapterId(""); return; }
+    setLoadingChapters(true);
+    setFilterChapterId("");
+    supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
+      .then(({ data }) => { setChapters(data || []); setLoadingChapters(false); });
+  }, [filterSubjectId]);
+
+  // Load topics when chapter is selected
+  useEffect(() => {
+    if (!filterChapterId) { setTopics([]); return; }
+    setLoadingTopics(true);
+    supabase.from("topics").select("*").eq("chapter_id", Number(filterChapterId)).order("created_at", { ascending: false })
+      .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+  }, [filterChapterId]);
+
+  // Modal: load subjects
+  useEffect(() => {
+    if (!modalClassId) { setModalSubjects([]); setModalSubjectId(""); return; }
+    setModalLoadingSub(true);
+    setModalSubjectId("");
+    setModalChapterId("");
+    supabase.from("subjects").select("id, name").eq("class_id", Number(modalClassId)).order("name")
+      .then(({ data }) => { setModalSubjects(data || []); setModalLoadingSub(false); });
+  }, [modalClassId]);
+
+  // Modal: load chapters
+  useEffect(() => {
+    if (!modalSubjectId) { setModalChapters([]); setModalChapterId(""); return; }
+    setModalLoadingCh(true);
+    setModalChapterId("");
+    supabase.from("chapters").select("id, name").eq("subject_id", Number(modalSubjectId)).order("name")
+      .then(({ data }) => { setModalChapters(data || []); setModalLoadingCh(false); });
+  }, [modalSubjectId]);
+
+  const resetFilters = () => {
+    setFilterClassId("");
+    setFilterSubjectId("");
+    setFilterChapterId("");
+    setTopics([]);
   };
 
-  useEffect(() => {
-    fetchTopics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterId]);
+  const openCreate = () => {
+    setEditItem(null);
+    setFormName("");
+    // Pre-fill modal with current filter selections
+    setModalClassId(filterClassId);
+    setModalSubjectId(filterSubjectId);
+    setModalChapterId(filterChapterId);
+    // Pre-fill modal dropdowns data
+    if (filterClassId) setModalSubjects(subjects);
+    if (filterSubjectId) setModalChapters(chapters);
+    setDialogOpen(true);
+  };
 
-  const openCreate = () => { setEditItem(null); setFormName(""); setDialogOpen(true); };
-  const openEdit = (item: any) => { setEditItem(item); setFormName(item.name); setDialogOpen(true); };
+  const openEdit = (item: any) => {
+    setEditItem(item);
+    setFormName(item.name);
+    // For edit, pre-fill with current filter context
+    setModalClassId(filterClassId);
+    setModalSubjectId(filterSubjectId);
+    setModalChapterId(filterChapterId);
+    if (filterClassId) setModalSubjects(subjects);
+    if (filterSubjectId) setModalChapters(chapters);
+    setDialogOpen(true);
+  };
 
   const handleSave = async () => {
     if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
-    const payload = { name: formName.trim(), chapter_id: chapterId };
+    const chapterId = editItem ? Number(filterChapterId) : Number(modalChapterId);
+    if (!chapterId) { toast.error("অধ্যায় নির্বাচন করুন"); return; }
+
     if (editItem) {
       const { error } = await supabase.from("topics").update({ name: formName.trim() }).eq("id", editItem.id);
       if (error) { toast.error("আপডেট ব্যর্থ"); return; }
       toast.success("আপডেট হয়েছে");
     } else {
-      const { error } = await supabase.from("topics").insert(payload);
+      const { error } = await supabase.from("topics").insert({ name: formName.trim(), chapter_id: chapterId });
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success("তৈরি হয়েছে");
     }
     setDialogOpen(false);
-    fetchTopics();
+    // Refresh topics if the chapter matches
+    if (filterChapterId && Number(filterChapterId) === chapterId) {
+      setLoadingTopics(true);
+      supabase.from("topics").select("*").eq("chapter_id", chapterId).order("created_at", { ascending: false })
+        .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -59,69 +155,170 @@ export default function AdminTopics() {
     const { error } = await supabase.from("topics").delete().eq("id", id);
     if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
     toast.success("মুছে ফেলা হয়েছে");
-    fetchTopics();
+    setTopics(prev => prev.filter(t => t.id !== id));
   };
+
+  const chapterName = chapters.find(c => String(c.id) === filterChapterId)?.name || "";
 
   return (
     <div>
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate("/admin/chapters")}>
-        <ArrowLeft className="w-4 h-4" /> অধ্যায় ম্যানেজমেন্টে ফিরুন
-      </Button>
-
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading text-2xl font-bold">টপিক ম্যানেজমেন্ট</h1>
-          <p className="text-muted-foreground text-sm">অধ্যায়: {chapterName}</p>
-        </div>
-        <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন টপিক যোগ করুন</Button>
+        <h1 className="font-heading text-2xl font-bold">টপিক ম্যানেজমেন্ট</h1>
+        <Button onClick={openCreate} className="gap-2 gradient-green text-primary-foreground border-0">
+          <Plus className="w-4 h-4" /> নতুন টপিক যোগ করুন
+        </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>নাম</TableHead>
-                <TableHead className="text-right">অ্যাকশন</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topics.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>{t.id}</TableCell>
-                  <TableCell className="font-medium">{t.name}</TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1"
-                      onClick={() => navigate(`/admin/topic-questions?topic_id=${t.id}&topic_name=${encodeURIComponent(t.name)}&chapter_name=${encodeURIComponent(chapterName)}`)}
-                    >
-                      <BookOpen className="w-3.5 h-3.5" /> প্রশ্ন ম্যানেজমেন্ট
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {topics.length === 0 && (
-                <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">কোনো টপিক নেই</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+      {/* Cascading Filters */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[150px]">
+              <Label className="text-xs mb-1 block">শ্রেণী</Label>
+              <Select value={filterClassId} onValueChange={setFilterClassId}>
+                <SelectTrigger><SelectValue placeholder="শ্রেণী নির্বাচন করুন" /></SelectTrigger>
+                <SelectContent>
+                  {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[150px]">
+              <Label className="text-xs mb-1 block">বিষয়</Label>
+              <Select value={filterSubjectId} onValueChange={setFilterSubjectId} disabled={!filterClassId}>
+                <SelectTrigger>
+                  {loadingSubjects ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="বিষয় নির্বাচন করুন" />}
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[150px]">
+              <Label className="text-xs mb-1 block">অধ্যায়</Label>
+              <Select value={filterChapterId} onValueChange={setFilterChapterId} disabled={!filterSubjectId}>
+                <SelectTrigger>
+                  {loadingChapters ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="অধ্যায় নির্বাচন করুন" />}
+                </SelectTrigger>
+                <SelectContent>
+                  {chapters.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="icon" onClick={resetFilters} title="রিসেট">
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
+      {/* Topics Table */}
+      {!filterChapterId ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            টপিক দেখতে উপরে শ্রেণী, বিষয় ও অধ্যায় নির্বাচন করুন
+          </CardContent>
+        </Card>
+      ) : loadingTopics ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground mt-2">লোড হচ্ছে...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground mb-2">অধ্যায়: <strong>{chapterName}</strong></p>
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>নাম</TableHead>
+                    <TableHead className="text-right">অ্যাকশন</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topics.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell>{t.id}</TableCell>
+                      <TableCell className="font-medium">{t.name}</TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => navigate(`/admin/topic-questions?topic_id=${t.id}&topic_name=${encodeURIComponent(t.name)}&chapter_name=${encodeURIComponent(chapterName)}`)}
+                        >
+                          <BookOpen className="w-3.5 h-3.5" /> প্রশ্ন
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {topics.length === 0 && (
+                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">কোনো টপিক নেই</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Add/Edit Topic Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন"}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+            {!editItem && (
+              <>
+                <div>
+                  <Label className="text-xs">শ্রেণী *</Label>
+                  <Select value={modalClassId} onValueChange={setModalClassId}>
+                    <SelectTrigger><SelectValue placeholder="শ্রেণী নির্বাচন করুন" /></SelectTrigger>
+                    <SelectContent>
+                      {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">বিষয় *</Label>
+                  <Select value={modalSubjectId} onValueChange={setModalSubjectId} disabled={!modalClassId}>
+                    <SelectTrigger>
+                      {modalLoadingSub ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="বিষয় নির্বাচন করুন" />}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modalSubjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">অধ্যায় *</Label>
+                  <Select value={modalChapterId} onValueChange={setModalChapterId} disabled={!modalSubjectId}>
+                    <SelectTrigger>
+                      {modalLoadingCh ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="অধ্যায় নির্বাচন করুন" />}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modalChapters.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div>
+              <Label className="text-xs">টপিকের নাম *</Label>
+              <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">
+              {editItem ? "আপডেট" : "তৈরি করুন"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

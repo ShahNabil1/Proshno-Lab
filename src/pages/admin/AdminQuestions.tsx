@@ -21,11 +21,13 @@ export default function AdminQuestions() {
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
+  const [topics, setTopics] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [loadingTopics, setLoadingTopics] = useState(false);
   const [form, setForm] = useState({
-    class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq",
+    class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
     cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
     cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
@@ -58,9 +60,17 @@ export default function AdminQuestions() {
       .then(({ data }) => setChapters(data || []));
   }, [form.subject_id]);
 
+  // Load topics when chapter changes
+  useEffect(() => {
+    if (!form.chapter_id) { setTopics([]); return; }
+    setLoadingTopics(true);
+    supabase.from("topics").select("id, name").eq("chapter_id", Number(form.chapter_id)).order("name")
+      .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+  }, [form.chapter_id]);
+
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", board_references: [], university_references: [] });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
@@ -69,7 +79,7 @@ export default function AdminQuestions() {
     const cd = item.creative_data || {};
     setForm({
       class_id: String(item.class_id), subject_id: String(item.subject_id),
-      chapter_id: String(item.chapter_id), category_id: item.category_id ? String(item.category_id) : "",
+      chapter_id: String(item.chapter_id), topic_id: item.topic_id ? String(item.topic_id) : "", category_id: item.category_id ? String(item.category_id) : "",
       type: item.type, question: item.question, option_a: item.option_a || "", option_b: item.option_b || "",
       option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: item.correct_answer || "",
       explanation: item.explanation || "",
@@ -96,6 +106,7 @@ export default function AdminQuestions() {
 
     const payload: any = {
       class_id: Number(form.class_id), subject_id: Number(form.subject_id), chapter_id: Number(form.chapter_id),
+      topic_id: form.topic_id ? Number(form.topic_id) : null,
       type: form.type,
       question: form.type === "cq" ? (form.cq_stem.substring(0, 100) + (form.cq_stem.length > 100 ? "..." : "")) : form.question,
       option_a: form.option_a || null, option_b: form.option_b || null,
@@ -191,23 +202,30 @@ export default function AdminQuestions() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>শ্রেণী</Label>
-                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: "", chapter_id: "" })}>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: "", chapter_id: "", topic_id: "" })}>
                   <option value="">নির্বাচন করুন</option>
                   {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
                 <Label>বিষয়</Label>
-                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value, chapter_id: "" })}>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value, chapter_id: "", topic_id: "" })}>
                   <option value="">নির্বাচন করুন</option>
                   {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <Label>অধ্যায়</Label>
-                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.chapter_id} onChange={(e) => setForm({ ...form, chapter_id: e.target.value })}>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.chapter_id} onChange={(e) => setForm({ ...form, chapter_id: e.target.value, topic_id: "" })}>
                   <option value="">নির্বাচন করুন</option>
                   {chapters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>টপিক {loadingTopics && <span className="text-xs text-muted-foreground">(লোড হচ্ছে...)</span>}</Label>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.topic_id} onChange={(e) => setForm({ ...form, topic_id: e.target.value })} disabled={!form.chapter_id}>
+                  <option value="">নির্বাচন করুন</option>
+                  {topics.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div>
