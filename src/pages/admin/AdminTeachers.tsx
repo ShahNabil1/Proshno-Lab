@@ -4,9 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Shield, ShieldOff, Settings } from "lucide-react";
+import { Shield, ShieldOff, Settings, Ban, Trash2, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ export default function AdminTeachers() {
   const [dialogMode, setDialogMode] = useState<"promote" | "permissions" | null>(null);
   const [selectedPages, setSelectedPages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: "ban" | "unban" | "delete"; teacher: any } | null>(null);
 
   const fetchData = async () => {
     const [{ data: t }, { data: r }] = await Promise.all([
@@ -109,6 +111,27 @@ export default function AdminTeachers() {
     }
   };
 
+  const handleBanToggle = async () => {
+    if (!confirmAction) return;
+    const { teacher, type } = confirmAction;
+    const newStatus = type === "ban";
+    const { error } = await supabase.from("teachers").update({ is_banned: newStatus }).eq("id", teacher.id);
+    if (error) { toast.error("ব্যর্থ হয়েছে"); }
+    else { toast.success(newStatus ? `${teacher.full_name || teacher.email} ব্যান করা হয়েছে` : `${teacher.full_name || teacher.email} আনব্যান করা হয়েছে`); }
+    setConfirmAction(null);
+    fetchData();
+  };
+
+  const handleDelete = async () => {
+    if (!confirmAction) return;
+    const { teacher } = confirmAction;
+    const { error } = await supabase.rpc("admin_delete_user", { _user_id: teacher.id });
+    if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); }
+    else { toast.success(`${teacher.full_name || teacher.email} ডিলিট করা হয়েছে`); }
+    setConfirmAction(null);
+    fetchData();
+  };
+
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-6">শিক্ষক ম্যানেজমেন্ট</h1>
@@ -120,13 +143,14 @@ export default function AdminTeachers() {
                 <TableHead>নাম</TableHead>
                 <TableHead>ইমেইল</TableHead>
                 <TableHead>রোল</TableHead>
+                <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>যোগদান</TableHead>
                 <TableHead className="text-right">অ্যাকশন</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {teachers.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} className={t.is_banned ? "opacity-60" : ""}>
                   <TableCell className="font-medium">{t.full_name || "—"}</TableCell>
                   <TableCell>{t.email}</TableCell>
                   <TableCell>
@@ -134,6 +158,13 @@ export default function AdminTeachers() {
                       <Badge className="bg-primary/10 text-primary border-primary/20">এ্যাডমিন</Badge>
                     ) : (
                       <Badge variant="secondary">ইউজার</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {t.is_banned ? (
+                      <Badge variant="destructive">ব্যানড</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-700 border-green-200">সক্রিয়</Badge>
                     )}
                   </TableCell>
                   <TableCell>{new Date(t.created_at).toLocaleDateString("bn-BD")}</TableCell>
@@ -153,12 +184,24 @@ export default function AdminTeachers() {
                           <Shield className="w-4 h-4" />
                         </Button>
                       )}
+                      {t.is_banned ? (
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmAction({ type: "unban", teacher: t })} title="আনব্যান করুন" className="text-green-600 hover:text-green-700">
+                          <UserCheck className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmAction({ type: "ban", teacher: t })} title="ব্যান করুন" className="text-orange-600 hover:text-orange-700">
+                          <Ban className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmAction({ type: "delete", teacher: t })} title="ডিলিট করুন" className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {teachers.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">কোনো শিক্ষক নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো শিক্ষক নেই</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -202,6 +245,32 @@ export default function AdminTeachers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmAction !== null} onOpenChange={() => setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete" ? "ইউজার ডিলিট করুন" : confirmAction?.type === "ban" ? "ইউজার ব্যান করুন" : "ইউজার আনব্যান করুন"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `${confirmAction?.teacher?.full_name || confirmAction?.teacher?.email} এর সমস্ত ডেটা (প্রশ্ন, প্রতিষ্ঠান, সাবস্ক্রিপশন) সহ স্থায়ীভাবে মুছে ফেলা হবে। এটি ফিরিয়ে আনা যাবে না!`
+                : confirmAction?.type === "ban"
+                ? `${confirmAction?.teacher?.full_name || confirmAction?.teacher?.email} কে ব্যান করলে সে আর ড্যাশবোর্ডে প্রবেশ করতে পারবে না।`
+                : `${confirmAction?.teacher?.full_name || confirmAction?.teacher?.email} কে আনব্যান করলে সে আবার ড্যাশবোর্ডে প্রবেশ করতে পারবে।`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAction?.type === "delete" ? handleDelete : handleBanToggle}
+              className={confirmAction?.type === "unban" ? "" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+            >
+              {confirmAction?.type === "delete" ? "হ্যাঁ, ডিলিট করুন" : confirmAction?.type === "ban" ? "হ্যাঁ, ব্যান করুন" : "হ্যাঁ, আনব্যান করুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

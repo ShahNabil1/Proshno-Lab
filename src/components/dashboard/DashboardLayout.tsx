@@ -53,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
+  const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -62,10 +63,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     supabase.from("institutes").select("id").eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => setHasInstitute(!!data));
+    
+    supabase.from("teachers").select("is_banned").eq("id", user.id).maybeSingle()
+      .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));
   }, [user]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (isBanned) return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="text-center space-y-4 max-w-md">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+          <Shield className="w-8 h-8 text-destructive" />
+        </div>
+        <h1 className="font-heading text-2xl font-bold text-foreground">অ্যাকাউন্ট স্থগিত</h1>
+        <p className="text-muted-foreground">আপনার অ্যাকাউন্ট এ্যাডমিন দ্বারা ব্যান করা হয়েছে। বিস্তারিত জানতে যোগাযোগ করুন।</p>
+        <Button onClick={signOut} variant="outline">লগআউট</Button>
+      </div>
+    </div>
+  );
 
   const avatarUrl = user.user_metadata?.avatar_url;
   const fullName = user.user_metadata?.full_name || "ব্যবহারকারী";
