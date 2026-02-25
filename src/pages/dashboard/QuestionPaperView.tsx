@@ -84,7 +84,7 @@ export default function QuestionPaperView() {
     paperSize: "A4" as PaperSize,
     optionStyle: "bracket" as OptionStyle,
     fontLang: "bangla",
-    fontSize: 14,
+    fontSize: 16,
     columns: 2 as ColumnCount,
     columnDivider: true,
     textAlign: "justify" as TextAlign,
@@ -221,13 +221,13 @@ export default function QuestionPaperView() {
           <style>
             @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
             @import url('https://fonts.maateen.me/kalpurush/font.css');
-            @import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@300;400;500;600;700;800&display=swap');
+            @font-face { font-family: 'SutonnyMJ'; src: url('${window.location.origin}/fonts/SutonnyMJ.ttf') format('truetype'); font-weight: normal; font-style: normal; }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: ${
               settings.fontLang === "solaimanlipi" ? "'SolaimanLipi', 'Arial', sans-serif"
               : settings.fontLang === "kalpurush" ? "'Kalpurush', 'Arial', sans-serif"
               : settings.fontLang === "timesnewroman" ? "'Times New Roman', 'Georgia', serif"
-              : "'Anek Bangla', 'SolaimanLipi', 'Arial', sans-serif"
+              : "'SutonnyMJ', 'SolaimanLipi', 'Arial', sans-serif"
             }; font-size: ${settings.fontSize}px; color: #000; background: #fff; }
             @page { size: ${paperWidths[settings.paperSize]} auto; margin: 12mm 15mm; }
             .paper-content { max-width: ${paperWidths[settings.paperSize]}; margin: 0 auto; }
@@ -377,7 +377,7 @@ export default function QuestionPaperView() {
               ? "'Kalpurush', 'Arial', sans-serif"
               : settings.fontLang === "timesnewroman"
               ? "'Times New Roman', 'Georgia', serif"
-              : "'Anek Bangla', 'SolaimanLipi', 'Arial', sans-serif",
+              : "'SutonnyMJ', 'SolaimanLipi', 'Arial', sans-serif",
             textAlign: settings.textAlign,
             position: "relative",
             overflow: "hidden",
@@ -954,7 +954,7 @@ export default function QuestionPaperView() {
                   <Select value={settings.fontLang} onValueChange={(v) => updateSetting("fontLang", v)}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bangla">বাংলা</SelectItem>
+                      <SelectItem value="bangla">SutonnyMJ</SelectItem>
                       <SelectItem value="solaimanlipi">সোলাইমান লিপি</SelectItem>
                       <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
                       <SelectItem value="timesnewroman">Times New Roman</SelectItem>
