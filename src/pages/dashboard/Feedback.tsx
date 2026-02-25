@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CheckCircle2, Clock, AlertCircle, MessageSquareReply } from "lucide-react";
 
 const categories = ["সাধারণ", "বাগ রিপোর্ট", "ফিচার রিকোয়েস্ট", "অন্যান্য"];
 const priorities = [
@@ -16,10 +17,25 @@ const priorities = [
   { value: "high", label: "বেশি" },
 ];
 
+const statusMap: Record<string, { label: string; icon: any; color: string }> = {
+  pending: { label: "অপেক্ষমান", icon: Clock, color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+  in_progress: { label: "প্রক্রিয়াধীন", icon: AlertCircle, color: "bg-blue-100 text-blue-800 border-blue-300" },
+  resolved: { label: "সমাধান হয়েছে", icon: CheckCircle2, color: "bg-green-100 text-green-800 border-green-300" },
+};
+
 export default function Feedback() {
   const { user } = useAuth();
   const [form, setForm] = useState({ category: "সাধারণ", subject: "", details: "", priority: "low" });
   const [loading, setLoading] = useState(false);
+  const [myFeedbacks, setMyFeedbacks] = useState<any[]>([]);
+
+  const fetchMyFeedbacks = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("feedback").select("*").eq("teacher_id", user.id).order("created_at", { ascending: false });
+    setMyFeedbacks(data || []);
+  };
+
+  useEffect(() => { fetchMyFeedbacks(); }, [user]);
 
   const ensureTeacherExists = async () => {
     if (!user) return false;
@@ -60,45 +76,87 @@ export default function Feedback() {
     } else {
       toast.success("মতামত সাবমিট হয়েছে!");
       setForm({ category: "সাধারণ", subject: "", details: "", priority: "low" });
+      fetchMyFeedbacks();
     }
   };
 
+  const getStatusBadge = (s: string) => {
+    const opt = statusMap[s] || statusMap.pending;
+    const Icon = opt.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${opt.color}`}>
+        <Icon className="w-3 h-3" />
+        {opt.label}
+      </span>
+    );
+  };
+
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="font-heading text-2xl font-bold mb-6">মতামত জানান !</h1>
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <div>
-            <Label>ক্যাটাগরি</Label>
-            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-              <SelectTrigger><SelectValue placeholder="ক্যাটাগরি নির্বাচন করুন" /></SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+    <div className="max-w-2xl mx-auto space-y-8">
+      <div>
+        <h1 className="font-heading text-2xl font-bold mb-6">মতামত জানান !</h1>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label>ক্যাটাগরি</Label>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger><SelectValue placeholder="ক্যাটাগরি নির্বাচন করুন" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>মতামতের বিষয়</Label>
+              <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="বিষয় লিখুন" />
+            </div>
+            <div>
+              <Label>বিস্তারিত লিখুন</Label>
+              <Textarea value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} placeholder="বিস্তারিত..." rows={5} />
+            </div>
+            <div>
+              <Label>গুরুত্বের স্তর</Label>
+              <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {priorities.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full gradient-hero text-white border-0 font-heading font-semibold" onClick={handleSubmit} disabled={loading}>
+              {loading ? "সাবমিট হচ্ছে..." : "সাবমিট"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {myFeedbacks.length > 0 && (
+        <div>
+          <h2 className="font-heading text-xl font-bold mb-4">আমার আগের মতামত সমূহ</h2>
+          <div className="space-y-3">
+            {myFeedbacks.map((fb) => (
+              <Card key={fb.id}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{fb.subject}</span>
+                    {getStatusBadge(fb.status)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{fb.details}</p>
+                  {fb.admin_reply && (
+                    <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-primary mb-1">
+                        <MessageSquareReply className="w-3 h-3" /> এ্যাডমিনের উত্তর
+                      </div>
+                      <p className="text-sm">{fb.admin_reply}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">{new Date(fb.created_at).toLocaleDateString("bn-BD")}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          <div>
-            <Label>মতামতের বিষয়</Label>
-            <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="বিষয় লিখুন" />
-          </div>
-          <div>
-            <Label>বিস্তারিত লিখুন</Label>
-            <Textarea value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} placeholder="বিস্তারিত..." rows={5} />
-          </div>
-          <div>
-            <Label>গুরুত্বের স্তর</Label>
-            <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {priorities.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button className="w-full gradient-hero text-white border-0 font-heading font-semibold" onClick={handleSubmit} disabled={loading}>
-            {loading ? "সাবমিট হচ্ছে..." : "সাবমিট"}
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }
