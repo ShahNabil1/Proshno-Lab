@@ -63,29 +63,35 @@ export type Database = {
       }
       feedback: {
         Row: {
+          admin_reply: string | null
           category: string
           created_at: string
           details: string
           id: number
           priority: string
+          status: string
           subject: string
           teacher_id: string
         }
         Insert: {
+          admin_reply?: string | null
           category?: string
           created_at?: string
           details?: string
           id?: number
           priority?: string
+          status?: string
           subject?: string
           teacher_id: string
         }
         Update: {
+          admin_reply?: string | null
           category?: string
           created_at?: string
           details?: string
           id?: number
           priority?: string
+          status?: string
           subject?: string
           teacher_id?: string
         }
