@@ -1,0 +1,1 @@
+ALTER TABLE public.institutes ADD COLUMN last_edited_at timestamp with time zone DEFAULT NULL;
