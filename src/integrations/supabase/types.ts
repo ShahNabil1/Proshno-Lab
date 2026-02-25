@@ -111,6 +111,7 @@ export type Database = {
           district: string | null
           division: string | null
           id: number
+          last_edited_at: string | null
           name: string
           owner_id: string
           phone: string | null
@@ -122,6 +123,7 @@ export type Database = {
           district?: string | null
           division?: string | null
           id?: number
+          last_edited_at?: string | null
           name?: string
           owner_id: string
           phone?: string | null
@@ -133,6 +135,7 @@ export type Database = {
           district?: string | null
           division?: string | null
           id?: number
+          last_edited_at?: string | null
           name?: string
           owner_id?: string
           phone?: string | null
