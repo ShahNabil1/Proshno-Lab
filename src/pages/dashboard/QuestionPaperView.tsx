@@ -84,7 +84,7 @@ export default function QuestionPaperView() {
     paperSize: "A4" as PaperSize,
     optionStyle: "bracket" as OptionStyle,
     fontLang: "bangla",
-    fontSize: 16,
+    fontSize: 14,
     columns: 2 as ColumnCount,
     columnDivider: true,
     textAlign: "justify" as TextAlign,
