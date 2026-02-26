@@ -402,6 +402,30 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          class_id: number
+          created_at: string
+          id: number
+          subject_id: number
+          user_id: string
+        }
+        Insert: {
+          class_id: number
+          created_at?: string
+          id?: number
+          subject_id: number
+          user_id: string
+        }
+        Update: {
+          class_id?: number
+          created_at?: string
+          id?: number
+          subject_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           allowed_pages: string[] | null
