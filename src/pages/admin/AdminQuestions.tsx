@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import MathInput from "@/components/MathInput";
+import RichTextEditor from "@/components/RichTextEditor";
 import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
