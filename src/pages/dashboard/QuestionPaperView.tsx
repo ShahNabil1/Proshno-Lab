@@ -720,7 +720,7 @@ export default function QuestionPaperView() {
             </div>
           )}
 
-          {/* ===== SHORT SECTION ===== */}
+          {/* ===== CQ SECTION (2nd) ===== */}
           {shortQuestions.length > 0 && (
             <div style={{ marginBottom: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "3px" }}>
