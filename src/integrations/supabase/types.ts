@@ -18,18 +18,21 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          is_free: boolean
           name: string
           subject_id: number
         }
         Insert: {
           created_at?: string
           id?: number
+          is_free?: boolean
           name: string
           subject_id: number
         }
         Update: {
           created_at?: string
           id?: number
+          is_free?: boolean
           name?: string
           subject_id?: number
         }
