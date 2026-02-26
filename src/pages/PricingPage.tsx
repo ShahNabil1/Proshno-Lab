@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Package, GraduationCap } from "lucide-react";
+import { ArrowRight, Sparkles, Package, GraduationCap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -13,68 +15,6 @@ const fadeUp = {
     transition: { delay: i * 0.08, duration: 0.5, ease: "easeOut" as const },
   }),
 };
-
-const bundlePackages = [
-  { classes: "ষষ্ঠ - দশম", subjects: "সকল বিষয়", price: "৯০০" },
-  { classes: "ষষ্ঠ - দ্বাদশ", subjects: "সকল বিষয়", price: "১,২০০" },
-];
-
-const classPackages = [
-  {
-    className: "ষষ্ঠ শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-  {
-    className: "সপ্তম শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-  {
-    className: "অষ্টম শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-  {
-    className: "নবম-দশম শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-  {
-    className: "একাদশ শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-  {
-    className: "দ্বাদশ শ্রেণি",
-    packages: [
-      { subject: "সকল বিষয়", price: "৩৯৯" },
-      { subject: "গণিত", price: "১৯৯" },
-      { subject: "বিজ্ঞান", price: "১৯৯" },
-      { subject: "তথ্য ও যোগাযোগ প্রযুক্তি", price: "১৯৯" },
-    ],
-  },
-];
 
 const faqs = [
   {
@@ -95,15 +35,55 @@ const faqs = [
   },
 ];
 
+interface PricingPackage {
+  id: number;
+  type: string;
+  class_name: string;
+  subject_name: string;
+  price: number;
+  sort_order: number;
+}
+
+function toBengaliDigits(n: number): string {
+  const bengaliDigits = "০১২৩৪৫৬৭৮৯";
+  return n.toLocaleString("en-IN").replace(/\d/g, (d) => bengaliDigits[parseInt(d)]);
+}
+
 export default function PricingPage() {
   const navigate = useNavigate();
+  const [packages, setPackages] = useState<PricingPackage[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const goToCheckout = (classes: string, subject: string, price: string) => {
-    // Convert Bengali digits to English
-    const bengaliToEnglish = (s: string) => s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
-    const priceNum = bengaliToEnglish(price.replace(/[,৳/-\s]/g, ""));
-    navigate(`/checkout?classes=${encodeURIComponent(classes)}&subject=${encodeURIComponent(subject)}&price=${priceNum}`);
+  useEffect(() => {
+    supabase
+      .from("pricing_packages")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        setPackages((data as any[]) || []);
+        setLoading(false);
+      });
+  }, []);
+
+  const bundlePackages = packages.filter((p) => p.type === "bundle");
+  const classPackages = packages.filter((p) => p.type === "class");
+
+  // Group class packages by class_name
+  const classGroups: { className: string; packages: PricingPackage[] }[] = [];
+  const classMap = new Map<string, PricingPackage[]>();
+  classPackages.forEach((p) => {
+    if (!classMap.has(p.class_name)) classMap.set(p.class_name, []);
+    classMap.get(p.class_name)!.push(p);
+  });
+  classMap.forEach((pkgs, className) => {
+    classGroups.push({ className, packages: pkgs });
+  });
+
+  const goToCheckout = (classes: string, subject: string, price: number) => {
+    navigate(`/checkout?classes=${encodeURIComponent(classes)}&subject=${encodeURIComponent(subject)}&price=${price}`);
   };
+
   return (
     <div>
       {/* Hero */}
@@ -124,79 +104,41 @@ export default function PricingPage() {
       </section>
 
       <div className="bg-background -mt-6 relative z-10 py-12 md:py-20 space-y-16 md:space-y-24">
-        {/* Bundle Packages */}
-        <section className="container max-w-3xl">
-          <motion.div custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <div className="flex items-center gap-2 mb-6">
-              <Package className="w-5 h-5 text-primary" />
-              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">Bundle Package</h2>
-              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">সেরা মূল্য</Badge>
-            </div>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Bundle Packages */}
+            {bundlePackages.length > 0 && (
+              <section className="container max-w-3xl">
+                <motion.div custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <Package className="w-5 h-5 text-primary" />
+                    <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">Bundle Package</h2>
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">সেরা মূল্য</Badge>
+                  </div>
 
-            <div className="rounded-xl border bg-card overflow-hidden shadow-premium">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-heading font-semibold text-foreground">শ্রেণি</TableHead>
-                    <TableHead className="font-heading font-semibold text-foreground">বিষয়</TableHead>
-                    <TableHead className="font-heading font-semibold text-foreground">মূল্য</TableHead>
-                    <TableHead className="font-heading font-semibold text-foreground text-center">পদক্ষেপ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bundlePackages.map((pkg, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium">{pkg.classes}</TableCell>
-                      <TableCell>{pkg.subjects}</TableCell>
-                      <TableCell className="font-semibold">৳{pkg.price}/-</TableCell>
-                      <TableCell className="text-center">
-                        <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
-                          onClick={() => goToCheckout(pkg.classes, pkg.subjects, pkg.price)}>
-                          ক্রয় করুন
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Class-wise Packages */}
-        <section className="container max-w-3xl">
-          <motion.div custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <div className="flex items-center gap-2 mb-6">
-              <GraduationCap className="w-5 h-5 text-primary" />
-              <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">শ্রেণি অনুযায়ী প্যাকেজ</h2>
-            </div>
-
-            <div className="space-y-6">
-              {classPackages.map((cls, ci) => (
-                <motion.div key={ci} custom={ci + 2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                  <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-                    <div className="bg-muted/50 px-4 py-3 border-b">
-                      <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        {cls.className}
-                      </h3>
-                    </div>
+                  <div className="rounded-xl border bg-card overflow-hidden shadow-premium">
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-heading font-semibold text-foreground">শ্রেণি</TableHead>
                           <TableHead className="font-heading font-semibold text-foreground">বিষয়</TableHead>
                           <TableHead className="font-heading font-semibold text-foreground">মূল্য</TableHead>
                           <TableHead className="font-heading font-semibold text-foreground text-center">পদক্ষেপ</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {cls.packages.map((pkg, pi) => (
-                          <TableRow key={pi}>
-                            <TableCell className={pi === 0 ? "font-semibold" : ""}>{pkg.subject}</TableCell>
-                            <TableCell className="font-semibold">৳{pkg.price}/-</TableCell>
+                        {bundlePackages.map((pkg) => (
+                          <TableRow key={pkg.id}>
+                            <TableCell className="font-medium">{pkg.class_name}</TableCell>
+                            <TableCell>{pkg.subject_name}</TableCell>
+                            <TableCell className="font-semibold">৳{toBengaliDigits(pkg.price)}/-</TableCell>
                             <TableCell className="text-center">
                               <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
-                                onClick={() => goToCheckout(cls.className, pkg.subject, pkg.price)}>
+                                onClick={() => goToCheckout(pkg.class_name, pkg.subject_name, pkg.price)}>
                                 ক্রয় করুন
                               </Button>
                             </TableCell>
@@ -206,10 +148,60 @@ export default function PricingPage() {
                     </Table>
                   </div>
                 </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </section>
+              </section>
+            )}
+
+            {/* Class-wise Packages */}
+            {classGroups.length > 0 && (
+              <section className="container max-w-3xl">
+                <motion.div custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <div className="flex items-center gap-2 mb-6">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">শ্রেণি অনুযায়ী প্যাকেজ</h2>
+                  </div>
+
+                  <div className="space-y-6">
+                    {classGroups.map((cls, ci) => (
+                      <motion.div key={cls.className} custom={ci + 2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                        <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+                          <div className="bg-muted/50 px-4 py-3 border-b">
+                            <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                              {cls.className}
+                            </h3>
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="font-heading font-semibold text-foreground">বিষয়</TableHead>
+                                <TableHead className="font-heading font-semibold text-foreground">মূল্য</TableHead>
+                                <TableHead className="font-heading font-semibold text-foreground text-center">পদক্ষেপ</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {cls.packages.map((pkg) => (
+                                <TableRow key={pkg.id}>
+                                  <TableCell className={pkg.subject_name === "সকল বিষয়" ? "font-semibold" : ""}>{pkg.subject_name}</TableCell>
+                                  <TableCell className="font-semibold">৳{toBengaliDigits(pkg.price)}/-</TableCell>
+                                  <TableCell className="text-center">
+                                    <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
+                                      onClick={() => goToCheckout(cls.className, pkg.subject_name, pkg.price)}>
+                                      ক্রয় করুন
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              </section>
+            )}
+          </>
+        )}
 
         {/* FAQ */}
         <section className="container max-w-3xl">

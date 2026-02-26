@@ -36,6 +36,9 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // For showing all subjects when "সকল বিষয়" is selected
+  const [allSubjects, setAllSubjects] = useState<string[]>([]);
+
   const totalPrice = Math.max(0, packagePrice - discount);
 
   // Auto-fill from logged-in user
@@ -45,7 +48,6 @@ export default function CheckoutPage() {
     setName(meta?.full_name || meta?.name || "");
     setEmail(user.email || "");
 
-    // Fetch phone & institute
     supabase.from("institutes").select("name, phone").eq("owner_id", user.id).maybeSingle()
       .then(({ data }) => {
         if (data) {
@@ -54,6 +56,30 @@ export default function CheckoutPage() {
         }
       });
   }, [user]);
+
+  // Fetch all subjects for this class when "সকল বিষয়" is selected
+  useEffect(() => {
+    if (packageSubject !== "সকল বিষয়" || !packageClasses) {
+      setAllSubjects([]);
+      return;
+    }
+    // Fetch other packages for the same class_name to show what subjects are included
+    supabase
+      .from("pricing_packages")
+      .select("subject_name")
+      .eq("class_name", packageClasses)
+      .eq("type", "class")
+      .eq("is_active", true)
+      .neq("subject_name", "সকল বিষয়")
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setAllSubjects(data.map((d: any) => d.subject_name));
+        } else {
+          setAllSubjects([]);
+        }
+      });
+  }, [packageClasses, packageSubject]);
 
   const copyNumber = () => {
     navigator.clipboard.writeText(BKASH_NUMBER);
@@ -159,8 +185,17 @@ export default function CheckoutPage() {
           </p>
           {packageSubject && (
             <div className="mt-3 bg-muted/50 rounded-lg p-3 text-left">
-              <p className="text-sm font-semibold text-muted-foreground">বিষয়সমূহ: {packageClasses} শ্রেণি</p>
-              <p className="text-sm mt-1">• {packageSubject}</p>
+              <p className="text-sm font-semibold text-muted-foreground">বিষয়সমূহ: {packageClasses}</p>
+              {packageSubject === "সকল বিষয়" && allSubjects.length > 0 ? (
+                <div className="mt-1 space-y-0.5">
+                  <p className="text-sm font-semibold text-primary">• সকল বিষয় (নিচের বিষয়গুলো অন্তর্ভুক্ত):</p>
+                  {allSubjects.map((s, i) => (
+                    <p key={i} className="text-sm ml-4">— {s}</p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm mt-1">• {packageSubject}</p>
+              )}
             </div>
           )}
         </div>
@@ -295,18 +330,13 @@ export default function CheckoutPage() {
                   if (error || !data) { toast.error("কুপন কোড সঠিক নয়"); return; }
 
                   const c = data as any;
-                  // Check expiry
                   if (c.expires_at && new Date(c.expires_at) < new Date()) { toast.error("কুপনের মেয়াদ শেষ"); return; }
-                  // Check use limit
                   if (c.use_limit !== null && c.used_count >= c.use_limit) { toast.error("কুপনের ব্যবহার সীমা শেষ"); return; }
-                  // Check min purchase
                   if (packagePrice < c.min_purchase) { toast.error(`ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন`); return; }
-                  // Check applicable packages
                   const pkgKey = `${packageClasses}__${packageSubject || "সকল বিষয়"}`;
                   if (c.applicable_packages && c.applicable_packages.length > 0 && !c.applicable_packages.includes(pkgKey)) {
                     toast.error("এই প্যাকেজে কুপনটি প্রযোজ্য নয়"); return;
                   }
-                  // Calculate discount
                   let disc = 0;
                   if (c.discount_type === "percentage") {
                     disc = Math.round(packagePrice * c.discount_value / 100);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Building2,
-  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag
+  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag, Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ const allSidebarItems = [
   { path: "/admin/feedback", label: "মতামত", icon: MessageSquare, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/coupons", label: "কুপন", icon: Tag, group: "ইউজার ম্যানেজমেন্ট" },
+  { path: "/admin/packages", label: "প্যাকেজ", icon: Package, group: "ইউজার ম্যানেজমেন্ট" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
