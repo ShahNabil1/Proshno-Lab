@@ -197,6 +197,39 @@ export type Database = {
           },
         ]
       }
+      pricing_packages: {
+        Row: {
+          class_name: string
+          created_at: string
+          id: number
+          is_active: boolean
+          price: number
+          sort_order: number
+          subject_name: string
+          type: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          id?: never
+          is_active?: boolean
+          price: number
+          sort_order?: number
+          subject_name?: string
+          type?: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          id?: never
+          is_active?: boolean
+          price?: number
+          sort_order?: number
+          subject_name?: string
+          type?: string
+        }
+        Relationships: []
+      }
       purchase_requests: {
         Row: {
           admin_note: string | null
