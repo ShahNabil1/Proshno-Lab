@@ -55,15 +55,17 @@ export default function AdminTopics() {
       .then(({ data }) => setAllSubjects(data || []));
   }, []);
 
-  // Filter: load subjects when class changes
+  // Filter: load subjects when class changes (filtered by permissions)
+  const [subjects, setSubjects] = useState<any[]>([]);
   useEffect(() => {
     if (!filterClassId) { setSubjects([]); setFilterSubjectId(""); return; }
     setLoadingSubjects(true);
     setFilterSubjectId("");
     setFilterChapterId("");
-    supabase.from("subjects").select("id, name").eq("class_id", Number(filterClassId)).order("name")
-      .then(({ data }) => { setSubjects(data || []); setLoadingSubjects(false); });
-  }, [filterClassId]);
+    const filtered = filterSubjects(allSubjects.filter(s => String(s.class_id) === filterClassId) as any);
+    setSubjects(filtered);
+    setLoadingSubjects(false);
+  }, [filterClassId, allSubjects, permLoading]);
 
   // Filter: load chapters when subject changes
   useEffect(() => {
