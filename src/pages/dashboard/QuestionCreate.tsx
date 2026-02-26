@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, Lock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -78,9 +78,10 @@ export default function QuestionCreate() {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
-  const [chapters, setChapters] = useState<{ id: number; name: string }[]>([]);
+  const [chapters, setChapters] = useState<{ id: number; name: string; is_free: boolean }[]>([]);
   const [topics, setTopics] = useState<{ id: number; name: string; chapter_id: number }[]>([]);
   const [warningDialog, setWarningDialog] = useState<WarningField>(null);
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
