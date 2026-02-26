@@ -61,6 +61,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          applicable_packages: string[] | null
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: number
+          is_active: boolean
+          max_discount: number | null
+          min_purchase: number
+          use_limit: number | null
+          used_count: number
+        }
+        Insert: {
+          applicable_packages?: string[] | null
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: number
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number
+          use_limit?: number | null
+          used_count?: number
+        }
+        Update: {
+          applicable_packages?: string[] | null
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: number
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number
+          use_limit?: number | null
+          used_count?: number
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           admin_reply: string | null
@@ -533,6 +578,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_coupon_usage: {
+        Args: { coupon_code: string }
+        Returns: undefined
       }
     }
     Enums: {

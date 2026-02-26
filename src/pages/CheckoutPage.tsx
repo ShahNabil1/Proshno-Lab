@@ -27,7 +27,9 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [institute, setInstitute] = useState("");
   const [coupon, setCoupon] = useState("");
-  const [discount] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [copied, setCopied] = useState(false);
@@ -94,7 +96,11 @@ export default function CheckoutPage() {
 
       if (error) throw error;
 
-      // If not logged in, create account with this email (sign up via magic link concept - just store for admin)
+      // Increment coupon used_count
+      if (couponApplied && coupon.trim()) {
+        await supabase.rpc("increment_coupon_usage" as any, { coupon_code: coupon.trim().toUpperCase() });
+      }
+
       setSubmitted(true);
       toast.success("আপনার রিকুয়েস্ট সফলভাবে জমা হয়েছে! অ্যাডমিন যাচাই করার পর সক্রিয় হবে।");
     } catch (err: any) {
@@ -270,13 +276,60 @@ export default function CheckoutPage() {
             <Input
               placeholder="কুপন কোড (যদি থাকে)"
               value={coupon}
-              onChange={(e) => setCoupon(e.target.value)}
-              className="flex-1 bg-muted/30"
+              onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); setDiscount(0); }}
+              className="flex-1 bg-muted/30 font-mono uppercase"
+              disabled={couponApplied}
             />
-            <Button variant="outline" className="font-heading" onClick={() => toast.info("কুপন ফিচার শীঘ্রই আসছে!")}>
-              প্রয়োগ করুন
-            </Button>
+            {couponApplied ? (
+              <Button variant="outline" className="font-heading text-destructive" onClick={() => { setCoupon(""); setCouponApplied(false); setDiscount(0); }}>
+                সরান
+              </Button>
+            ) : (
+              <Button variant="outline" className="font-heading" disabled={couponLoading || !coupon.trim()} onClick={async () => {
+                setCouponLoading(true);
+                try {
+                  const { data, error } = await supabase
+                    .from("coupons")
+                    .select("*")
+                    .eq("code", coupon.trim().toUpperCase())
+                    .eq("is_active", true)
+                    .maybeSingle();
+
+                  if (error || !data) { toast.error("কুপন কোড সঠিক নয়"); return; }
+
+                  const c = data as any;
+                  // Check expiry
+                  if (c.expires_at && new Date(c.expires_at) < new Date()) { toast.error("কুপনের মেয়াদ শেষ"); return; }
+                  // Check use limit
+                  if (c.use_limit !== null && c.used_count >= c.use_limit) { toast.error("কুপনের ব্যবহার সীমা শেষ"); return; }
+                  // Check min purchase
+                  if (packagePrice < c.min_purchase) { toast.error(`ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন`); return; }
+                  // Check applicable packages
+                  const pkgKey = `${packageClasses}__${packageSubject || "সকল বিষয়"}`;
+                  if (c.applicable_packages && c.applicable_packages.length > 0 && !c.applicable_packages.includes(pkgKey)) {
+                    toast.error("এই প্যাকেজে কুপনটি প্রযোজ্য নয়"); return;
+                  }
+                  // Calculate discount
+                  let disc = 0;
+                  if (c.discount_type === "percentage") {
+                    disc = Math.round(packagePrice * c.discount_value / 100);
+                    if (c.max_discount && disc > c.max_discount) disc = c.max_discount;
+                  } else {
+                    disc = c.discount_value;
+                  }
+                  disc = Math.min(disc, packagePrice);
+                  setDiscount(disc);
+                  setCouponApplied(true);
+                  toast.success(`কুপন প্রয়োগ হয়েছে! ৳${disc} ডিসকাউন্ট`);
+                } catch { toast.error("সমস্যা হয়েছে"); } finally { setCouponLoading(false); }
+              }}>
+                {couponLoading ? "যাচাই..." : "প্রয়োগ করুন"}
+              </Button>
+            )}
           </div>
+          {couponApplied && (
+            <p className="text-xs text-primary font-medium">✅ কুপন "{coupon.toUpperCase()}" প্রয়োগ হয়েছে — ৳{discount} ডিসকাউন্ট</p>
+          )}
 
           <p className="text-xs text-center text-muted-foreground pt-1">
             By confirming, I agree to the{" "}
