@@ -13,6 +13,7 @@ import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 const typeOptions = ["mcq", "short", "cq"];
 
