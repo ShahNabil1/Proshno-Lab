@@ -30,6 +30,11 @@ export default function AdminQuestions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [loadingTopics, setLoadingTopics] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterClassId, setFilterClassId] = useState("");
+  const [filterSubjectId, setFilterSubjectId] = useState("");
+  const [filterChapterId, setFilterChapterId] = useState("");
+  const [filterChapters, setFilterChapters] = useState<any[]>([]);
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
