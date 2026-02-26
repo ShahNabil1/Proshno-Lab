@@ -67,9 +67,20 @@ export default function AdminTeachers() {
     ? teachers.filter(t => t.email?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     : teachers;
 
+  const fetchPermissions = async (userId: string) => {
+    const { data } = await supabase.from("user_permissions").select("*").eq("user_id", userId);
+    setExistingPermissions(data || []);
+  };
+
+  const filteredSubjectsForPerm = subjects.filter(s => String(s.class_id) === newPermClassId);
+
   const openPromoteDialog = (teacher: any) => {
     setSelectedTeacher(teacher);
     setSelectedPages(ADMIN_PAGES.map(p => p.value));
+    setExistingPermissions([]);
+    setNewPermClassId("");
+    setNewPermSubjectId("");
+    fetchPermissions(teacher.id);
     setDialogMode("promote");
   };
 
@@ -78,6 +89,9 @@ export default function AdminTeachers() {
     const role = getRole(teacher.id);
     const pages = role?.allowed_pages || ADMIN_PAGES.map(p => p.value);
     setSelectedPages(pages);
+    setNewPermClassId("");
+    setNewPermSubjectId("");
+    fetchPermissions(teacher.id);
     setDialogMode("permissions");
   };
 
