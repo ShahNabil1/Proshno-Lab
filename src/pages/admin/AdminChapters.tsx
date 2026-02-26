@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, Filter } from "lucide-react";
@@ -16,6 +17,7 @@ interface ChapterItem {
   id: number;
   name: string;
   subject_id: number;
+  is_free: boolean;
   created_at: string;
   subjects?: { name: string; class_id: number; classes?: { name: string } };
 }
@@ -180,6 +182,7 @@ export default function AdminChapters() {
                 <TableHead>নাম</TableHead>
                 <TableHead>শ্রেণী</TableHead>
                 <TableHead>বিষয়</TableHead>
+                <TableHead className="text-center">ফ্রি/ডেমো</TableHead>
                 <TableHead className="text-right">অ্যাকশন</TableHead>
               </TableRow>
             </TableHeader>
@@ -190,6 +193,16 @@ export default function AdminChapters() {
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{(item as any).subjects?.classes?.name || "—"}</TableCell>
                   <TableCell>{(item as any).subjects?.name || "—"}</TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={item.is_free}
+                      onCheckedChange={async (checked) => {
+                        await supabase.from("chapters").update({ is_free: checked } as any).eq("id", item.id);
+                        setChapters(prev => prev.map(ch => ch.id === item.id ? { ...ch, is_free: checked } : ch));
+                        toast.success(checked ? "ফ্রি/ডেমো সক্রিয়" : "ফ্রি/ডেমো নিষ্ক্রিয়");
+                      }}
+                    />
+                  </TableCell>
                   <TableCell className="text-right space-x-1">
                     <Button
                       variant="outline"
@@ -205,7 +218,7 @@ export default function AdminChapters() {
                 </TableRow>
               ))}
               {displayChapters.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">কোনো ডাটা নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো ডাটা নেই</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

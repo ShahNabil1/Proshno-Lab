@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, Lock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -78,9 +78,10 @@ export default function QuestionCreate() {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
-  const [chapters, setChapters] = useState<{ id: number; name: string }[]>([]);
+  const [chapters, setChapters] = useState<{ id: number; name: string; is_free: boolean }[]>([]);
   const [topics, setTopics] = useState<{ id: number; name: string; chapter_id: number }[]>([]);
   const [warningDialog, setWarningDialog] = useState<WarningField>(null);
+  const [hasSubscription, setHasSubscription] = useState<boolean>(false);
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -118,9 +119,21 @@ export default function QuestionCreate() {
   // Load chapters when subject changes
   useEffect(() => {
     if (!form.subjectId) { setChapters([]); setTopics([]); return; }
-    supabase.from("chapters").select("id, name").eq("subject_id", Number(form.subjectId)).order("name")
-      .then(({ data }) => setChapters(data || []));
+    supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).order("name")
+      .then(({ data }) => setChapters((data as any[]) || []));
   }, [form.subjectId]);
+
+  // Check subscription for selected subject
+  useEffect(() => {
+    if (!user?.id || !form.subjectId) { setHasSubscription(false); return; }
+    supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("teacher_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .then(({ data }) => setHasSubscription(!!(data && data.length > 0)));
+  }, [user?.id, form.subjectId]);
 
   // Load topics when chapters selected
   useEffect(() => {
@@ -590,18 +603,36 @@ export default function QuestionCreate() {
                   <div className="p-2 space-y-1">
                     {chapters.map((c) => {
                       const isSelected = form.chapterIds.includes(String(c.id));
+                      const isLocked = !hasSubscription && !c.is_free;
                       return (
                         <label
                           key={c.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors text-sm ${
-                            isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-sm ${
+                            isLocked
+                              ? "opacity-60 cursor-not-allowed bg-muted/30"
+                              : isSelected
+                                ? "bg-primary/10 text-primary font-medium cursor-pointer"
+                                : "hover:bg-muted/50 cursor-pointer"
                           }`}
+                          onClick={(e) => {
+                            if (isLocked) {
+                              e.preventDefault();
+                              toast.error("এই অধ্যায়ের জন্য সাবস্ক্রিপশন প্রয়োজন। প্যাকেজ কিনুন!", { id: "locked-chapter" });
+                            }
+                          }}
                         >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleChapter(String(c.id))}
-                          />
-                          <span>{c.name}</span>
+                          {isLocked ? (
+                            <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
+                          ) : (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleChapter(String(c.id))}
+                            />
+                          )}
+                          <span className={isLocked ? "text-muted-foreground" : ""}>{c.name}</span>
+                          {isLocked && (
+                            <span className="ml-auto text-xs text-destructive/70 whitespace-nowrap">🔒 লক</span>
+                          )}
                         </label>
                       );
                     })}
