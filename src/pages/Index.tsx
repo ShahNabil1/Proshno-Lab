@@ -30,32 +30,7 @@ const categories = [
   { icon: Shield, label: "মেডিকেল" },
 ];
 
-const packages = [
-  {
-    name: "জুনিয়র বৃত্তি প্রস্তুতি",
-    price: "২৪৯",
-    badge: "NEW",
-    badgeColor: "bg-primary",
-    features: ["১৮০+ অধ্যায়ভিত্তিক মডেল টেস্ট", "৫০টি মডেল টেস্ট", "সুপার সাজেশন"],
-    featured: false,
-  },
-  {
-    name: "প্রাইমারি বৃত্তি প্রস্তুতি",
-    price: "২৪৯",
-    badge: "FEATURED",
-    badgeColor: "bg-yellow-badge",
-    features: ["২০০+ অধ্যায়ভিত্তিক মডেল টেস্ট", "প্রতি বিষয়ে ১৫টি মডেল টেস্ট", "সুপার সাজেশন"],
-    featured: true,
-  },
-  {
-    name: "SSC প্রস্তুতি - ২০২৫",
-    price: "৯৯",
-    badge: null,
-    badgeColor: "",
-    features: ["বছরের চূড়ান্ত প্রস্তুতি", "অধ্যায়ভিত্তিক ৪ সেট প্রশ্ন", "বাছাইকৃত প্রশ্ন সমন্বয়া"],
-    featured: false,
-  },
-];
+
 
 const faqs = [
   { q: "eExamapp এর সেবা সমূহ কি কি?", a: "আমরা ১ ক্লিকে প্রশ্ন তৈরি, অধ্যায়ভিত্তিক eExamapp, অনলাইন পরীক্ষা এবং OMR মূল্যায়ন সেবা প্রদান করি।" },
