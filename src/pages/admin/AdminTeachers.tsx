@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Shield, ShieldOff, Settings, Ban, Trash2, UserCheck, Search, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Shield, ShieldOff, Settings, Ban, Trash2, UserCheck, Search, X, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -36,13 +38,24 @@ export default function AdminTeachers() {
   const [confirmAction, setConfirmAction] = useState<{ type: "ban" | "unban" | "delete"; teacher: any } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Subject permission states
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [existingPermissions, setExistingPermissions] = useState<any[]>([]);
+  const [newPermClassId, setNewPermClassId] = useState<string>("");
+  const [newPermSubjectId, setNewPermSubjectId] = useState<string>("");
+
   const fetchData = async () => {
-    const [{ data: t }, { data: r }] = await Promise.all([
+    const [{ data: t }, { data: r }, { data: c }, { data: s }] = await Promise.all([
       supabase.from("teachers").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*"),
+      supabase.from("classes").select("*").order("name"),
+      supabase.from("subjects").select("*").order("name"),
     ]);
     setTeachers(t || []);
     setRoles(r || []);
+    setClasses(c || []);
+    setSubjects(s || []);
   };
 
   useEffect(() => { fetchData(); }, []);
