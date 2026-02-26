@@ -123,17 +123,18 @@ export default function QuestionCreate() {
       .then(({ data }) => setChapters((data as any[]) || []));
   }, [form.subjectId]);
 
-  // Check subscription for selected subject
+  // Check user_permissions for specific class + subject access
   useEffect(() => {
-    if (!user?.id || !form.subjectId) { setHasSubscription(false); return; }
+    if (!user?.id || !form.classId || !form.subjectId) { setHasSubscription(false); return; }
     supabase
-      .from("subscriptions")
+      .from("user_permissions")
       .select("id")
-      .eq("teacher_id", user.id)
-      .eq("status", "active")
+      .eq("user_id", user.id)
+      .eq("class_id", Number(form.classId))
+      .eq("subject_id", Number(form.subjectId))
       .limit(1)
       .then(({ data }) => setHasSubscription(!!(data && data.length > 0)));
-  }, [user?.id, form.subjectId]);
+  }, [user?.id, form.classId, form.subjectId]);
 
   // Load topics when chapters selected
   useEffect(() => {
