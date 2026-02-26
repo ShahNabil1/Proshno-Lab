@@ -60,7 +60,7 @@ export default function AdminPurchases() {
 
     if (error) { toast.error("সমস্যা হয়েছে"); return; }
 
-    // If approved and teacher exists, activate subscription
+    // If approved and teacher exists, activate subscription + grant permissions
     if (action === "approved" && teacherId) {
       const endsAt = new Date();
       endsAt.setFullYear(endsAt.getFullYear() + 1);
@@ -87,6 +87,71 @@ export default function AdminPurchases() {
           starts_at: new Date().toISOString(),
           ends_at: endsAt.toISOString(),
         });
+      }
+
+      // Grant user_permissions for the purchased class + subject(s)
+      // Resolve class_name to class_id
+      const { data: classRow } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("name", classes)
+        .maybeSingle();
+
+      if (classRow) {
+        // If "সকল বিষয়" → grant all subjects in that class
+        if (plan === "সকল বিষয়" || plan.includes("সকল বিষয়")) {
+          const { data: allSubjects } = await supabase
+            .from("subjects")
+            .select("id")
+            .eq("class_id", classRow.id);
+
+          if (allSubjects) {
+            for (const sub of allSubjects) {
+              // Upsert to avoid duplicates
+              const { data: existing } = await supabase
+                .from("user_permissions")
+                .select("id")
+                .eq("user_id", teacherId)
+                .eq("class_id", classRow.id)
+                .eq("subject_id", sub.id)
+                .maybeSingle();
+
+              if (!existing) {
+                await supabase.from("user_permissions").insert({
+                  user_id: teacherId,
+                  class_id: classRow.id,
+                  subject_id: sub.id,
+                });
+              }
+            }
+          }
+        } else {
+          // Single subject — resolve subject_name to subject_id
+          const { data: subjectRow } = await supabase
+            .from("subjects")
+            .select("id")
+            .eq("class_id", classRow.id)
+            .eq("name", plan)
+            .maybeSingle();
+
+          if (subjectRow) {
+            const { data: existing } = await supabase
+              .from("user_permissions")
+              .select("id")
+              .eq("user_id", teacherId)
+              .eq("class_id", classRow.id)
+              .eq("subject_id", subjectRow.id)
+              .maybeSingle();
+
+            if (!existing) {
+              await supabase.from("user_permissions").insert({
+                user_id: teacherId,
+                class_id: classRow.id,
+                subject_id: subjectRow.id,
+              });
+            }
+          }
+        }
       }
     }
 
