@@ -1,1 +1,4 @@
 project_id = "dskkoqswztcerihagqnl"
+
+[functions.cloudinary-config]
+verify_jwt = false

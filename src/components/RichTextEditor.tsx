@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -48,7 +48,6 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: string;
-  cloudinaryConfig?: { cloudName: string; uploadPreset: string };
 }
 
 export default function RichTextEditor({
@@ -56,12 +55,21 @@ export default function RichTextEditor({
   onChange,
   placeholder = "Write your main question here...",
   minHeight = "150px",
-  cloudinaryConfig,
 }: RichTextEditorProps) {
   const [mathModalOpen, setMathModalOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cloudinaryConfig, setCloudinaryConfig] = useState<{ cloudName: string; uploadPreset: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    if (!projectId) return;
+    fetch(`https://${projectId}.supabase.co/functions/v1/cloudinary-config`)
+      .then(r => r.json())
+      .then(d => { if (d.cloudName) setCloudinaryConfig(d); })
+      .catch(() => {});
+  }, []);
 
   const editor = useEditor({
     extensions: [
