@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useNavigate } from "react-router-dom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -94,9 +95,13 @@ const faqs = [
   },
 ];
 
-const MESSENGER_URL = "https://m.me/eexamapp";
-
 export default function PricingPage() {
+  const navigate = useNavigate();
+
+  const goToCheckout = (classes: string, subject: string, price: string) => {
+    const priceNum = price.replace(/[,৳/-]/g, "").trim();
+    navigate(`/checkout?classes=${encodeURIComponent(classes)}&subject=${encodeURIComponent(subject)}&price=${priceNum}`);
+  };
   return (
     <div>
       {/* Hero */}
@@ -143,10 +148,9 @@ export default function PricingPage() {
                       <TableCell>{pkg.subjects}</TableCell>
                       <TableCell className="font-semibold">৳{pkg.price}/-</TableCell>
                       <TableCell className="text-center">
-                        <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4" asChild>
-                          <a href={MESSENGER_URL} target="_blank" rel="noopener noreferrer">
-                            ক্রয় করুন
-                          </a>
+                        <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
+                          onClick={() => goToCheckout(pkg.classes, pkg.subjects, pkg.price)}>
+                          ক্রয় করুন
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -189,10 +193,9 @@ export default function PricingPage() {
                             <TableCell className={pi === 0 ? "font-semibold" : ""}>{pkg.subject}</TableCell>
                             <TableCell className="font-semibold">৳{pkg.price}/-</TableCell>
                             <TableCell className="text-center">
-                              <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4" asChild>
-                                <a href={MESSENGER_URL} target="_blank" rel="noopener noreferrer">
-                                  ক্রয় করুন
-                                </a>
+                              <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
+                                onClick={() => goToCheckout(cls.className, pkg.subject, pkg.price)}>
+                                ক্রয় করুন
                               </Button>
                             </TableCell>
                           </TableRow>
