@@ -191,6 +191,40 @@ export default function AdminQuestions() {
         <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন প্রশ্ন</Button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="প্রশ্ন অনুসন্ধান করুন..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={filterClassId} onValueChange={(v) => { setFilterClassId(v === "all" ? "" : v); setFilterSubjectId(""); setFilterChapterId(""); }}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="শ্রেণী" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল শ্রেণী</SelectItem>
+            {classes.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); }} disabled={!filterClassId}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="বিষয়" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল বিষয়</SelectItem>
+            {allSubjects.filter(s => String(s.class_id) === filterClassId).map((s: any) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterChapterId} onValueChange={(v) => setFilterChapterId(v === "all" ? "" : v)} disabled={!filterSubjectId}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল অধ্যায়</SelectItem>
+            {filterChapters.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -206,7 +240,7 @@ export default function AdminQuestions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
@@ -222,7 +256,7 @@ export default function AdminQuestions() {
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && (
+              {filteredItems.length === 0 && (
                 <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
               )}
             </TableBody>
