@@ -43,6 +43,7 @@ import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminChapters from "./pages/admin/AdminChapters";
 import AdminTopics from "./pages/admin/AdminTopics";
 import AdminTopicQuestions from "./pages/admin/AdminTopicQuestions";
 
@@ -88,7 +89,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout><AdminHome /></AdminLayout>} />
             <Route path="/admin/classes" element={<AdminLayout><AdminCrudPage title="শ্রেণী ম্যানেজমেন্ট" table="classes" /></AdminLayout>} />
             <Route path="/admin/subjects" element={<AdminLayout><AdminCrudPage title="বিষয় ম্যানেজমেন্ট" table="subjects" parentTable="classes" parentLabel="শ্রেণী" parentKey="class_id" /></AdminLayout>} />
-            <Route path="/admin/chapters" element={<AdminLayout><AdminCrudPage title="অধ্যায় ম্যানেজমেন্ট" table="chapters" parentTable="subjects" parentLabel="বিষয়" parentKey="subject_id" /></AdminLayout>} />
+            <Route path="/admin/chapters" element={<AdminLayout><AdminChapters /></AdminLayout>} />
             <Route path="/admin/categories" element={<AdminLayout><AdminCrudPage title="প্রশ্নের ক্যাটাগরি" table="question_categories" /></AdminLayout>} />
             <Route path="/admin/questions" element={<AdminLayout><AdminQuestions /></AdminLayout>} />
             <Route path="/admin/teachers" element={<AdminLayout><AdminTeachers /></AdminLayout>} />
