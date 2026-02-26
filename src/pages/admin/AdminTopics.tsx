@@ -10,9 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 export default function AdminTopics() {
   const navigate = useNavigate();
+  const { filterClasses, filterSubjects, loading: permLoading } = useAdminPermissions();
 
   // Filter states
   const [filterClassId, setFilterClassId] = useState("");
@@ -20,11 +22,13 @@ export default function AdminTopics() {
   const [filterChapterId, setFilterChapterId] = useState("");
 
   // Data for filters
-  const [classes, setClasses] = useState<any[]>([]);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
+
+  const classes = filterClasses(allClasses);
 
   // Topics
   const [topics, setTopics] = useState<any[]>([]);
@@ -43,21 +47,25 @@ export default function AdminTopics() {
   const [modalLoadingSub, setModalLoadingSub] = useState(false);
   const [modalLoadingCh, setModalLoadingCh] = useState(false);
 
-  // Load classes once
+  // Load classes & subjects once
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name")
-      .then(({ data }) => setClasses(data || []));
+      .then(({ data }) => setAllClasses(data || []));
+    supabase.from("subjects").select("id, name, class_id").order("name")
+      .then(({ data }) => setAllSubjects(data || []));
   }, []);
 
-  // Filter: load subjects when class changes
+  // Filter: load subjects when class changes (filtered by permissions)
+  const [subjects, setSubjects] = useState<any[]>([]);
   useEffect(() => {
     if (!filterClassId) { setSubjects([]); setFilterSubjectId(""); return; }
     setLoadingSubjects(true);
     setFilterSubjectId("");
     setFilterChapterId("");
-    supabase.from("subjects").select("id, name").eq("class_id", Number(filterClassId)).order("name")
-      .then(({ data }) => { setSubjects(data || []); setLoadingSubjects(false); });
-  }, [filterClassId]);
+    const filtered = filterSubjects(allSubjects.filter(s => String(s.class_id) === filterClassId) as any);
+    setSubjects(filtered);
+    setLoadingSubjects(false);
+  }, [filterClassId, allSubjects, permLoading]);
 
   // Filter: load chapters when subject changes
   useEffect(() => {

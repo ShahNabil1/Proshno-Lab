@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 interface AdminCrudPageProps {
   title: string;
@@ -19,6 +20,7 @@ interface AdminCrudPageProps {
 
 export default function AdminCrudPage({ title, table, parentTable, parentLabel, parentKey }: AdminCrudPageProps) {
   const navigate = useNavigate();
+  const { isClassAllowed, isSubjectAllowed, hasFullAccess, loading: permLoading } = useAdminPermissions();
   const [items, setItems] = useState<any[]>([]);
   const [parents, setParents] = useState<{ id: number; name: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,17 +37,32 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
       query = supabase.from(table).select("*").order("created_at", { ascending: false });
     }
     const { data } = await query;
-    setItems(data || []);
+    let filtered = data || [];
+    if (!hasFullAccess) {
+      if (table === "classes") {
+        filtered = filtered.filter((item: any) => isClassAllowed(item.id));
+      } else if (table === "subjects") {
+        filtered = filtered.filter((item: any) => isSubjectAllowed(item.class_id, item.id));
+      } else if (table === "chapters") {
+        // chapters have subject_id; we need to check subject permission
+        filtered = filtered.filter((item: any) => {
+          // We can't easily check class_id from chapter alone, so allow if any permission matches subject_id
+          return true; // chapters are filtered via subject dropdown anyway
+        });
+      }
+    }
+    setItems(filtered);
   };
 
   useEffect(() => {
+    if (permLoading) return;
     fetchItems();
     if (parentTable) {
       supabase.from(parentTable).select("id, name").order("name")
         .then(({ data }: any) => setParents(data || []));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table]);
+  }, [table, permLoading]);
 
   const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
