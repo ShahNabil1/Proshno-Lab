@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import MathInput from "@/components/MathInput";
+import RichTextEditor from "@/components/RichTextEditor";
 import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
@@ -273,33 +274,63 @@ export default function AdminQuestions() {
             ) : (
               <>
                 {/* === Non-CQ Form === */}
-                <div>
-                  <Label>প্রশ্ন</Label>
-                  <MathInput value={form.question} onChange={(v) => setForm({ ...form, question: v })} rows={3} placeholder="প্রশ্নটি লিখুন... (LaTeX: $\\\\\\\\sqrt{x}$)" />
-                </div>
-                {form.type === "mcq" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>অপশন ক</Label><MathInput value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} singleLine /></div>
-                    <div><Label>অপশন খ</Label><MathInput value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} singleLine /></div>
-                    <div><Label>অপশন গ</Label><MathInput value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} singleLine /></div>
-                    <div><Label>অপশন ঘ</Label><MathInput value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} singleLine /></div>
-                  </div>
+                {form.type === "mcq" ? (
+                  <>
+                    <div>
+                      <Label>প্রশ্ন</Label>
+                      <RichTextEditor
+                        value={form.question}
+                        onChange={(v) => setForm({ ...form, question: v })}
+                        placeholder="Write your main question here..."
+                        minHeight="180px"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="mb-1 block">ক</Label>
+                        <RichTextEditor value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} placeholder="Write your main question here..." minHeight="120px" />
+                      </div>
+                      <div>
+                        <Label className="mb-1 block">খ</Label>
+                        <RichTextEditor value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} placeholder="Write your main question here..." minHeight="120px" />
+                      </div>
+                      <div>
+                        <Label className="mb-1 block">গ</Label>
+                        <RichTextEditor value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} placeholder="Write your main question here..." minHeight="120px" />
+                      </div>
+                      <div>
+                        <Label className="mb-1 block">ঘ</Label>
+                        <RichTextEditor value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} placeholder="Write your main question here..." minHeight="120px" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>সঠিক উত্তর</Label>
+                      <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="ক">ক</option>
+                        <option value="খ">খ</option>
+                        <option value="গ">গ</option>
+                        <option value="ঘ">ঘ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>ব্যাখ্যা (ঐচ্ছিক)</Label>
+                      <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="Write your main question here..." minHeight="120px" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Label>প্রশ্ন</Label>
+                      <MathInput value={form.question} onChange={(v) => setForm({ ...form, question: v })} rows={3} placeholder="প্রশ্নটি লিখুন... (LaTeX: $\\\\\\\\sqrt{x}$)" />
+                    </div>
+                    <div>
+                      <Label>সঠিক উত্তর</Label>
+                      <MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine />
+                    </div>
+                    <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
+                  </>
                 )}
-                <div>
-                  <Label>সঠিক উত্তর</Label>
-                  {form.type === "mcq" ? (
-                    <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
-                      <option value="">নির্বাচন করুন</option>
-                      <option value="ক">ক</option>
-                      <option value="খ">খ</option>
-                      <option value="গ">গ</option>
-                      <option value="ঘ">ঘ</option>
-                    </select>
-                  ) : (
-                    <MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine />
-                  )}
-                </div>
-                <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
               </>
             )}
 
