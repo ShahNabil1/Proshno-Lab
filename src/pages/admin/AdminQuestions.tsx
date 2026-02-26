@@ -63,9 +63,9 @@ export default function AdminQuestions() {
 
   useEffect(() => {
     if (!form.class_id) return;
-    supabase.from("subjects").select("id, name").eq("class_id", Number(form.class_id)).order("name")
-      .then(({ data }) => setSubjects(data || []));
-  }, [form.class_id]);
+    const filtered = filterSubjects(allSubjects.filter(s => String(s.class_id) === form.class_id) as any);
+    setSubjects(filtered);
+  }, [form.class_id, allSubjects, permLoading]);
 
   useEffect(() => {
     if (!form.subject_id) return;
