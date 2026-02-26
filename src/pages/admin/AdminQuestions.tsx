@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import MathInput from "@/components/MathInput";
 import RichTextEditor from "@/components/RichTextEditor";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -35,6 +36,8 @@ export default function AdminQuestions() {
   const [filterSubjectId, setFilterSubjectId] = useState("");
   const [filterChapterId, setFilterChapterId] = useState("");
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
@@ -62,10 +65,18 @@ export default function AdminQuestions() {
     if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedItems = filteredItems.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId]);
+
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
       .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
-      .order("created_at", { ascending: false }).limit(100);
+      .order("created_at", { ascending: false });
     if (hasFullAccess) {
       setItems(data || []);
     } else {
@@ -240,7 +251,7 @@ export default function AdminQuestions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item) => (
+              {paginatedItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
@@ -263,6 +274,39 @@ export default function AdminQuestions() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            মোট {filteredItems.length}টি প্রশ্নের মধ্যে {(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeCurrentPage * ITEMS_PER_PAGE, filteredItems.length)} দেখানো হচ্ছে
+          </p>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 2)
+              .reduce((acc, p, idx, arr) => {
+                if (idx > 0 && p - arr[idx - 1] > 1) acc.push(-1);
+                acc.push(p);
+                return acc;
+              }, [] as number[])
+              .map((p, idx) =>
+                p === -1 ? (
+                  <span key={`dot-${idx}`} className="px-1 text-muted-foreground">…</span>
+                ) : (
+                  <Button key={p} variant={p === safeCurrentPage ? "default" : "outline"} size="icon" className="w-8 h-8 text-xs" onClick={() => setCurrentPage(p)}>
+                    {p}
+                  </Button>
+                )
+              )}
+            <Button variant="outline" size="icon" disabled={safeCurrentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
