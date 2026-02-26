@@ -14,6 +14,7 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 export default function AdminTopics() {
   const navigate = useNavigate();
+  const { filterClasses, filterSubjects, loading: permLoading } = useAdminPermissions();
 
   // Filter states
   const [filterClassId, setFilterClassId] = useState("");
@@ -21,11 +22,13 @@ export default function AdminTopics() {
   const [filterChapterId, setFilterChapterId] = useState("");
 
   // Data for filters
-  const [classes, setClasses] = useState<any[]>([]);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
+
+  const classes = filterClasses(allClasses);
 
   // Topics
   const [topics, setTopics] = useState<any[]>([]);
@@ -44,10 +47,12 @@ export default function AdminTopics() {
   const [modalLoadingSub, setModalLoadingSub] = useState(false);
   const [modalLoadingCh, setModalLoadingCh] = useState(false);
 
-  // Load classes once
+  // Load classes & subjects once
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name")
-      .then(({ data }) => setClasses(data || []));
+      .then(({ data }) => setAllClasses(data || []));
+    supabase.from("subjects").select("id, name, class_id").order("name")
+      .then(({ data }) => setAllSubjects(data || []));
   }, []);
 
   // Filter: load subjects when class changes
