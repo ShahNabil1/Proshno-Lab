@@ -96,7 +96,11 @@ export default function CheckoutPage() {
 
       if (error) throw error;
 
-      // If not logged in, create account with this email (sign up via magic link concept - just store for admin)
+      // Increment coupon used_count
+      if (couponApplied && coupon.trim()) {
+        await supabase.rpc("increment_coupon_usage" as any, { coupon_code: coupon.trim().toUpperCase() });
+      }
+
       setSubmitted(true);
       toast.success("আপনার রিকুয়েস্ট সফলভাবে জমা হয়েছে! অ্যাডমিন যাচাই করার পর সক্রিয় হবে।");
     } catch (err: any) {
