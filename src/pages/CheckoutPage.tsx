@@ -77,29 +77,26 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("purchase_requests").insert({
-        teacher_id: user?.id || null,
-        teacher_name: name.trim(),
-        teacher_email: email.trim(),
-        teacher_phone: phone.trim(),
-        institute_name: institute.trim(),
-        package_name: packageSubject || packageName,
-        package_classes: packageClasses,
-        package_price: packagePrice,
-        coupon_code: coupon.trim(),
-        discount,
-        total_price: totalPrice,
-        payment_method: paymentMethod,
-        transaction_id: transactionId.trim(),
-        status: "pending",
-      } as any);
+      const { data, error } = await supabase.functions.invoke("submit-purchase", {
+        body: {
+          logged_in_user_id: user?.id || null,
+          teacher_name: name.trim(),
+          teacher_email: email.trim(),
+          teacher_phone: phone.trim(),
+          institute_name: institute.trim(),
+          package_name: packageSubject || packageName,
+          package_classes: packageClasses,
+          package_price: packagePrice,
+          coupon_code: couponApplied ? coupon.trim().toUpperCase() : "",
+          discount,
+          total_price: totalPrice,
+          payment_method: paymentMethod,
+          transaction_id: transactionId.trim(),
+        },
+      });
 
       if (error) throw error;
-
-      // Increment coupon used_count
-      if (couponApplied && coupon.trim()) {
-        await supabase.rpc("increment_coupon_usage" as any, { coupon_code: coupon.trim().toUpperCase() });
-      }
+      if (data?.error) throw new Error(data.error);
 
       setSubmitted(true);
       toast.success("আপনার রিকুয়েস্ট সফলভাবে জমা হয়েছে! অ্যাডমিন যাচাই করার পর সক্রিয় হবে।");
