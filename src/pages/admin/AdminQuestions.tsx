@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MathInput from "@/components/MathInput";
 import RichTextEditor from "@/components/RichTextEditor";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -29,6 +30,11 @@ export default function AdminQuestions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [loadingTopics, setLoadingTopics] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterClassId, setFilterClassId] = useState("");
+  const [filterSubjectId, setFilterSubjectId] = useState("");
+  const [filterChapterId, setFilterChapterId] = useState("");
+  const [filterChapters, setFilterChapters] = useState<any[]>([]);
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
@@ -40,7 +46,22 @@ export default function AdminQuestions() {
   });
 
   const classes = filterClasses(allClasses);
+  const filterSubjectsList = filterSubjectId ? [] : allSubjects.filter(s => filterClassId ? String(s.class_id) === filterClassId : true);
 
+  // Load chapters for filter
+  useEffect(() => {
+    if (!filterSubjectId) { setFilterChapters([]); return; }
+    supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
+      .then(({ data }) => setFilterChapters(data || []));
+  }, [filterSubjectId]);
+
+  const filteredItems = items.filter((item) => {
+    if (searchTerm && !item.question?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterClassId && String(item.class_id) !== filterClassId) return false;
+    if (filterSubjectId && String(item.subject_id) !== filterSubjectId) return false;
+    if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
+    return true;
+  });
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
       .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
@@ -170,6 +191,40 @@ export default function AdminQuestions() {
         <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন প্রশ্ন</Button>
       </div>
 
+      {/* Search & Filters */}
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="প্রশ্ন অনুসন্ধান করুন..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={filterClassId} onValueChange={(v) => { setFilterClassId(v === "all" ? "" : v); setFilterSubjectId(""); setFilterChapterId(""); }}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="শ্রেণী" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল শ্রেণী</SelectItem>
+            {classes.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); }} disabled={!filterClassId}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="বিষয়" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল বিষয়</SelectItem>
+            {allSubjects.filter(s => String(s.class_id) === filterClassId).map((s: any) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterChapterId} onValueChange={(v) => setFilterChapterId(v === "all" ? "" : v)} disabled={!filterSubjectId}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল অধ্যায়</SelectItem>
+            {filterChapters.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -185,7 +240,7 @@ export default function AdminQuestions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
@@ -201,7 +256,7 @@ export default function AdminQuestions() {
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && (
+              {filteredItems.length === 0 && (
                 <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
               )}
             </TableBody>
