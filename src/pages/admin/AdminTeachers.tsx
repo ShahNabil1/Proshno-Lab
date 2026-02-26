@@ -135,6 +135,36 @@ export default function AdminTeachers() {
     fetchData();
   };
 
+  const handleAddSubjectPermission = async () => {
+    if (!selectedTeacher || !newPermClassId || !newPermSubjectId) {
+      toast.error("শ্রেণী ও বিষয় সিলেক্ট করুন");
+      return;
+    }
+    const exists = existingPermissions.some(
+      p => String(p.class_id) === newPermClassId && String(p.subject_id) === newPermSubjectId
+    );
+    if (exists) {
+      toast.error("এই পারমিশন আগে থেকেই আছে");
+      return;
+    }
+    const { error } = await supabase.from("user_permissions").insert({
+      user_id: selectedTeacher.id,
+      class_id: Number(newPermClassId),
+      subject_id: Number(newPermSubjectId),
+    });
+    if (error) { toast.error("যোগ করা যায়নি"); return; }
+    toast.success("বিষয় পারমিশন যোগ হয়েছে");
+    setNewPermClassId("");
+    setNewPermSubjectId("");
+    fetchPermissions(selectedTeacher.id);
+  };
+
+  const handleRemoveSubjectPermission = async (permId: number) => {
+    await supabase.from("user_permissions").delete().eq("id", permId);
+    toast.success("বিষয় পারমিশন সরানো হয়েছে");
+    if (selectedTeacher) fetchPermissions(selectedTeacher.id);
+  };
+
   const handleDemote = async (teacher: any) => {
     const role = getRole(teacher.id);
     if (role) {
