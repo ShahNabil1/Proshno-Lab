@@ -55,13 +55,14 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   };
 
   useEffect(() => {
+    if (permLoading) return;
     fetchItems();
     if (parentTable) {
       supabase.from(parentTable).select("id, name").order("name")
         .then(({ data }: any) => setParents(data || []));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table]);
+  }, [table, permLoading]);
 
   const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
