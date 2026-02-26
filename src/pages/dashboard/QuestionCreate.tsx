@@ -119,9 +119,21 @@ export default function QuestionCreate() {
   // Load chapters when subject changes
   useEffect(() => {
     if (!form.subjectId) { setChapters([]); setTopics([]); return; }
-    supabase.from("chapters").select("id, name").eq("subject_id", Number(form.subjectId)).order("name")
-      .then(({ data }) => setChapters(data || []));
+    supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).order("name")
+      .then(({ data }) => setChapters((data as any[]) || []));
   }, [form.subjectId]);
+
+  // Check subscription for selected subject
+  useEffect(() => {
+    if (!user?.id || !form.subjectId) { setHasSubscription(false); return; }
+    supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("teacher_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .then(({ data }) => setHasSubscription(!!(data && data.length > 0)));
+  }, [user?.id, form.subjectId]);
 
   // Load topics when chapters selected
   useEffect(() => {
