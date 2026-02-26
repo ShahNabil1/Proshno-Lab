@@ -46,7 +46,22 @@ export default function AdminQuestions() {
   });
 
   const classes = filterClasses(allClasses);
+  const filterSubjectsList = filterSubjectId ? [] : allSubjects.filter(s => filterClassId ? String(s.class_id) === filterClassId : true);
 
+  // Load chapters for filter
+  useEffect(() => {
+    if (!filterSubjectId) { setFilterChapters([]); return; }
+    supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
+      .then(({ data }) => setFilterChapters(data || []));
+  }, [filterSubjectId]);
+
+  const filteredItems = items.filter((item) => {
+    if (searchTerm && !item.question?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterClassId && String(item.class_id) !== filterClassId) return false;
+    if (filterSubjectId && String(item.subject_id) !== filterSubjectId) return false;
+    if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
+    return true;
+  });
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
       .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
