@@ -295,31 +295,88 @@ export default function AdminTeachers() {
 
       {/* Admin Promote / Page Permissions Dialog */}
       <Dialog open={dialogMode === "promote" || dialogMode === "permissions"} onOpenChange={() => setDialogMode(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "promote" ? "এ্যাডমিন বানান" : "পেইজ পারমিশন পরিবর্তন"}
+              {dialogMode === "promote" ? "এ্যাডমিন বানান" : "পারমিশন পরিবর্তন"}
             </DialogTitle>
             <DialogDescription>
-              {selectedTeacher?.full_name || selectedTeacher?.email} — কোন কোন পেইজে অ্যাক্সেস থাকবে সিলেক্ট করুন
+              {selectedTeacher?.full_name || selectedTeacher?.email} — পেইজ ও বিষয় পারমিশন সেট করুন
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2 max-h-[50vh] overflow-y-auto">
-            {ADMIN_PAGES.map((page) => (
-              <div key={page.value} className="flex items-center gap-3">
-                <Checkbox
-                  id={page.value}
-                  checked={selectedPages.includes(page.value)}
-                  onCheckedChange={() => togglePage(page.value)}
-                />
-                <Label htmlFor={page.value} className="cursor-pointer text-sm">{page.label}</Label>
+
+          {/* Page Permissions */}
+          <div>
+            <h4 className="font-semibold text-sm mb-2">পেইজ পারমিশন</h4>
+            <div className="space-y-2">
+              {ADMIN_PAGES.map((page) => (
+                <div key={page.value} className="flex items-center gap-3">
+                  <Checkbox
+                    id={page.value}
+                    checked={selectedPages.includes(page.value)}
+                    onCheckedChange={() => togglePage(page.value)}
+                  />
+                  <Label htmlFor={page.value} className="cursor-pointer text-sm">{page.label}</Label>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setSelectedPages(ADMIN_PAGES.map(p => p.value))}>সব সিলেক্ট</Button>
+              <Button variant="outline" size="sm" onClick={() => setSelectedPages([])}>সব বাদ দিন</Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Subject Permissions */}
+          <div>
+            <h4 className="font-semibold text-sm mb-2">বিষয় পারমিশন</h4>
+            <p className="text-xs text-muted-foreground mb-3">কোন শ্রেণীর কোন বিষয়ে অ্যাক্সেস থাকবে নির্ধারণ করুন</p>
+
+            {/* Existing permissions list */}
+            {existingPermissions.length > 0 && (
+              <div className="space-y-1.5 mb-3">
+                {existingPermissions.map((perm) => {
+                  const cls = classes.find(c => c.id === perm.class_id);
+                  const sub = subjects.find(s => s.id === perm.subject_id);
+                  return (
+                    <div key={perm.id} className="flex items-center justify-between bg-muted/50 rounded px-3 py-1.5 text-sm">
+                      <span>{cls?.name || "?"} → {sub?.name || "?"}</span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => handleRemoveSubjectPermission(perm.id)}>
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            )}
+
+            {/* Add new permission */}
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label className="text-xs">শ্রেণী</Label>
+                <Select value={newPermClassId} onValueChange={(v) => { setNewPermClassId(v); setNewPermSubjectId(""); }}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="শ্রেণী বাছুন" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs">বিষয়</Label>
+                <Select value={newPermSubjectId} onValueChange={setNewPermSubjectId} disabled={!newPermClassId}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="বিষয় বাছুন" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredSubjectsForPerm.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button size="sm" variant="outline" className="h-9" onClick={handleAddSubjectPermission} disabled={!newPermClassId || !newPermSubjectId}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setSelectedPages(ADMIN_PAGES.map(p => p.value))}>সব সিলেক্ট</Button>
-            <Button variant="outline" size="sm" onClick={() => setSelectedPages([])}>সব বাদ দিন</Button>
-          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogMode(null)}>বাতিল</Button>
             <Button
