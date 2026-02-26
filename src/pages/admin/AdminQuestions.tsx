@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import MathInput from "@/components/MathInput";
 import RichTextEditor from "@/components/RichTextEditor";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -35,6 +36,8 @@ export default function AdminQuestions() {
   const [filterSubjectId, setFilterSubjectId] = useState("");
   const [filterChapterId, setFilterChapterId] = useState("");
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
@@ -62,10 +65,18 @@ export default function AdminQuestions() {
     if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedItems = filteredItems.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId]);
+
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
       .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
-      .order("created_at", { ascending: false }).limit(100);
+      .order("created_at", { ascending: false });
     if (hasFullAccess) {
       setItems(data || []);
     } else {
