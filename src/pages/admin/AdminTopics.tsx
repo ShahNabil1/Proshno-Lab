@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 export default function AdminTopics() {
   const navigate = useNavigate();
