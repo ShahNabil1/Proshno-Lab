@@ -22,6 +22,7 @@ const allSidebarItems = [
   { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/topics", label: "টপিক", icon: Layers, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/feedback", label: "মতামত", icon: MessageSquare, group: "ইউজার ম্যানেজমেন্ট" },
+  { path: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

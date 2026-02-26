@@ -15,6 +15,7 @@ import CQPage from "./pages/CQPage";
 import ShortPage from "./pages/ShortPage";
 
 import PricingPage from "./pages/PricingPage";
+import CheckoutPage from "./pages/CheckoutPage";
 import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
 import TermsPage from "./pages/TermsPage";
@@ -43,6 +44,7 @@ import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
+import AdminPurchases from "./pages/admin/AdminPurchases";
 import AdminChapters from "./pages/admin/AdminChapters";
 import AdminTopics from "./pages/admin/AdminTopics";
 import AdminTopicQuestions from "./pages/admin/AdminTopicQuestions";
@@ -68,6 +70,7 @@ const App = () => (
             <Route element={<Layout><ShortPage /></Layout>} path="/questions/short" />
             
             <Route element={<Layout><PricingPage /></Layout>} path="/pricing" />
+            <Route element={<Layout><CheckoutPage /></Layout>} path="/checkout" />
             <Route element={<Layout><DemoPage /></Layout>} path="/demo" />
             <Route element={<Layout><TermsPage /></Layout>} path="/terms" />
             <Route element={<Layout><PrivacyPage /></Layout>} path="/privacy" />
@@ -98,6 +101,7 @@ const App = () => (
             <Route path="/admin/topics" element={<AdminLayout><AdminTopics /></AdminLayout>} />
             <Route path="/admin/topic-questions" element={<AdminLayout><AdminTopicQuestions /></AdminLayout>} />
             <Route path="/admin/feedback" element={<AdminLayout><AdminFeedback /></AdminLayout>} />
+            <Route path="/admin/purchases" element={<AdminLayout><AdminPurchases /></AdminLayout>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Copy, Check, ShoppingCart } from "lucide-react";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import logoImg from "@/assets/logo.png";
 
 const BKASH_NUMBER = "01933520904";
