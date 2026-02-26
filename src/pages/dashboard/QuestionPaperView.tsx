@@ -230,11 +230,18 @@ export default function QuestionPaperView() {
     }
   };
 
-  const mcqQuestions = questions.filter(q => q.type === "mcq");
-  const shortQuestions = questions.filter(q => q.type === "short");
-  const cqQuestions = questions.filter(q => q.type === "cq");
+  /* Sort questions by type priority: MCQ(1) → CQ(2) → Short(3) → Descriptive(4) */
+  const typePriority: Record<string, number> = { mcq: 1, cq: 2, short: 3, descriptive: 4 };
+  const sortedQuestions = [...questions].sort(
+    (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
+  );
 
-  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqQuestions.length * 10;
+  const mcqQuestions = sortedQuestions.filter(q => q.type === "mcq");
+  const cqQuestions = sortedQuestions.filter(q => q.type === "cq");
+  const shortQuestions = sortedQuestions.filter(q => q.type === "short");
+  const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
+
+  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqQuestions.length * 10 + descriptiveQuestions.length * 5;
 
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
