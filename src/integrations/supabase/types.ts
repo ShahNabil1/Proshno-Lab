@@ -152,6 +152,77 @@ export type Database = {
           },
         ]
       }
+      purchase_requests: {
+        Row: {
+          admin_note: string | null
+          coupon_code: string | null
+          created_at: string
+          discount: number
+          id: number
+          institute_name: string
+          package_classes: string
+          package_name: string
+          package_price: number
+          payment_method: string
+          reviewed_at: string | null
+          status: string
+          teacher_email: string
+          teacher_id: string | null
+          teacher_name: string
+          teacher_phone: string
+          total_price: number
+          transaction_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          discount?: number
+          id?: number
+          institute_name?: string
+          package_classes?: string
+          package_name?: string
+          package_price?: number
+          payment_method?: string
+          reviewed_at?: string | null
+          status?: string
+          teacher_email?: string
+          teacher_id?: string | null
+          teacher_name?: string
+          teacher_phone?: string
+          total_price?: number
+          transaction_id?: string
+        }
+        Update: {
+          admin_note?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          discount?: number
+          id?: number
+          institute_name?: string
+          package_classes?: string
+          package_name?: string
+          package_price?: number
+          payment_method?: string
+          reviewed_at?: string | null
+          status?: string
+          teacher_email?: string
+          teacher_id?: string | null
+          teacher_name?: string
+          teacher_phone?: string
+          total_price?: number
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requests_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       question_categories: {
         Row: {
           created_at: string
