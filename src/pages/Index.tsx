@@ -141,55 +141,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ PACKAGES / PRICING PREVIEW ══════ */}
-      <section className="py-16 md:py-24 bg-slate-alt">
-        <div className="container">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
-              রেডি প্রশ্ন ও সুপার সাজেশন!
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-lg mx-auto">
-              এক্সাম-রেডি প্রশ্ন ও সুপার সাজেশনে, পরীক্ষা হবে নিশ্চিতে!
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {packages.map((pkg, i) => (
-              <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className={`relative rounded-2xl bg-card p-7 hover-lift ${pkg.featured ? "ring-2 ring-primary shadow-elevated md:-translate-y-2" : "shadow-premium"}`}>
-                  {pkg.badge && (
-                    <span className={`absolute -top-3 left-6 px-3 py-1 rounded-full text-xs font-bold text-white ${pkg.badgeColor}`}>
-                      {pkg.badge}
-                    </span>
-                  )}
-                  <h3 className="font-heading font-bold text-lg text-foreground mb-2">{pkg.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-5">
-                    <span className="font-heading font-extrabold text-3xl text-foreground">৳{pkg.price}</span>
-                    <span className="text-muted-foreground text-sm">টাকায়</span>
-                  </div>
-                  <ul className="space-y-3 mb-7">
-                    {pkg.features.map((f, fi) => (
-                      <li key={fi} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex gap-3">
-                    <Button className={`flex-1 rounded-xl font-heading font-semibold ${pkg.featured ? "gradient-green text-white border-0" : ""}`} variant={pkg.featured ? "default" : "outline"}>
-                      বিস্তারিত
-                    </Button>
-                    <Button variant="ghost" className="flex-1 rounded-xl font-heading text-muted-foreground">
-                      ডেমো দেখুন
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ══════ DEMO BUILDER PREVIEW ══════ */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container">
