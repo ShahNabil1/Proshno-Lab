@@ -19,7 +19,8 @@ const typeOptions = ["mcq", "short", "cq"];
 
 export default function AdminQuestions() {
   const [items, setItems] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
@@ -27,6 +28,7 @@ export default function AdminQuestions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [loadingTopics, setLoadingTopics] = useState(false);
+  const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
@@ -36,18 +38,28 @@ export default function AdminQuestions() {
     university_references: [] as Array<{ name: string; year: string }>,
   });
 
+  const classes = filterClasses(allClasses);
+
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
       .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
       .order("created_at", { ascending: false }).limit(100);
-    setItems(data || []);
+    if (hasFullAccess) {
+      setItems(data || []);
+    } else {
+      setItems((data || []).filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id)));
+    }
   };
 
   useEffect(() => {
-    fetchItems();
-    supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(data || []));
+    supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(data || []));
+    supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
     supabase.from("question_categories").select("id, name").order("name").then(({ data }) => setCategories(data || []));
   }, []);
+
+  useEffect(() => {
+    if (!permLoading) fetchItems();
+  }, [permLoading]);
 
   useEffect(() => {
     if (!form.class_id) return;
