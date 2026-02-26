@@ -312,11 +312,13 @@ export default function RichTextEditor({
         </div>
       </div>
 
-      {/* LaTeX Preview */}
+      {/* Preview */}
       {showPreview && value && (
-        <div className="border-t border-border bg-muted/30 p-3 text-sm">
-          <LatexRenderer text={editor.getText()} />
-        </div>
+        <div
+          className="border-t border-border bg-muted/30 p-3 text-sm prose prose-sm max-w-none font-body"
+          style={{ fontFamily: "'SolaimanLipi', sans-serif" }}
+          dangerouslySetInnerHTML={{ __html: editor.getHTML() }}
+        />
       )}
 
       {/* Hidden file input for image upload */}
