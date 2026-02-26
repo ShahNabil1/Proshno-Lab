@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, Filter } from "lucide-react";
@@ -16,6 +17,7 @@ interface ChapterItem {
   id: number;
   name: string;
   subject_id: number;
+  is_free: boolean;
   created_at: string;
   subjects?: { name: string; class_id: number; classes?: { name: string } };
 }
