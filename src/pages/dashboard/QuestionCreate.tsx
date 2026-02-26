@@ -603,18 +603,36 @@ export default function QuestionCreate() {
                   <div className="p-2 space-y-1">
                     {chapters.map((c) => {
                       const isSelected = form.chapterIds.includes(String(c.id));
+                      const isLocked = !hasSubscription && !c.is_free;
                       return (
                         <label
                           key={c.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors text-sm ${
-                            isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/50"
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors text-sm ${
+                            isLocked
+                              ? "opacity-60 cursor-not-allowed bg-muted/30"
+                              : isSelected
+                                ? "bg-primary/10 text-primary font-medium cursor-pointer"
+                                : "hover:bg-muted/50 cursor-pointer"
                           }`}
+                          onClick={(e) => {
+                            if (isLocked) {
+                              e.preventDefault();
+                              toast.error("এই অধ্যায়ের জন্য সাবস্ক্রিপশন প্রয়োজন। প্যাকেজ কিনুন!", { id: "locked-chapter" });
+                            }
+                          }}
                         >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleChapter(String(c.id))}
-                          />
-                          <span>{c.name}</span>
+                          {isLocked ? (
+                            <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
+                          ) : (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleChapter(String(c.id))}
+                            />
+                          )}
+                          <span className={isLocked ? "text-muted-foreground" : ""}>{c.name}</span>
+                          {isLocked && (
+                            <span className="ml-auto text-xs text-destructive/70 whitespace-nowrap">🔒 লক</span>
+                          )}
                         </label>
                       );
                     })}
