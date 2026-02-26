@@ -268,7 +268,6 @@ export default function AdminTeachers() {
                 <TableHead>নাম</TableHead>
                 <TableHead>ইমেইল</TableHead>
                 <TableHead>রোল</TableHead>
-                <TableHead>বিষয় পারমিশন</TableHead>
                 <TableHead>স্ট্যাটাস</TableHead>
                 <TableHead>যোগদান</TableHead>
                 <TableHead className="text-right">অ্যাকশন</TableHead>
@@ -276,7 +275,6 @@ export default function AdminTeachers() {
             </TableHeader>
             <TableBody>
               {filteredTeachers.map((t) => {
-                const userPerms = getUserPermissions(t.id);
                 return (
                   <TableRow key={t.id} className={t.is_banned ? "opacity-60" : ""}>
                     <TableCell className="font-medium">{t.full_name || "—"}</TableCell>
@@ -289,19 +287,6 @@ export default function AdminTeachers() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {userPerms.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {userPerms.map(p => (
-                            <Badge key={p.id} variant="outline" className="border-primary/30 text-primary text-xs">
-                              {getPermissionLabel(p)}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">কোনো পারমিশন নেই</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       {t.is_banned ? (
                         <Badge variant="destructive">ব্যানড</Badge>
                       ) : (
@@ -311,9 +296,6 @@ export default function AdminTeachers() {
                     <TableCell>{new Date(t.created_at).toLocaleDateString("bn-BD")}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openSubjectPermissionsDialog(t)} title="বিষয় পারমিশন">
-                          <BookOpen className="w-4 h-4" />
-                        </Button>
                         {isAdmin(t.id) ? (
                           <>
                             <Button variant="ghost" size="sm" onClick={() => openPermissionsDialog(t)} title="পেইজ পারমিশন">
@@ -347,7 +329,7 @@ export default function AdminTeachers() {
               })}
               {filteredTeachers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     {searchQuery ? "কোনো ফলাফল পাওয়া যায়নি" : "কোনো শিক্ষক নেই"}
                   </TableCell>
                 </TableRow>
