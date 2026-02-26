@@ -99,7 +99,9 @@ export default function PricingPage() {
   const navigate = useNavigate();
 
   const goToCheckout = (classes: string, subject: string, price: string) => {
-    const priceNum = price.replace(/[,৳/-]/g, "").trim();
+    // Convert Bengali digits to English
+    const bengaliToEnglish = (s: string) => s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+    const priceNum = bengaliToEnglish(price.replace(/[,৳/-\s]/g, ""));
     navigate(`/checkout?classes=${encodeURIComponent(classes)}&subject=${encodeURIComponent(subject)}&price=${priceNum}`);
   };
   return (
