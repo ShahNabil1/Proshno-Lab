@@ -6,11 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Settings, Plus, Minus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Download, Settings, Plus, Minus, Save } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
 import FloatingToolbar from "@/components/FloatingToolbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuestionRow {
   id: number;
@@ -63,9 +65,13 @@ const padBangla = (n: number): string => {
 
 export default function QuestionPaperView() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
@@ -119,11 +125,35 @@ export default function QuestionPaperView() {
   });
 
   useEffect(() => {
-    const qData = sessionStorage.getItem("viewPaperQuestions");
-    const mData = sessionStorage.getItem("viewPaperMeta");
-    if (qData) setQuestions(JSON.parse(qData));
-    if (mData) setMeta(JSON.parse(mData));
-  }, []);
+    const paperId = searchParams.get("paper_id");
+    if (paperId) {
+      // Load saved paper from DB
+      setCurrentPaperId(paperId);
+      supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          setMeta(data.meta as any);
+          if (data.settings) setSettings(prev => ({ ...prev, ...(data.settings as any) }));
+          // Fetch actual questions by IDs
+          const ids = data.question_ids as number[];
+          if (ids.length > 0) {
+            supabase.from("questions").select("*").in("id", ids)
+              .then(({ data: qData }) => {
+                if (qData) {
+                  // Preserve original order
+                  const qMap = new Map(qData.map(q => [q.id, q]));
+                  setQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]);
+                }
+              });
+          }
+        });
+    } else {
+      const qData = sessionStorage.getItem("viewPaperQuestions");
+      const mData = sessionStorage.getItem("viewPaperMeta");
+      if (qData) setQuestions(JSON.parse(qData));
+      if (mData) setMeta(JSON.parse(mData));
+    }
+  }, [searchParams]);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     e.stopPropagation();
@@ -230,6 +260,45 @@ export default function QuestionPaperView() {
       paperRef.current?.querySelectorAll("[data-editable]").forEach(el => {
         (el as HTMLElement).contentEditable = "true";
       });
+    }
+  };
+
+  const handleSavePaper = async () => {
+    if (!user || !meta || questions.length === 0) {
+      toast.error("সেভ করার জন্য প্রশ্ন ও মেটাডাটা প্রয়োজন");
+      return;
+    }
+    setSaving(true);
+    try {
+      const paperData = {
+        teacher_id: user.id,
+        institution_name: meta.instituteName || "",
+        exam_name: meta.programName || "",
+        class_name: meta.className || "",
+        subject_name: meta.subjectName || "",
+        chapter_names: meta.chapterNames || [],
+        question_ids: questions.map(q => q.id),
+        meta: meta as any,
+        settings: settings as any,
+      };
+
+      if (currentPaperId) {
+        // Update existing - but we don't have UPDATE policy, so delete + insert
+        await supabase.from("saved_papers").delete().eq("id", currentPaperId);
+        const { data, error } = await supabase.from("saved_papers").insert({ ...paperData, id: currentPaperId } as any).select("id").single();
+        if (error) throw error;
+        toast.success("প্রশ্নপত্র আপডেট হয়েছে!");
+      } else {
+        const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
+        if (error) throw error;
+        setCurrentPaperId(data.id);
+        toast.success("প্রশ্নপত্র সেভ হয়েছে!");
+      }
+    } catch (err: any) {
+      toast.error("সেভ করতে সমস্যা হয়েছে");
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1058,9 +1127,14 @@ export default function QuestionPaperView() {
                 <Settings className="h-4 w-4" /> সেটিংস
               </h3>
 
-              <Button className="w-full gradient-green text-primary-foreground border-0 mb-4 font-heading font-semibold" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" /> ডাউনলোড
-              </Button>
+              <div className="flex gap-2 mb-4">
+                <Button className="flex-1 gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" /> ডাউনলোড
+                </Button>
+                <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
+                  <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
+                </Button>
+              </div>
 
               {/* প্রশ্নে সংযুক্তি */}
               <div className="border-b border-border pb-3 mb-3">
