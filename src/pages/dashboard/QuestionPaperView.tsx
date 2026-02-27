@@ -6,11 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Settings, Plus, Minus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Download, Settings, Plus, Minus, Save } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
 import FloatingToolbar from "@/components/FloatingToolbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuestionRow {
   id: number;
@@ -63,9 +65,13 @@ const padBangla = (n: number): string => {
 
 export default function QuestionPaperView() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
