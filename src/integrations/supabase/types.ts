@@ -437,6 +437,48 @@ export type Database = {
           },
         ]
       }
+      saved_papers: {
+        Row: {
+          chapter_names: string[]
+          class_name: string
+          created_at: string
+          exam_name: string
+          id: string
+          institution_name: string
+          meta: Json
+          question_ids: number[]
+          settings: Json
+          subject_name: string
+          teacher_id: string
+        }
+        Insert: {
+          chapter_names?: string[]
+          class_name?: string
+          created_at?: string
+          exam_name?: string
+          id?: string
+          institution_name?: string
+          meta?: Json
+          question_ids?: number[]
+          settings?: Json
+          subject_name?: string
+          teacher_id: string
+        }
+        Update: {
+          chapter_names?: string[]
+          class_name?: string
+          created_at?: string
+          exam_name?: string
+          id?: string
+          institution_name?: string
+          meta?: Json
+          question_ids?: number[]
+          settings?: Json
+          subject_name?: string
+          teacher_id?: string
+        }
+        Relationships: []
+      }
       subjects: {
         Row: {
           class_id: number
