@@ -233,8 +233,8 @@ export default function QuestionPaperView() {
     }
   };
 
-  /* Sort questions by type priority: MCQ(1) → CQ(2) → Short(3) → Descriptive(4) */
-  const typePriority: Record<string, number> = { mcq: 1, cq: 2, short: 3, descriptive: 4 };
+  /* Sort questions by type priority: MCQ(1) → Short(2) → CQ(3) → Descriptive(4) */
+  const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
   const sortedQuestions = [...questions].sort(
     (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
   );
@@ -682,10 +682,15 @@ export default function QuestionPaperView() {
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
-                <span>—</span>
-                <span className={editableClass} data-editable="mcq-title" onClick={handleEditableClick} suppressContentEditableWarning>বহুনির্বাচনী অংশ</span>
-                <span>—</span>
-                <span style={{ fontWeight: 400, fontSize: "0.9em" }}>{mcqMarksLine}</span>
+                <span
+                  className={editableClass}
+                  data-editable="mcq-title"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                >
+                  বহুনির্বাচনি অংশ:
+                </span>
+                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>{mcqMarksLine}</span>
               </div>
 
               {/* Regular standalone MCQs in grid */}
@@ -935,20 +940,22 @@ export default function QuestionPaperView() {
             </div>
           )}
 
-          {/* ===== SHORT SECTION (3rd) ===== */}
+          {/* ===== SHORT SECTION (2nd) ===== */}
           {shortQuestions.length > 0 && (
             <div style={{ marginBottom: "8px" }}>
+              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "3px" }}>
-                <span>—</span>
                 <span
                   className={editableClass}
                   data-editable="short-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  সংক্ষিপ্ত প্রশ্ন
+                  সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
                 </span>
-                <span>—</span>
+                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                  {`${toBanglaNum(shortQuestions.length)} x ${toBanglaNum(2)} = ${toBanglaNum(shortQuestions.length * 2)}`}
+                </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                 {shortQuestions.map((q, idx) => {
@@ -977,19 +984,18 @@ export default function QuestionPaperView() {
           {/* ===== DESCRIPTIVE SECTION (4th) ===== */}
           {descriptiveQuestions.length > 0 && (
             <div style={{ marginBottom: "8px" }}>
+              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
-                <span>—</span>
                 <span
                   className={editableClass}
                   data-editable="desc-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  বর্ণনামূলক প্রশ্ন
+                  প্র্যাক্টিস অংশঃ বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
                 </span>
-                <span>—</span>
-                <span style={{ fontWeight: 400, fontSize: "0.9em" }}>
-                  {`${toBanglaNum(descriptiveQuestions.length)} x ${toBanglaNum(10)} = ${toBanglaNum(descriptiveQuestions.length * 10)}`}
+                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                  {`${toBanglaNum(10)} x ${toBanglaNum(descriptiveQuestions.length)} = ${toBanglaNum(descriptiveQuestions.length * 10)}`}
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
