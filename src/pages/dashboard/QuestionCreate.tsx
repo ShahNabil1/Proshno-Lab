@@ -232,6 +232,9 @@ export default function QuestionCreate() {
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
 
+  // Strict sorting: MCQ → Short → CQ → Descriptive
+  const typeSortOrder: Record<string, number> = { mcq: 0, short: 1, cq: 2, descriptive: 3 };
+
   // Apply all filters
   const getFilteredQuestions = () => {
     let result = [...questions];
@@ -266,6 +269,9 @@ export default function QuestionCreate() {
         return refs.length > 0;
       });
     }
+
+    // Sort by type priority: MCQ → Short → CQ → Descriptive
+    result.sort((a, b) => (typeSortOrder[a.type] ?? 99) - (typeSortOrder[b.type] ?? 99));
 
     return result;
   };
@@ -485,8 +491,9 @@ export default function QuestionCreate() {
                     {[
                       { value: null, label: "সব" },
                       { value: "mcq", label: "বহুনির্বাচনী" },
-                      { value: "cq", label: "সৃজনশীল" },
                       { value: "short", label: "সংক্ষিপ্ত" },
+                      { value: "cq", label: "সৃজনশীল" },
+                      { value: "descriptive", label: "বর্ণনামূলক" },
                     ].map(opt => (
                       <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
                         <input
