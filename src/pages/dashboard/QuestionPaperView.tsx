@@ -25,6 +25,8 @@ interface QuestionRow {
   board_references?: any[] | null;
   university_references?: any[] | null;
   creative_data?: any | null;
+  stimulus_group_id?: string | null;
+  stimulus_text?: string | null;
 }
 
 interface PaperMeta {
