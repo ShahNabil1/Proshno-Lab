@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
@@ -28,7 +29,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   const [formName, setFormName] = useState("");
   const [formParentId, setFormParentId] = useState("");
   const [formSubjectCode, setFormSubjectCode] = useState("");
-
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: "" });
   const fetchItems = async () => {
     let query: any;
     if (parentTable && parentKey) {
@@ -92,11 +93,16 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
     fetchItems();
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("মুছে ফেলতে চান?")) return;
-    const { error } = await (supabase.from(table) as any).delete().eq("id", id);
+  const confirmDelete = (id: number, name: string) => {
+    setDeleteConfirm({ open: true, id, name });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return;
+    const { error } = await (supabase.from(table) as any).delete().eq("id", deleteConfirm.id);
     if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
     toast.success("মুছে ফেলা হয়েছে");
+    setDeleteConfirm({ open: false, id: null, name: "" });
     fetchItems();
   };
 
@@ -142,7 +148,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => confirmDelete(item.id, item.name)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -176,6 +182,28 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, id: null, name: "" })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-full bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <AlertDialogTitle className="text-lg">মুছে ফেলতে চান?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm">
+              <span className="font-semibold text-foreground">"{deleteConfirm.name}"</span> মুছে ফেলা হলে এটি আর ফিরিয়ে আনা যাবে না। আপনি কি নিশ্চিত?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              হ্যাঁ, মুছে ফেলুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
