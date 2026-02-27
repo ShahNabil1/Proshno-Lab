@@ -68,10 +68,17 @@ export default function AdminQuestions() {
 
   // Load chapters for filter
   useEffect(() => {
-    if (!filterSubjectId) { setFilterChapters([]); return; }
+    if (!filterSubjectId) { setFilterChapters([]); setFilterTopics([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
       .then(({ data }) => setFilterChapters(data || []));
   }, [filterSubjectId]);
+
+  // Load topics for filter
+  useEffect(() => {
+    if (!filterChapterId) { setFilterTopics([]); setFilterTopicId(""); return; }
+    supabase.from("topics").select("id, name").eq("chapter_id", Number(filterChapterId)).order("name")
+      .then(({ data }) => setFilterTopics(data || []));
+  }, [filterChapterId]);
 
   const filteredItems = items.filter((item) => {
     if (searchTerm && !item.question?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
