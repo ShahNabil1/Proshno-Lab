@@ -182,11 +182,26 @@ export default function AdminQuestions() {
     };
 
     if (form.type === "cq") {
-      payload.creative_data = {
-        stem: form.cq_stem,
-        q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
-        ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
-      };
+      // Determine math subject at save time using available subject lists
+      const saveSub = subjects.find(s => String(s.id) === form.subject_id) || allSubjects.find(s => String(s.id) === form.subject_id);
+      const saveMath = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((saveSub?.name || "").trim());
+      if (saveMath) {
+        // 3-part: ক=২, খ=৪, গ=৪
+        payload.creative_data = {
+          is_math: true,
+          stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
+        };
+      } else {
+        // 4-part: ক=১, খ=২, গ=৩, ঘ=৪
+        payload.creative_data = {
+          is_math: false,
+          stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
+        };
+      }
     }
 
     if (form.type === "descriptive") {
@@ -377,6 +392,14 @@ export default function AdminQuestions() {
             {/* === CQ Form === */}
             {form.type === "cq" ? (
               <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                    {isMathSubject
+                      ? "সৃজনশীল (গণিত) — ১০ মার্ক (ক=২, খ=৪, গ=৪)"
+                      : "সৃজনশীল — ১০ মার্ক (ক=১, খ=২, গ=৩, ঘ=৪)"}
+                  </span>
+                  {!form.subject_id && <span className="text-xs text-muted-foreground">(বিষয় নির্বাচন করলে মার্ক নির্ধারিত হবে)</span>}
+                </div>
                 <div>
                   <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
                   <RichTextEditor value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} placeholder="উদ্দীপকটি এখানে লিখুন..." minHeight="150px" />
@@ -384,23 +407,32 @@ export default function AdminQuestions() {
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
                   <div>
-                    <Label>ক) জ্ঞানমূলক (নম্বর: ২)</Label>
+                    <Label>ক) {isMathSubject ? "জ্ঞানমূলক (নম্বর: ২)" : "জ্ঞানমূলক (নম্বর: ১)"}</Label>
                     <RichTextEditor value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} placeholder="প্রশ্ন ক" minHeight="80px" />
                   </div>
                   <div>
-                    <Label>খ) অনুধাবনমূলক (নম্বর: ৪)</Label>
+                    <Label>খ) {isMathSubject ? "অনুধাবনমূলক (নম্বর: ৪)" : "অনুধাবনমূলক (নম্বর: ২)"}</Label>
                     <RichTextEditor value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} placeholder="প্রশ্ন খ" minHeight="80px" />
                   </div>
                   <div>
-                    <Label>গ) প্রয়োগমূলক (নম্বর: ৪)</Label>
+                    <Label>গ) {isMathSubject ? "প্রয়োগমূলক (নম্বর: ৪)" : "প্রয়োগমূলক (নম্বর: ৩)"}</Label>
                     <RichTextEditor value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} placeholder="প্রশ্ন গ" minHeight="80px" />
                   </div>
+                  {!isMathSubject && (
+                    <div>
+                      <Label>ঘ) উচ্চতর দক্ষতামূলক (নম্বর: ৪)</Label>
+                      <RichTextEditor value={form.cq_q_gha} onChange={(v) => setForm({ ...form, cq_q_gha: v })} placeholder="প্রশ্ন ঘ" minHeight="80px" />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
                   <div><Label>উত্তর ক</Label><RichTextEditor value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} placeholder="উত্তর ক" minHeight="80px" /></div>
                   <div><Label>উত্তর খ</Label><RichTextEditor value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} placeholder="উত্তর খ" minHeight="80px" /></div>
                   <div><Label>উত্তর গ</Label><RichTextEditor value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} placeholder="উত্তর গ" minHeight="80px" /></div>
+                  {!isMathSubject && (
+                    <div><Label>উত্তর ঘ</Label><RichTextEditor value={form.cq_ans_gha} onChange={(v) => setForm({ ...form, cq_ans_gha: v })} placeholder="উত্তর ঘ" minHeight="80px" /></div>
+                  )}
                 </div>
                 <div>
                   <Label>ব্যাখ্যা (ঐচ্ছিক)</Label>
