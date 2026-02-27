@@ -96,7 +96,7 @@ export default function QuestionCreate() {
   const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set());
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
   const [filterYear, setFilterYear] = useState("");
-  const [filterSpecial, setFilterSpecial] = useState<Set<string>>(new Set());
+  const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
 
   // Report modal states
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
