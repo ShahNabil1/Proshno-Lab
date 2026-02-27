@@ -95,7 +95,7 @@ const App = () => (
             <Route path="/admin/classes" element={<AdminLayout><AdminCrudPage title="শ্রেণী ম্যানেজমেন্ট" table="classes" /></AdminLayout>} />
             <Route path="/admin/subjects" element={<AdminLayout><AdminCrudPage title="বিষয় ম্যানেজমেন্ট" table="subjects" parentTable="classes" parentLabel="শ্রেণী" parentKey="class_id" /></AdminLayout>} />
             <Route path="/admin/chapters" element={<AdminLayout><AdminChapters /></AdminLayout>} />
-            <Route path="/admin/categories" element={<AdminLayout><AdminCrudPage title="প্রশ্নের ক্যাটাগরি" table="question_categories" /></AdminLayout>} />
+            
             <Route path="/admin/questions" element={<AdminLayout><AdminQuestions /></AdminLayout>} />
             <Route path="/admin/teachers" element={<AdminLayout><AdminTeachers /></AdminLayout>} />
             <Route path="/admin/institutes" element={<AdminLayout><AdminInstitutes /></AdminLayout>} />
