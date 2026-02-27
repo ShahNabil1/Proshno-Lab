@@ -638,6 +638,7 @@ export default function QuestionCreate() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
     );
   }
 
