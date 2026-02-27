@@ -138,6 +138,25 @@ export default function AdminQuestions() {
   const openEdit = (item: any) => {
     setEditItem(item);
     const cd = item.creative_data || {};
+    // Detect grouped MCQ
+    if (item.type === "mcq" && item.stimulus_group_id) {
+      setIsGroupedMcq(true);
+      setStimulusText(item.stimulus_text || "");
+      // We'll load grouped questions from DB
+      supabase.from("questions").select("*").eq("stimulus_group_id", item.stimulus_group_id).order("id")
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setGroupedQuestions(data.map((q: any) => ({
+              question: q.question || "", option_a: q.option_a || "", option_b: q.option_b || "",
+              option_c: q.option_c || "", option_d: q.option_d || "", correct_answer: q.correct_answer || "",
+            })));
+          }
+        });
+    } else {
+      setIsGroupedMcq(false);
+      setStimulusText(item.stimulus_text || "");
+      setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+    }
     setForm({
       class_id: String(item.class_id), subject_id: String(item.subject_id),
       chapter_id: String(item.chapter_id), topic_id: item.topic_id ? String(item.topic_id) : "", category_id: item.category_id ? String(item.category_id) : "",
