@@ -85,6 +85,8 @@ export default function AdminQuestions() {
     if (filterClassId && String(item.class_id) !== filterClassId) return false;
     if (filterSubjectId && String(item.subject_id) !== filterSubjectId) return false;
     if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
+    if (filterTopicId && String(item.topic_id) !== filterTopicId) return false;
+    if (filterType && item.type !== filterType) return false;
     return true;
   });
 
