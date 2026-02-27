@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye, Lock } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -637,7 +637,7 @@ export default function QuestionCreate() {
                           }}
                         >
                           {isLocked ? (
-                            <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                           ) : (
                             <Checkbox
                               checked={isSelected}
@@ -646,7 +646,7 @@ export default function QuestionCreate() {
                           )}
                           <span className={isLocked ? "text-muted-foreground" : ""}>{c.name}</span>
                           {isLocked && (
-                            <span className="ml-auto text-xs text-destructive/70 whitespace-nowrap">🔒 লক</span>
+                            <span className="ml-auto text-xs text-amber-500 whitespace-nowrap">সাবস্ক্রিপশন নেই</span>
                           )}
                         </label>
                       );
