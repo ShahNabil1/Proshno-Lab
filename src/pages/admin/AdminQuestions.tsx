@@ -377,6 +377,22 @@ export default function AdminQuestions() {
             {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
           </SelectContent>
         </Select>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>প্রশ্ন</TableHead>
+                <TableHead>টাইপ</TableHead>
+                <TableHead>শ্রেণী</TableHead>
+                <TableHead>বিষয়</TableHead>
+                <TableHead>শিক্ষক</TableHead>
+                <TableHead className="text-right">অ্যাকশন</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {paginatedItems.map((item) => (
                 <TableRow key={item.id}>
