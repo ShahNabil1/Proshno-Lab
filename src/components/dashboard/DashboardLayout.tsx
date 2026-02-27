@@ -17,7 +17,6 @@ const sidebarGroups = [
     items: [
       { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
       { path: "/dashboard/create", label: "১ ক্লিকে প্রশ্ন তৈরি", icon: PlusCircle },
-      { path: "/dashboard/question-bank", label: "eExamapp", icon: BookOpen },
     ],
   },
   {
