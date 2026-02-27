@@ -263,6 +263,45 @@ export default function QuestionPaperView() {
     }
   };
 
+  const handleSavePaper = async () => {
+    if (!user || !meta || questions.length === 0) {
+      toast.error("সেভ করার জন্য প্রশ্ন ও মেটাডাটা প্রয়োজন");
+      return;
+    }
+    setSaving(true);
+    try {
+      const paperData = {
+        teacher_id: user.id,
+        institution_name: meta.instituteName || "",
+        exam_name: meta.programName || "",
+        class_name: meta.className || "",
+        subject_name: meta.subjectName || "",
+        chapter_names: meta.chapterNames || [],
+        question_ids: questions.map(q => q.id),
+        meta: meta as any,
+        settings: settings as any,
+      };
+
+      if (currentPaperId) {
+        // Update existing - but we don't have UPDATE policy, so delete + insert
+        await supabase.from("saved_papers").delete().eq("id", currentPaperId);
+        const { data, error } = await supabase.from("saved_papers").insert({ ...paperData, id: currentPaperId } as any).select("id").single();
+        if (error) throw error;
+        toast.success("প্রশ্নপত্র আপডেট হয়েছে!");
+      } else {
+        const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
+        if (error) throw error;
+        setCurrentPaperId(data.id);
+        toast.success("প্রশ্নপত্র সেভ হয়েছে!");
+      }
+    } catch (err: any) {
+      toast.error("সেভ করতে সমস্যা হয়েছে");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   /* Sort questions by type priority: MCQ(1) → Short(2) → CQ(3) → Descriptive(4) */
   const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
   const sortedQuestions = [...questions].sort(
@@ -1088,9 +1127,14 @@ export default function QuestionPaperView() {
                 <Settings className="h-4 w-4" /> সেটিংস
               </h3>
 
-              <Button className="w-full gradient-green text-primary-foreground border-0 mb-4 font-heading font-semibold" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" /> ডাউনলোড
-              </Button>
+              <div className="flex gap-2 mb-4">
+                <Button className="flex-1 gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" /> ডাউনলোড
+                </Button>
+                <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
+                  <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
+                </Button>
+              </div>
 
               {/* প্রশ্নে সংযুক্তি */}
               <div className="border-b border-border pb-3 mb-3">
