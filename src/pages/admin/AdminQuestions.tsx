@@ -42,12 +42,16 @@ export default function AdminQuestions() {
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
-    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "",
-    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "",
+    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
+    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
     desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
     board_references: [] as Array<{ board: string; year: string }>,
     university_references: [] as Array<{ name: string; year: string }>,
   });
+
+  // Determine if selected subject is math-type (3-part CQ) or other (4-part CQ)
+  const selectedSubjectName = subjects.find(s => String(s.id) === form.subject_id)?.name || allSubjects.find(s => String(s.id) === form.subject_id)?.name || "";
+  const isMathSubject = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test(selectedSubjectName.trim());
 
   const classes = filterClasses(allClasses);
   const filterSubjectsList = filterSubjectId ? [] : allSubjects.filter(s => filterClassId ? String(s.class_id) === filterClassId : true);
@@ -117,7 +121,7 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
