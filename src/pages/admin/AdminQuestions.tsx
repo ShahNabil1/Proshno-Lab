@@ -42,8 +42,8 @@ export default function AdminQuestions() {
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
-    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
-    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
+    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "",
+    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "",
     board_references: [] as Array<{ board: string; year: string }>,
     university_references: [] as Array<{ name: string; year: string }>,
   });
@@ -116,7 +116,7 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", board_references: [], university_references: [] });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
@@ -129,8 +129,8 @@ export default function AdminQuestions() {
       type: item.type, question: item.question, option_a: item.option_a || "", option_b: item.option_b || "",
       option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: item.correct_answer || "",
       explanation: item.explanation || "",
-      cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
-      cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
+      cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "",
+      cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "",
       board_references: Array.isArray(item.board_references) ? item.board_references : [],
       university_references: Array.isArray(item.university_references) ? item.university_references : [],
     });
@@ -165,8 +165,8 @@ export default function AdminQuestions() {
     if (form.type === "cq") {
       payload.creative_data = {
         stem: form.cq_stem,
-        q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
-        ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
+        q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
+        ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
       };
     }
 
@@ -353,21 +353,32 @@ export default function AdminQuestions() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
-                  <MathInput value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} rows={5} placeholder="উদ্দীপকটি এখানে লিখুন... (LaTeX: $\\\\\\\\vec{P}$)" />
+                  <RichTextEditor value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} placeholder="উদ্দীপকটি এখানে লিখুন..." minHeight="150px" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
-                  <div><Label>ক) জ্ঞানমূলক</Label><MathInput value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} singleLine placeholder="প্রশ্ন ক" /></div>
-                  <div><Label>খ) অনুধাবনমূলক</Label><MathInput value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} singleLine placeholder="প্রশ্ন খ" /></div>
-                  <div><Label>গ) প্রয়োগমূলক</Label><MathInput value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} singleLine placeholder="প্রশ্ন গ" /></div>
-                  <div><Label>ঘ) উচ্চতর দক্ষতামূলক</Label><MathInput value={form.cq_q_gha} onChange={(v) => setForm({ ...form, cq_q_gha: v })} singleLine placeholder="প্রশ্ন ঘ" /></div>
+                  <div>
+                    <Label>ক) জ্ঞানমূলক (নম্বর: ২)</Label>
+                    <RichTextEditor value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} placeholder="প্রশ্ন ক" minHeight="80px" />
+                  </div>
+                  <div>
+                    <Label>খ) অনুধাবনমূলক (নম্বর: ৪)</Label>
+                    <RichTextEditor value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} placeholder="প্রশ্ন খ" minHeight="80px" />
+                  </div>
+                  <div>
+                    <Label>গ) প্রয়োগমূলক (নম্বর: ৪)</Label>
+                    <RichTextEditor value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} placeholder="প্রশ্ন গ" minHeight="80px" />
+                  </div>
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
-                  <div><Label>উত্তর ক</Label><MathInput value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} rows={2} /></div>
-                  <div><Label>উত্তর খ</Label><MathInput value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} rows={2} /></div>
-                  <div><Label>উত্তর গ</Label><MathInput value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} rows={2} /></div>
-                  <div><Label>উত্তর ঘ</Label><MathInput value={form.cq_ans_gha} onChange={(v) => setForm({ ...form, cq_ans_gha: v })} rows={2} /></div>
+                  <div><Label>উত্তর ক</Label><RichTextEditor value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} placeholder="উত্তর ক" minHeight="80px" /></div>
+                  <div><Label>উত্তর খ</Label><RichTextEditor value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} placeholder="উত্তর খ" minHeight="80px" /></div>
+                  <div><Label>উত্তর গ</Label><RichTextEditor value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} placeholder="উত্তর গ" minHeight="80px" /></div>
+                </div>
+                <div>
+                  <Label>ব্যাখ্যা (ঐচ্ছিক)</Label>
+                  <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="80px" />
                 </div>
               </div>
             ) : (
