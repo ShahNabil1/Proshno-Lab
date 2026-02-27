@@ -22,7 +22,6 @@ interface ChapterItem {
 }
 
 export default function AdminChapters() {
-  const navigate = useNavigate();
   const { hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
