@@ -777,22 +777,27 @@ export default function QuestionPaperView() {
                     const colIdx = (idx - 1) % settings.columns;
                     const showLeftBorder = colIdx > 0 && settings.columnDivider;
                     return (
-                      <div key={q.id} className={editableClass} style={{
+                    <div key={q.id} className={editableClass} style={{
                         padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
                         borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
                         background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
                       }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                          <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
-                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
-                        </div>
-                        <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
-                          {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                            const val = q[key]; if (!val) return null;
-                            const label = ["ক", "খ", "গ", "ঘ"][oi];
-                            const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
-                            return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
-                          })}
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                          <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                              <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                              {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                const val = q[key]; if (!val) return null;
+                                const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
+                                return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                              })}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
@@ -812,16 +817,19 @@ export default function QuestionPaperView() {
                       </div>
                     )}
                     <div className={editableClass} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                        <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
-                      </div>
-                      <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
-                        {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                          const val = q[key]; if (!val) return null;
-                          const label = ["ক", "খ", "গ", "ঘ"][oi];
-                          const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
-                          return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
-                        })}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                        <div style={{ flex: 1 }}>
+                          <span><LatexRenderer text={q.question} /></span>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                            {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                              const val = q[key]; if (!val) return null;
+                              const label = ["ক", "খ", "গ", "ঘ"][oi];
+                              const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
+                              return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -856,16 +864,19 @@ export default function QuestionPaperView() {
                             padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
                             borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
                           }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                              <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
-                            </div>
-                            <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
-                              {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                                const val = q[key]; if (!val) return null;
-                                const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
-                                return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
-                              })}
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                              <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                              <div style={{ flex: 1 }}>
+                                <span><LatexRenderer text={q.question} /></span>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                                  {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                    const val = q[key]; if (!val) return null;
+                                    const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
+                                    return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                  })}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
