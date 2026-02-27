@@ -710,8 +710,10 @@ export default function AdminQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive" || form.type === "cq") ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
-              {editItem ? "আপডেট" : "তৈরি করুন"}
+            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive" || form.type === "cq" || (form.type === "mcq" && isGroupedMcq)) ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
+              {form.type === "mcq" && isGroupedMcq
+                ? (editItem ? "গ্রুপ আপডেট" : `${groupedQuestions.length}টি MCQ তৈরি করুন`)
+                : (editItem ? "আপডেট" : "তৈরি করুন")}
             </Button>
           </DialogFooter>
         </DialogContent>
