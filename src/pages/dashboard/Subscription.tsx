@@ -107,7 +107,7 @@ export default function Subscription() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Hero */}
       <div className="gradient-hero rounded-2xl p-6 md:p-8 text-center text-white">
-        <Crown className="w-8 h-8 mx-auto mb-2 text-yellow-300" />
+        <Crown className="w-8 h-8 mx-auto mb-2 text-primary-foreground" />
         <h1 className="font-heading text-xl md:text-2xl font-bold">সাবস্ক্রিপশন ড্যাশবোর্ড</h1>
         <p className="text-white/70 text-sm mt-1">আপনার প্ল্যান পরিচালনা করুন ও নতুন প্যাকেজ এক্সপ্লোর করুন</p>
       </div>
@@ -146,7 +146,7 @@ export default function Subscription() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <Crown className="w-5 h-5 text-yellow-500" />
+                          <Crown className="w-5 h-5 text-accent-foreground" />
                           <h3 className="font-heading font-bold text-lg">{sub.plan}</h3>
                         </div>
                         <Badge className="gradient-green text-primary-foreground border-0 text-xs">
