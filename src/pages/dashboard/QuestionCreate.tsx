@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
