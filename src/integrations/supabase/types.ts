@@ -338,6 +338,8 @@ export type Database = {
           option_c: string | null
           option_d: string | null
           question: string
+          stimulus_group_id: string | null
+          stimulus_text: string | null
           subject_id: number
           teacher_id: string
           topic_id: number | null
@@ -359,6 +361,8 @@ export type Database = {
           option_c?: string | null
           option_d?: string | null
           question: string
+          stimulus_group_id?: string | null
+          stimulus_text?: string | null
           subject_id: number
           teacher_id: string
           topic_id?: number | null
@@ -380,6 +384,8 @@ export type Database = {
           option_c?: string | null
           option_d?: string | null
           question?: string
+          stimulus_group_id?: string | null
+          stimulus_text?: string | null
           subject_id?: number
           teacher_id?: string
           topic_id?: number | null
