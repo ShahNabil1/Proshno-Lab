@@ -18,7 +18,7 @@ import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
-const typeOptions = ["mcq", "short", "cq"];
+const typeOptions = ["mcq", "short", "cq", "descriptive"];
 
 export default function AdminQuestions() {
   const [items, setItems] = useState<any[]>([]);
@@ -44,6 +44,7 @@ export default function AdminQuestions() {
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
     cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "",
     cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "",
+    desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
     board_references: [] as Array<{ board: string; year: string }>,
     university_references: [] as Array<{ name: string; year: string }>,
   });
@@ -116,7 +117,7 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", board_references: [], university_references: [] });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
@@ -131,6 +132,8 @@ export default function AdminQuestions() {
       explanation: item.explanation || "",
       cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "",
       cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "",
+      desc_q_ka: cd.desc_q_ka || "", desc_q_kha: cd.desc_q_kha || "",
+      desc_ans_ka: cd.desc_ans_ka || "", desc_ans_kha: cd.desc_ans_kha || "",
       board_references: Array.isArray(item.board_references) ? item.board_references : [],
       university_references: Array.isArray(item.university_references) ? item.university_references : [],
     });
@@ -143,6 +146,11 @@ export default function AdminQuestions() {
         toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
         return;
       }
+    } else if (form.type === "descriptive") {
+      if ((!form.desc_q_ka && !form.desc_q_kha) || !form.class_id || !form.subject_id || !form.chapter_id) {
+        toast.error("অন্তত একটি প্রশ্ন, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
+        return;
+      }
     } else {
       if (!form.question || !form.class_id || !form.subject_id || !form.chapter_id) {
         toast.error("প্রশ্ন, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
@@ -150,11 +158,18 @@ export default function AdminQuestions() {
       }
     }
 
+    // For descriptive, use first sub-question as summary for the question column
+    const questionText = form.type === "cq"
+      ? (form.cq_stem.substring(0, 100) + (form.cq_stem.length > 100 ? "..." : ""))
+      : form.type === "descriptive"
+      ? (form.desc_q_ka.substring(0, 100) + (form.desc_q_ka.length > 100 ? "..." : ""))
+      : form.question;
+
     const payload: any = {
       class_id: Number(form.class_id), subject_id: Number(form.subject_id), chapter_id: Number(form.chapter_id),
       topic_id: form.topic_id ? Number(form.topic_id) : null,
       type: form.type,
-      question: form.type === "cq" ? (form.cq_stem.substring(0, 100) + (form.cq_stem.length > 100 ? "..." : "")) : form.question,
+      question: questionText,
       option_a: form.option_a || null, option_b: form.option_b || null,
       option_c: form.option_c || null, option_d: form.option_d || null, correct_answer: form.correct_answer || null,
       explanation: form.explanation || null,
@@ -167,6 +182,13 @@ export default function AdminQuestions() {
         stem: form.cq_stem,
         q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
         ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
+      };
+    }
+
+    if (form.type === "descriptive") {
+      payload.creative_data = {
+        desc_q_ka: form.desc_q_ka, desc_q_kha: form.desc_q_kha,
+        desc_ans_ka: form.desc_ans_ka, desc_ans_kha: form.desc_ans_kha,
       };
     }
 
@@ -383,8 +405,8 @@ export default function AdminQuestions() {
               </div>
             ) : (
               <>
-                {/* === Non-CQ Form === */}
-                {form.type === "mcq" ? (
+                {/* === MCQ Form === */}
+                {form.type === "mcq" && (
                   <>
                     <div>
                       <Label>প্রশ্ন</Label>
@@ -428,9 +450,11 @@ export default function AdminQuestions() {
                       <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="Write your main question here..." minHeight="120px" />
                     </div>
                   </>
-                ) : (
+                )}
+
+                {/* === SHORT Question Form === */}
+                {form.type === "short" && (
                   <>
-                    {/* === SHORT Question Form === */}
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
                         সংক্ষিপ্ত প্রশ্ন — ২ মার্ক
@@ -438,32 +462,48 @@ export default function AdminQuestions() {
                     </div>
                     <div>
                       <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>প্রশ্ন</Label>
-                      <RichTextEditor
-                        value={form.question}
-                        onChange={(v) => setForm({ ...form, question: v })}
-                        placeholder="সংক্ষিপ্ত প্রশ্নটি এখানে লিখুন..."
-                        minHeight="140px"
-                      />
+                      <RichTextEditor value={form.question} onChange={(v) => setForm({ ...form, question: v })} placeholder="সংক্ষিপ্ত প্রশ্নটি এখানে লিখুন..." minHeight="140px" />
                     </div>
                     <div>
                       <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>উত্তর (ঐচ্ছিক)</Label>
-                      <RichTextEditor
-                        value={form.correct_answer}
-                        onChange={(v) => setForm({ ...form, correct_answer: v })}
-                        placeholder="নমুনা উত্তর লিখুন..."
-                        minHeight="120px"
-                      />
+                      <RichTextEditor value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} placeholder="নমুনা উত্তর লিখুন..." minHeight="120px" />
                     </div>
                     <div>
                       <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>ব্যাখ্যা (ঐচ্ছিক)</Label>
-                      <RichTextEditor
-                        value={form.explanation}
-                        onChange={(v) => setForm({ ...form, explanation: v })}
-                        placeholder="ব্যাখ্যা লিখুন..."
-                        minHeight="100px"
-                      />
+                      <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="100px" />
                     </div>
                   </>
+                )}
+
+                {/* === DESCRIPTIVE Question Form === */}
+                {form.type === "descriptive" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                        বর্ণনামূলক প্রশ্ন — ১০ মার্ক (ক = ৩, খ = ৭)
+                      </span>
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>ক) প্রশ্ন (নম্বর: ৩)</Label>
+                      <RichTextEditor value={form.desc_q_ka} onChange={(v) => setForm({ ...form, desc_q_ka: v })} placeholder="প্রশ্ন ক লিখুন..." minHeight="140px" />
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>ক) উত্তর (ঐচ্ছিক)</Label>
+                      <RichTextEditor value={form.desc_ans_ka} onChange={(v) => setForm({ ...form, desc_ans_ka: v })} placeholder="উত্তর ক লিখুন..." minHeight="100px" />
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>খ) প্রশ্ন (নম্বর: ৭)</Label>
+                      <RichTextEditor value={form.desc_q_kha} onChange={(v) => setForm({ ...form, desc_q_kha: v })} placeholder="প্রশ্ন খ লিখুন..." minHeight="140px" />
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>খ) উত্তর (ঐচ্ছিক)</Label>
+                      <RichTextEditor value={form.desc_ans_kha} onChange={(v) => setForm({ ...form, desc_ans_kha: v })} placeholder="উত্তর খ লিখুন..." minHeight="100px" />
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>ব্যাখ্যা (ঐচ্ছিক)</Label>
+                      <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="100px" />
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -491,7 +531,7 @@ export default function AdminQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave} className={form.type === "short" ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
+            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive") ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
               {editItem ? "আপডেট" : "তৈরি করুন"}
             </Button>
           </DialogFooter>
