@@ -349,36 +349,34 @@ export default function AdminQuestions() {
             {classes.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); }} disabled={!filterClassId}>
+        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); setFilterTopicId(""); }} disabled={!filterClassId}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="বিষয়" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">সকল বিষয়</SelectItem>
             {allSubjects.filter(s => String(s.class_id) === filterClassId).map((s: any) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterChapterId} onValueChange={(v) => setFilterChapterId(v === "all" ? "" : v)} disabled={!filterSubjectId}>
+        <Select value={filterChapterId} onValueChange={(v) => { setFilterChapterId(v === "all" ? "" : v); setFilterTopicId(""); }} disabled={!filterSubjectId}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">সকল অধ্যায়</SelectItem>
             {filterChapters.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>প্রশ্ন</TableHead>
-                <TableHead>টাইপ</TableHead>
-                <TableHead>শ্রেণী</TableHead>
-                <TableHead>বিষয়</TableHead>
-                <TableHead>শিক্ষক</TableHead>
-                <TableHead className="text-right">অ্যাকশন</TableHead>
-              </TableRow>
-            </TableHeader>
+        <Select value={filterTopicId} onValueChange={(v) => setFilterTopicId(v === "all" ? "" : v)} disabled={!filterChapterId || filterTopics.length === 0}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="টপিক" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল টপিক</SelectItem>
+            {filterTopics.map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterType} onValueChange={(v) => setFilterType(v === "all" ? "" : v)}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="টাইপ" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল টাইপ</SelectItem>
+            {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
+          </SelectContent>
+        </Select>
             <TableBody>
               {paginatedItems.map((item) => (
                 <TableRow key={item.id}>
