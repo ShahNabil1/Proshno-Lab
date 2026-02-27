@@ -435,7 +435,19 @@ export default function QuestionCreate() {
                         boardRefs={q.board_references as any}
                         uniRefs={q.university_references as any}
                       />
-                      <button className="text-muted-foreground hover:text-foreground"><MessageSquare className="h-4 w-4" /></button>
+                      <button
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        title="রিপোর্ট করুন"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportQuestionId(q.id);
+                          setReportErrorType("বানান ভুল");
+                          setReportComment("");
+                          setReportDialogOpen(true);
+                        }}
+                      >
+                        <Flag className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                   <p className="font-medium mb-3">
