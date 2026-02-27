@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -97,6 +98,31 @@ export default function QuestionCreate() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<Set<string>>(new Set());
 
+  // Report modal states
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportQuestionId, setReportQuestionId] = useState<number | null>(null);
+  const [reportErrorType, setReportErrorType] = useState("বানান ভুল");
+  const [reportComment, setReportComment] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const reportErrorTypes = ["বানান ভুল", "উত্তর ভুল", "অপশন ভুল", "প্রশ্ন অসম্পূর্ণ", "ডুপ্লিকেট প্রশ্ন", "অন্যান্য"];
+
+  const handleReport = async () => {
+    if (!user || !reportQuestionId) return;
+    setReportLoading(true);
+    const { error } = await supabase.from("question_reports" as any).insert({
+      question_id: reportQuestionId,
+      teacher_id: user.id,
+      error_type: reportErrorType,
+      comment: reportComment,
+    } as any);
+    setReportLoading(false);
+    if (error) { toast.error("রিপোর্ট সাবমিট ব্যর্থ"); return; }
+    toast.success("রিপোর্ট সাবমিট হয়েছে! ধন্যবাদ।");
+    setReportDialogOpen(false);
+    setReportComment("");
+    setReportQuestionId(null);
+  };
   const [institute, setInstitute] = useState<{ name: string; upazila?: string | null; district?: string | null; division?: string | null } | null>(null);
 
   // Fetch institute
@@ -232,6 +258,9 @@ export default function QuestionCreate() {
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
 
+  // Strict sorting: MCQ → Short → CQ → Descriptive
+  const typeSortOrder: Record<string, number> = { mcq: 0, short: 1, cq: 2, descriptive: 3 };
+
   // Apply all filters
   const getFilteredQuestions = () => {
     let result = [...questions];
@@ -266,6 +295,9 @@ export default function QuestionCreate() {
         return refs.length > 0;
       });
     }
+
+    // Sort by type priority: MCQ → Short → CQ → Descriptive
+    result.sort((a, b) => (typeSortOrder[a.type] ?? 99) - (typeSortOrder[b.type] ?? 99));
 
     return result;
   };
@@ -362,6 +394,7 @@ export default function QuestionCreate() {
   // ─── STEP 3: Question List with Advanced Filter Sidebar ───
   if (step === "questionList") {
     return (
+      <>
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
         {/* Main content */}
         <div className="space-y-4">
@@ -403,7 +436,19 @@ export default function QuestionCreate() {
                         boardRefs={q.board_references as any}
                         uniRefs={q.university_references as any}
                       />
-                      <button className="text-muted-foreground hover:text-foreground"><MessageSquare className="h-4 w-4" /></button>
+                      <button
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        title="রিপোর্ট করুন"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportQuestionId(q.id);
+                          setReportErrorType("বানান ভুল");
+                          setReportComment("");
+                          setReportDialogOpen(true);
+                        }}
+                      >
+                        <Flag className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                   <p className="font-medium mb-3">
@@ -485,8 +530,9 @@ export default function QuestionCreate() {
                     {[
                       { value: null, label: "সব" },
                       { value: "mcq", label: "বহুনির্বাচনী" },
-                      { value: "cq", label: "সৃজনশীল" },
                       { value: "short", label: "সংক্ষিপ্ত" },
+                      { value: "cq", label: "সৃজনশীল" },
+                      { value: "descriptive", label: "বর্ণনামূলক" },
                     ].map(opt => (
                       <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
                         <input
@@ -563,6 +609,37 @@ export default function QuestionCreate() {
           </div>
         </aside>
       </div>
+
+      {/* Report Dialog */}
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">প্রশ্ন রিপোর্ট করুন</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>ভুলের ধরন</Label>
+              <Select value={reportErrorType} onValueChange={setReportErrorType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {reportErrorTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>মন্তব্য (ঐচ্ছিক)</Label>
+              <Textarea value={reportComment} onChange={e => setReportComment(e.target.value)} placeholder="বিস্তারিত লিখুন..." rows={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>বাতিল</Button>
+            <Button className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleReport} disabled={reportLoading}>
+              {reportLoading ? "সাবমিট হচ্ছে..." : "রিপোর্ট সাবমিট"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
     );
   }
 

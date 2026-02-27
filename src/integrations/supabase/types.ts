@@ -322,6 +322,57 @@ export type Database = {
         }
         Relationships: []
       }
+      question_reports: {
+        Row: {
+          admin_reply: string | null
+          comment: string
+          created_at: string
+          error_type: string
+          id: number
+          question_id: number
+          resolved_at: string | null
+          status: string
+          teacher_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          comment?: string
+          created_at?: string
+          error_type?: string
+          id?: never
+          question_id: number
+          resolved_at?: string | null
+          status?: string
+          teacher_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          comment?: string
+          created_at?: string
+          error_type?: string
+          id?: never
+          question_id?: number
+          resolved_at?: string | null
+          status?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_reports_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_reports_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           board_references: Json | null
