@@ -36,7 +36,10 @@ export default function AdminQuestions() {
   const [filterClassId, setFilterClassId] = useState("");
   const [filterSubjectId, setFilterSubjectId] = useState("");
   const [filterChapterId, setFilterChapterId] = useState("");
+  const [filterTopicId, setFilterTopicId] = useState("");
+  const [filterType, setFilterType] = useState("");
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
+  const [filterTopics, setFilterTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
@@ -65,16 +68,25 @@ export default function AdminQuestions() {
 
   // Load chapters for filter
   useEffect(() => {
-    if (!filterSubjectId) { setFilterChapters([]); return; }
+    if (!filterSubjectId) { setFilterChapters([]); setFilterTopics([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
       .then(({ data }) => setFilterChapters(data || []));
   }, [filterSubjectId]);
+
+  // Load topics for filter
+  useEffect(() => {
+    if (!filterChapterId) { setFilterTopics([]); setFilterTopicId(""); return; }
+    supabase.from("topics").select("id, name").eq("chapter_id", Number(filterChapterId)).order("name")
+      .then(({ data }) => setFilterTopics(data || []));
+  }, [filterChapterId]);
 
   const filteredItems = items.filter((item) => {
     if (searchTerm && !item.question?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     if (filterClassId && String(item.class_id) !== filterClassId) return false;
     if (filterSubjectId && String(item.subject_id) !== filterSubjectId) return false;
     if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
+    if (filterTopicId && String(item.topic_id) !== filterTopicId) return false;
+    if (filterType && item.type !== filterType) return false;
     return true;
   });
 
@@ -83,7 +95,7 @@ export default function AdminQuestions() {
   const paginatedItems = filteredItems.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
 
   const fetchItems = async () => {
     const { data } = await supabase.from("questions")
@@ -337,18 +349,32 @@ export default function AdminQuestions() {
             {classes.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); }} disabled={!filterClassId}>
+        <Select value={filterSubjectId} onValueChange={(v) => { setFilterSubjectId(v === "all" ? "" : v); setFilterChapterId(""); setFilterTopicId(""); }} disabled={!filterClassId}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="বিষয়" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">সকল বিষয়</SelectItem>
             {allSubjects.filter(s => String(s.class_id) === filterClassId).map((s: any) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterChapterId} onValueChange={(v) => setFilterChapterId(v === "all" ? "" : v)} disabled={!filterSubjectId}>
+        <Select value={filterChapterId} onValueChange={(v) => { setFilterChapterId(v === "all" ? "" : v); setFilterTopicId(""); }} disabled={!filterSubjectId}>
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="অধ্যায়" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">সকল অধ্যায়</SelectItem>
             {filterChapters.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterTopicId} onValueChange={(v) => setFilterTopicId(v === "all" ? "" : v)} disabled={!filterChapterId || filterTopics.length === 0}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="টপিক" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল টপিক</SelectItem>
+            {filterTopics.map((t: any) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterType} onValueChange={(v) => setFilterType(v === "all" ? "" : v)}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="টাইপ" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সকল টাইপ</SelectItem>
+            {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
