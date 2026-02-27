@@ -545,15 +545,12 @@ export default function QuestionCreate() {
                   <div className="space-y-2">
                     {specialSearchOptions.map(opt => (
                       <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={filterSpecial.has(opt.id)}
-                          onCheckedChange={() => {
-                            setFilterSpecial(prev => {
-                              const next = new Set(prev);
-                              next.has(opt.id) ? next.delete(opt.id) : next.add(opt.id);
-                              return next;
-                            });
-                          }}
+                        <input
+                          type="radio"
+                          name="filterSpecial"
+                          checked={filterSpecial === opt.id}
+                          onChange={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}
+                          className="accent-primary"
                         />
                         {opt.label}
                       </label>
