@@ -289,10 +289,48 @@ export default function QuestionCreate() {
       });
     }
 
-    if (filterSpecial.has("board")) {
+    // Special search filters (radio - only one active at a time)
+    if (filterSpecial === "board") {
+      // Repeated board questions: appeared in 2+ different boards
       result = result.filter(r => {
         const refs = Array.isArray(r.board_references) ? r.board_references : [];
-        return refs.length > 0;
+        const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
+        return uniqueBoards.size >= 2;
+      });
+    } else if (filterSpecial === "math") {
+      // Mathematical: contains LaTeX symbols
+      result = result.filter(r => {
+        const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
+        return /\$.*?\$|\\frac|\\sqrt|\\sum|\\int|\\[|\\]|\\(|\\)|\\times|\\div|\\pm|\\leq|\\geq|\\neq|\\alpha|\\beta|\\theta|\\pi/i.test(text);
+      });
+    } else if (filterSpecial === "theoretical") {
+      // Theoretical: does NOT contain complex math
+      result = result.filter(r => {
+        const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""}`;
+        return !/\$.*?\$|\\frac|\\sqrt|\\sum|\\int/i.test(text);
+      });
+    } else if (filterSpecial === "diagram") {
+      // Image-based: contains <img> tag or cloudinary URL
+      result = result.filter(r => {
+        const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
+        return /<img\s/i.test(text) || /cloudinary\.com/i.test(text) || /res\.cloudinary/i.test(text);
+      });
+    } else if (filterSpecial === "multi_completion") {
+      // Multiple completion: MCQs linked to a stimulus with 2+ questions sharing it
+      const stimulusCounts: Record<string, number> = {};
+      questions.forEach(q => {
+        if (q.stimulus_group_id) {
+          stimulusCounts[q.stimulus_group_id] = (stimulusCounts[q.stimulus_group_id] || 0) + 1;
+        }
+      });
+      result = result.filter(r =>
+        r.type === "mcq" && r.stimulus_group_id && (stimulusCounts[r.stimulus_group_id] || 0) >= 2
+      );
+    } else if (filterSpecial === "assertion") {
+      // Uniform information-based: has board refs but only 1 unique board (same info repeated)
+      result = result.filter(r => {
+        const refs = Array.isArray(r.board_references) ? r.board_references : [];
+        return refs.length >= 1;
       });
     }
 
