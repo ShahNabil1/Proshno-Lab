@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MathInput from "@/components/MathInput";
@@ -39,6 +40,12 @@ export default function AdminQuestions() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
+  const [isGroupedMcq, setIsGroupedMcq] = useState(false);
+  const [groupedQuestions, setGroupedQuestions] = useState<Array<{
+    question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string;
+  }>>([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+  const [stimulusText, setStimulusText] = useState("");
+
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
