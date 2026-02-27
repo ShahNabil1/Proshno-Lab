@@ -15,12 +15,13 @@ import { useNavigate } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceBadges from "@/components/ReferenceBadges";
 
-const typeOptions = ["mcq", "short", "cq", "mcq_short", "mcq_short_cq"];
-const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল" };
+const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
+const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল", all: "সকল প্রকার" };
 const typeDbValues: Record<string, string[]> = {
-  mcq: ["mcq"], short: ["short"], cq: ["cq"],
+  mcq: ["mcq"], short: ["short"], cq: ["cq"], descriptive: ["descriptive"],
   mcq_short: ["mcq", "short"],
   mcq_short_cq: ["mcq", "short", "cq"],
+  all: ["mcq", "short", "cq", "descriptive"],
 };
 
 type WarningField = "subject" | "chapter" | null;
