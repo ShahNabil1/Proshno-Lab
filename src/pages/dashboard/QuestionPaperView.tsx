@@ -125,11 +125,35 @@ export default function QuestionPaperView() {
   });
 
   useEffect(() => {
-    const qData = sessionStorage.getItem("viewPaperQuestions");
-    const mData = sessionStorage.getItem("viewPaperMeta");
-    if (qData) setQuestions(JSON.parse(qData));
-    if (mData) setMeta(JSON.parse(mData));
-  }, []);
+    const paperId = searchParams.get("paper_id");
+    if (paperId) {
+      // Load saved paper from DB
+      setCurrentPaperId(paperId);
+      supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          setMeta(data.meta as any);
+          if (data.settings) setSettings(prev => ({ ...prev, ...(data.settings as any) }));
+          // Fetch actual questions by IDs
+          const ids = data.question_ids as number[];
+          if (ids.length > 0) {
+            supabase.from("questions").select("*").in("id", ids)
+              .then(({ data: qData }) => {
+                if (qData) {
+                  // Preserve original order
+                  const qMap = new Map(qData.map(q => [q.id, q]));
+                  setQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]);
+                }
+              });
+          }
+        });
+    } else {
+      const qData = sessionStorage.getItem("viewPaperQuestions");
+      const mData = sessionStorage.getItem("viewPaperMeta");
+      if (qData) setQuestions(JSON.parse(qData));
+      if (mData) setMeta(JSON.parse(mData));
+    }
+  }, [searchParams]);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     e.stopPropagation();
