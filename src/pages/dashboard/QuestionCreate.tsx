@@ -123,7 +123,7 @@ export default function QuestionCreate() {
     setReportComment("");
     setReportQuestionId(null);
   };
-
+  const [institute, setInstitute] = useState<{ name: string; upazila?: string | null; district?: string | null; division?: string | null } | null>(null);
 
   // Fetch institute
   useEffect(() => {
