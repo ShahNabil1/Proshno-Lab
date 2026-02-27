@@ -45,6 +45,8 @@ interface QuestionRow {
   university_references?: any;
   topic_id?: number | null;
   chapter_id: number;
+  stimulus_group_id?: string | null;
+  stimulus_text?: string | null;
 }
 
 // Special search categories
@@ -196,7 +198,18 @@ export default function QuestionCreate() {
   const toggleQuestion = (id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      const question = questions.find(q => q.id === id);
+      const isAdding = !next.has(id);
+
+      if (question?.stimulus_group_id) {
+        // Auto-select/deselect all questions in the same group
+        const groupQs = questions.filter(q => q.stimulus_group_id === question.stimulus_group_id);
+        groupQs.forEach(gq => {
+          if (isAdding) next.add(gq.id); else next.delete(gq.id);
+        });
+      } else {
+        if (isAdding) next.add(id); else next.delete(id);
+      }
       return next;
     });
   };

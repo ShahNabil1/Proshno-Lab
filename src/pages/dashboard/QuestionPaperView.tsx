@@ -25,6 +25,8 @@ interface QuestionRow {
   board_references?: any[] | null;
   university_references?: any[] | null;
   creative_data?: any | null;
+  stimulus_group_id?: string | null;
+  stimulus_text?: string | null;
 }
 
 interface PaperMeta {
@@ -644,81 +646,150 @@ export default function QuestionPaperView() {
           )}
 
           {/* ===== MCQ SECTION ===== */}
-          {mcqQuestions.length > 0 && (
+          {mcqQuestions.length > 0 && (() => {
+            // Group MCQs: separate standalone vs grouped by stimulus_group_id
+            const standaloneWithStimulus: QuestionRow[] = []; // single MCQ with optional stimulus
+            const grouped = new Map<string, QuestionRow[]>();
+            const standalone: QuestionRow[] = [];
+
+            mcqQuestions.forEach(q => {
+              if (q.stimulus_group_id) {
+                if (!grouped.has(q.stimulus_group_id)) grouped.set(q.stimulus_group_id, []);
+                grouped.get(q.stimulus_group_id)!.push(q);
+              } else if (q.stimulus_text) {
+                standaloneWithStimulus.push(q);
+              } else {
+                standalone.push(q);
+              }
+            });
+
+            // Build rendering order: standalone first, then standalone-with-stimulus, then groups
+            let mcqNumber = 0;
+
+            return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
                 <span>—</span>
-                <span
-                  className={editableClass}
-                  data-editable="mcq-title"
-                  onClick={handleEditableClick}
-                  suppressContentEditableWarning
-                >
-                  বহুনির্বাচনী অংশ
-                </span>
+                <span className={editableClass} data-editable="mcq-title" onClick={handleEditableClick} suppressContentEditableWarning>বহুনির্বাচনী অংশ</span>
                 <span>—</span>
                 <span style={{ fontWeight: 400, fontSize: "0.9em" }}>{mcqMarksLine}</span>
               </div>
 
-              {/* MCQ 2-column grid with central divider */}
-              <div
-                style={{
+              {/* Regular standalone MCQs in grid */}
+              {standalone.length > 0 && (
+                <div style={{
                   display: "grid",
                   gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
-                  columnGap: "0",
-                  rowGap: "0",
-                }}
-              >
-                {mcqQuestions.map((q, idx) => {
-                  const isDuplicate = duplicateIds.has(q.id);
-                  const refStr = formatRefs(q);
-                  const colIdx = idx % settings.columns;
-                  const showLeftBorder = colIdx > 0 && settings.columnDivider;
-                  return (
-                    <div
-                      key={q.id}
-                      className={editableClass}
-                      style={{
-                        padding: "1px 0",
-                        paddingLeft: colIdx > 0 ? "10px" : "0",
-                        paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
+                  columnGap: "0", rowGap: "0",
+                }}>
+                  {standalone.map((q) => {
+                    mcqNumber++;
+                    const idx = mcqNumber;
+                    const isDuplicate = duplicateIds.has(q.id);
+                    const refStr = formatRefs(q);
+                    const colIdx = (idx - 1) % settings.columns;
+                    const showLeftBorder = colIdx > 0 && settings.columnDivider;
+                    return (
+                      <div key={q.id} className={editableClass} style={{
+                        padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
                         borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
                         background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
-                        borderRadius: isDuplicate ? "2px" : undefined,
-                      }}
-                      data-editable={`mcq-${q.id}`}
-                      onClick={(e) => handleEditableClick(e, q.id)}
-                      suppressContentEditableWarning
-                    >
+                      }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                          <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
+                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                        </div>
+                        <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                          {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                            const val = q[key]; if (!val) return null;
+                            const label = ["ক", "খ", "গ", "ঘ"][oi];
+                            const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
+                            return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Standalone MCQs with optional stimulus (not grouped) */}
+              {standaloneWithStimulus.map((q) => {
+                mcqNumber++;
+                const idx = mcqNumber;
+                return (
+                  <div key={q.id} style={{ marginTop: "6px" }}>
+                    {q.stimulus_text && (
+                      <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
+                        <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                      </div>
+                    )}
+                    <div className={editableClass} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                        <span style={{ flex: 1 }}>
-                          <LatexRenderer text={`${padBangla(idx + 1)}। ${q.question}`} />
-                        </span>
-                        {settings.showQuestionInfo && refStr && (
-                          <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>
-                        )}
+                        <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
                       </div>
                       <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
                         {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                          const val = q[key];
-                          if (!val) return null;
+                          const val = q[key]; if (!val) return null;
                           const label = ["ক", "খ", "গ", "ঘ"][oi];
-                          const answerKey = ["ক", "খ", "গ", "ঘ"][oi];
-                          const isCorrect = settings.showAnswerSheet && q.correct_answer && q.correct_answer === answerKey;
-                          return (
-                            <span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>
-                              {getOptionLabel(label)} <LatexRenderer text={val} />
-                              {isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}
-                            </span>
-                          );
+                          const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
+                          return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                         })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
+
+              {/* Grouped MCQs with shared stimulus */}
+              {Array.from(grouped.entries()).map(([groupId, groupQs]) => {
+                const stimulusHtml = groupQs[0]?.stimulus_text || "";
+                return (
+                  <div key={groupId} style={{ marginTop: "8px" }}>
+                    <p style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }}>
+                      নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:
+                    </p>
+                    {stimulusHtml && (
+                      <div style={{ marginBottom: "6px", padding: "4px 8px", borderLeft: "2px solid #000" }}>
+                        <span dangerouslySetInnerHTML={{ __html: stimulusHtml }} />
+                      </div>
+                    )}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
+                      columnGap: "0", rowGap: "0",
+                    }}>
+                      {groupQs.map((q) => {
+                        mcqNumber++;
+                        const idx = mcqNumber;
+                        const colIdx = (groupQs.indexOf(q)) % settings.columns;
+                        const showLeftBorder = colIdx > 0 && settings.columnDivider;
+                        return (
+                          <div key={q.id} className={editableClass} style={{
+                            padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
+                            borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
+                          }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                              <span style={{ flex: 1 }}><LatexRenderer text={`${padBangla(idx)}। ${q.question}`} /></span>
+                            </div>
+                            <div style={{ marginLeft: "16px", display: "flex", flexWrap: "wrap", gap: "1px 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                              {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                const val = q[key]; if (!val) return null;
+                                const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                const isCorrect = settings.showAnswerSheet && q.correct_answer === label;
+                                return (<span key={key} style={isCorrect ? { fontWeight: 700 } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
+            );
+          })()}
 
           {/* ===== CQ SECTION (2nd) ===== */}
           {cqQuestions.length > 0 && (

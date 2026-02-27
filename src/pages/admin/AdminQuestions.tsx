@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MathInput from "@/components/MathInput";
@@ -39,6 +40,12 @@ export default function AdminQuestions() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
+  const [isGroupedMcq, setIsGroupedMcq] = useState(false);
+  const [groupedQuestions, setGroupedQuestions] = useState<Array<{
+    question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string;
+  }>>([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+  const [stimulusText, setStimulusText] = useState("");
+
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
@@ -121,6 +128,9 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
+    setIsGroupedMcq(false);
+    setStimulusText("");
+    setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
     setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
@@ -128,6 +138,25 @@ export default function AdminQuestions() {
   const openEdit = (item: any) => {
     setEditItem(item);
     const cd = item.creative_data || {};
+    // Detect grouped MCQ
+    if (item.type === "mcq" && item.stimulus_group_id) {
+      setIsGroupedMcq(true);
+      setStimulusText(item.stimulus_text || "");
+      // We'll load grouped questions from DB
+      supabase.from("questions").select("*").eq("stimulus_group_id", item.stimulus_group_id).order("id")
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setGroupedQuestions(data.map((q: any) => ({
+              question: q.question || "", option_a: q.option_a || "", option_b: q.option_b || "",
+              option_c: q.option_c || "", option_d: q.option_d || "", correct_answer: q.correct_answer || "",
+            })));
+          }
+        });
+    } else {
+      setIsGroupedMcq(false);
+      setStimulusText(item.stimulus_text || "");
+      setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+    }
     setForm({
       class_id: String(item.class_id), subject_id: String(item.subject_id),
       chapter_id: String(item.chapter_id), topic_id: item.topic_id ? String(item.topic_id) : "", category_id: item.category_id ? String(item.category_id) : "",
@@ -145,6 +174,55 @@ export default function AdminQuestions() {
   };
 
   const handleSave = async () => {
+    // Grouped MCQ save logic
+    if (form.type === "mcq" && isGroupedMcq) {
+      if (!stimulusText || !form.class_id || !form.subject_id || !form.chapter_id) {
+        toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
+        return;
+      }
+      const validQs = groupedQuestions.filter(gq => gq.question.trim());
+      if (validQs.length === 0) {
+        toast.error("অন্তত একটি প্রশ্ন প্রয়োজন");
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const groupId = editItem?.stimulus_group_id || crypto.randomUUID();
+
+      // If editing, delete old group questions first
+      if (editItem?.stimulus_group_id) {
+        await supabase.from("questions").delete().eq("stimulus_group_id", editItem.stimulus_group_id);
+      }
+
+      const payloads = validQs.map((gq) => ({
+        class_id: Number(form.class_id),
+        subject_id: Number(form.subject_id),
+        chapter_id: Number(form.chapter_id),
+        topic_id: form.topic_id ? Number(form.topic_id) : null,
+        category_id: form.category_id ? Number(form.category_id) : null,
+        type: "mcq",
+        question: gq.question,
+        option_a: gq.option_a || null,
+        option_b: gq.option_b || null,
+        option_c: gq.option_c || null,
+        option_d: gq.option_d || null,
+        correct_answer: gq.correct_answer || null,
+        explanation: form.explanation || null,
+        stimulus_group_id: groupId,
+        stimulus_text: stimulusText,
+        board_references: form.board_references.length > 0 ? form.board_references : [],
+        university_references: form.university_references.length > 0 ? form.university_references : [],
+        teacher_id: user?.id,
+      }));
+
+      const { error } = await supabase.from("questions").insert(payloads as any);
+      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
+      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : "গ্রুপ তৈরি হয়েছে");
+      setDialogOpen(false);
+      fetchItems();
+      return;
+    }
+
     if (form.type === "cq") {
       if (!form.cq_stem || !form.class_id || !form.subject_id || !form.chapter_id) {
         toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
@@ -179,25 +257,23 @@ export default function AdminQuestions() {
       explanation: form.explanation || null,
       board_references: form.board_references.length > 0 ? form.board_references : [],
       university_references: form.university_references.length > 0 ? form.university_references : [],
+      // For single MCQ with optional stimulus
+      stimulus_text: form.type === "mcq" && stimulusText ? stimulusText : null,
+      stimulus_group_id: null,
     };
 
     if (form.type === "cq") {
-      // Determine math subject at save time using available subject lists
       const saveSub = subjects.find(s => String(s.id) === form.subject_id) || allSubjects.find(s => String(s.id) === form.subject_id);
       const saveMath = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((saveSub?.name || "").trim());
       if (saveMath) {
-        // 3-part: ক=২, খ=৪, গ=৪
         payload.creative_data = {
-          is_math: true,
-          stem: form.cq_stem,
+          is_math: true, stem: form.cq_stem,
           q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
           ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
         };
       } else {
-        // 4-part: ক=১, খ=২, গ=৩, ঘ=৪
         payload.creative_data = {
-          is_math: false,
-          stem: form.cq_stem,
+          is_math: false, stem: form.cq_stem,
           q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
           ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
         };
@@ -444,46 +520,113 @@ export default function AdminQuestions() {
                 {/* === MCQ Form === */}
                 {form.type === "mcq" && (
                   <>
-                    <div>
-                      <Label>প্রশ্ন</Label>
-                      <RichTextEditor
-                        value={form.question}
-                        onChange={(v) => setForm({ ...form, question: v })}
-                        placeholder="Write your main question here..."
-                        minHeight="180px"
-                      />
+                    {/* Grouped MCQ Toggle */}
+                    <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                      <div>
+                        <Label className="font-semibold" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>উদ্দীপক ভিত্তিক প্রশ্ন (Grouped MCQ)</Label>
+                        <p className="text-xs text-muted-foreground">একটি উদ্দীপকের অধীনে একাধিক MCQ যোগ করুন</p>
+                      </div>
+                      <Switch checked={isGroupedMcq} onCheckedChange={setIsGroupedMcq} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="mb-1 block">ক</Label>
-                        <RichTextEditor value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} placeholder="Write your main question here..." minHeight="120px" />
-                      </div>
-                      <div>
-                        <Label className="mb-1 block">খ</Label>
-                        <RichTextEditor value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} placeholder="Write your main question here..." minHeight="120px" />
-                      </div>
-                      <div>
-                        <Label className="mb-1 block">গ</Label>
-                        <RichTextEditor value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} placeholder="Write your main question here..." minHeight="120px" />
-                      </div>
-                      <div>
-                        <Label className="mb-1 block">ঘ</Label>
-                        <RichTextEditor value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} placeholder="Write your main question here..." minHeight="120px" />
-                      </div>
+
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                        MCQ — প্রতিটি ১ নম্বর
+                      </span>
                     </div>
-                    <div>
-                      <Label>সঠিক উত্তর</Label>
-                      <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
-                        <option value="">নির্বাচন করুন</option>
-                        <option value="ক">ক</option>
-                        <option value="খ">খ</option>
-                        <option value="গ">গ</option>
-                        <option value="ঘ">ঘ</option>
-                      </select>
-                    </div>
+
+                    {/* Optional Stimulus field (shown for both modes) */}
+                    {(isGroupedMcq || !isGroupedMcq) && (
+                      <div>
+                        <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                          {isGroupedMcq ? "উদ্দীপক (Stimulus) *" : "উদ্দীপক (ঐচ্ছিক)"}
+                        </Label>
+                        <RichTextEditor
+                          value={stimulusText}
+                          onChange={setStimulusText}
+                          placeholder="উদ্দীপকটি এখানে লিখুন..."
+                          minHeight={isGroupedMcq ? "150px" : "100px"}
+                        />
+                      </div>
+                    )}
+
+                    {!isGroupedMcq ? (
+                      <>
+                        {/* Single MCQ */}
+                        <div>
+                          <Label>প্রশ্ন</Label>
+                          <RichTextEditor value={form.question} onChange={(v) => setForm({ ...form, question: v })} placeholder="প্রশ্নটি এখানে লিখুন..." minHeight="180px" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label className="mb-1 block">ক</Label><RichTextEditor value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} placeholder="অপশন ক" minHeight="120px" /></div>
+                          <div><Label className="mb-1 block">খ</Label><RichTextEditor value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} placeholder="অপশন খ" minHeight="120px" /></div>
+                          <div><Label className="mb-1 block">গ</Label><RichTextEditor value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} placeholder="অপশন গ" minHeight="120px" /></div>
+                          <div><Label className="mb-1 block">ঘ</Label><RichTextEditor value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} placeholder="অপশন ঘ" minHeight="120px" /></div>
+                        </div>
+                        <div>
+                          <Label>সঠিক উত্তর</Label>
+                          <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
+                            <option value="">নির্বাচন করুন</option>
+                            <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Grouped MCQ - Dynamic Question List */}
+                        <div className="space-y-4">
+                          <Label className="text-base font-semibold" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                            প্রশ্নসমূহ ({groupedQuestions.length}টি)
+                          </Label>
+                          {groupedQuestions.map((gq, gi) => (
+                            <div key={gi} className="border border-border rounded-lg p-3 space-y-2 relative bg-background">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-semibold" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                                  প্রশ্ন {gi + 1}
+                                </span>
+                                {groupedQuestions.length > 1 && (
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setGroupedQuestions(prev => prev.filter((_, i) => i !== gi))}>
+                                    <X className="h-3.5 w-3.5 text-destructive" />
+                                  </Button>
+                                )}
+                              </div>
+                              <RichTextEditor
+                                value={gq.question}
+                                onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, question: v } : q))}
+                                placeholder={`প্রশ্ন ${gi + 1} লিখুন...`}
+                                minHeight="100px"
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div><Label className="text-xs">ক</Label><RichTextEditor value={gq.option_a} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_a: v } : q))} placeholder="অপশন ক" minHeight="70px" /></div>
+                                <div><Label className="text-xs">খ</Label><RichTextEditor value={gq.option_b} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_b: v } : q))} placeholder="অপশন খ" minHeight="70px" /></div>
+                                <div><Label className="text-xs">গ</Label><RichTextEditor value={gq.option_c} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_c: v } : q))} placeholder="অপশন গ" minHeight="70px" /></div>
+                                <div><Label className="text-xs">ঘ</Label><RichTextEditor value={gq.option_d} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_d: v } : q))} placeholder="অপশন ঘ" minHeight="70px" /></div>
+                              </div>
+                              <div>
+                                <Label className="text-xs">সঠিক উত্তর</Label>
+                                <select className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background" value={gq.correct_answer} onChange={(e) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, correct_answer: e.target.value } : q))}>
+                                  <option value="">নির্বাচন করুন</option>
+                                  <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                                </select>
+                              </div>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full border-dashed border-emerald-400 text-emerald-600 hover:bg-emerald-50"
+                            onClick={() => setGroupedQuestions(prev => [...prev, { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }])}
+                            style={{ fontFamily: "'SolaimanLipi', sans-serif" }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যোগ করুন
+                          </Button>
+                        </div>
+                      </>
+                    )}
+
                     <div>
                       <Label>ব্যাখ্যা (ঐচ্ছিক)</Label>
-                      <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="Write your main question here..." minHeight="120px" />
+                      <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="120px" />
                     </div>
                   </>
                 )}
@@ -567,8 +710,10 @@ export default function AdminQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive" || form.type === "cq") ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
-              {editItem ? "আপডেট" : "তৈরি করুন"}
+            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive" || form.type === "cq" || (form.type === "mcq" && isGroupedMcq)) ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
+              {form.type === "mcq" && isGroupedMcq
+                ? (editItem ? "গ্রুপ আপডেট" : `${groupedQuestions.length}টি MCQ তৈরি করুন`)
+                : (editItem ? "আপডেট" : "তৈরি করুন")}
             </Button>
           </DialogFooter>
         </DialogContent>
