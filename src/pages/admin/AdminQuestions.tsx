@@ -430,15 +430,39 @@ export default function AdminQuestions() {
                   </>
                 ) : (
                   <>
-                    <div>
-                      <Label>প্রশ্ন</Label>
-                      <MathInput value={form.question} onChange={(v) => setForm({ ...form, question: v })} rows={3} placeholder="প্রশ্নটি লিখুন... (LaTeX: $\\\\\\\\sqrt{x}$)" />
+                    {/* === SHORT Question Form === */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                        সংক্ষিপ্ত প্রশ্ন — ২ মার্ক
+                      </span>
                     </div>
                     <div>
-                      <Label>সঠিক উত্তর</Label>
-                      <MathInput value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} singleLine />
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>প্রশ্ন</Label>
+                      <RichTextEditor
+                        value={form.question}
+                        onChange={(v) => setForm({ ...form, question: v })}
+                        placeholder="সংক্ষিপ্ত প্রশ্নটি এখানে লিখুন..."
+                        minHeight="140px"
+                      />
                     </div>
-                    <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><MathInput value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} rows={2} /></div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>উত্তর (ঐচ্ছিক)</Label>
+                      <RichTextEditor
+                        value={form.correct_answer}
+                        onChange={(v) => setForm({ ...form, correct_answer: v })}
+                        placeholder="নমুনা উত্তর লিখুন..."
+                        minHeight="120px"
+                      />
+                    </div>
+                    <div>
+                      <Label style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>ব্যাখ্যা (ঐচ্ছিক)</Label>
+                      <RichTextEditor
+                        value={form.explanation}
+                        onChange={(v) => setForm({ ...form, explanation: v })}
+                        placeholder="ব্যাখ্যা লিখুন..."
+                        minHeight="100px"
+                      />
+                    </div>
                   </>
                 )}
               </>
@@ -467,7 +491,9 @@ export default function AdminQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button onClick={handleSave} className={form.type === "short" ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
+              {editItem ? "আপডেট" : "তৈরি করুন"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
