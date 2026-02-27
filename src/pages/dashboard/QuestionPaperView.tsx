@@ -1076,6 +1076,32 @@ export default function QuestionPaperView() {
                 </div>
               </div>
 
+              {/* সৃজনশীল প্রশ্ন সেটিংস */}
+              {cqQuestions.length > 0 && (
+                <div className="border-b border-border pb-3 mb-3">
+                  <h4 className="font-heading font-bold text-sm mb-2">সৃজনশীল প্রশ্ন</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">কতটি প্রশ্নের উত্তর দিতে হবে?</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={cqQuestions.length}
+                          className="h-8 text-sm w-20"
+                          value={settings.cqToAnswer || cqQuestions.length}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value) || 0;
+                            updateSetting("cqToAnswer", v);
+                          }}
+                        />
+                        <span className="text-xs text-muted-foreground">/ {toBanglaNum(cqQuestions.length)}টি</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* প্রশ্নের মেটাডাটা */}
               <div className="border-b border-border pb-3 mb-3">
                 <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নের মেটাডাটা (হেডার)</h4>
