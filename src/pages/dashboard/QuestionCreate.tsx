@@ -450,7 +450,7 @@ export default function QuestionCreate() {
               </Button>
               <Button className="gradient-green text-primary-foreground border-0" size="sm"
                 onClick={handleSaveAndView}
-                disabled={selectedIds.size === 0}>💾 Save</Button>
+                disabled={selectedIds.size === 0}><Save size={16} /> Save</Button>
             </div>
           </div>
 
