@@ -174,6 +174,55 @@ export default function AdminQuestions() {
   };
 
   const handleSave = async () => {
+    // Grouped MCQ save logic
+    if (form.type === "mcq" && isGroupedMcq) {
+      if (!stimulusText || !form.class_id || !form.subject_id || !form.chapter_id) {
+        toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
+        return;
+      }
+      const validQs = groupedQuestions.filter(gq => gq.question.trim());
+      if (validQs.length === 0) {
+        toast.error("অন্তত একটি প্রশ্ন প্রয়োজন");
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const groupId = editItem?.stimulus_group_id || crypto.randomUUID();
+
+      // If editing, delete old group questions first
+      if (editItem?.stimulus_group_id) {
+        await supabase.from("questions").delete().eq("stimulus_group_id", editItem.stimulus_group_id);
+      }
+
+      const payloads = validQs.map((gq) => ({
+        class_id: Number(form.class_id),
+        subject_id: Number(form.subject_id),
+        chapter_id: Number(form.chapter_id),
+        topic_id: form.topic_id ? Number(form.topic_id) : null,
+        category_id: form.category_id ? Number(form.category_id) : null,
+        type: "mcq",
+        question: gq.question,
+        option_a: gq.option_a || null,
+        option_b: gq.option_b || null,
+        option_c: gq.option_c || null,
+        option_d: gq.option_d || null,
+        correct_answer: gq.correct_answer || null,
+        explanation: form.explanation || null,
+        stimulus_group_id: groupId,
+        stimulus_text: stimulusText,
+        board_references: form.board_references.length > 0 ? form.board_references : [],
+        university_references: form.university_references.length > 0 ? form.university_references : [],
+        teacher_id: user?.id,
+      }));
+
+      const { error } = await supabase.from("questions").insert(payloads as any);
+      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
+      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : "গ্রুপ তৈরি হয়েছে");
+      setDialogOpen(false);
+      fetchItems();
+      return;
+    }
+
     if (form.type === "cq") {
       if (!form.cq_stem || !form.class_id || !form.subject_id || !form.chapter_id) {
         toast.error("উদ্দীপক, শ্রেণী, বিষয় ও অধ্যায় আবশ্যক");
@@ -208,54 +257,12 @@ export default function AdminQuestions() {
       explanation: form.explanation || null,
       board_references: form.board_references.length > 0 ? form.board_references : [],
       university_references: form.university_references.length > 0 ? form.university_references : [],
+      // For single MCQ with optional stimulus
+      stimulus_text: form.type === "mcq" && stimulusText ? stimulusText : null,
+      stimulus_group_id: null,
     };
 
-    if (form.type === "cq") {
-      // Determine math subject at save time using available subject lists
-      const saveSub = subjects.find(s => String(s.id) === form.subject_id) || allSubjects.find(s => String(s.id) === form.subject_id);
-      const saveMath = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((saveSub?.name || "").trim());
-      if (saveMath) {
-        // 3-part: ক=২, খ=৪, গ=৪
-        payload.creative_data = {
-          is_math: true,
-          stem: form.cq_stem,
-          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
-          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
-        };
-      } else {
-        // 4-part: ক=১, খ=২, গ=৩, ঘ=৪
-        payload.creative_data = {
-          is_math: false,
-          stem: form.cq_stem,
-          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
-          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
-        };
-      }
-    }
-
-    if (form.type === "descriptive") {
-      payload.creative_data = {
-        desc_q_ka: form.desc_q_ka, desc_q_kha: form.desc_q_kha,
-        desc_ans_ka: form.desc_ans_ka, desc_ans_kha: form.desc_ans_kha,
-      };
-    }
-
-    if (form.category_id) payload.category_id = Number(form.category_id);
-
-    if (editItem) {
-      const { error } = await supabase.from("questions").update(payload).eq("id", editItem.id);
-      if (error) { toast.error("আপডেট ব্যর্থ: " + error.message); return; }
-      toast.success("আপডেট হয়েছে");
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      payload.teacher_id = user?.id;
-      const { error } = await supabase.from("questions").insert(payload);
-      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
-    }
-    setDialogOpen(false);
-    fetchItems();
-  };
+    // ... keep existing code for CQ and descriptive payload
 
   const handleDelete = async (id: number) => {
     if (!confirm("মুছে ফেলতে চান?")) return;
