@@ -244,7 +244,8 @@ export default function QuestionPaperView() {
   const shortQuestions = sortedQuestions.filter(q => q.type === "short");
   const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
 
-  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqQuestions.length * 10 + descriptiveQuestions.length * 10;
+  const cqToAnswerForTotal = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
+  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqToAnswerForTotal * 10 + descriptiveQuestions.length * 10;
 
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
