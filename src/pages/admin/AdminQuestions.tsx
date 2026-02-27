@@ -36,7 +36,10 @@ export default function AdminQuestions() {
   const [filterClassId, setFilterClassId] = useState("");
   const [filterSubjectId, setFilterSubjectId] = useState("");
   const [filterChapterId, setFilterChapterId] = useState("");
+  const [filterTopicId, setFilterTopicId] = useState("");
+  const [filterType, setFilterType] = useState("");
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
+  const [filterTopics, setFilterTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
