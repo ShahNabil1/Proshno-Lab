@@ -394,6 +394,7 @@ export default function QuestionCreate() {
   // ─── STEP 3: Question List with Advanced Filter Sidebar ───
   if (step === "questionList") {
     return (
+      <>
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
         {/* Main content */}
         <div className="space-y-4">
