@@ -889,137 +889,6 @@ export default function QuestionPaperView() {
             );
           })()}
 
-          {/* ===== CQ SECTION (2nd) ===== */}
-          {cqQuestions.length > 0 && (
-            <div style={{ marginBottom: "8px" }}>
-              {/* Horizontal divider before CQ */}
-              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
-
-              {/* Section header: সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০) */}
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
-                <span
-                  className={editableClass}
-                  data-editable="cq-title"
-                  onClick={handleEditableClick}
-                  suppressContentEditableWarning
-                >
-                  সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০)
-                </span>
-              </div>
-
-              {/* Dynamic instruction + marks calc */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "6px" }}>
-                <span style={{ fontWeight: 600 }}>{cqInstruction}</span>
-                <span style={{ fontWeight: 600 }}>{cqMarksLine}</span>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {cqQuestions.map((q, idx) => {
-                  const num = idx + 1;
-                  const refStr = formatRefs(q);
-                  const cData = q.creative_data;
-                  const subQuestions = cData?.sub_questions || [];
-
-                  // Determine marks based on subject (Math: 3 parts, Others: 4 parts)
-                  const usesMathMarks = isMathSubject || cData?.is_math === true;
-                  const subLabels = usesMathMarks ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
-                  const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
-
-                  return (
-                    <div
-                      key={q.id}
-                      className={editableClass}
-                      data-editable={`cq-${q.id}`}
-                      onClick={(e) => handleEditableClick(e, q.id)}
-                      suppressContentEditableWarning
-                    >
-                      {/* Stimulus rendering for CQ */}
-                      {q.stimulus_text && (
-                        <div style={{ marginBottom: "4px", padding: "4px 0" }}>
-                          <span style={{ fontWeight: 600 }}>{padBangla(num)}।</span>{" "}
-                          <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
-                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
-                        </div>
-                      )}
-
-                      {/* Question text (non-stimulus) */}
-                      {!q.stimulus_text && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
-                          <span style={{ fontWeight: 600, flex: 1 }}>
-                            <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
-                          </span>
-                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
-                        </div>
-                      )}
-
-                      {/* Sub-questions from creative_data.sub_questions */}
-                      {subQuestions.length > 0 && (
-                        <div style={{ marginLeft: "18px" }}>
-                          {subQuestions.map((sq: any, si: number) => {
-                            const label = subLabels[si] || "";
-                            const marks = subMarksMap[si] || "";
-                            if (!label) return null;
-                            return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                <span>({label}) <LatexRenderer text={sq.question || sq.text || ""} /></span>
-                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(marks))}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Sub-questions from creative_data keys (q_ka, q_kha, etc.) */}
-                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
-                        <div style={{ marginLeft: "18px" }}>
-                          <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
-                            <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
-                          </p>
-                          {(() => {
-                            const keys = usesMathMarks
-                              ? ["q_ka", "q_kha", "q_ga"]
-                              : ["q_ka", "q_kha", "q_ga", "q_gha"];
-                            return keys.map((key, si) => {
-                              const text = cData[key];
-                              if (!text) return null;
-                              return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
-                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      )}
-
-                      {/* Fallback: no creative_data, just question text with sub_questions from stimulus */}
-                      {(!subQuestions || subQuestions.length === 0) && !cData?.stem && q.stimulus_text && (
-                        <div style={{ marginLeft: "18px" }}>
-                          {(() => {
-                            const keys = usesMathMarks
-                              ? ["q_ka", "q_kha", "q_ga"]
-                              : ["q_ka", "q_kha", "q_ga", "q_gha"];
-                            return keys.map((key, si) => {
-                              const text = cData?.[key];
-                              if (!text) return null;
-                              return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
-                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* ===== SHORT SECTION (2nd) ===== */}
           {shortQuestions.length > 0 && (
             <div style={{ marginBottom: "8px" }}>
@@ -1054,6 +923,109 @@ export default function QuestionPaperView() {
                         <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
                       {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ===== CQ SECTION (3rd) ===== */}
+          {cqQuestions.length > 0 && (
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
+              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+                <span
+                  className={editableClass}
+                  data-editable="cq-title"
+                  onClick={handleEditableClick}
+                  suppressContentEditableWarning
+                >
+                  সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০)
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 600 }}>{cqInstruction}</span>
+                <span style={{ fontWeight: 600 }}>{cqMarksLine}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {cqQuestions.map((q, idx) => {
+                  const num = idx + 1;
+                  const refStr = formatRefs(q);
+                  const cData = q.creative_data;
+                  const subQuestions = cData?.sub_questions || [];
+                  const usesMathMarks = isMathSubject || cData?.is_math === true;
+                  const subLabels = usesMathMarks ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
+                  const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
+                  return (
+                    <div key={q.id} className={editableClass} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                      {q.stimulus_text && (
+                        <div style={{ marginBottom: "4px", padding: "4px 0" }}>
+                          <span style={{ fontWeight: 600 }}>{padBangla(num)}।</span>{" "}
+                          <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                        </div>
+                      )}
+                      {!q.stimulus_text && (
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
+                          <span style={{ fontWeight: 600, flex: 1 }}>
+                            <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
+                          </span>
+                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                        </div>
+                      )}
+                      {subQuestions.length > 0 && (
+                        <div style={{ marginLeft: "18px" }}>
+                          {subQuestions.map((sq: any, si: number) => {
+                            const label = subLabels[si] || "";
+                            const marks = subMarksMap[si] || "";
+                            if (!label) return null;
+                            return (
+                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
+                                <span>({label}) <LatexRenderer text={sq.question || sq.text || ""} /></span>
+                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(marks))}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
+                        <div style={{ marginLeft: "18px" }}>
+                          <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
+                            <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
+                          </p>
+                          {(() => {
+                            const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
+                            return keys.map((key, si) => {
+                              const text = cData[key];
+                              if (!text) return null;
+                              return (
+                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
+                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
+                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+                      {(!subQuestions || subQuestions.length === 0) && !cData?.stem && q.stimulus_text && (
+                        <div style={{ marginLeft: "18px" }}>
+                          {(() => {
+                            const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
+                            return keys.map((key, si) => {
+                              const text = cData?.[key];
+                              if (!text) return null;
+                              return (
+                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
+                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
+                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
