@@ -405,8 +405,8 @@ export default function AdminQuestions() {
               </div>
             ) : (
               <>
-                {/* === Non-CQ Form === */}
-                {form.type === "mcq" ? (
+                {/* === MCQ Form === */}
+                {form.type === "mcq" && (
                   <>
                     <div>
                       <Label>প্রশ্ন</Label>
@@ -450,8 +450,8 @@ export default function AdminQuestions() {
                       <RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="Write your main question here..." minHeight="120px" />
                     </div>
                   </>
-                ) : (
-                  <>
+                )}
+
                 {/* === SHORT Question Form === */}
                 {form.type === "short" && (
                   <>
