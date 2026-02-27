@@ -90,6 +90,7 @@ const App = () => (
             <Route path="/dashboard/contact" element={<DashboardLayout><Contact /></DashboardLayout>} />
             <Route path="/dashboard/feedback" element={<DashboardLayout><Feedback /></DashboardLayout>} />
             <Route path="/dashboard/view-paper" element={<DashboardLayout><QuestionPaperView /></DashboardLayout>} />
+            <Route path="/dashboard/create-cq" element={<DashboardLayout><CQCreate /></DashboardLayout>} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminLayout><AdminHome /></AdminLayout>} />

@@ -47,7 +47,7 @@ export default function CQCreate() {
   const [explanation, setExplanation] = useState("");
 
   // References
-  const [boardRefs, setBoardRefs] = useState<{ board: string; year: string }[]>([]);
+  const [boardRefs, setBoardRefs] = useState<{ board?: string; name?: string; year: string }[]>([]);
   const [specialSearch, setSpecialSearch] = useState<Set<string>>(new Set());
 
   const [saving, setSaving] = useState(false);
