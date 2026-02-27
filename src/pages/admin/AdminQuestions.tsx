@@ -262,7 +262,47 @@ export default function AdminQuestions() {
       stimulus_group_id: null,
     };
 
-    // ... keep existing code for CQ and descriptive payload
+    if (form.type === "cq") {
+      const saveSub = subjects.find(s => String(s.id) === form.subject_id) || allSubjects.find(s => String(s.id) === form.subject_id);
+      const saveMath = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((saveSub?.name || "").trim());
+      if (saveMath) {
+        payload.creative_data = {
+          is_math: true, stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
+        };
+      } else {
+        payload.creative_data = {
+          is_math: false, stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
+        };
+      }
+    }
+
+    if (form.type === "descriptive") {
+      payload.creative_data = {
+        desc_q_ka: form.desc_q_ka, desc_q_kha: form.desc_q_kha,
+        desc_ans_ka: form.desc_ans_ka, desc_ans_kha: form.desc_ans_kha,
+      };
+    }
+
+    if (form.category_id) payload.category_id = Number(form.category_id);
+
+    if (editItem) {
+      const { error } = await supabase.from("questions").update(payload).eq("id", editItem.id);
+      if (error) { toast.error("আপডেট ব্যর্থ: " + error.message); return; }
+      toast.success("আপডেট হয়েছে");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      payload.teacher_id = user?.id;
+      const { error } = await supabase.from("questions").insert(payload);
+      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
+      toast.success("তৈরি হয়েছে");
+    }
+    setDialogOpen(false);
+    fetchItems();
+  };
 
   const handleDelete = async (id: number) => {
     if (!confirm("মুছে ফেলতে চান?")) return;
