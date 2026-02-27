@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, AlertCircle, MessageSquareReply } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, MessageSquareReply, Flag } from "lucide-react";
 
 const categories = ["সাধারণ", "বাগ রিপোর্ট", "ফিচার রিকোয়েস্ট", "অন্যান্য"];
 const priorities = [
@@ -28,6 +29,7 @@ export default function Feedback() {
   const [form, setForm] = useState({ category: "সাধারণ", subject: "", details: "", priority: "low" });
   const [loading, setLoading] = useState(false);
   const [myFeedbacks, setMyFeedbacks] = useState<any[]>([]);
+  const [myReports, setMyReports] = useState<any[]>([]);
 
   const fetchMyFeedbacks = async () => {
     if (!user) return;
@@ -35,7 +37,13 @@ export default function Feedback() {
     setMyFeedbacks(data || []);
   };
 
-  useEffect(() => { fetchMyFeedbacks(); }, [user]);
+  const fetchMyReports = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("question_reports" as any).select("*").eq("teacher_id", user.id).order("created_at", { ascending: false });
+    setMyReports((data as any[]) || []);
+  };
+
+  useEffect(() => { fetchMyFeedbacks(); fetchMyReports(); }, [user]);
 
   const ensureTeacherExists = async () => {
     if (!user) return false;
@@ -130,33 +138,64 @@ export default function Feedback() {
         </Card>
       </div>
 
-      {myFeedbacks.length > 0 && (
-        <div>
-          <h2 className="font-heading text-xl font-bold mb-4">আমার আগের মতামত সমূহ</h2>
-          <div className="space-y-3">
-            {myFeedbacks.map((fb) => (
-              <Card key={fb.id}>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">{fb.subject}</span>
-                    {getStatusBadge(fb.status)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{fb.details}</p>
-                  {fb.admin_reply && (
-                    <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
-                      <div className="flex items-center gap-1 text-xs font-semibold text-primary mb-1">
-                        <MessageSquareReply className="w-3 h-3" /> এ্যাডমিনের উত্তর
-                      </div>
-                      <p className="text-sm">{fb.admin_reply}</p>
+      {/* Tabs for history */}
+      <Tabs defaultValue="feedback">
+        <TabsList className="w-full">
+          <TabsTrigger value="feedback" className="flex-1">মতামত ইতিহাস ({myFeedbacks.length})</TabsTrigger>
+          <TabsTrigger value="reports" className="flex-1">প্রশ্ন রিপোর্ট ({myReports.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="feedback" className="space-y-3 mt-4">
+          {myFeedbacks.length === 0 && <p className="text-center text-muted-foreground py-4">কোনো মতামত নেই</p>}
+          {myFeedbacks.map((fb) => (
+            <Card key={fb.id}>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">{fb.subject}</span>
+                  {getStatusBadge(fb.status)}
+                </div>
+                <p className="text-sm text-muted-foreground">{fb.details}</p>
+                {fb.admin_reply && (
+                  <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-primary mb-1">
+                      <MessageSquareReply className="w-3 h-3" /> এ্যাডমিনের উত্তর
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">{new Date(fb.created_at).toLocaleDateString("bn-BD")}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+                    <p className="text-sm">{fb.admin_reply}</p>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{new Date(fb.created_at).toLocaleDateString("bn-BD")}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-3 mt-4">
+          {myReports.length === 0 && <p className="text-center text-muted-foreground py-4">কোনো প্রশ্ন রিপোর্ট নেই</p>}
+          {myReports.map((r: any) => (
+            <Card key={r.id}>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flag className="w-4 h-4 text-destructive" />
+                    <span className="font-medium text-sm">{r.error_type}</span>
+                  </div>
+                  {getStatusBadge(r.status)}
+                </div>
+                {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
+                {r.admin_reply && (
+                  <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-primary mb-1">
+                      <MessageSquareReply className="w-3 h-3" /> এ্যাডমিনের উত্তর
+                    </div>
+                    <p className="text-sm">{r.admin_reply}</p>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("bn-BD")}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
