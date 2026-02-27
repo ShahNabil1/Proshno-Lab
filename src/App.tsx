@@ -34,6 +34,7 @@ import Subscription from "./pages/dashboard/Subscription";
 import Contact from "./pages/dashboard/Contact";
 import Feedback from "./pages/dashboard/Feedback";
 import QuestionPaperView from "./pages/dashboard/QuestionPaperView";
+import CQCreate from "./pages/dashboard/CQCreate";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
