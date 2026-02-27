@@ -45,6 +45,8 @@ interface QuestionRow {
   university_references?: any;
   topic_id?: number | null;
   chapter_id: number;
+  stimulus_group_id?: string | null;
+  stimulus_text?: string | null;
 }
 
 // Special search categories
