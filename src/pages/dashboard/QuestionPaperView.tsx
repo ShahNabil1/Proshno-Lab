@@ -777,18 +777,24 @@ export default function QuestionPaperView() {
                       {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
                         <div style={{ marginLeft: "18px" }}>
                           <p style={{ fontStyle: "italic", marginBottom: "2px" }}><LatexRenderer text={cData.stem} /></p>
-                          {["ক", "খ", "গ", "ঘ"].map((label, si) => {
-                            const key = `sub_${si + 1}` as string;
-                            const text = cData[key];
-                            if (!text) return null;
-                            const marks = [1, 2, 3, 4][si];
-                            return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4 }}>
-                                <span>({label}) <LatexRenderer text={text} /></span>
-                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(marks)}</span>
-                              </div>
-                            );
-                          })}
+                          {(() => {
+                            const isMath = cData.is_math === true;
+                            const labels = isMath ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
+                            const marksMap = isMath ? [2, 4, 4] : [1, 2, 3, 4];
+                            const keys = isMath
+                              ? ["q_ka", "q_kha", "q_ga"]
+                              : ["q_ka", "q_kha", "q_ga", "q_gha"];
+                            return keys.map((key, si) => {
+                              const text = cData[key];
+                              if (!text) return null;
+                              return (
+                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4 }}>
+                                  <span>({labels[si]}) <LatexRenderer text={text} /></span>
+                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(marksMap[si])}</span>
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       )}
                     </div>

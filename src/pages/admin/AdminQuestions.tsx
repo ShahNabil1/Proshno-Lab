@@ -42,12 +42,16 @@ export default function AdminQuestions() {
   const [form, setForm] = useState({
     class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq",
     question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
-    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "",
-    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "",
+    cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
+    cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
     desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
     board_references: [] as Array<{ board: string; year: string }>,
     university_references: [] as Array<{ name: string; year: string }>,
   });
+
+  // Determine if selected subject is math-type (3-part CQ) or other (4-part CQ)
+  const selectedSubjectName = subjects.find(s => String(s.id) === form.subject_id)?.name || allSubjects.find(s => String(s.id) === form.subject_id)?.name || "";
+  const isMathSubject = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test(selectedSubjectName.trim());
 
   const classes = filterClasses(allClasses);
   const filterSubjectsList = filterSubjectId ? [] : allSubjects.filter(s => filterClassId ? String(s.class_id) === filterClassId : true);
@@ -117,7 +121,7 @@ export default function AdminQuestions() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
+    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
     setDialogOpen(true);
   };
 
@@ -130,8 +134,8 @@ export default function AdminQuestions() {
       type: item.type, question: item.question, option_a: item.option_a || "", option_b: item.option_b || "",
       option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: item.correct_answer || "",
       explanation: item.explanation || "",
-      cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "",
-      cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "",
+      cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
+      cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
       desc_q_ka: cd.desc_q_ka || "", desc_q_kha: cd.desc_q_kha || "",
       desc_ans_ka: cd.desc_ans_ka || "", desc_ans_kha: cd.desc_ans_kha || "",
       board_references: Array.isArray(item.board_references) ? item.board_references : [],
@@ -178,11 +182,26 @@ export default function AdminQuestions() {
     };
 
     if (form.type === "cq") {
-      payload.creative_data = {
-        stem: form.cq_stem,
-        q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
-        ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
-      };
+      // Determine math subject at save time using available subject lists
+      const saveSub = subjects.find(s => String(s.id) === form.subject_id) || allSubjects.find(s => String(s.id) === form.subject_id);
+      const saveMath = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((saveSub?.name || "").trim());
+      if (saveMath) {
+        // 3-part: ক=২, খ=৪, গ=৪
+        payload.creative_data = {
+          is_math: true,
+          stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga,
+        };
+      } else {
+        // 4-part: ক=১, খ=২, গ=৩, ঘ=৪
+        payload.creative_data = {
+          is_math: false,
+          stem: form.cq_stem,
+          q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, q_gha: form.cq_q_gha,
+          ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga, ans_gha: form.cq_ans_gha,
+        };
+      }
     }
 
     if (form.type === "descriptive") {
@@ -373,6 +392,14 @@ export default function AdminQuestions() {
             {/* === CQ Form === */}
             {form.type === "cq" ? (
               <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+                    {isMathSubject
+                      ? "সৃজনশীল (গণিত) — ১০ মার্ক (ক=২, খ=৪, গ=৪)"
+                      : "সৃজনশীল — ১০ মার্ক (ক=১, খ=২, গ=৩, ঘ=৪)"}
+                  </span>
+                  {!form.subject_id && <span className="text-xs text-muted-foreground">(বিষয় নির্বাচন করলে মার্ক নির্ধারিত হবে)</span>}
+                </div>
                 <div>
                   <Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label>
                   <RichTextEditor value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} placeholder="উদ্দীপকটি এখানে লিখুন..." minHeight="150px" />
@@ -380,23 +407,32 @@ export default function AdminQuestions() {
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
                   <div>
-                    <Label>ক) জ্ঞানমূলক (নম্বর: ২)</Label>
+                    <Label>ক) {isMathSubject ? "জ্ঞানমূলক (নম্বর: ২)" : "জ্ঞানমূলক (নম্বর: ১)"}</Label>
                     <RichTextEditor value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} placeholder="প্রশ্ন ক" minHeight="80px" />
                   </div>
                   <div>
-                    <Label>খ) অনুধাবনমূলক (নম্বর: ৪)</Label>
+                    <Label>খ) {isMathSubject ? "অনুধাবনমূলক (নম্বর: ৪)" : "অনুধাবনমূলক (নম্বর: ২)"}</Label>
                     <RichTextEditor value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} placeholder="প্রশ্ন খ" minHeight="80px" />
                   </div>
                   <div>
-                    <Label>গ) প্রয়োগমূলক (নম্বর: ৪)</Label>
+                    <Label>গ) {isMathSubject ? "প্রয়োগমূলক (নম্বর: ৪)" : "প্রয়োগমূলক (নম্বর: ৩)"}</Label>
                     <RichTextEditor value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} placeholder="প্রশ্ন গ" minHeight="80px" />
                   </div>
+                  {!isMathSubject && (
+                    <div>
+                      <Label>ঘ) উচ্চতর দক্ষতামূলক (নম্বর: ৪)</Label>
+                      <RichTextEditor value={form.cq_q_gha} onChange={(v) => setForm({ ...form, cq_q_gha: v })} placeholder="প্রশ্ন ঘ" minHeight="80px" />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
                   <div><Label>উত্তর ক</Label><RichTextEditor value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} placeholder="উত্তর ক" minHeight="80px" /></div>
                   <div><Label>উত্তর খ</Label><RichTextEditor value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} placeholder="উত্তর খ" minHeight="80px" /></div>
                   <div><Label>উত্তর গ</Label><RichTextEditor value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} placeholder="উত্তর গ" minHeight="80px" /></div>
+                  {!isMathSubject && (
+                    <div><Label>উত্তর ঘ</Label><RichTextEditor value={form.cq_ans_gha} onChange={(v) => setForm({ ...form, cq_ans_gha: v })} placeholder="উত্তর ঘ" minHeight="80px" /></div>
+                  )}
                 </div>
                 <div>
                   <Label>ব্যাখ্যা (ঐচ্ছিক)</Label>
@@ -531,7 +567,7 @@ export default function AdminQuestions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive") ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
+            <Button onClick={handleSave} className={(form.type === "short" || form.type === "descriptive" || form.type === "cq") ? "bg-emerald-600 hover:bg-emerald-700" : ""}>
               {editItem ? "আপডেট" : "তৈরি করুন"}
             </Button>
           </DialogFooter>
