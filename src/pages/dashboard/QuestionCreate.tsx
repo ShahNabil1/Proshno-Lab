@@ -98,7 +98,32 @@ export default function QuestionCreate() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<Set<string>>(new Set());
 
-  const [institute, setInstitute] = useState<{ name: string; upazila?: string | null; district?: string | null; division?: string | null } | null>(null);
+  // Report modal states
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportQuestionId, setReportQuestionId] = useState<number | null>(null);
+  const [reportErrorType, setReportErrorType] = useState("বানান ভুল");
+  const [reportComment, setReportComment] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const reportErrorTypes = ["বানান ভুল", "উত্তর ভুল", "অপশন ভুল", "প্রশ্ন অসম্পূর্ণ", "ডুপ্লিকেট প্রশ্ন", "অন্যান্য"];
+
+  const handleReport = async () => {
+    if (!user || !reportQuestionId) return;
+    setReportLoading(true);
+    const { error } = await supabase.from("question_reports" as any).insert({
+      question_id: reportQuestionId,
+      teacher_id: user.id,
+      error_type: reportErrorType,
+      comment: reportComment,
+    } as any);
+    setReportLoading(false);
+    if (error) { toast.error("রিপোর্ট সাবমিট ব্যর্থ"); return; }
+    toast.success("রিপোর্ট সাবমিট হয়েছে! ধন্যবাদ।");
+    setReportDialogOpen(false);
+    setReportComment("");
+    setReportQuestionId(null);
+  };
+
 
   // Fetch institute
   useEffect(() => {
