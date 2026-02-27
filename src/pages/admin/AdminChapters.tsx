@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, BookOpen, Filter } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus, Pencil, Trash2, Filter } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 interface ClassItem { id: number; name: string; }
@@ -23,7 +22,6 @@ interface ChapterItem {
 }
 
 export default function AdminChapters() {
-  const navigate = useNavigate();
   const { hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
@@ -204,14 +202,6 @@ export default function AdminChapters() {
                     />
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1"
-                      onClick={() => navigate(`/admin/topics?chapter_id=${item.id}&chapter_name=${encodeURIComponent(item.name)}`)}
-                    >
-                      <BookOpen className="w-3.5 h-3.5" /> টপিক
-                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                   </TableCell>
