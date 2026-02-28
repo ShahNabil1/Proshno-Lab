@@ -49,6 +49,7 @@ interface QuestionRow {
   chapter_id: number;
   stimulus_group_id?: string | null;
   stimulus_text?: string | null;
+  creative_data?: any;
 }
 
 // Special search categories
@@ -489,9 +490,10 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  <p className="font-medium mb-3">
+                  <div className="font-medium mb-3">
                     <LatexRenderer text={`${idx + 1}. ${q.question}`} />
-                  </p>
+                  </div>
+                  {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
                       {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
@@ -507,6 +509,31 @@ export default function QuestionCreate() {
                       })}
                     </div>
                   )}
+                  {/* CQ / Descriptive sub-questions */}
+                  {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
+                    const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
+                    const subFields = q.type === "descriptive"
+                      ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }]
+                      : data?.is_math
+                        ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }]
+                        : [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }, { key: "q_gha", label: "ঘ" }];
+                    const hasSubs = subFields.some(f => data?.[f.key]);
+                    if (!hasSubs) return null;
+                    return (
+                      <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary/20">
+                        {subFields.map(f => {
+                          const val = data?.[f.key];
+                          if (!val) return null;
+                          return (
+                            <div key={f.key} className="text-sm">
+                              <span className="font-semibold">({f.label}) </span>
+                              <LatexRenderer text={val} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}
