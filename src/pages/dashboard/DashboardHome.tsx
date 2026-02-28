@@ -162,8 +162,10 @@ export default function DashboardHome() {
               আপনার কথা আমাদের কাছে সবচেয়ে মূল্যবান! যেকোনো প্রশ্ন, পরামর্শ বা সমস্যার দ্রুত সমাধানে আমরা সবসময় আছি আপনার পাশে।
             </p>
             <div className="space-y-2">
-              <Button variant="outline" className="w-full gap-2" size="sm">
-                <Phone className="w-4 h-4" /> +880 1711-476706
+              <Button variant="outline" className="w-full gap-2" size="sm" asChild>
+                <a href="tel:+8801340345787">
+                  <Phone className="w-4 h-4" /> +880 1340-345787
+                </a>
               </Button>
               <Button className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white border-0" size="sm" asChild>
                 <a href="https://wa.me/8801340345787" target="_blank" rel="noopener noreferrer">
