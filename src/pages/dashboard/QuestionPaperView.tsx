@@ -1269,9 +1269,8 @@ export default function QuestionPaperView() {
 
           {/* ===== SHORT SECTION (2nd) ===== */}
           {shortQuestions.length > 0 && (
-            <div style={{ marginBottom: "8px" }}>
-              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "3px" }}>
+            <div style={{ marginTop: "10px", marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "3px" }}>
                 <span
                   className={editableClass}
                   data-editable="short-title"
@@ -1310,8 +1309,7 @@ export default function QuestionPaperView() {
 
           {/* ===== CQ SECTION (3rd) ===== */}
           {cqQuestions.length > 0 && (
-            <div style={{ marginBottom: "8px" }}>
-              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
+            <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
@@ -1359,8 +1357,11 @@ export default function QuestionPaperView() {
                             const marks = subMarksMap[si] || "";
                             if (!label) return null;
                             return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                <span>({label}) <LatexRenderer text={sq.question || sq.text || ""} /></span>
+                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
+                                <div style={{ display: "flex", gap: "4px", flex: 1 }}>
+                                  <span style={{ flexShrink: 0 }}>({label})</span>
+                                  <span style={{ flex: 1 }}><LatexRenderer text={sq.question || sq.text || ""} /></span>
+                                </div>
                                 <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(marks))}</span>
                               </div>
                             );
@@ -1378,8 +1379,11 @@ export default function QuestionPaperView() {
                               const text = cData[key];
                               if (!text) return null;
                               return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
+                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
+                                  <div style={{ display: "flex", gap: "4px", flex: 1 }}>
+                                    <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
+                                    <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: text }} />
+                                  </div>
                                   <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
                                 </div>
                               );
@@ -1395,8 +1399,11 @@ export default function QuestionPaperView() {
                               const text = cData?.[key];
                               if (!text) return null;
                               return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.5 }}>
-                                  <span>({subLabels[si]}) <span dangerouslySetInnerHTML={{ __html: text }} /></span>
+                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
+                                  <div style={{ display: "flex", gap: "4px", flex: 1 }}>
+                                    <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
+                                    <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: text }} />
+                                  </div>
                                   <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
                                 </div>
                               );
@@ -1413,9 +1420,8 @@ export default function QuestionPaperView() {
 
           {/* ===== DESCRIPTIVE SECTION (4th) ===== */}
           {descriptiveQuestions.length > 0 && (
-            <div style={{ marginBottom: "8px" }}>
-              <div style={{ borderTop: "1.5px solid #000", margin: "10px 0 6px" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
+            <div style={{ marginTop: "10px", marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "4px" }}>
                 <span
                   className={editableClass}
                   data-editable="desc-title"
@@ -1450,14 +1456,20 @@ export default function QuestionPaperView() {
                       {dData && (
                         <div style={{ marginLeft: "18px" }}>
                           {dData.desc_q_ka && (
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4, marginBottom: "2px" }}>
-                              <span>(ক) <span dangerouslySetInnerHTML={{ __html: dData.desc_q_ka }} /></span>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4, marginBottom: "2px" }}>
+                              <div style={{ display: "flex", gap: "4px", flex: 1 }}>
+                                <span style={{ flexShrink: 0 }}>(ক)</span>
+                                <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: dData.desc_q_ka }} />
+                              </div>
                               <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৩</span>
                             </div>
                           )}
                           {dData.desc_q_kha && (
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", lineHeight: 1.4 }}>
-                              <span>(খ) <span dangerouslySetInnerHTML={{ __html: dData.desc_q_kha }} /></span>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4 }}>
+                              <div style={{ display: "flex", gap: "4px", flex: 1 }}>
+                                <span style={{ flexShrink: 0 }}>(খ)</span>
+                                <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: dData.desc_q_kha }} />
+                              </div>
                               <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৭</span>
                             </div>
                           )}
