@@ -72,17 +72,23 @@ export default function AnnouncementBar() {
       </div>
 
       <style>{`
+        .marquee-track {
+          animation: marquee 20s linear infinite;
+        }
+        .group:hover .marquee-track {
+          animation-play-state: paused;
+        }
         @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-33.33%); }
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
         .mask-marquee {
-          mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
         }
       `}</style>
     </div>
