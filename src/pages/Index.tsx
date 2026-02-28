@@ -202,6 +202,27 @@ export default function Index() {
         </div>
       </section>
 
+      {/* ══════ PRICING CTA ══════ */}
+      <section className="py-14 md:py-16 bg-background">
+        <div className="container">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center">
+            <div className="max-w-xl mx-auto bg-card rounded-2xl p-8 md:p-10 shadow-premium">
+              <div className="w-16 h-16 mx-auto mb-5 rounded-2xl gradient-green flex items-center justify-center">
+                <BarChart3 className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-3">আমাদের মূল্য তালিকা</h2>
+              <p className="text-muted-foreground mb-6">সাশ্রয়ী মূল্যে সকল বিষয়ের প্রশ্নব্যাংক — আপনার প্রয়োজন অনুযায়ী প্যাকেজ বেছে নিন।</p>
+              <Link to="/pricing">
+                <Button size="lg" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-8 rounded-xl gap-2 text-base">
+                  মূল্য তালিকা দেখুন
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ══════ CATEGORIES ══════ */}
       <section className="py-16 md:py-20 bg-slate-alt">
         <div className="container">
