@@ -599,10 +599,11 @@ export default function AdminChapters() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
+                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">ID</TableHead>
                     <TableHead>প্রশ্ন</TableHead>
+                    <TableHead className="w-40">বোর্ড</TableHead>
                     <TableHead className="w-24">টাইপ</TableHead>
                     <TableHead className="w-32">টপিক</TableHead>
                     <TableHead className="w-24 text-right">অ্যাকশন</TableHead>
