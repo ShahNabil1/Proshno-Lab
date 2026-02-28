@@ -131,6 +131,21 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
         <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন যোগ করুন</Button>
       </div>
 
+      {/* Class filter for subjects */}
+      {table === "subjects" && parents.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <select
+            className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+            value={filterClassId}
+            onChange={(e) => setFilterClassId(e.target.value)}
+          >
+            <option value="">সকল শ্রেণী</option>
+            {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <Table>
