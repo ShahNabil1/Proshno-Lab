@@ -444,6 +444,8 @@ export default function QuestionPaperView() {
         <div
           className="mx-auto font-paper"
           ref={paperRef}
+          data-print-paper
+          ref={paperRef}
           style={{
             maxWidth: paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
