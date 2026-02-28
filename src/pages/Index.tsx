@@ -43,6 +43,18 @@ const testimonials = [
 export default function Index() {
   const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<{ id: number; question: string; answer: string }[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("faqs")
+      .select("id, question, answer")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data) setFaqs(data as any);
+      });
+  }, []);
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
 
