@@ -58,9 +58,8 @@ export default function Index() {
       .select("id, question, answer")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .then(({ data }) => {
-        if (data) setFaqs(data as any);
-      });
+      .then(({ data }) => { if (data) setFaqs(data as any); });
+    fetchReviews();
   }, []);
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
@@ -230,32 +229,42 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section className="py-16 md:py-24 bg-background">
+       <section className="py-16 md:py-24 bg-background">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
             <p className="text-muted-foreground text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {reviews.map((t, i) => (
+              <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="bg-card rounded-2xl p-7 shadow-premium hover-lift h-full flex flex-col">
-                  <Star className="w-5 h-5 text-yellow-badge mb-4" />
+                  <div className="flex items-center gap-0.5 mb-4">
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
+                    ))}
+                  </div>
                   <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">"{t.text}"</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-border">
-                    <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
-                      {t.name.charAt(0)}
-                    </div>
+                    {t.image_url ? (
+                      <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
+                        {t.name.charAt(0)}
+                      </div>
+                    )}
                     <div>
                       <p className="font-heading font-semibold text-sm text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
+                      <p className="text-xs text-muted-foreground">{t.designation}{t.institution ? `, ${t.institution}` : ""}</p>
                     </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-10">
+            <ReviewModal onSuccess={fetchReviews} />
+          </motion.div>
         </div>
       </section>
 
