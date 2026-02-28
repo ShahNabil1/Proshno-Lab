@@ -11,16 +11,9 @@ export default function RefundPage() {
           <div className="space-y-8 text-muted-foreground text-sm leading-relaxed">
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">১. রিফান্ড নীতি</h2>
-              <p>1. eExamapp-এর সাবস্ক্রিপশন ক্রয়ের পর কোনো অবস্থাতেই অর্থ ফেরতযোগ্য নয়।
-
-2. রিফান্ড শুধুমাত্র মূল পেমেন্ট মাধ্যমেই প্রদান করা হবে (bKash, Nagad, Rocket ও Upay)।
-
-3. ভিন্ন মাধ্যমে রিফান্ড গ্রহণের ক্ষেত্রে তা আলোচনা সাপেক্ষে বিবেচনা করা হবে।</p>
+              <p>eExamapp-এর সাবস্ক্রিপশন ক্রয়ের পর কোনো অবস্থাতেই অর্থ ফেরতযোগ্য নয়।</p>
+              <p className="mt-2">রিফান্ড শুধুমাত্র মূল পেমেন্ট মাধ্যমেই প্রদান করা হবে (bKash, Nagad, Rocket ও Upay)।</p>
             </section>
-
-
-
-
 
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৬. যোগাযোগ</h2>
@@ -33,4 +26,5 @@ export default function RefundPage() {
           </div>
         </motion.div>
       </div>
-    </div>);}
+    </div>);
+}
