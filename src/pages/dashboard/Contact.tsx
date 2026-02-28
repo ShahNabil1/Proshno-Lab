@@ -12,8 +12,8 @@ export default function Contact() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <Button variant="outline" className="w-full gap-2 justify-start" asChild>
-            <a href="tel:+8801711476706">
-              <Phone className="w-4 h-4" /> +880 1711-476706
+            <a href="tel:+8801340345787">
+              <Phone className="w-4 h-4" /> +880 1340-345787
             </a>
           </Button>
           <Button className="w-full gap-2 justify-start bg-green-600 hover:bg-green-700 text-white border-0" asChild>
