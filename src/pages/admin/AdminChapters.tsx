@@ -570,7 +570,7 @@ export default function AdminChapters() {
             <h1 className="text-xl font-bold">{ch.name} — সকল প্রশ্ন</h1>
             <p className="text-sm text-muted-foreground">{className} • {subjectName}</p>
           </div>
-          <Button className="ml-auto gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => openAddQuestion(ch)}>
+          <Button className="ml-auto gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => openAddQuestion(ch, "questions")}>
             <Plus className="w-4 h-4" /> নতুন প্রশ্ন যুক্ত করুন
           </Button>
         </div>
