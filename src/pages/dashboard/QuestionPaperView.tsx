@@ -473,7 +473,7 @@ export default function QuestionPaperView() {
         )}
 
         {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
-        <div style={{
+        <div data-print-paper-wrapper style={{
           width: paperPreviewWidths[settings.paperSize],
           transformOrigin: "top left",
           transform: `scale(${paperScale})`,
