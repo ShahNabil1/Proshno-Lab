@@ -780,7 +780,7 @@ export default function QuestionCreate() {
               </Select>
             </div>
             <div>
-              <Label>সংখ্যা</Label>
+              <Label>পূর্ণমান</Label>
               <Input type="number" value={form.count} onChange={(e) => setForm({ ...form, count: e.target.value })} />
             </div>
             <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={handleCreateQuestionSet} disabled={loading}>
