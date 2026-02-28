@@ -59,6 +59,8 @@ export default function AdminChapters() {
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [qFilterType, setQFilterType] = useState("");
   const [qCurrentPage, setQCurrentPage] = useState(1);
+  const [qFilterTopicId, setQFilterTopicId] = useState("");
+  const [qTopics, setQTopics] = useState<any[]>([]);
 
   // "Add Question" modal
   const [addQDialogOpen, setAddQDialogOpen] = useState(false); // kept for edit dialog compatibility
@@ -210,8 +212,11 @@ export default function AdminChapters() {
   const openQuestionsView = async (chapter: ChapterItem) => {
     const classId = (chapter as any).subjects?.class_id;
     setQuestionsView({ chapter, classId, subjectId: chapter.subject_id });
-    setQFilterType(""); setQCurrentPage(1);
+    setQFilterType(""); setQCurrentPage(1); setQFilterTopicId("");
     setQuestionsLoading(true);
+    // Load topics for this chapter
+    supabase.from("topics").select("id, name").eq("chapter_id", chapter.id).order("name")
+      .then(({ data }) => setQTopics(data || []));
     const { data } = await supabase.from("questions")
       .select("*, topics(name)")
       .eq("chapter_id", chapter.id)
@@ -223,6 +228,7 @@ export default function AdminChapters() {
   const typeSortOrder: Record<string, number> = { mcq: 0, short: 1, cq: 2, descriptive: 3 };
   const filteredQuestions = questions
     .filter(q => !qFilterType || q.type === qFilterType)
+    .filter(q => !qFilterTopicId || String(q.topic_id) === qFilterTopicId)
     .sort((a, b) => (typeSortOrder[a.type] ?? 99) - (typeSortOrder[b.type] ?? 99));
 
   const qTotalPages = Math.max(1, Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE));
@@ -590,6 +596,17 @@ export default function AdminChapters() {
               {tab.label}
             </Button>
           ))}
+          {qTopics.length > 0 && (
+            <select
+              className="border border-border rounded-md px-3 py-1.5 text-sm bg-background ml-2"
+              value={qFilterTopicId}
+              onChange={(e) => { setQFilterTopicId(e.target.value); setQCurrentPage(1); }}
+              style={{ fontFamily: FONT }}
+            >
+              <option value="">সকল টপিক</option>
+              {qTopics.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          )}
           <span className="text-sm text-muted-foreground ml-auto self-center">মোট: {filteredQuestions.length}টি</span>
         </div>
 
