@@ -12,24 +12,27 @@ import { Button } from "@/components/ui/button";
 
 const allSidebarItems = [
   { path: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard, group: "ওভারভিউ" },
+
   { path: "/admin/classes", label: "শ্রেণী", icon: GraduationCap, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/subjects", label: "বিষয়", icon: BookOpen, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/chapters", label: "অধ্যায়", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
-  { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "একাডেমিক ম্যানেজমেন্ট" },
-  { path: "/admin/faqs", label: "FAQ", icon: HelpCircle, group: "একাডেমিক ম্যানেজমেন্ট" },
-  { path: "/admin/reviews", label: "রিভিউ", icon: Star, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/questions", label: "প্রশ্ন", icon: FileText, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/topics", label: "টপিক", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/suggestions", label: "সাজেশন", icon: ClipboardList, group: "একাডেমিক ম্যানেজমেন্ট" },
-  
-  { path: "/admin/questions", label: "প্রশ্ন", icon: FileText, group: "কন্টেন্ট ম্যানেজমেন্ট" },
-  { path: "/admin/question-reports", label: "প্রশ্নের রিপোর্ট", icon: Flag, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+
+  { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/faqs", label: "FAQ", icon: HelpCircle, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/reviews", label: "রিভিউ", icon: Star, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/coupons", label: "কুপন", icon: Tag, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+  { path: "/admin/packages", label: "প্যাকেজ", icon: Package, group: "কন্টেন্ট ম্যানেজমেন্ট" },
+
+  { path: "/admin/question-reports", label: "প্রশ্নের রিপোর্ট", icon: Flag, group: "রিপোর্ট ম্যানেজমেন্ট" },
+  { path: "/admin/feedback", label: "মতামত", icon: MessageSquare, group: "রিপোর্ট ম্যানেজমেন্ট" },
+
   { path: "/admin/teachers", label: "শিক্ষক", icon: Users, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
-  { path: "/admin/topics", label: "টপিক", icon: Layers, group: "কন্টেন্ট ম্যানেজমেন্ট" },
-  { path: "/admin/feedback", label: "মতামত", icon: MessageSquare, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
-  { path: "/admin/coupons", label: "কুপন", icon: Tag, group: "ইউজার ম্যানেজমেন্ট" },
-  { path: "/admin/packages", label: "প্যাকেজ", icon: Package, group: "ইউজার ম্যানেজমেন্ট" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

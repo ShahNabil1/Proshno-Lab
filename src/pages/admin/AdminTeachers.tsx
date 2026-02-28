@@ -14,19 +14,48 @@ import { Shield, ShieldOff, Settings, Ban, Trash2, UserCheck, Search, X, Plus } 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const ADMIN_PAGES = [
-  { value: "/admin", label: "ড্যাশবোর্ড" },
-  { value: "/admin/classes", label: "শ্রেণী" },
-  { value: "/admin/subjects", label: "বিষয়" },
-  { value: "/admin/chapters", label: "অধ্যায়" },
-  { value: "/admin/categories", label: "প্রশ্নের ক্যাটাগরি" },
-  { value: "/admin/questions", label: "প্রশ্ন" },
-  { value: "/admin/teachers", label: "শিক্ষক" },
-  { value: "/admin/institutes", label: "প্রতিষ্ঠান" },
-  { value: "/admin/subscriptions", label: "সাবস্ক্রিপশন" },
-  { value: "/admin/topics", label: "টপিক" },
-  { value: "/admin/feedback", label: "মতামত" },
+const ADMIN_PAGE_GROUPS = [
+  {
+    label: "একাডেমিক ম্যানেজমেন্ট",
+    pages: [
+      { value: "/admin", label: "ড্যাশবোর্ড" },
+      { value: "/admin/classes", label: "শ্রেণী" },
+      { value: "/admin/subjects", label: "বিষয়" },
+      { value: "/admin/chapters", label: "অধ্যায়" },
+      { value: "/admin/questions", label: "প্রশ্ন" },
+      { value: "/admin/topics", label: "টপিক" },
+      { value: "/admin/suggestions", label: "সাজেশন" },
+    ],
+  },
+  {
+    label: "কন্টেন্ট ম্যানেজমেন্ট",
+    pages: [
+      { value: "/admin/announcements", label: "অ্যানাউন্সমেন্ট" },
+      { value: "/admin/faqs", label: "FAQ" },
+      { value: "/admin/reviews", label: "রিভিউ" },
+      { value: "/admin/coupons", label: "কুপন" },
+      { value: "/admin/packages", label: "প্যাকেজ" },
+    ],
+  },
+  {
+    label: "রিপোর্ট ম্যানেজমেন্ট",
+    pages: [
+      { value: "/admin/question-reports", label: "প্রশ্নের রিপোর্ট" },
+      { value: "/admin/feedback", label: "মতামত" },
+    ],
+  },
+  {
+    label: "ইউজার ম্যানেজমেন্ট",
+    pages: [
+      { value: "/admin/teachers", label: "শিক্ষক" },
+      { value: "/admin/institutes", label: "প্রতিষ্ঠান" },
+      { value: "/admin/subscriptions", label: "সাবস্ক্রিপশন" },
+      { value: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট" },
+    ],
+  },
 ];
+
+const ADMIN_PAGES = ADMIN_PAGE_GROUPS.flatMap(g => g.pages);
 
 export default function AdminTeachers() {
   const [teachers, setTeachers] = useState<any[]>([]);
