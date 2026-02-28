@@ -1128,7 +1128,7 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", borderBottom: "1px solid #000", paddingBottom: "2px", marginBottom: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", paddingBottom: "2px", marginBottom: "4px" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
