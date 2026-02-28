@@ -122,6 +122,20 @@ export default function AdminChapters() {
       );
     }
     setChapters(filtered as ChapterItem[]);
+
+    // Fetch question counts per chapter
+    const chapterIds = filtered.map((ch: any) => ch.id);
+    if (chapterIds.length > 0) {
+      const { data: qData } = await supabase
+        .from("questions")
+        .select("chapter_id")
+        .in("chapter_id", chapterIds);
+      const counts: Record<number, number> = {};
+      (qData || []).forEach((q: any) => {
+        counts[q.chapter_id] = (counts[q.chapter_id] || 0) + 1;
+      });
+      setChapterQuestionCounts(counts);
+    }
   };
 
   // Filtered display
