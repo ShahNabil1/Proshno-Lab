@@ -38,6 +38,7 @@ const categories = [
 
 export default function Index() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqs, setFaqs] = useState<{id: number;question: string;answer: string;}[]>([]);
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
