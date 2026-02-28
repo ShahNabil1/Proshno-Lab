@@ -21,6 +21,7 @@ export default function Login() {
 
           <Button
             onClick={signInWithGoogle}
+            variant="outline"
             size="lg"
             className="w-full font-heading font-semibold rounded-xl gap-3 bg-white hover:bg-slate-50 text-slate-800 border border-border shadow-sm"
           >
