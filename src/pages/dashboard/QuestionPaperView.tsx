@@ -514,7 +514,7 @@ export default function QuestionPaperView() {
             lineHeight: 1.35,
             userSelect: "none",
             WebkitUserSelect: "none",
-            padding: "28px 44px",
+            padding: isMobile ? "12px 10px" : "28px 44px",
             color: "#000",
             background: "#fff",
             boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
