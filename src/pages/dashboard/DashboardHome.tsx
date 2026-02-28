@@ -142,7 +142,7 @@ export default function DashboardHome() {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer">
                     <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{q.question || "প্রশ্ন"}</p>
+                      <p className="text-sm font-medium truncate">{(q.question || "প্রশ্ন").replace(/<[^>]*>/g, '')}</p>
                       <p className="text-xs text-muted-foreground">{(q as any).classes?.name} • {(q as any).subjects?.name}</p>
                     </div>
                     <Badge variant="secondary" className="text-[10px] shrink-0 uppercase">{q.type}</Badge>
