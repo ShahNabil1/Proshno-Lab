@@ -16,6 +16,7 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
+import ReferenceBadges from "@/components/ReferenceBadges";
 
 const FONT = "'SolaimanLipi', sans-serif";
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
@@ -598,10 +599,11 @@ export default function AdminChapters() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
+                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">ID</TableHead>
                     <TableHead>প্রশ্ন</TableHead>
+                    <TableHead className="w-40">বোর্ড</TableHead>
                     <TableHead className="w-24">টাইপ</TableHead>
                     <TableHead className="w-32">টপিক</TableHead>
                     <TableHead className="w-24 text-right">অ্যাকশন</TableHead>
@@ -640,6 +642,9 @@ export default function AdminChapters() {
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
+                        <ReferenceBadges boardRefs={q.board_references} uniRefs={q.university_references} />
+                      </TableCell>
+                      <TableCell className="align-top">
                         <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">{typeLabelsMap[q.type] || q.type}</span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground align-top">{q.topics?.name || "—"}</TableCell>
@@ -650,7 +655,7 @@ export default function AdminChapters() {
                     </TableRow>
                   ))}
                   {filteredQuestions.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
