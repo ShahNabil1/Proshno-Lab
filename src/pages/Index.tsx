@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import ReviewModal from "@/components/ReviewModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -39,6 +40,17 @@ export default function Index() {
   const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqs, setFaqs] = useState<{ id: number; question: string; answer: string }[]>([]);
+  const [reviews, setReviews] = useState<{ id: number; name: string; designation: string; institution: string; image_url: string; rating: number; text: string }[]>([]);
+
+  const fetchReviews = () => {
+    supabase
+      .from("reviews")
+      .select("id, name, designation, institution, image_url, rating, text")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setReviews(data as any); });
+  };
 
   useEffect(() => {
     supabase
