@@ -260,16 +260,11 @@ export default function Index() {
             <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">
               বাংলাদেশের সবচেয়ে বড় ডিজিটাল eExamapp প্ল্যাটফর্মে যোগ দিন
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex justify-center">
               <Link to="/register">
-                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold px-8 h-12 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)]">
+                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold px-10 h-14 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] text-base">
                   ফ্রি রেজিস্ট্রেশন
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-              <Link to="/demo">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-heading font-semibold px-8 h-12 rounded-xl">
-                  ডেমো দেখুন
                 </Button>
               </Link>
             </div>
