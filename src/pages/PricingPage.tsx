@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Package, GraduationCap, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Package, GraduationCap, Loader2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,13 @@ const faqs = [
     q: "প্যাকেজ কেনার পর কি আপগ্রেড করা যায়?",
     a: "হ্যাঁ, যেকোনো সময় বড় প্যাকেজে আপগ্রেড করতে পারবেন। পার্থক্য মূল্য পরিশোধ করলেই হবে।",
   },
+];
+
+const bundleFeatures = [
+  "সকল বিষয়ের প্রশ্ন ব্যাংক",
+  "১-ক্লিকে প্রশ্নপত্র তৈরি",
+  "প্রফেশনাল প্রিন্ট লেআউট",
+  "ক্লাউড ব্যাকআপ",
 ];
 
 interface PricingPackage {
@@ -110,42 +118,47 @@ export default function PricingPage() {
           </div>
         ) : (
           <>
-            {/* Bundle Packages */}
+            {/* Bundle Packages as Cards */}
             {bundlePackages.length > 0 && (
-              <section className="container max-w-3xl">
+              <section className="container max-w-4xl">
                 <motion.div custom={0} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                   <div className="flex items-center gap-2 mb-6">
                     <Package className="w-5 h-5 text-primary" />
-                    <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">Bundle Package</h2>
-                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">সেরা মূল্য</Badge>
+                    <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground">প্যাকেজ সমূহ</h2>
                   </div>
 
-                  <div className="rounded-xl border bg-card overflow-hidden shadow-premium">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="font-heading font-semibold text-foreground">শ্রেণি</TableHead>
-                          <TableHead className="font-heading font-semibold text-foreground">বিষয়</TableHead>
-                          <TableHead className="font-heading font-semibold text-foreground">মূল্য</TableHead>
-                          <TableHead className="font-heading font-semibold text-foreground text-center">পদক্ষেপ</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {bundlePackages.map((pkg) => (
-                          <TableRow key={pkg.id}>
-                            <TableCell className="font-medium">{pkg.class_name}</TableCell>
-                            <TableCell>{pkg.subject_name}</TableCell>
-                            <TableCell className="font-semibold">৳{toBengaliDigits(pkg.price)}/-</TableCell>
-                            <TableCell className="text-center">
-                              <Button size="sm" className="gradient-green text-white border-0 rounded-lg font-heading text-xs h-8 px-4"
-                                onClick={() => goToCheckout(pkg.class_name, pkg.subject_name, pkg.price)}>
-                                ক্রয় করুন
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {bundlePackages.map((pkg, i) => (
+                      <motion.div key={pkg.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                        <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/20 hover:shadow-lg transition-all hover-lift">
+                          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-3 py-0.5 rounded-bl-lg">
+                            সেরা অফার
+                          </div>
+                          <CardContent className="p-5 pt-7">
+                            <h3 className="font-heading font-bold text-base mb-1">{pkg.class_name}</h3>
+                            <p className="text-xs text-muted-foreground mb-3">{pkg.subject_name}</p>
+                            <div className="flex items-end gap-1 mb-4">
+                              <span className="font-heading text-2xl font-bold text-primary">৳{toBengaliDigits(pkg.price)}</span>
+                              <span className="text-xs text-muted-foreground mb-1">/ বছর</span>
+                            </div>
+                            <div className="space-y-1.5 mb-5">
+                              {bundleFeatures.map((f, fi) => (
+                                <div key={fi} className="flex items-center gap-1.5 text-xs">
+                                  <Sparkles className="w-3 h-3 text-primary shrink-0" />
+                                  <span>{f}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg"
+                              onClick={() => goToCheckout(pkg.class_name, pkg.subject_name, pkg.price)}
+                            >
+                              এখনই কিনুন <ChevronRight className="w-4 h-4 ml-1" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
                   </div>
                 </motion.div>
               </section>
