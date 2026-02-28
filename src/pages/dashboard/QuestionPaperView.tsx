@@ -128,6 +128,29 @@ export default function QuestionPaperView() {
     cqToAnswer: 0, // 0 means auto (all)
   });
 
+  // Measure container width for responsive scaling
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width - 32);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const paperWidthPx = useMemo(() => {
+    const map: Record<PaperSize, number> = { A4: 780, Letter: 800, Legal: 800, A5: 560 };
+    return map[settings.paperSize];
+  }, [settings.paperSize]);
+
+  const paperScale = useMemo(() => {
+    if (!containerWidth || containerWidth >= paperWidthPx) return 1;
+    return containerWidth / paperWidthPx;
+  }, [containerWidth, paperWidthPx]);
+
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
     if (paperId) {
