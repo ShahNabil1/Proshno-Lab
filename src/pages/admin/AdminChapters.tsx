@@ -596,6 +596,17 @@ export default function AdminChapters() {
               {tab.label}
             </Button>
           ))}
+          {qTopics.length > 0 && (
+            <select
+              className="border border-border rounded-md px-3 py-1.5 text-sm bg-background ml-2"
+              value={qFilterTopicId}
+              onChange={(e) => { setQFilterTopicId(e.target.value); setQCurrentPage(1); }}
+              style={{ fontFamily: FONT }}
+            >
+              <option value="">সকল টপিক</option>
+              {qTopics.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          )}
           <span className="text-sm text-muted-foreground ml-auto self-center">মোট: {filteredQuestions.length}টি</span>
         </div>
 
