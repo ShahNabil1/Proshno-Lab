@@ -36,6 +36,7 @@ export default function AdminPackages() {
   const [editing, setEditing] = useState<PricingPackage | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [filterClass, setFilterClass] = useState("");
 
   const fetchPackages = async () => {
     const { data } = await supabase
