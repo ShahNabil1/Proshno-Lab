@@ -48,14 +48,11 @@ export default function AnnouncementBar() {
 
         {/* Infinite marquee */}
         <div className="flex-1 overflow-hidden relative mask-marquee">
-          <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] group-hover:[animation-play-state:paused]">
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2">
+          <div className="flex whitespace-nowrap marquee-track">
+            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-4">
               {marqueeText}
             </span>
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2" aria-hidden="true">
-              {marqueeText}
-            </span>
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2" aria-hidden="true">
+            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-4" aria-hidden="true">
               {marqueeText}
             </span>
           </div>
