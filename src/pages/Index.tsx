@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import ReviewModal from "@/components/ReviewModal";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -34,16 +35,22 @@ const categories = [
 
 
 
-const testimonials = [
-  { name: "রাহাত হোসেন", role: "সহকারী শিক্ষক, রাজশাহী", text: "eExamapp ব্যবহার করে প্রশ্নপত্র তৈরি করা এখন অনেক সহজ হয়ে গেছে। সময় বাঁচে এবং মান বজায় থাকে।" },
-  { name: "ফাতেমা আক্তার", role: "প্রধান শিক্ষক, চট্টগ্রাম", text: "আমাদের প্রতিষ্ঠানের সকল শিক্ষক এই প্ল্যাটফর্ম ব্যবহার করছেন। খুবই কার্যকর একটি টুল।" },
-  { name: "মো: আলী আহমেদ", role: "বিষয় শিক্ষক, ঢাকা", text: "অধ্যায়ভিত্তিক eExamapp থেকে মডেল টেস্ট তৈরি করতে মাত্র কয়েক মিনিট লাগে।" },
-];
 
 export default function Index() {
   const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqs, setFaqs] = useState<{ id: number; question: string; answer: string }[]>([]);
+  const [reviews, setReviews] = useState<{ id: number; name: string; designation: string; institution: string; image_url: string; rating: number; text: string }[]>([]);
+
+  const fetchReviews = () => {
+    supabase
+      .from("reviews")
+      .select("id, name, designation, institution, image_url, rating, text")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setReviews(data as any); });
+  };
 
   useEffect(() => {
     supabase
@@ -51,9 +58,8 @@ export default function Index() {
       .select("id, question, answer")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .then(({ data }) => {
-        if (data) setFaqs(data as any);
-      });
+      .then(({ data }) => { if (data) setFaqs(data as any); });
+    fetchReviews();
   }, []);
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
@@ -223,32 +229,42 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section className="py-16 md:py-24 bg-background">
+       <section className="py-16 md:py-24 bg-background">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
             <p className="text-muted-foreground text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {reviews.map((t, i) => (
+              <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="bg-card rounded-2xl p-7 shadow-premium hover-lift h-full flex flex-col">
-                  <Star className="w-5 h-5 text-yellow-badge mb-4" />
+                  <div className="flex items-center gap-0.5 mb-4">
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
+                    ))}
+                  </div>
                   <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">"{t.text}"</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-border">
-                    <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
-                      {t.name.charAt(0)}
-                    </div>
+                    {t.image_url ? (
+                      <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
+                        {t.name.charAt(0)}
+                      </div>
+                    )}
                     <div>
                       <p className="font-heading font-semibold text-sm text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
+                      <p className="text-xs text-muted-foreground">{t.designation}{t.institution ? `, ${t.institution}` : ""}</p>
                     </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-10">
+            <ReviewModal onSuccess={fetchReviews} />
+          </motion.div>
         </div>
       </section>
 
