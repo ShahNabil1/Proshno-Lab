@@ -291,7 +291,7 @@ export default function Subscription() {
                         <CheckCircle2 className="w-4 h-4 mr-1" /> ইতিমধ্যেই কেনা হয়েছে
                       </Button>
                     ) : (
-                      <Link to={`/checkout?package=${pkg.id}`}>
+                      <Link to={`/checkout?package=${pkg.id}&price=${pkg.price}&classes=${encodeURIComponent(pkg.class_name)}&subject=${encodeURIComponent(pkg.subject_name)}`}>
                         <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold">
                           এখনই কিনুন <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
@@ -338,7 +338,7 @@ export default function Subscription() {
                                 <CheckCircle2 className="w-3 h-3 mr-1" /> কেনা হয়েছে
                               </Button>
                             ) : (
-                              <Link to={`/checkout?package=${pkg.id}`}>
+                              <Link to={`/checkout?package=${pkg.id}&price=${pkg.price}&classes=${encodeURIComponent(pkg.class_name)}&subject=${encodeURIComponent(pkg.subject_name)}`}>
                                 <Button size="sm" className="w-full gradient-green text-primary-foreground border-0 text-xs font-heading">
                                   এখনই কিনুন <ChevronRight className="w-3 h-3 ml-1" />
                                 </Button>
