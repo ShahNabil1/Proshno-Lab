@@ -88,7 +88,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               </div>
             :
               <Link to="/login">
-                <Button size="sm" variant="outline" className={cn("font-heading font-semibold px-5 rounded-lg", mutedTextColor, "border-white/30 hover:bg-white/10")}>
+                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
                   লগইন করুন
                 </Button>
               </Link>
