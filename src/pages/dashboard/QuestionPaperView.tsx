@@ -497,11 +497,12 @@ export default function QuestionPaperView() {
         )}
 
         {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
-        <div style={{
-          width: paperPreviewWidths[settings.paperSize],
+        <div className="mx-auto" style={{
+          width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
+          maxWidth: '100%',
           transformOrigin: "top left",
-          transform: `scale(${paperScale})`,
-          marginBottom: `calc((${paperScale} - 1) * -50%)`,
+          transform: isMobile ? 'none' : `scale(${paperScale})`,
+          marginBottom: isMobile ? 0 : `calc((${paperScale} - 1) * -50%)`,
         }}>
         <div
           className="font-paper"
