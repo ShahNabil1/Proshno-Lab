@@ -36,6 +36,13 @@ const faqs = [
   },
 ];
 
+const bundleFeatures = [
+  "সকল বিষয়ের প্রশ্ন ব্যাংক",
+  "১-ক্লিকে প্রশ্নপত্র তৈরি",
+  "প্রফেশনাল প্রিন্ট লেআউট",
+  "ক্লাউড ব্যাকআপ",
+];
+
 interface PricingPackage {
   id: number;
   type: string;
