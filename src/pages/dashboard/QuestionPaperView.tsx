@@ -443,6 +443,311 @@ export default function QuestionPaperView() {
   /* Detect if subject is Math/Higher Math for CQ marks distribution */
   const isMathSubject = meta?.subjectName ? /গণিত|math|higher\s*math|উচ্চতর\s*গণিত/i.test(meta.subjectName) : false;
 
+  const settingsContent = (
+    <>
+      {/* প্রশ্নে সংযুক্তি */}
+      <div className="border-b border-border pb-3 mb-3">
+        <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নে সংযুক্তি</h4>
+        <div className="space-y-2">
+          {([
+            { key: "showAnswerSheet" as const, label: "উত্তরপত্র" },
+            { key: "showImportantQ" as const, label: "গুরুত্বপূর্ণ প্রশ্ন" },
+            { key: "showQuestionInfo" as const, label: "প্রশ্নের তথ্য" },
+            { key: "showStudentInfo" as const, label: "শিক্ষার্থীর তথ্য" },
+            { key: "showMarksBox" as const, label: "প্রাপ্ত নম্বর ঘর" },
+            { key: "showSubjectCode" as const, label: "বিষয় কোড" },
+          ]).map(item => (
+            <div key={item.key} className="flex items-center justify-between">
+              <span className="text-sm">{item.label}</span>
+              <Switch checked={settings[item.key]} onCheckedChange={(v) => updateSetting(item.key, v)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* সৃজনশীল প্রশ্ন সেটিংস */}
+      {cqQuestions.length > 0 && (
+        <div className="border-b border-border pb-3 mb-3">
+          <h4 className="font-heading font-bold text-sm mb-2">সৃজনশীল প্রশ্ন</h4>
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">কতটি প্রশ্নের উত্তর দিতে হবে?</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={cqQuestions.length}
+                  className="h-8 text-sm w-20"
+                  value={settings.cqToAnswer || cqQuestions.length}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || 0;
+                    updateSetting("cqToAnswer", v);
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">/ {toBanglaNum(cqQuestions.length)}টি</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* প্রশ্নের মেটাডাটা */}
+      <div className="border-b border-border pb-3 mb-3">
+        <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নের মেটাডাটা (হেডার)</h4>
+        <div className="space-y-2">
+          {([
+            { key: "showClassName" as const, label: "শ্রেণির নাম" },
+            { key: "showSubjectName" as const, label: "বিষয়ের নাম" },
+            { key: "showChapterName" as const, label: "অধ্যায়ের নাম" },
+            { key: "showSetCode" as const, label: "সেট কোড" },
+            { key: "showProgramName" as const, label: "প্রোগ্রাম/পরীক্ষার নাম" },
+            { key: "showInstruction" as const, label: "নির্দেশনা" },
+          ]).map(item => (
+            <div key={item.key} className="flex items-center justify-between">
+              <span className="text-sm">{item.label}</span>
+              <Switch checked={settings[item.key]} onCheckedChange={(v) => updateSetting(item.key, v)} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ডকুমেন্ট কাস্টমাইজেশন */}
+      <div className="border-b border-border pb-3 mb-3">
+        <h4 className="font-heading font-bold text-sm mb-2">ডকুমেন্ট কাস্টমাইজেশন</h4>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">টেক্সট এলাইনমেন্ট</Label>
+          <div className="flex gap-1 mt-1">
+            {(["left", "center", "right", "justify"] as TextAlign[]).map(a => (
+              <Button key={a} size="sm" variant={settings.textAlign === a ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("textAlign", a)}>
+                {a === "left" ? "≡←" : a === "center" ? "≡↔" : a === "right" ? "≡→" : "≡≡"}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">পেপার সাইজ</Label>
+          <div className="flex gap-1 mt-1">
+            {(["A4", "Letter", "Legal", "A5"] as PaperSize[]).map(s => (
+              <Button key={s} size="sm" variant={settings.paperSize === s ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("paperSize", s)}>
+                {s}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">অপশন স্টাইল</Label>
+          <div className="flex gap-1 mt-1">
+            {([
+              { v: "none" as OptionStyle, l: "○" },
+              { v: "bracket" as OptionStyle, l: "( )" },
+              { v: "dot" as OptionStyle, l: "." },
+              { v: "paren" as OptionStyle, l: ")" },
+            ]).map(s => (
+              <Button key={s.v} size="sm" variant={settings.optionStyle === s.v ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("optionStyle", s.v)}>
+                {s.l}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">ফন্ট পরিবর্তন</Label>
+          <Select value={settings.fontLang} onValueChange={(v) => updateSetting("fontLang", v)}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bangla">সোলাইমান লিপি</SelectItem>
+              <SelectItem value="solaimanlipi">সোলাইমান লিপি</SelectItem>
+              <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
+              <SelectItem value="timesnewroman">Times New Roman</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm flex items-center gap-1.5">
+              <Pencil className="h-3.5 w-3.5 text-primary" /> এডিটিং মোড
+            </span>
+            <Switch checked={editingMode} onCheckedChange={(v) => {
+              setEditingMode(v);
+              if (!v) handleCloseToolbar();
+              if (v) toast.info("এডিটিং মোড অন হয়েছে");
+            }} />
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">ফন্ট সাইজ</Label>
+          <div className="flex items-center gap-2 mt-1">
+            <Button size="sm" variant="outline" onClick={() => updateSetting("fontSize", Math.max(10, settings.fontSize - 1))}>
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="text-sm font-medium w-8 text-center">{settings.fontSize}</span>
+            <Button size="sm" variant="outline" onClick={() => updateSetting("fontSize", Math.min(24, settings.fontSize + 1))}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-xs text-muted-foreground">কলাম (MCQ)</Label>
+          <div className="flex gap-1 mt-1">
+            {([1, 2, 3] as ColumnCount[]).map(c => (
+              <Button key={c} size="sm" variant={settings.columns === c ? "default" : "outline"} className="flex-1 text-xs" onClick={() => updateSetting("columns", c)}>
+                {c === 1 ? "█" : c === 2 ? "█ █" : "█ █ █"}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs">কলাম ডিভাইডার</span>
+            <Switch checked={settings.columnDivider} onCheckedChange={(v) => updateSetting("columnDivider", v)} />
+          </div>
+        </div>
+      </div>
+
+      {/* সহায়ক টুলস */}
+      <div className="border-b border-border pb-3 mb-3">
+        <h4 className="font-heading font-bold text-sm mb-2">সহায়ক টুলস</h4>
+        <div className="space-y-2">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">পুনরাবৃত্ত প্রশ্ন শনাক্ত</span>
+              <Switch checked={settings.showDuplicateMarker} onCheckedChange={(v) => updateSetting("showDuplicateMarker", v)} />
+            </div>
+            <p className="text-[10px] text-muted-foreground">একই প্রশ্ন একাধিকবার নির্বাচিত হলে সহজে শনাক্ত ও পরিবর্তন করা যাবে।</p>
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">শীট</span>
+              <Switch checked={settings.showSheet} onCheckedChange={(v) => updateSetting("showSheet", v)} />
+            </div>
+            <p className="text-[10px] text-muted-foreground">শীট তৈরী সেটিংগুলো অটোমেটিক সেট থাকবে সবসময়।</p>
+          </div>
+          {settings.showSheet && (
+            <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs">ইন্সট্রাক্টর নেম</span>
+                <Switch checked={settings.sheetInstructorName} onCheckedChange={(v) => updateSetting("sheetInstructorName", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs">ইন্সট্রাক্টর প্রোফাইল</span>
+                <Switch checked={settings.sheetInstructorProfile} onCheckedChange={(v) => updateSetting("sheetInstructorProfile", v)} />
+              </div>
+              {settings.sheetInstructorProfile && (
+                <Input
+                  className="text-xs h-7"
+                  placeholder="প্রোফাইল লিখুন (e.g. Teacher)"
+                  value={settings.sheetInstructorProfileText}
+                  onChange={(e) => updateSetting("sheetInstructorProfileText", e.target.value)}
+                />
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs">লেকচার নম্বর</span>
+                <Switch checked={settings.sheetLectureNumber} onCheckedChange={(v) => updateSetting("sheetLectureNumber", v)} />
+              </div>
+              {settings.sheetLectureNumber && (
+                <Input
+                  className="text-xs h-7"
+                  placeholder="লেকচার নম্বর লিখুন"
+                  value={settings.sheetLectureNumberText}
+                  onChange={(e) => updateSetting("sheetLectureNumberText", e.target.value)}
+                />
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs">লেকচার টপিক</span>
+                <Switch checked={settings.sheetTopic} onCheckedChange={(v) => updateSetting("sheetTopic", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs">তারিখ</span>
+                <Switch checked={settings.sheetDate} onCheckedChange={(v) => updateSetting("sheetDate", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs">রঙিন ব্যাকগ্রাউন্ড</span>
+                <Switch checked={settings.sheetColoredBg} onCheckedChange={(v) => updateSetting("sheetColoredBg", v)} />
+              </div>
+              {settings.sheetColoredBg && (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">ব্যাকগ্রাউন্ড কালার পছন্দ করুন ↕</label>
+                    <input type="color" value={settings.sheetBgColor} onChange={(e) => updateSetting("sheetBgColor", e.target.value)} className="w-full h-8 rounded cursor-pointer border-0" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">টেক্সট কালার পছন্দ করুন ↕</label>
+                    <input type="color" value={settings.sheetTextColor} onChange={(e) => updateSetting("sheetTextColor", e.target.value)} className="w-full h-8 rounded cursor-pointer border-0" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm">শাফল (সেট কোড তৈরী)</span>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={handleShuffle}>⇆</Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ব্র্যান্ডিং */}
+      <div>
+        <h4 className="font-heading font-bold text-sm mb-2">ব্র্যান্ডিং</h4>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">ঠিকানা</span>
+            <Switch checked={settings.showAddress} onCheckedChange={(v) => updateSetting("showAddress", v)} />
+          </div>
+          {settings.showAddress && (
+            <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs">স্পেসিফিক ঠিকানা</span>
+                <Switch checked={settings.showAddressSpecific} onCheckedChange={(v) => updateSetting("showAddressSpecific", v)} />
+              </div>
+              {settings.showAddressSpecific && (
+                <Input className="text-xs h-7" placeholder="স্পেসিফিক ঠিকানা লিখুন" value={settings.addressText} onChange={(e) => updateSetting("addressText", e.target.value)} />
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs">উপজেলা</span>
+                <Switch checked={settings.showAddressUpazila} onCheckedChange={(v) => updateSetting("showAddressUpazila", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs">জেলা</span>
+                <Switch checked={settings.showAddressDistrict} onCheckedChange={(v) => updateSetting("showAddressDistrict", v)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs">বিভাগ</span>
+                <Switch checked={settings.showAddressDivision} onCheckedChange={(v) => updateSetting("showAddressDivision", v)} />
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm">জলছাপ</span>
+            <Switch checked={settings.showWatermark} onCheckedChange={(v) => updateSetting("showWatermark", v)} />
+          </div>
+          {settings.showWatermark && (
+            <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Opacity</span>
+                  <span className="text-xs font-medium">{settings.watermarkOpacity}</span>
+                </div>
+                <Slider value={[settings.watermarkOpacity]} min={5} max={100} step={5} onValueChange={([v]) => updateSetting("watermarkOpacity", v)} />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Size</span>
+                  <span className="text-xs font-medium">{settings.watermarkSize}</span>
+                </div>
+                <Slider value={[settings.watermarkSize]} min={12} max={80} step={2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
+              </div>
+              <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="lg:grid lg:grid-cols-[1fr_300px] gap-0 -m-4 md:-m-6 relative">
       {/* Floating Toolbar */}
