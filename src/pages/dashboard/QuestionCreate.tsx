@@ -682,8 +682,7 @@ export default function QuestionCreate() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
-        <h1 className="font-heading text-2xl font-bold">১ ক্লিকে প্রশ্ন তৈরীর সফটওয়্যার !</h1>
-        <p className="text-white/60 text-sm mt-2">শিক্ষা এবং সফটওয়্যার, একসাথে এগিয়ে চলা! 🎓</p>
+        <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
       </div>
 
       <Card>
