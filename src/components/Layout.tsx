@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { path: "/", label: "হোম" },
-  { path: "/questions/mcq", label: "eExamapp" },
+  
   { path: "/pricing", label: "মূল্য তালিকা" },
   { path: "/demo", label: "ডেমো" },
 ];
