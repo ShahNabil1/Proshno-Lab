@@ -453,13 +453,39 @@ export default function QuestionPaperView() {
         onClose={handleCloseToolbar}
       />
 
-      {/* Paper preview */}
-      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
-        <div className="mb-4 flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
-            <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
+      {/* Mobile top toolbar */}
+      {isMobile && (
+        <div className="flex items-center gap-2 p-2 border-b border-border bg-background sticky top-0 z-30">
+          <Button variant="outline" size="sm" className="flex-1 font-heading text-xs" onClick={() => setSettingsOpen(true)}>
+            <Settings className="h-3.5 w-3.5 mr-1" /> সেটিংস
+          </Button>
+          {settings.showAnswerSheet && (
+            <Button variant="outline" size="sm" className="flex-1 font-heading text-xs" onClick={() => updateSetting("showAnswerSheet", !settings.showAnswerSheet)}>
+              📝 উত্তরমালা
+            </Button>
+          )}
+          <Button size="sm" className="flex-1 gradient-green text-primary-foreground border-0 font-heading text-xs" onClick={handleDownload}>
+            <Download className="h-3.5 w-3.5 mr-1" /> ডাউনলোড
           </Button>
         </div>
+      )}
+
+      {/* Paper preview */}
+      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
+        {!isMobile && (
+          <div className="mb-4 flex items-center gap-3 max-w-[800px] mx-auto">
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
+              <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
+            </Button>
+          </div>
+        )}
+        {isMobile && (
+          <div className="mb-3 flex items-center gap-2">
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/dashboard/create")}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
+            </Button>
+          </div>
+        )}
 
         {editingMode && (
           <Alert className="mb-4 border-emerald-300 bg-emerald-50 text-emerald-900">
