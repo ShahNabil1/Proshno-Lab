@@ -76,29 +76,6 @@ export default function QuestionPaperView() {
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure container width for responsive scaling
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width - 32); // subtract padding
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const paperWidthPx = useMemo(() => {
-    const map: Record<PaperSize, number> = { A4: 780, Letter: 800, Legal: 800, A5: 560 };
-    return map[settings.paperSize];
-  }, [settings.paperSize]);
-
-  const paperScale = useMemo(() => {
-    if (!containerWidth || containerWidth >= paperWidthPx) return 1;
-    return containerWidth / paperWidthPx;
-  }, [containerWidth, paperWidthPx]);
-
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
   const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
