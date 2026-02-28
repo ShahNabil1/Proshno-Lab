@@ -219,11 +219,15 @@ export default function QuestionCreate() {
 
       const { data, error } = await query;
       if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.info("এই ফিল্টারে কোনো প্রশ্ন পাওয়া যায়নি");
+      // Filter out questions already in the paper
+      const filtered = addToPaper
+        ? (data || []).filter(q => !existingQuestionIds.has(q.id))
+        : data || [];
+      if (filtered.length === 0) {
+        toast.info("এই ফিল্টারে কোনো নতুন প্রশ্ন পাওয়া যায়নি");
         return;
       }
-      const shuffled = data.sort(() => Math.random() - 0.5);
+      const shuffled = filtered.sort(() => Math.random() - 0.5);
       setQuestions(shuffled);
       setSelectedIds(new Set());
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
