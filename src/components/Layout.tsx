@@ -3,6 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronRight, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/logo.png";
+import bkashLogo from "@/assets/bkash-logo.webp";
+import nagadLogo from "@/assets/nagad-logo.png";
+import rocketLogo from "@/assets/rocket-logo.png";
+import upayLogo from "@/assets/upay-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -223,9 +227,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-white/40 text-sm">© ২০২৬ eExamapp — সর্বস্বত্ব সংরক্ষিত</p>
             <div className="flex items-center gap-3">
-              {["bKash", "Nagad", "Visa", "Mastercard"].map(p => (
-                <span key={p} className="px-3 py-1.5 rounded-md bg-white/10 text-white/50 text-xs font-medium">{p}</span>
-              ))}
+              <img src={bkashLogo} alt="bKash" className="h-6 object-contain rounded bg-white/10 px-2 py-1" />
+              <img src={nagadLogo} alt="Nagad" className="h-6 object-contain rounded bg-white/10 px-2 py-1" />
+              <img src={rocketLogo} alt="Rocket" className="h-6 object-contain rounded bg-white/10 px-2 py-1" />
+              <img src={upayLogo} alt="Upay" className="h-6 object-contain rounded bg-white/10 px-2 py-1" />
             </div>
           </div>
         </div>
