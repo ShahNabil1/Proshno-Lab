@@ -173,8 +173,9 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
                 <span className="font-heading font-bold text-xl">eExamapp</span>
               </div>
-              <p className="leading-relaxed text-green-50 text-base text-left">📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢    
+              <p className="leading-relaxed text-green-50 text-base text-left">📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢     
 💡স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান💡
+
               </p>
             </div>
 
@@ -190,8 +191,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             <div>
               <h4 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/40 mb-4">অন্যান্য</h4>
               <ul className="space-y-2.5">
-                {["অফার সমূহ", "ব্লগ", "সাহায্য কেন্দ্র"].map((t) =>
-                <li key={t}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{t}</a></li>
+                {["অফার সমূহ", "ব্লগ", "সাহায্য কেন্দ্র"].map((t) => <li key={t}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{t}</a></li>
                 )}
               </ul>
             </div>
