@@ -96,12 +96,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         "fixed top-0 left-0 z-50 h-screen w-[220px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0 lg:sticky lg:z-auto",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0">
+        <Link to="/" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="eExamapp" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">
             eExam<span className="text-gradient-green">app</span>
           </span>
-        </div>
+        </Link>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           {sidebarGroups.map((group) => (
