@@ -1313,7 +1313,7 @@ export default function QuestionPaperView() {
                       <span>
                         <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
-                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                     </div>
                   );
                 })}
