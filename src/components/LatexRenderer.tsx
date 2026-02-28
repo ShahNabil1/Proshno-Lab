@@ -5,6 +5,7 @@ import "katex/dist/katex.min.css";
 interface LatexRendererProps {
   text: string;
   className?: string;
+  inline?: boolean;
 }
 
 /**
