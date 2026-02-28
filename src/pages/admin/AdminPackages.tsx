@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Loader2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Package, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface PricingPackage {
