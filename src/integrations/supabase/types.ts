@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           id: number
+          is_active: boolean
           is_free: boolean
           name: string
           subject_id: number
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: number
+          is_active?: boolean
           is_free?: boolean
           name: string
           subject_id: number
@@ -32,6 +34,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
+          is_active?: boolean
           is_free?: boolean
           name?: string
           subject_id?: number
