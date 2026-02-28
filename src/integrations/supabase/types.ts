@@ -260,6 +260,7 @@ export type Database = {
           created_at: string
           id: number
           is_active: boolean
+          is_coming_soon: boolean
           price: number
           sort_order: number
           subject_name: string
@@ -270,6 +271,7 @@ export type Database = {
           created_at?: string
           id?: never
           is_active?: boolean
+          is_coming_soon?: boolean
           price: number
           sort_order?: number
           subject_name?: string
@@ -280,6 +282,7 @@ export type Database = {
           created_at?: string
           id?: never
           is_active?: boolean
+          is_coming_soon?: boolean
           price?: number
           sort_order?: number
           subject_name?: string
@@ -300,6 +303,7 @@ export type Database = {
           package_price: number
           payment_method: string
           reviewed_at: string | null
+          selected_packages: Json | null
           status: string
           teacher_email: string
           teacher_id: string | null
@@ -320,6 +324,7 @@ export type Database = {
           package_price?: number
           payment_method?: string
           reviewed_at?: string | null
+          selected_packages?: Json | null
           status?: string
           teacher_email?: string
           teacher_id?: string | null
@@ -340,6 +345,7 @@ export type Database = {
           package_price?: number
           payment_method?: string
           reviewed_at?: string | null
+          selected_packages?: Json | null
           status?: string
           teacher_email?: string
           teacher_id?: string | null
