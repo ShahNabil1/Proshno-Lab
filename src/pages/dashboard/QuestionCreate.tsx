@@ -512,21 +512,25 @@ export default function QuestionCreate() {
                   {/* CQ / Descriptive sub-questions */}
                   {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
                     const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
-                    const subs = data?.sub_questions || data?.subQuestions || [];
-                    if (subs.length === 0) return null;
-                    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
+                    const subFields = q.type === "descriptive"
+                      ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }]
+                      : data?.is_math
+                        ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }]
+                        : [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }, { key: "q_gha", label: "ঘ" }];
+                    const hasSubs = subFields.some(f => data?.[f.key]);
+                    if (!hasSubs) return null;
                     return (
                       <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary/20">
-                        {subs.map((sub: any, si: number) => (
-                          <div key={si} className="text-sm">
-                            <div className="font-medium">
-                              <LatexRenderer text={`(${labels[si] || String.fromCharCode(2453 + si)}) ${sub.question || sub.text || ""}`} />
+                        {subFields.map(f => {
+                          const val = data?.[f.key];
+                          if (!val) return null;
+                          return (
+                            <div key={f.key} className="text-sm">
+                              <span className="font-semibold">({f.label}) </span>
+                              <LatexRenderer text={val} />
                             </div>
-                            {sub.marks && (
-                              <span className="text-xs text-muted-foreground ml-1">[মান: {sub.marks}]</span>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     );
                   })()}
