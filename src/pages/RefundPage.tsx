@@ -12,7 +12,8 @@ export default function RefundPage() {
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">১. রিফান্ড নীতি</h2>
               <p>
-                eExamapp-এর সাবস্ক্রিপশন ক্রয়ের পর নির্দিষ্ট শর্ত সাপেক্ষে রিফান্ড প্রদান করা হয়। আমরা গ্রাহক সন্তুষ্টিকে সর্বোচ্চ গুরুত্ব দিই এবং ন্যায্য রিফান্ড প্রক্রিয়া অনুসরণ করি।
+                eExamapp-এর সাবস্ক্রিপশন ক্রয়ের পর কোনো অবস্থাতেই অর্থ ফেরতযোগ্য নয়।
+
               </p>
             </section>
 
@@ -65,6 +66,5 @@ export default function RefundPage() {
           </div>
         </motion.div>
       </div>
-    </div>
-  );
+    </div>);
 }
