@@ -1118,10 +1118,11 @@ export default function QuestionPaperView() {
             const standalone: QuestionRow[] = [];
 
             mcqQuestions.forEach(q => {
+              const hasStimulus = q.stimulus_text && q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0;
               if (q.stimulus_group_id) {
                 if (!grouped.has(q.stimulus_group_id)) grouped.set(q.stimulus_group_id, []);
                 grouped.get(q.stimulus_group_id)!.push(q);
-              } else if (q.stimulus_text) {
+              } else if (hasStimulus) {
                 standaloneWithStimulus.push(q);
               } else {
                 standalone.push(q);
