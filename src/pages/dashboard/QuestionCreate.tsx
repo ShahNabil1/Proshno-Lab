@@ -544,16 +544,16 @@ export default function QuestionCreate() {
                   <h4 className="font-heading font-bold text-sm mb-2">eExamapp স্পেশাল সার্চ</h4>
                   <div className="space-y-2">
                     {specialSearchOptions.map(opt => (
-                      <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="radio"
-                          name="filterSpecial"
-                          checked={filterSpecial === opt.id}
-                          onChange={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}
-                          className="accent-primary"
-                        />
+                      <div
+                        key={opt.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                        onClick={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}
+                      >
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${filterSpecial === opt.id ? 'border-primary' : 'border-muted-foreground/50'}`}>
+                          {filterSpecial === opt.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        </div>
                         {opt.label}
-                      </label>
+                      </div>
                     ))}
                   </div>
                 </div>
