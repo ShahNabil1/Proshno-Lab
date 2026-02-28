@@ -168,6 +168,29 @@ export default function QuestionPaperView() {
     return containerWidth / paperWidthPx;
   }, [containerWidth, paperWidthPx]);
 
+  // Auto-save helper
+  const autoSavePaper = useCallback(async (paperMeta: PaperMeta, paperQuestions: QuestionRow[], paperSettings: typeof settings) => {
+    if (!user || !paperMeta || paperQuestions.length === 0) return;
+    try {
+      const paperData = {
+        teacher_id: user.id,
+        institution_name: paperMeta.instituteName || "",
+        exam_name: paperMeta.programName || "",
+        class_name: paperMeta.className || "",
+        subject_name: paperMeta.subjectName || "",
+        chapter_names: paperMeta.chapterNames || [],
+        question_ids: paperQuestions.map(q => q.id),
+        meta: paperMeta as any,
+        settings: paperSettings as any,
+      };
+      const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
+      if (error) throw error;
+      setCurrentPaperId(data.id);
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+    }
+  }, [user]);
+
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
     if (paperId) {
@@ -194,8 +217,17 @@ export default function QuestionPaperView() {
     } else {
       const qData = sessionStorage.getItem("viewPaperQuestions");
       const mData = sessionStorage.getItem("viewPaperMeta");
-      if (qData) setQuestions(JSON.parse(qData));
-      if (mData) setMeta(JSON.parse(mData));
+      if (qData && mData) {
+        const parsedQuestions = JSON.parse(qData);
+        const parsedMeta = JSON.parse(mData);
+        setQuestions(parsedQuestions);
+        setMeta(parsedMeta);
+        // Auto-save new paper immediately
+        autoSavePaper(parsedMeta, parsedQuestions, settings);
+        // Clear sessionStorage so refresh doesn't duplicate
+        sessionStorage.removeItem("viewPaperQuestions");
+        sessionStorage.removeItem("viewPaperMeta");
+      }
     }
   }, [searchParams]);
 
