@@ -173,7 +173,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
                 <span className="font-heading font-bold text-xl">eExamapp</span>
               </div>
-              <p className="leading-relaxed text-green-50 text-base text-left">📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢     
+              <p className="leading-relaxed text-green-50 text-base text-left">📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢      
 💡স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান💡
 
               </p>
