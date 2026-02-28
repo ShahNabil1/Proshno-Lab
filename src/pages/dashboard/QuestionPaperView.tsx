@@ -1412,6 +1412,12 @@ export default function QuestionPaperView() {
                           </div>
                         );
                       })()}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ===== DESCRIPTIVE SECTION (4th) ===== */}
           {descriptiveQuestions.length > 0 && (
