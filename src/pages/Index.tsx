@@ -124,55 +124,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ DEMO BUILDER PREVIEW ══════ */}
-      <section className="py-16 md:py-24 bg-background">
-        <div className="container">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
-              ১ ক্লিকে প্রশ্ন তৈরী !
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              শুধু প্রশ্ন সিলেক্ট করুন, প্রশ্নপত্র তৈরী হবে অটোমেটিক !
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start max-w-5xl mx-auto">
-            {/* Left: Question cards */}
-            <motion.div custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="space-y-4">
-              {[
-              { q: "বাংলাদেশের রাজধানী কোনটি?", opts: ["চট্টগ্রাম", "ঢাকা", "খুলনা", "রাজশাহী"], selected: true },
-              { q: "সূর্য কেন আলো দেয়?", opts: ["তাপ বিকিরণ", "পরমাণু বিস্ফোরণ", "নিউক্লিয়ার ফিউশন", "বৈদ্যুতিক তরঙ্গ"], selected: false },
-              { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"], selected: false }].
-              map((item, i) =>
-              <div key={i} className={`rounded-xl border-2 p-5 transition-all cursor-pointer ${item.selected ? "border-primary bg-primary/5 shadow-[0_0_0_1px_hsl(155_72%_44%/0.2)]" : "border-border bg-card hover:border-primary/30"}`}>
-                  <p className="font-medium text-foreground text-sm mb-3">{i + 1}. {item.q}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {item.opts.map((o, oi) =>
-                  <span key={oi} className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md">
-                        {String.fromCharCode(0x0995 + oi)}. {o}
-                      </span>
-                  )}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Right: PDF preview mock */}
-            <motion.div custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-              <div className="text-center">
-                <Button
-                  size="lg"
-                  onClick={() => user ? navigate("/dashboard/create") : navigate("/login")}
-                  className="gradient-green text-primary-foreground border-0 rounded-xl font-heading font-semibold px-8 text-base gap-2"
-                >
-                  প্রশ্ন তৈরী করুন
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* ══════ PRICING CTA ══════ */}
       <section className="py-14 md:py-16 bg-background">
