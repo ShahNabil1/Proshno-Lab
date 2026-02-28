@@ -228,6 +228,7 @@ export default function AdminChapters() {
   const typeSortOrder: Record<string, number> = { mcq: 0, short: 1, cq: 2, descriptive: 3 };
   const filteredQuestions = questions
     .filter(q => !qFilterType || q.type === qFilterType)
+    .filter(q => !qFilterTopicId || String(q.topic_id) === qFilterTopicId)
     .sort((a, b) => (typeSortOrder[a.type] ?? 99) - (typeSortOrder[b.type] ?? 99));
 
   const qTotalPages = Math.max(1, Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE));
