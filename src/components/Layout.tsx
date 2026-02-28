@@ -12,13 +12,13 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
-  { path: "/", label: "হোম" },
-  
-  { path: "/pricing", label: "মূল্য তালিকা" },
-  { path: "/demo", label: "ডেমো" },
-];
+{ path: "/", label: "হোম" },
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+{ path: "/pricing", label: "মূল্য তালিকা" },
+{ path: "/demo", label: "ডেমো" }];
+
+
+export default function Layout({ children }: {children: React.ReactNode;}) {
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -35,11 +35,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const headerBg = scrolled
-    ? "bg-card/90 backdrop-blur-xl shadow-[0_1px_3px_hsl(207_60%_15%/0.08)] border-b border-border"
-    : isHeroPage
-      ? "bg-transparent"
-      : "bg-card border-b border-border";
+  const headerBg = scrolled ?
+  "bg-card/90 backdrop-blur-xl shadow-[0_1px_3px_hsl(207_60%_15%/0.08)] border-b border-border" :
+  isHeroPage ?
+  "bg-transparent" :
+  "bg-card border-b border-border";
 
   const textColor = !scrolled && isHeroPage ? "text-white" : "text-foreground";
   const mutedTextColor = !scrolled && isHeroPage ? "text-white/70" : "text-muted-foreground";
@@ -56,22 +56,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path}>
+            {navItems.map((item) =>
+            <Link key={item.path} to={item.path}>
                 <button
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                    location.pathname === item.path
-                      ? "bg-primary/10 text-primary"
-                      : cn("hover:bg-primary/5", mutedTextColor)
-                  )}
-                >
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  location.pathname === item.path ?
+                  "bg-primary/10 text-primary" :
+                  cn("hover:bg-primary/5", mutedTextColor)
+                )}>
+
                   {item.label}
                 </button>
               </Link>
-            ))}
-            {user ? (
-              <div className="flex items-center gap-2 ml-3">
+            )}
+            {user ?
+            <div className="flex items-center gap-2 ml-3">
                 <Link to="/dashboard">
                   <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
                     ড্যাশবোর্ড
@@ -86,53 +86,53 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Button variant="ghost" size="icon" className={cn(mutedTextColor)} onClick={signOut}>
                   <LogOut className="w-4 h-4" />
                 </Button>
-              </div>
-            ) : (
-              <Link to="/login" className="ml-3">
+              </div> :
+
+            <Link to="/login" className="ml-3">
                 <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
                   লগইন করুন
                 </Button>
               </Link>
-            )}
+            }
           </nav>
 
           <Button
             variant="ghost"
             size="icon"
             className={cn("md:hidden", textColor)}
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
+            onClick={() => setMobileOpen(!mobileOpen)}>
+
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
 
         <AnimatePresence>
-          {mobileOpen && (
-            <motion.nav
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden bg-card border-t border-border"
-            >
+          {mobileOpen &&
+          <motion.nav
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden overflow-hidden bg-card border-t border-border">
+
               <div className="container py-4 flex flex-col gap-1">
-                {navItems.map((item) => (
-                  <Link key={item.path} to={item.path}>
+                {navItems.map((item) =>
+              <Link key={item.path} to={item.path}>
                     <button
-                      className={cn(
-                        "w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between transition-colors",
-                        location.pathname === item.path
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-muted"
-                      )}
-                    >
+                  className={cn(
+                    "w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between transition-colors",
+                    location.pathname === item.path ?
+                    "bg-primary/10 text-primary" :
+                    "text-foreground hover:bg-muted"
+                  )}>
+
                       {item.label}
                       <ChevronRight className="w-4 h-4 opacity-40" />
                     </button>
                   </Link>
-                ))}
-                {user ? (
-                  <div className="flex flex-col gap-2 mt-2">
+              )}
+                {user ?
+              <div className="flex flex-col gap-2 mt-2">
                     <Link to="/dashboard">
                       <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
                         ড্যাশবোর্ড
@@ -148,17 +148,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <LogOut className="w-4 h-4" /> লগআউট
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <Link to="/login" className="mt-2">
+                  </div> :
+
+              <Link to="/login" className="mt-2">
                     <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
                       লগইন করুন
                     </Button>
                   </Link>
-                )}
+              }
               </div>
             </motion.nav>
-          )}
+          }
         </AnimatePresence>
       </header>
 
@@ -173,8 +173,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
                 <span className="font-heading font-bold text-xl">eExamapp</span>
               </div>
-              <p className="text-white/60 text-sm leading-relaxed">
-                ১ ক্লিকে প্রশ্ন তৈরির সফটওয়্যার + অধ্যায়ভিত্তিক প্রশ্ন সরবরাহ ও অনলাইন পরীক্ষা
+              <p className="text-white/60 text-sm leading-relaxed">📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢  
+💡স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান💡
               </p>
             </div>
 
@@ -190,9 +190,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h4 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/40 mb-4">অন্যান্য</h4>
               <ul className="space-y-2.5">
-                {["অফার সমূহ", "ব্লগ", "সাহায্য কেন্দ্র"].map(t => (
-                  <li key={t}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{t}</a></li>
-                ))}
+                {["অফার সমূহ", "ব্লগ", "সাহায্য কেন্দ্র"].map((t) =>
+                <li key={t}><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">{t}</a></li>
+                )}
               </ul>
             </div>
 
@@ -200,25 +200,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="font-heading font-semibold text-sm uppercase tracking-wider text-white/40 mb-4">যোগাযোগ</h4>
               <ul className="space-y-2.5 text-white/60 text-sm">
                 <li className="flex items-start gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                   <span>Ulipur, Pallimongol Hat, Bogura Sadar, Bogura, Bangladesh - 5800</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                   <a href="tel:+8801340345787" className="hover:text-white transition-colors">০১৩৪০-৩৪৫৭৮৭</a>
                 </li>
                 <li className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
                   <a href="mailto:hello@eexamapp.com" className="hover:text-white transition-colors">hello@eexamapp.com</a>
                 </li>
               </ul>
               {/* Social icons */}
               <div className="flex items-center gap-3 mt-4">
                 <a href="https://www.facebook.com/eexamapp" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#1877F2]" aria-label="Facebook">
-                  <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
                 </a>
                 <a href="https://www.youtube.com/@eExamapp" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#FF0000]" aria-label="YouTube">
-                  <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                  <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                 </a>
               </div>
             </div>
@@ -235,6 +235,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>);
+
 }
