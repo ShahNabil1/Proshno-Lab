@@ -524,6 +524,38 @@ export default function AdminChapters() {
     </div>
   );
 
+  // === "Add Question" Full Page View ===
+  if (addQFullPage) {
+    const ch = addQFullPage.chapter;
+    const className = (ch as any).subjects?.classes?.name || "—";
+    const subjectName = (ch as any).subjects?.name || "—";
+
+    return (
+      <div style={{ fontFamily: FONT }}>
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setAddQFullPage(null)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">নতুন প্রশ্ন যুক্ত করুন</h1>
+            <p className="text-sm text-muted-foreground">{className} • {subjectName} • {ch.name}</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            {renderQuestionForm()}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setAddQFullPage(null)} style={{ fontFamily: FONT }}>বাতিল</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
+                {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // === "See All Questions" View ===
   if (questionsView) {
     const ch = questionsView.chapter;
