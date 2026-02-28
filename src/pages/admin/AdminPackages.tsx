@@ -155,6 +155,24 @@ export default function AdminPackages() {
         </Button>
       </div>
 
+      {/* Class Filter */}
+      {(() => {
+        const uniqueClasses = [...new Set(packages.map(p => p.class_name))].sort();
+        return uniqueClasses.length > 0 ? (
+          <div className="flex items-center gap-3">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <select
+              className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+            >
+              <option value="">সকল শ্রেণী</option>
+              {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        ) : null;
+      })()}
+
       <div className="rounded-xl border bg-card overflow-hidden">
         <Table>
           <TableHeader>
