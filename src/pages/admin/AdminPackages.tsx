@@ -187,7 +187,7 @@ export default function AdminPackages() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {packages.map((pkg) => (
+            {(filterClass ? packages.filter(p => p.class_name === filterClass) : packages).map((pkg) => (
               <TableRow key={pkg.id}>
                 <TableCell>
                   <Badge variant={pkg.type === "bundle" ? "default" : "secondary"}>
