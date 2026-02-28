@@ -293,8 +293,8 @@
     font-weight: 600;
   }
   [data-print-paper] img {
-    max-width: 220px;
-    max-height: 180px;
+    max-width: 50px;
+    max-height: 45px;
     height: auto;
     width: auto;
     object-fit: contain;
