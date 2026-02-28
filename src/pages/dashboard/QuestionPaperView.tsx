@@ -68,7 +68,13 @@ const padBangla = (n: number): string => {
 
 /* Strip wrapping <p> tags from option values to keep them inline */
 const stripPTags = (html: string): string => {
-  return html.replace(/^<p>([\s\S]*?)<\/p>$/i, "$1").trim();
+  // Remove all wrapping <p>...</p> tags, handle multiple paragraphs
+  let cleaned = html
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<\/p>/gi, " ")
+    .trim();
+  // Remove trailing/leading whitespace artifacts
+  return cleaned.replace(/\s+/g, " ").trim();
 };
 
 export default function QuestionPaperView() {
