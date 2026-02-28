@@ -158,8 +158,16 @@ export default function RichTextEditor({
   );
 
   const insertTable = useCallback(() => {
-    editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-  }, [editor]);
+    setTableDialogOpen(true);
+  }, []);
+
+  const confirmInsertTable = useCallback(() => {
+    editor?.chain().focus().insertTable({ rows: tableRows, cols: tableCols, withHeaderRow: tableHeaderRow }).run();
+    setTableDialogOpen(false);
+    setTableRows(3);
+    setTableCols(3);
+    setTableHeaderRow(true);
+  }, [editor, tableRows, tableCols, tableHeaderRow]);
 
   const insertLink = useCallback(() => {
     const url = prompt("লিংক URL:");
