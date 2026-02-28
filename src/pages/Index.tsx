@@ -227,7 +227,7 @@ export default function Index() {
        <section className="py-16 md:py-24 bg-background">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 whitespace-nowrap">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
             <p className="text-muted-foreground text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
