@@ -1384,8 +1384,8 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && (() => {
-                        // Show stem only if it exists and is different from stimulus_text
-                        const showStem = cData?.stem && (!q.stimulus_text || cData.stem.replace(/<[^>]*>/g, "").trim() !== q.stimulus_text.replace(/<[^>]*>/g, "").trim());
+                        // Never show stem if stimulus_text already shown above
+                        const showStem = cData?.stem && !q.stimulus_text;
                         const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
                         const hasSubParts = keys.some(key => cData?.[key]);
                         if (!showStem && !hasSubParts) return null;
