@@ -838,7 +838,7 @@ export default function QuestionPaperView() {
         )}
 
         {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
-        <div className="mx-auto" style={{
+        <div className="mx-auto" data-print-scale-wrapper style={{
           width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
           maxWidth: '100%',
           transformOrigin: "top left",
