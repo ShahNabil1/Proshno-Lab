@@ -336,6 +336,17 @@
   margin: 0;
 }
 
+/* Paper preview: constrain images */
+[data-print-paper] img {
+  max-width: 50px;
+  max-height: 45px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 4px 0;
+}
+
 /* LatexRenderer: tables & images */
 .latex-renderer table {
   border-collapse: collapse;
