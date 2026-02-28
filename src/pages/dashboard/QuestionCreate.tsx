@@ -583,32 +583,42 @@ export default function QuestionCreate() {
                   </div>
                 </div>
 
-                {/* Topics by chapter */}
-                {Object.entries(topicsByChapter).map(([chId, data]) => (
-                  <div key={chId} className="border border-border rounded-lg p-3 mb-4">
-                    <h4 className="font-heading font-bold text-sm mb-2">টপিক - {data.chapterName}</h4>
-                    <div className="space-y-2">
-                      {data.topics.length === 0 && (
-                        <p className="text-xs text-muted-foreground">কোনো টপিক নেই</p>
-                      )}
-                      {data.topics.map(t => (
-                        <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <Checkbox
-                            checked={filterTopicIds.has(t.id)}
-                            onCheckedChange={() => {
-                              setFilterTopicIds(prev => {
-                                const next = new Set(prev);
-                                next.has(t.id) ? next.delete(t.id) : next.add(t.id);
-                                return next;
-                              });
-                            }}
-                          />
-                          {t.name}
-                        </label>
+                {/* Topics grouped by chapter */}
+                {Object.keys(topicsByChapter).length > 0 && (
+                  <div className="border border-border rounded-lg p-3 mb-4">
+                    <h4 className="font-heading font-bold text-sm mb-3">টপিক</h4>
+                    <div className="space-y-3">
+                      {Object.entries(topicsByChapter).map(([chId, data]) => (
+                        <div key={chId}>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1.5 border-b border-border pb-1">
+                            📖 {data.chapterName}
+                          </p>
+                          {data.topics.length === 0 ? (
+                            <p className="text-xs text-muted-foreground/70 pl-4">কোনো টপিক নেই</p>
+                          ) : (
+                            <div className="space-y-1.5 pl-4">
+                              {data.topics.map(t => (
+                                <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <Checkbox
+                                    checked={filterTopicIds.has(t.id)}
+                                    onCheckedChange={() => {
+                                      setFilterTopicIds(prev => {
+                                        const next = new Set(prev);
+                                        next.has(t.id) ? next.delete(t.id) : next.add(t.id);
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                  {t.name}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
 
                 {/* Board filter */}
                 <div className="border border-border rounded-lg p-3">
