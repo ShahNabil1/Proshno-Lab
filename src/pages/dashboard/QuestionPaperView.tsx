@@ -1384,8 +1384,8 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && (() => {
-                        // Never show stem if stimulus_text already shown above
-                        const showStem = cData?.stem && !q.stimulus_text;
+                        // Never show stem - it's already rendered via q.stimulus_text or q.question above
+                        const showStem = false;
                         const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
                         const hasSubParts = keys.some(key => cData?.[key]);
                         if (!showStem && !hasSubParts) return null;
