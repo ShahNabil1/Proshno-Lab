@@ -299,7 +299,7 @@ export default function Index() {
                 </Button>
               </Link>
               <Link to="/demo">
-                <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 font-heading font-semibold px-8 h-12 rounded-xl">
+                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-heading font-semibold px-8 h-12 rounded-xl">
                   ডেমো দেখুন
                 </Button>
               </Link>
