@@ -20,12 +20,6 @@ export default function RefundPage() {
 
 
 
-            <section>
-              <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৫. রিফান্ড মাধ্যম</h2>
-              <p>
-                রিফান্ড মূল পেমেন্ট মাধ্যমে ফেরত দেওয়া হবে (bKash, Nagad, ব্যাংক ট্রান্সফার)। ভিন্ন মাধ্যমে ফেরত নেওয়ার ক্ষেত্রে আলাদাভাবে আলোচনা করা যাবে।
-              </p>
-            </section>
 
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৬. যোগাযোগ</h2>
