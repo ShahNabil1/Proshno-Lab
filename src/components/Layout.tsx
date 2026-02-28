@@ -69,7 +69,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <PenLine className="w-4 h-4" />
               প্রশ্ন তৈরী করুন
             </Button>
-            {user &&
+            {user ?
               <div className="flex items-center gap-2">
                 <Link to="/dashboard">
                   <Button variant="ghost" size="sm" className={cn("font-heading font-medium", mutedTextColor)}>
@@ -86,6 +86,12 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>
+            :
+              <Link to="/login">
+                <Button size="sm" variant="outline" className={cn("font-heading font-semibold px-5 rounded-lg", mutedTextColor, "border-white/30 hover:bg-white/10")}>
+                  লগইন করুন
+                </Button>
+              </Link>
             }
           </nav>
 
