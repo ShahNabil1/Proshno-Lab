@@ -134,6 +134,8 @@ export default function QuestionPaperView() {
     watermarkOpacity: 40,
     watermarkSize: 30,
     watermarkText: "",
+    watermarkLogoUrl: "",
+    watermarkType: "text" as "text" | "logo",
     cqToAnswer: 0, // 0 means auto (all)
   });
 
@@ -689,7 +691,7 @@ export default function QuestionPaperView() {
           )}
           <div className="flex items-center justify-between">
             <span className="text-sm">শাফল (সেট কোড তৈরী)</span>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={handleShuffle}>⇆</Button>
+            <Button size="sm" variant="outline" className="h-9 w-9 p-0 text-lg font-bold" onClick={handleShuffle}>⇆</Button>
           </div>
         </div>
       </div>
