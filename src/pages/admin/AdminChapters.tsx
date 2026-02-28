@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Filter, MoreVertical, Eye, ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -32,6 +33,7 @@ export default function AdminChapters() {
   const { hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
+  const [chapterQuestionCounts, setChapterQuestionCounts] = useState<Record<number, number>>({});
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [allSubjects, setAllSubjects] = useState<SubjectItem[]>([]);
@@ -120,6 +122,20 @@ export default function AdminChapters() {
       );
     }
     setChapters(filtered as ChapterItem[]);
+
+    // Fetch question counts per chapter
+    const chapterIds = filtered.map((ch: any) => ch.id);
+    if (chapterIds.length > 0) {
+      const { data: qData } = await supabase
+        .from("questions")
+        .select("chapter_id")
+        .in("chapter_id", chapterIds);
+      const counts: Record<number, number> = {};
+      (qData || []).forEach((q: any) => {
+        counts[q.chapter_id] = (counts[q.chapter_id] || 0) + 1;
+      });
+      setChapterQuestionCounts(counts);
+    }
   };
 
   // Filtered display
@@ -731,6 +747,11 @@ export default function AdminChapters() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteTarget(item)} className="gap-2 text-destructive">
                             <Trash2 className="w-4 h-4" /> মুছে ফেলুন
+                            {(chapterQuestionCounts[item.id] || 0) > 0 && (
+                              <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-destructive/10 text-destructive border-destructive/20">
+                                {chapterQuestionCounts[item.id]}টি প্রশ্ন
+                              </Badge>
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
