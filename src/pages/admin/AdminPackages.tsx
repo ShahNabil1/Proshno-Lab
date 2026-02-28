@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Loader2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Package, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface PricingPackage {
@@ -36,6 +36,7 @@ export default function AdminPackages() {
   const [editing, setEditing] = useState<PricingPackage | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [filterClass, setFilterClass] = useState("");
 
   const fetchPackages = async () => {
     const { data } = await supabase
@@ -154,6 +155,24 @@ export default function AdminPackages() {
         </Button>
       </div>
 
+      {/* Class Filter */}
+      {(() => {
+        const uniqueClasses = [...new Set(packages.map(p => p.class_name))].sort();
+        return uniqueClasses.length > 0 ? (
+          <div className="flex items-center gap-3">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <select
+              className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+            >
+              <option value="">সকল শ্রেণী</option>
+              {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        ) : null;
+      })()}
+
       <div className="rounded-xl border bg-card overflow-hidden">
         <Table>
           <TableHeader>
@@ -168,7 +187,7 @@ export default function AdminPackages() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {packages.map((pkg) => (
+            {(filterClass ? packages.filter(p => p.class_name === filterClass) : packages).map((pkg) => (
               <TableRow key={pkg.id}>
                 <TableCell>
                   <Badge variant={pkg.type === "bundle" ? "default" : "secondary"}>
