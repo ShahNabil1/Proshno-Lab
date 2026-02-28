@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, BookOpen, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, AlertTriangle, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
