@@ -15,6 +15,7 @@ const allSidebarItems = [
   { path: "/admin/classes", label: "শ্রেণী", icon: GraduationCap, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/subjects", label: "বিষয়", icon: BookOpen, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/chapters", label: "অধ্যায়", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
+  { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "একাডেমিক ম্যানেজমেন্ট" },
   
   { path: "/admin/questions", label: "প্রশ্ন", icon: FileText, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/question-reports", label: "প্রশ্নের রিপোর্ট", icon: Flag, group: "কন্টেন্ট ম্যানেজমেন্ট" },
