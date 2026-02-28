@@ -71,6 +71,8 @@ const boardList = [
 export default function QuestionCreate() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const addToPaper = searchParams.get("add_to_paper") === "true";
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     programName: "",
