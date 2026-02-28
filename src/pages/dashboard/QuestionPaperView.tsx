@@ -229,41 +229,39 @@ export default function QuestionPaperView() {
     };
   }, []);
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!paperRef.current) return;
-    toast.info("পিডিএফ তৈরি হচ্ছে...");
 
+    // Close any editing state
     paperRef.current.querySelectorAll("[contenteditable]").forEach(el => {
       (el as HTMLElement).contentEditable = "false";
     });
     handleCloseToolbar();
 
-    try {
-      const html2pdf = (await import("html2pdf.js")).default;
+    // Set dynamic page size via data attribute on <html>
+    const pageSizeMap: Record<PaperSize, string> = {
+      A4: "210mm 297mm",
+      Letter: "8.5in 11in",
+      Legal: "8.5in 14in",
+      A5: "148mm 210mm",
+    };
+    document.documentElement.setAttribute("data-print-size", pageSizeMap[settings.paperSize]);
 
-      const paperWidths: Record<PaperSize, [number, number]> = {
-        A4: [210, 297], Letter: [216, 279], Legal: [216, 356], A5: [148, 210],
-      };
+    // Wait for images/LaTeX to finish rendering
+    const images = paperRef.current.querySelectorAll("img");
+    const imagePromises = Array.from(images).map(img =>
+      img.complete ? Promise.resolve() : new Promise<void>(resolve => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      })
+    );
 
-      const [w, h] = paperWidths[settings.paperSize];
-
-      const opt = {
-        margin: [12, 15, 12, 15],
-        filename: "প্রশ্নপত্র.pdf",
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: "mm", format: [w, h], orientation: "portrait" as const },
-      };
-
-      await html2pdf().set(opt).from(paperRef.current).save();
-      toast.success("পিডিএফ ডাউনলোড হয়েছে!");
-    } catch {
-      toast.error("পিডিএফ তৈরি করতে সমস্যা হয়েছে");
-    } finally {
-      paperRef.current?.querySelectorAll("[data-editable]").forEach(el => {
-        (el as HTMLElement).contentEditable = "true";
-      });
-    }
+    Promise.all(imagePromises).then(() => {
+      // Small delay for KaTeX rendering
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    });
   };
 
   const handleSavePaper = async () => {
