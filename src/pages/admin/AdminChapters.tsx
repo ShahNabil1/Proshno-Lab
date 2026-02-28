@@ -59,6 +59,8 @@ export default function AdminChapters() {
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [qFilterType, setQFilterType] = useState("");
   const [qCurrentPage, setQCurrentPage] = useState(1);
+  const [qFilterTopicId, setQFilterTopicId] = useState("");
+  const [qTopics, setQTopics] = useState<any[]>([]);
 
   // "Add Question" modal
   const [addQDialogOpen, setAddQDialogOpen] = useState(false); // kept for edit dialog compatibility
