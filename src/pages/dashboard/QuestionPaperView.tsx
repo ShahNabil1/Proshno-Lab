@@ -1172,7 +1172,7 @@ export default function QuestionPaperView() {
                                 const val = q[key]; if (!val) return null;
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
                                 const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1204,7 +1204,7 @@ export default function QuestionPaperView() {
                               const val = q[key]; if (!val) return null;
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
                               const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                              return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1251,7 +1251,7 @@ export default function QuestionPaperView() {
                                     const val = q[key]; if (!val) return null;
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
                                     const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                    return (<span key={key} style={isCorrect ? { fontWeight: 700, color: "#047857" } : undefined}>{getOptionLabel(label)} <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
