@@ -111,6 +111,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               </Link>
             }
           </div>
+        </div>
       </header>
 
       <main className="flex-1">{children}</main>
