@@ -1453,53 +1453,6 @@ export default function QuestionPaperView() {
                           })()}
                         </div>
                       </div>
-                      {subQuestions.length > 0 && (
-                        <div style={{ paddingLeft: "2.2rem" }}>
-                          {subQuestions.map((sq: any, si: number) => {
-                            const label = subLabels[si] || "";
-                            const marks = subMarksMap[si] || "";
-                            if (!label) return null;
-                            return (
-                              <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
-                                <div style={{ display: "flex", gap: "4px", flex: 1 }}>
-                                  <span style={{ flexShrink: 0 }}>({label})</span>
-                                  <span style={{ flex: 1 }}><LatexRenderer text={sq.question || sq.text || ""} /></span>
-                                </div>
-                                <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(marks))}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {(!subQuestions || subQuestions.length === 0) && (() => {
-                        // Never show stem - it's already rendered via q.stimulus_text or q.question above
-                        const showStem = false;
-                        const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
-                        const hasSubParts = keys.some(key => cData?.[key]);
-                        if (!showStem && !hasSubParts) return null;
-                        return (
-                          <div style={{ paddingLeft: "2.2rem" }}>
-                            {showStem && (
-                              <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
-                                <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
-                              </p>
-                            )}
-                            {keys.map((key, si) => {
-                              const text = cData?.[key];
-                              if (!text) return null;
-                              return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
-                                  <div style={{ display: "flex", gap: "4px", flex: 1 }}>
-                                    <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
-                                    <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: text }} />
-                                  </div>
-                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
                     </div>
                   );
                 })}
