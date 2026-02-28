@@ -1176,10 +1176,11 @@ export default function QuestionPaperView() {
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
+                                const cleaned = stripPTags(val);
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
                                 const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                const isHtml = val.includes("<");
-                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: val }} /> : <LatexRenderer text={val} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                const isHtml = cleaned.includes("<");
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1209,10 +1210,11 @@ export default function QuestionPaperView() {
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
+                              const cleaned = stripPTags(val);
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
                               const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                              const isHtml = val.includes("<");
-                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: val }} /> : <LatexRenderer text={val} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                              const isHtml = cleaned.includes("<");
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1258,10 +1260,11 @@ export default function QuestionPaperView() {
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
+                                    const cleaned = stripPTags(val);
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
                                     const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                    const isHtml = val.includes("<");
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: val }} /> : <LatexRenderer text={val} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                    const isHtml = cleaned.includes("<");
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
