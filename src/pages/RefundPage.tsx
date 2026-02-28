@@ -19,16 +19,6 @@ export default function RefundPage() {
 
 
 
-            <section>
-              <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৪. রিফান্ড প্রক্রিয়া</h2>
-              <p>রিফান্ড আবেদন করতে:</p>
-              <ol className="list-decimal list-inside space-y-2 ml-2 mt-2">
-                <li>hello@eexamapp.com ইমেইলে রিফান্ড আবেদন পাঠান।</li>
-                <li>আবেদনে আপনার নাম, ইমেইল এবং ট্রানজেকশন আইডি উল্লেখ করুন।</li>
-                <li>আমরা ৩-৫ কার্যদিবসের মধ্যে আবেদন পর্যালোচনা করব।</li>
-                <li>অনুমোদিত হলে ৭-১০ কার্যদিবসের মধ্যে রিফান্ড প্রদান করা হবে।</li>
-              </ol>
-            </section>
 
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৫. রিফান্ড মাধ্যম</h2>
