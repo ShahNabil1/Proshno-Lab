@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
+import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
 
 const sidebarGroups = [
   {
@@ -157,6 +158,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         </header>
+
+        <AnnouncementBar />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:overflow-visible">{children}</main>
       </div>
