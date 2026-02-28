@@ -154,11 +154,12 @@ export default function AdminChapters() {
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select
-          className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+          className={`border border-border rounded-md px-3 py-2 text-sm bg-background ${!filterClassId ? "opacity-50 cursor-not-allowed" : ""}`}
           value={filterSubjectId}
           onChange={(e) => setFilterSubjectId(e.target.value)}
+          disabled={!filterClassId}
         >
-          <option value="">সকল বিষয়</option>
+          <option value="">{filterClassId ? "সকল বিষয়" : "আগে শ্রেণী নির্বাচন করুন"}</option>
           {filteredSubjectsForFilter.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         {(filterClassId || filterSubjectId) && (
