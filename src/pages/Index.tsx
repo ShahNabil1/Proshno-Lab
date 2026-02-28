@@ -159,46 +159,16 @@ export default function Index() {
 
             {/* Right: PDF preview mock */}
             <motion.div custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-              <div className="rounded-2xl bg-card shadow-elevated p-1 border border-border">
-                <div className="rounded-xl bg-background p-6">
-                  <div className="text-center mb-5 pb-4 border-b border-border">
-                    <p className="font-heading font-bold text-foreground text-sm">স্বপ্নছোয়া একাডেমি</p>
-                    <p className="text-xs text-muted-foreground">শ্রেণিঃ ষষ্ঠ | বিষয়ঃ সাধারণ জ্ঞান</p>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                      <span>সময়ঃ ৪ মিনিট</span>
-                      <span>পূর্ণমানঃ ৪</span>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                    { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"] },
-                    { q: "বাংলাদেশের জাতীয় পতাকার রং কী কী?", opts: [] }].
-                    map((item, i) =>
-                    <div key={i}>
-                        <p className="text-xs text-foreground font-medium mb-1.5">{i + 1}. {item.q}</p>
-                        {item.opts.length > 0 &&
-                      <div className="grid grid-cols-2 gap-1">
-                            {item.opts.map((o, oi) =>
-                        <span key={oi} className="text-[11px] text-muted-foreground">
-                                {String.fromCharCode(0x0995 + oi)}. {o}
-                              </span>
-                        )}
-                          </div>
-                      }
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="text-center">
+                <Button
+                  size="lg"
+                  onClick={() => user ? navigate("/dashboard/create") : navigate("/login")}
+                  className="gradient-green text-primary-foreground border-0 rounded-xl font-heading font-semibold px-8 text-base gap-2"
+                >
+                  প্রশ্ন তৈরী করুন
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </div>
-              <div className="text-center mt-5">
-                <Link to="/demo">
-                  <Button className="gradient-green text-white border-0 rounded-xl font-heading font-semibold px-8">
-                    Live Demo
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
           </div>
         </div>
       </section>
