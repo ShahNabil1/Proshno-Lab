@@ -16,6 +16,7 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
+import ReferenceBadges from "@/components/ReferenceBadges";
 
 const FONT = "'SolaimanLipi', sans-serif";
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
