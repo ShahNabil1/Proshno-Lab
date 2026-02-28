@@ -30,6 +30,7 @@ export default function AdminQuestions() {
   const [topics, setTopics] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [fullPageCreate, setFullPageCreate] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [loadingTopics, setLoadingTopics] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
