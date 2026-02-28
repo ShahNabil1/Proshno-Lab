@@ -60,7 +60,8 @@ export default function AdminChapters() {
   const [qCurrentPage, setQCurrentPage] = useState(1);
 
   // "Add Question" modal
-  const [addQDialogOpen, setAddQDialogOpen] = useState(false);
+  const [addQDialogOpen, setAddQDialogOpen] = useState(false); // kept for edit dialog compatibility
+  const [addQFullPage, setAddQFullPage] = useState<{ chapter: ChapterItem; returnTo: "main" | "questions" } | null>(null);
   const [addQChapter, setAddQChapter] = useState<ChapterItem | null>(null);
   const [addQTopics, setAddQTopics] = useState<any[]>([]);
   const [addQLoadingTopics, setAddQLoadingTopics] = useState(false);
