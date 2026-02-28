@@ -1383,34 +1383,20 @@ export default function QuestionPaperView() {
                           })}
                         </div>
                       )}
-                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && !q.stimulus_text && (
-                        <div style={{ paddingLeft: "2.2rem" }}>
-                          <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
-                            <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
-                          </p>
-                          {(() => {
-                            const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
-                            return keys.map((key, si) => {
-                              const text = cData[key];
-                              if (!text) return null;
-                              return (
-                                <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
-                                  <div style={{ display: "flex", gap: "4px", flex: 1 }}>
-                                    <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
-                                    <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: text }} />
-                                  </div>
-                                  <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      )}
-                      {(!subQuestions || subQuestions.length === 0) && (cData?.stem || q.stimulus_text) && (
-                        <div style={{ paddingLeft: "2.2rem" }}>
-                          {(() => {
-                            const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
-                            return keys.map((key, si) => {
+                      {(!subQuestions || subQuestions.length === 0) && (() => {
+                        // Show stem only if it exists and is different from stimulus_text
+                        const showStem = cData?.stem && (!q.stimulus_text || cData.stem.replace(/<[^>]*>/g, "").trim() !== q.stimulus_text.replace(/<[^>]*>/g, "").trim());
+                        const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
+                        const hasSubParts = keys.some(key => cData?.[key]);
+                        if (!showStem && !hasSubParts) return null;
+                        return (
+                          <div style={{ paddingLeft: "2.2rem" }}>
+                            {showStem && (
+                              <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
+                                <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
+                              </p>
+                            )}
+                            {keys.map((key, si) => {
                               const text = cData?.[key];
                               if (!text) return null;
                               return (
@@ -1422,10 +1408,10 @@ export default function QuestionPaperView() {
                                   <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
                                 </div>
                               );
-                            });
-                          })()}
-                        </div>
-                      )}
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
