@@ -1241,7 +1241,7 @@ export default function QuestionPaperView() {
                   <div key={q.id} style={{ marginTop: "6px" }}>
                     {q.stimulus_text && (
                       <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                        <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                        <LatexRenderer text={q.stimulus_text} />
                       </div>
                     )}
                     <div className={editableClass} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
@@ -1275,7 +1275,7 @@ export default function QuestionPaperView() {
                     </p>
                     {stimulusHtml && (
                       <div style={{ marginBottom: "6px", padding: "4px 8px", borderLeft: "2px solid #000" }}>
-                        <span dangerouslySetInnerHTML={{ __html: stimulusHtml }} />
+                        <LatexRenderer text={stimulusHtml} />
                       </div>
                     )}
                     <div style={{
