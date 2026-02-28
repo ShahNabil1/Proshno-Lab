@@ -207,7 +207,7 @@ export default function Index() {
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">আমাদের SmartApp শিক্ষা কার্যক্রমকে সমৃদ্ধ করেছে</h2>
-            <p className="text-muted-foreground text-lg max-w-lg mx-auto">সারাদেশে যেকোনো পাবলিক পরীক্ষা হওয়া মাত্র সবার আগে প্রশ্ন আপডেট হয়</p>
+            <p className="text-muted-foreground text-lg max-w-lg mx-auto">দেশজুড়ে প্রতিটি পাবলিক পরীক্ষার প্রশ্ন।</p>
           </motion.div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {categories.map((cat, i) =>
