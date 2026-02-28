@@ -30,6 +30,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   const [formParentId, setFormParentId] = useState("");
   const [formSubjectCode, setFormSubjectCode] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: "" });
+  const [filterClassId, setFilterClassId] = useState("");
   const fetchItems = async () => {
     let query: any;
     if (parentTable && parentKey) {
