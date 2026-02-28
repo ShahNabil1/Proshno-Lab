@@ -126,21 +126,29 @@ export default function Index() {
 
 
       {/* ══════ PRICING CTA ══════ */}
-      <section className="py-14 md:py-16 bg-background">
+      <section className="py-16 md:py-20 bg-background">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center">
-            <div className="max-w-xl mx-auto bg-card rounded-2xl p-8 md:p-10 shadow-premium">
-              <div className="w-16 h-16 mx-auto mb-5 rounded-2xl gradient-green flex items-center justify-center">
-                <BarChart3 className="w-7 h-7 text-primary-foreground" />
+            <div className="max-w-2xl mx-auto relative overflow-hidden rounded-3xl gradient-hero p-10 md:p-14">
+              {/* Decorative circles */}
+              <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/20 blur-2xl" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-primary/15 blur-2xl" />
+              
+              <div className="relative z-10">
+                <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-primary/20 backdrop-blur-sm border border-primary/30 flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                </div>
+                <h2 className="font-heading text-2xl md:text-3xl font-bold text-white mb-3">আমাদের মূল্য তালিকা</h2>
+                <p className="text-white/60 mb-8 max-w-md mx-auto">
+                  সাশ্রয়ী মূল্যে সকল বিষয়ের প্রশ্নব্যাংক — আপনার প্রয়োজন অনুযায়ী প্যাকেজ বেছে নিন
+                </p>
+                <Link to="/pricing">
+                  <Button size="lg" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-10 py-6 rounded-xl gap-2 text-base shadow-lg hover:shadow-xl transition-shadow">
+                    মূল্য তালিকা দেখুন
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
               </div>
-              <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-3">আমাদের মূল্য তালিকা</h2>
-              <p className="text-muted-foreground mb-6">সাশ্রয়ী মূল্যে সকল বিষয়ের প্রশ্নব্যাংক — আপনার প্রয়োজন অনুযায়ী প্যাকেজ বেছে নিন।</p>
-              <Link to="/pricing">
-                <Button size="lg" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-8 rounded-xl gap-2 text-base">
-                  মূল্য তালিকা দেখুন
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
             </div>
           </motion.div>
         </div>
