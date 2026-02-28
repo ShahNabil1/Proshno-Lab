@@ -321,7 +321,7 @@ export default function CheckoutPage() {
               placeholder="কুপন কোড (যদি থাকে)"
               value={coupon}
               onChange={(e) => {setCoupon(e.target.value);setCouponApplied(false);setDiscount(0);}}
-              className="flex-1 bg-muted/30 font-mono uppercase"
+              className="flex-1 bg-muted/30"
               disabled={couponApplied} />
 
             {couponApplied ?
