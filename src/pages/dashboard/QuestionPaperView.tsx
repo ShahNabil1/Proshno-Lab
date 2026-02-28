@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Settings, Plus, Minus, Save, Pencil } from "lucide-react";
+import { Download, Settings, Plus, Minus, Save, Pencil, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -134,6 +134,8 @@ export default function QuestionPaperView() {
     watermarkOpacity: 40,
     watermarkSize: 30,
     watermarkText: "",
+    watermarkLogoUrl: "",
+    watermarkType: "text" as "text" | "logo",
     cqToAnswer: 0, // 0 means auto (all)
   });
 
@@ -689,7 +691,7 @@ export default function QuestionPaperView() {
           )}
           <div className="flex items-center justify-between">
             <span className="text-sm">শাফল (সেট কোড তৈরী)</span>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={handleShuffle}>⇆</Button>
+            <Button size="sm" variant="outline" className="h-9 w-9 p-0 text-lg font-bold" onClick={handleShuffle}>⇆</Button>
           </div>
         </div>
       </div>
@@ -731,6 +733,10 @@ export default function QuestionPaperView() {
           </div>
           {settings.showWatermark && (
             <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
+              <div className="flex gap-1 mb-1">
+                <Button size="sm" variant={settings.watermarkType === "text" ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => updateSetting("watermarkType", "text")}>টেক্সট</Button>
+                <Button size="sm" variant={settings.watermarkType === "logo" ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => updateSetting("watermarkType", "logo")}>লোগো</Button>
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Opacity</span>
@@ -741,11 +747,36 @@ export default function QuestionPaperView() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Size</span>
-                  <span className="text-xs font-medium">{settings.watermarkSize}</span>
+                  <span className="text-xs font-medium">{settings.watermarkSize}{settings.watermarkType === "logo" ? "px" : ""}</span>
                 </div>
-                <Slider value={[settings.watermarkSize]} min={12} max={80} step={2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
+                <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 40 : 12} max={settings.watermarkType === "logo" ? 300 : 80} step={settings.watermarkType === "logo" ? 10 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
               </div>
-              <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
+              {settings.watermarkType === "text" ? (
+                <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
+              ) : (
+                <div className="space-y-1">
+                  {settings.watermarkLogoUrl && (
+                    <div className="flex items-center gap-2">
+                      <img src={settings.watermarkLogoUrl} alt="Logo" className="h-8 w-8 object-contain rounded border" />
+                      <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" onClick={() => updateSetting("watermarkLogoUrl", "")}>সরান</Button>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-1 cursor-pointer text-xs text-primary hover:underline">
+                    <Upload size={12} />
+                    <span>{settings.watermarkLogoUrl ? "পরিবর্তন করুন" : "লোগো আপলোড করুন"}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        updateSetting("watermarkLogoUrl", ev.target?.result as string);
+                        if (settings.watermarkSize < 40) updateSetting("watermarkSize", 100);
+                      };
+                      reader.readAsDataURL(file);
+                    }} />
+                  </label>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -841,21 +872,32 @@ export default function QuestionPaperView() {
           }}
         >
           {/* ===== WATERMARK ===== */}
-          {settings.showWatermark && (settings.watermarkText || meta.instituteName) && (
+          {settings.showWatermark && (
             <div style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%) rotate(-35deg)",
-              fontSize: `${settings.watermarkSize || 30}px`,
-              fontWeight: 900,
               opacity: (settings.watermarkOpacity || 40) / 100,
-              whiteSpace: "nowrap",
               pointerEvents: "none",
               zIndex: 0,
-              color: "#000",
             }}>
-              {settings.watermarkText || meta.instituteName}
+              {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
+                <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
+                  width: `${settings.watermarkSize || 100}px`,
+                  height: "auto",
+                  objectFit: "contain",
+                }} />
+              ) : (settings.watermarkText || meta.instituteName) ? (
+                <span style={{
+                  fontSize: `${settings.watermarkSize || 30}px`,
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                  color: "#000",
+                }}>
+                  {settings.watermarkText || meta.instituteName}
+                </span>
+              ) : null}
             </div>
           )}
 
