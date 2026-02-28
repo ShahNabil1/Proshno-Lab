@@ -490,9 +490,10 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  <p className="font-medium mb-3">
+                  <div className="font-medium mb-3">
                     <LatexRenderer text={`${idx + 1}. ${q.question}`} />
-                  </p>
+                  </div>
+                  {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
                       {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
@@ -508,6 +509,27 @@ export default function QuestionCreate() {
                       })}
                     </div>
                   )}
+                  {/* CQ / Descriptive sub-questions */}
+                  {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
+                    const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
+                    const subs = data?.sub_questions || data?.subQuestions || [];
+                    if (subs.length === 0) return null;
+                    const labels = ["ক", "খ", "গ", "ঘ", "ঙ"];
+                    return (
+                      <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary/20">
+                        {subs.map((sub: any, si: number) => (
+                          <div key={si} className="text-sm">
+                            <div className="font-medium">
+                              <LatexRenderer text={`(${labels[si] || String.fromCharCode(2453 + si)}) ${sub.question || sub.text || ""}`} />
+                            </div>
+                            {sub.marks && (
+                              <span className="text-xs text-muted-foreground ml-1">[মান: {sub.marks}]</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ))}
