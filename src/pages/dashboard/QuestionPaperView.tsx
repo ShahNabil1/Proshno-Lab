@@ -1145,7 +1145,7 @@ export default function QuestionPaperView() {
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
-                  columnGap: "0", rowGap: "0",
+                  columnGap: "0", rowGap: "2px",
                 }}>
                   {standalone.map((q) => {
                     mcqNumber++;
@@ -1156,23 +1156,24 @@ export default function QuestionPaperView() {
                     const showLeftBorder = colIdx > 0 && settings.columnDivider;
                     return (
                     <div key={q.id} className={editableClass} style={{
-                        padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
+                        padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < settings.columns - 1 ? "4px" : "0",
                         borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
                         background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                        marginBottom: "1px",
                       }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                         <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                          <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                          <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
                               <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
                                 const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1196,15 +1197,15 @@ export default function QuestionPaperView() {
                     )}
                     <div className={editableClass} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                        <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                         <div style={{ flex: 1 }}>
                           <span><LatexRenderer text={q.question} /></span>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
                               const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1230,7 +1231,7 @@ export default function QuestionPaperView() {
                     <div style={{
                       display: "grid",
                       gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
-                      columnGap: "0", rowGap: "0",
+                      columnGap: "0", rowGap: "2px",
                     }}>
                       {groupQs.map((q) => {
                         mcqNumber++;
@@ -1239,19 +1240,20 @@ export default function QuestionPaperView() {
                         const showLeftBorder = colIdx > 0 && settings.columnDivider;
                         return (
                           <div key={q.id} className={editableClass} style={{
-                            padding: "1px 0", paddingLeft: colIdx > 0 ? "10px" : "0", paddingRight: colIdx < settings.columns - 1 ? "10px" : "0",
+                            padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < settings.columns - 1 ? "4px" : "0",
                             borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
+                            marginBottom: "1px",
                           }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                              <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                              <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
                                 <span><LatexRenderer text={q.question} /></span>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
                                     const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
