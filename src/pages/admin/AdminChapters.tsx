@@ -175,6 +175,13 @@ export default function AdminChapters() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    // Check if chapter has questions
+    const { count } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("chapter_id", deleteTarget.id);
+    if (count && count > 0) {
+      toast.error(`এই অধ্যায়ে ${count}টি প্রশ্ন আছে। আগে প্রশ্নগুলো মুছুন, তারপর অধ্যায় মুছতে পারবেন।`);
+      setDeleteTarget(null);
+      return;
+    }
     const { error } = await supabase.from("chapters").delete().eq("id", deleteTarget.id);
     if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
     toast.success("মুছে ফেলা হয়েছে");
