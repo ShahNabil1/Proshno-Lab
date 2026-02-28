@@ -105,9 +105,9 @@ export default function DashboardHome() {
 
         <Card className="bg-accent/30 border-accent">
           <CardContent className="p-6">
-            <h3 className="font-heading font-bold text-center mb-3">📢 eExamapp আপডেটস</h3>
+            <h3 className="font-heading font-bold text-center mb-3">📱 Smart App</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              সফট ওয়্যারের নতুন ফিচার, জরুরি আপডেট এবং নির্দেশনা — সবই আগে পাবেন আমাদের মেসেঞ্জার ব্রডকাস্ট চ্যানেলে।
+              গুরুত্বপূর্ণ নির্দেশনা সবার আগে পেতে আমাদের মেসেঞ্জার ব্রডকাস্ট চ্যানেলে যুক্ত থাকুন।
             </p>
             <Button className="w-full mt-4 gradient-green text-primary-foreground border-0" size="sm">
               🔔 চ্যানেলে এখনই যুক্ত হোন
