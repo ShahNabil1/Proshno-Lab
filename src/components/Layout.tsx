@@ -108,26 +108,18 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             transition={{ duration: 0.2 }}
             className="md:hidden overflow-hidden bg-card border-t border-border">
 
-              <div className="container py-4 flex flex-col gap-1">
-                {navItems.map((item) =>
-              <Link key={item.path} to={item.path}>
-                    <button
-                  className={cn(
-                    "w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between transition-colors",
-                    location.pathname === item.path ?
-                    "bg-primary/10 text-primary" :
-                    "text-foreground hover:bg-muted"
-                  )}>
-
-                      {item.label}
-                      <ChevronRight className="w-4 h-4 opacity-40" />
-                    </button>
-                  </Link>
-              )}
-                {user ?
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="container py-4 flex flex-col gap-2">
+                <Button
+                  onClick={handleCreateQuestion}
+                  className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg gap-2"
+                >
+                  <PenLine className="w-4 h-4" />
+                  প্রশ্ন তৈরী করুন
+                </Button>
+                {user &&
+                  <div className="flex flex-col gap-2 mt-1">
                     <Link to="/dashboard">
-                      <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
+                      <Button variant="outline" className="w-full font-heading font-medium rounded-lg">
                         ড্যাশবোর্ড
                       </Button>
                     </Link>
@@ -141,13 +133,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                         <LogOut className="w-4 h-4" /> লগআউট
                       </Button>
                     </div>
-                  </div> :
-
-              <Link to="/login" className="mt-2">
-                    <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
-                      লগইন করুন
-                    </Button>
-                  </Link>
+                  </div>
+                }
               }
               </div>
             </motion.nav>
