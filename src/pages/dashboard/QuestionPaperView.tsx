@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -69,10 +69,12 @@ export default function QuestionPaperView() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const [saving, setSaving] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
@@ -125,6 +127,29 @@ export default function QuestionPaperView() {
     watermarkText: "",
     cqToAnswer: 0, // 0 means auto (all)
   });
+
+  // Measure container width for responsive scaling
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width - 32);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const paperWidthPx = useMemo(() => {
+    const map: Record<PaperSize, number> = { A4: 780, Letter: 800, Legal: 800, A5: 560 };
+    return map[settings.paperSize];
+  }, [settings.paperSize]);
+
+  const paperScale = useMemo(() => {
+    if (!containerWidth || containerWidth >= paperWidthPx) return 1;
+    return containerWidth / paperWidthPx;
+  }, [containerWidth, paperWidthPx]);
 
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
@@ -425,7 +450,7 @@ export default function QuestionPaperView() {
       />
 
       {/* Paper preview */}
-      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]">
+      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
         <div className="mb-4 flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
             <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
@@ -441,12 +466,19 @@ export default function QuestionPaperView() {
           </Alert>
         )}
 
+        {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
+        <div style={{
+          width: paperPreviewWidths[settings.paperSize],
+          transformOrigin: "top left",
+          transform: `scale(${paperScale})`,
+          marginBottom: `calc((${paperScale} - 1) * -50%)`,
+        }}>
         <div
-          className="mx-auto font-paper"
+          className="font-paper"
           ref={paperRef}
           data-print-paper
           style={{
-            maxWidth: paperPreviewWidths[settings.paperSize],
+            width: paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
             lineHeight: 1.35,
             userSelect: "none",
@@ -1109,6 +1141,7 @@ export default function QuestionPaperView() {
 
           {/* Address moved to header */}
         </div>
+        </div> {/* end scaling wrapper */}
       </div>
 
       {/* ===== SETTINGS SIDEBAR ===== */}
