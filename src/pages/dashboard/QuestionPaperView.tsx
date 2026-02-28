@@ -417,7 +417,7 @@ export default function QuestionPaperView() {
   const isMathSubject = meta?.subjectName ? /গণিত|math|higher\s*math|উচ্চতর\s*গণিত/i.test(meta.subjectName) : false;
 
   return (
-    <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
+    <div className="lg:grid lg:grid-cols-[1fr_300px] gap-0 -m-4 md:-m-6 relative">
       {/* Floating Toolbar */}
       <FloatingToolbar
         targetEl={activeEditEl}
@@ -427,7 +427,7 @@ export default function QuestionPaperView() {
       />
 
       {/* Paper preview */}
-      <div>
+      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]">
         <div className="mb-4 flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
             <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
@@ -1113,8 +1113,8 @@ export default function QuestionPaperView() {
       </div>
 
       {/* ===== SETTINGS SIDEBAR ===== */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-24 space-y-4">
+      <aside className="hidden lg:block border-l border-border h-[calc(100vh-64px)] sticky top-0 overflow-y-auto">
+        <div className="p-4 space-y-4">
           <Card>
             <CardContent className="p-4">
               <h3 className="font-heading font-bold text-center mb-3 flex items-center justify-center gap-2">
