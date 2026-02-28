@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Filter, MoreVertical, Eye, ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
