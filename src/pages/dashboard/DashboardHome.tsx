@@ -138,14 +138,15 @@ export default function DashboardHome() {
             ) : (
               <div className="space-y-2">
                 {recentQuestions.map((q: any) => (
-                  <div key={q.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                  <Link key={q.id} to="/dashboard/my-questions"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer">
                     <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{q.question || "প্রশ্ন"}</p>
                       <p className="text-xs text-muted-foreground">{(q as any).classes?.name} • {(q as any).subjects?.name}</p>
                     </div>
                     <Badge variant="secondary" className="text-[10px] shrink-0 uppercase">{q.type}</Badge>
-                  </div>
+                  </Link>
                 ))}
                 <Link to="/dashboard/my-questions" className="text-sm text-primary font-medium flex items-center gap-1 mt-2">
                   সকল প্রশ্ন দেখুন →
