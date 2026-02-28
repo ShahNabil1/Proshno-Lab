@@ -17,6 +17,13 @@ export default function RefundPage() {
             </section>
 
             <section>
+              <h2 className="font-heading text-lg font-semibold text-foreground mb-3">⚠️ পেমেন্ট সংক্রান্ত গুরুত্বপূর্ণ নির্দেশনা</h2>
+              <p>1. শুধুমাত্র আমাদের অফিসিয়াল নম্বর 01930709532 এ পেমেন্ট করতে হবে।</p>
+              <p className="mt-2">2. উক্ত নম্বর ব্যতীত অন্য কোনো নম্বরে পেমেন্ট করলে কর্তৃপক্ষ কোনোভাবেই দায়ী থাকবে না।</p>
+              <p className="mt-2">3. ভুল নম্বরে টাকা প্রেরণ করলে তার সম্পূর্ণ দায় প্রেরণকারীকেই বহন করতে হবে।</p>
+            </section>
+
+            <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৬. যোগাযোগ</h2>
               <p>
                 ৩. যোগাযোগ
