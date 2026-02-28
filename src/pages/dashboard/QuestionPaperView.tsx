@@ -1170,7 +1170,7 @@ export default function QuestionPaperView() {
                           <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                              <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
+                              <span style={{ flex: 1 }}>{q.question.includes("<") ? <span dangerouslySetInnerHTML={{ __html: stripPTags(q.question) }} /> : <LatexRenderer text={q.question} />}</span>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
