@@ -212,8 +212,11 @@ export default function AdminChapters() {
   const openQuestionsView = async (chapter: ChapterItem) => {
     const classId = (chapter as any).subjects?.class_id;
     setQuestionsView({ chapter, classId, subjectId: chapter.subject_id });
-    setQFilterType(""); setQCurrentPage(1);
+    setQFilterType(""); setQCurrentPage(1); setQFilterTopicId("");
     setQuestionsLoading(true);
+    // Load topics for this chapter
+    supabase.from("topics").select("id, name").eq("chapter_id", chapter.id).order("name")
+      .then(({ data }) => setQTopics(data || []));
     const { data } = await supabase.from("questions")
       .select("*, topics(name)")
       .eq("chapter_id", chapter.id)
