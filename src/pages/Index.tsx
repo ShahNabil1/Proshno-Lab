@@ -265,7 +265,7 @@ export default function Index() {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group"
                 >
-                  <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.q}</span>
+                  <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 <AnimatePresence>
@@ -277,7 +277,7 @@ export default function Index() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.a}</p>
+                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
