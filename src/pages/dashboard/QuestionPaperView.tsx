@@ -1172,7 +1172,7 @@ export default function QuestionPaperView() {
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
                               <span style={{ flex: 1 }}>{q.question.includes("<") ? <span dangerouslySetInnerHTML={{ __html: stripPTags(q.question) }} /> : <LatexRenderer text={q.question} />}</span>
-                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
@@ -1313,7 +1313,7 @@ export default function QuestionPaperView() {
                       <span>
                         <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
-                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                     </div>
                   );
                 })}
@@ -1355,12 +1355,12 @@ export default function QuestionPaperView() {
                           {q.stimulus_text ? (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                               <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
-                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
                             </div>
                           ) : (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                               <span><LatexRenderer text={q.question} /></span>
-                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
                             </div>
                           )}
                         </div>
@@ -1383,7 +1383,7 @@ export default function QuestionPaperView() {
                           })}
                         </div>
                       )}
-                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
+                      {(!subQuestions || subQuestions.length === 0) && cData?.stem && !q.stimulus_text && (
                         <div style={{ paddingLeft: "2.2rem" }}>
                           <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
                             <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
@@ -1406,7 +1406,7 @@ export default function QuestionPaperView() {
                           })()}
                         </div>
                       )}
-                      {(!subQuestions || subQuestions.length === 0) && !cData?.stem && q.stimulus_text && (
+                      {(!subQuestions || subQuestions.length === 0) && (cData?.stem || q.stimulus_text) && (
                         <div style={{ paddingLeft: "2.2rem" }}>
                           {(() => {
                             const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
@@ -1467,7 +1467,7 @@ export default function QuestionPaperView() {
                           {padBangla(num)}।
                         </span>
                         <div style={{ flex: 1 }}>
-                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
+                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                       {dData && (
                         <div>
                           {dData.desc_q_ka && (
