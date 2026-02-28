@@ -329,6 +329,176 @@ export default function AdminQuestions() {
     fetchItems();
   };
 
+  // === Full Page Create View ===
+  if (fullPageCreate) {
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setFullPageCreate(false)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl font-bold">নতুন প্রশ্ন তৈরি করুন</h1>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>শ্রেণী</Label>
+                  <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value, subject_id: "", chapter_id: "", topic_id: "" })}>
+                    <option value="">নির্বাচন করুন</option>
+                    {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>বিষয়</Label>
+                  <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.subject_id} onChange={(e) => setForm({ ...form, subject_id: e.target.value, chapter_id: "", topic_id: "" })}>
+                    <option value="">নির্বাচন করুন</option>
+                    {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>অধ্যায়</Label>
+                  <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.chapter_id} onChange={(e) => setForm({ ...form, chapter_id: e.target.value, topic_id: "" })}>
+                    <option value="">নির্বাচন করুন</option>
+                    {chapters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>টপিক {loadingTopics && <span className="text-xs text-muted-foreground">(লোড হচ্ছে...)</span>}</Label>
+                  <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.topic_id} onChange={(e) => setForm({ ...form, topic_id: e.target.value })} disabled={!form.chapter_id}>
+                    <option value="">নির্বাচন করুন</option>
+                    {topics.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>টাইপ</Label>
+                  <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                    {typeOptions.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+                  </select>
+                </div>
+              </div>
+              {/* Reuse the same form content from dialog below - rendered inline */}
+              {form.type === "cq" ? (
+                <div className="space-y-4">
+                  <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                    {isMathSubject ? "সৃজনশীল (গণিত) — ১০ মার্ক (ক=২, খ=৪, গ=৪)" : "সৃজনশীল — ১০ মার্ক (ক=১, খ=২, গ=৩, ঘ=৪)"}
+                  </span>
+                  <div><Label className="text-base font-semibold">উদ্দীপক (Stem/Stimulus)</Label><RichTextEditor value={form.cq_stem} onChange={(v) => setForm({ ...form, cq_stem: v })} placeholder="উদ্দীপকটি এখানে লিখুন..." minHeight="150px" /></div>
+                  <Label className="text-base font-semibold">উপ-প্রশ্নসমূহ</Label>
+                  <div><Label>ক) {isMathSubject ? "জ্ঞানমূলক (নম্বর: ২)" : "জ্ঞানমূলক (নম্বর: ১)"}</Label><RichTextEditor value={form.cq_q_ka} onChange={(v) => setForm({ ...form, cq_q_ka: v })} placeholder="প্রশ্ন ক" minHeight="80px" /></div>
+                  <div><Label>খ) {isMathSubject ? "অনুধাবনমূলক (নম্বর: ৪)" : "অনুধাবনমূলক (নম্বর: ২)"}</Label><RichTextEditor value={form.cq_q_kha} onChange={(v) => setForm({ ...form, cq_q_kha: v })} placeholder="প্রশ্ন খ" minHeight="80px" /></div>
+                  <div><Label>গ) {isMathSubject ? "প্রয়োগমূলক (নম্বর: ৪)" : "প্রয়োগমূলক (নম্বর: ৩)"}</Label><RichTextEditor value={form.cq_q_ga} onChange={(v) => setForm({ ...form, cq_q_ga: v })} placeholder="প্রশ্ন গ" minHeight="80px" /></div>
+                  {!isMathSubject && <div><Label>ঘ) উচ্চতর দক্ষতামূলক (নম্বর: ৪)</Label><RichTextEditor value={form.cq_q_gha} onChange={(v) => setForm({ ...form, cq_q_gha: v })} placeholder="প্রশ্ন ঘ" minHeight="80px" /></div>}
+                  <Label className="text-base font-semibold">নমুনা উত্তর (ঐচ্ছিক)</Label>
+                  <div><Label>উত্তর ক</Label><RichTextEditor value={form.cq_ans_ka} onChange={(v) => setForm({ ...form, cq_ans_ka: v })} placeholder="উত্তর ক" minHeight="80px" /></div>
+                  <div><Label>উত্তর খ</Label><RichTextEditor value={form.cq_ans_kha} onChange={(v) => setForm({ ...form, cq_ans_kha: v })} placeholder="উত্তর খ" minHeight="80px" /></div>
+                  <div><Label>উত্তর গ</Label><RichTextEditor value={form.cq_ans_ga} onChange={(v) => setForm({ ...form, cq_ans_ga: v })} placeholder="উত্তর গ" minHeight="80px" /></div>
+                  {!isMathSubject && <div><Label>উত্তর ঘ</Label><RichTextEditor value={form.cq_ans_gha} onChange={(v) => setForm({ ...form, cq_ans_gha: v })} placeholder="উত্তর ঘ" minHeight="80px" /></div>}
+                  <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="80px" /></div>
+                </div>
+              ) : (
+                <>
+                  {form.type === "mcq" && (
+                    <>
+                      <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                        <div>
+                          <Label className="font-semibold">উদ্দীপক ভিত্তিক প্রশ্ন (Grouped MCQ)</Label>
+                          <p className="text-xs text-muted-foreground">একটি উদ্দীপকের অধীনে একাধিক MCQ যোগ করুন</p>
+                        </div>
+                        <Switch checked={isGroupedMcq} onCheckedChange={setIsGroupedMcq} />
+                      </div>
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">MCQ — প্রতিটি ১ নম্বর</span>
+                      <div><Label>{isGroupedMcq ? "উদ্দীপক (Stimulus) *" : "উদ্দীপক (ঐচ্ছিক)"}</Label><RichTextEditor value={stimulusText} onChange={setStimulusText} placeholder="উদ্দীপকটি এখানে লিখুন..." minHeight={isGroupedMcq ? "150px" : "100px"} /></div>
+                      {!isGroupedMcq ? (
+                        <>
+                          <div><Label>প্রশ্ন</Label><RichTextEditor value={form.question} onChange={(v) => setForm({ ...form, question: v })} placeholder="প্রশ্নটি এখানে লিখুন..." minHeight="180px" /></div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><Label className="mb-1 block">ক</Label><RichTextEditor value={form.option_a} onChange={(v) => setForm({ ...form, option_a: v })} placeholder="অপশন ক" minHeight="120px" /></div>
+                            <div><Label className="mb-1 block">খ</Label><RichTextEditor value={form.option_b} onChange={(v) => setForm({ ...form, option_b: v })} placeholder="অপশন খ" minHeight="120px" /></div>
+                            <div><Label className="mb-1 block">গ</Label><RichTextEditor value={form.option_c} onChange={(v) => setForm({ ...form, option_c: v })} placeholder="অপশন গ" minHeight="120px" /></div>
+                            <div><Label className="mb-1 block">ঘ</Label><RichTextEditor value={form.option_d} onChange={(v) => setForm({ ...form, option_d: v })} placeholder="অপশন ঘ" minHeight="120px" /></div>
+                          </div>
+                          <div>
+                            <Label>সঠিক উত্তর</Label>
+                            <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.correct_answer} onChange={(e) => setForm({ ...form, correct_answer: e.target.value })}>
+                              <option value="">নির্বাচন করুন</option>
+                              <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-4">
+                          <Label className="text-base font-semibold">প্রশ্নসমূহ ({groupedQuestions.length}টি)</Label>
+                          {groupedQuestions.map((gq, gi) => (
+                            <div key={gi} className="border border-border rounded-lg p-3 space-y-2 relative bg-background">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-semibold">প্রশ্ন {gi + 1}</span>
+                                {groupedQuestions.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setGroupedQuestions(prev => prev.filter((_, i) => i !== gi))}><X className="h-3.5 w-3.5 text-destructive" /></Button>}
+                              </div>
+                              <RichTextEditor value={gq.question} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, question: v } : q))} placeholder={`প্রশ্ন ${gi + 1} লিখুন...`} minHeight="100px" />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div><Label className="text-xs">ক</Label><RichTextEditor value={gq.option_a} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_a: v } : q))} placeholder="অপশন ক" minHeight="70px" /></div>
+                                <div><Label className="text-xs">খ</Label><RichTextEditor value={gq.option_b} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_b: v } : q))} placeholder="অপশন খ" minHeight="70px" /></div>
+                                <div><Label className="text-xs">গ</Label><RichTextEditor value={gq.option_c} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_c: v } : q))} placeholder="অপশন গ" minHeight="70px" /></div>
+                                <div><Label className="text-xs">ঘ</Label><RichTextEditor value={gq.option_d} onChange={(v) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, option_d: v } : q))} placeholder="অপশন ঘ" minHeight="70px" /></div>
+                              </div>
+                              <div>
+                                <Label className="text-xs">সঠিক উত্তর</Label>
+                                <select className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background" value={gq.correct_answer} onChange={(e) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, correct_answer: e.target.value } : q))}>
+                                  <option value="">নির্বাচন করুন</option>
+                                  <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                                </select>
+                              </div>
+                            </div>
+                          ))}
+                          <Button type="button" variant="outline" className="w-full border-dashed border-emerald-400 text-emerald-600 hover:bg-emerald-50" onClick={() => setGroupedQuestions(prev => [...prev, { question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }])}>
+                            <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যোগ করুন
+                          </Button>
+                        </div>
+                      )}
+                      <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="120px" /></div>
+                    </>
+                  )}
+                  {form.type === "short" && (
+                    <>
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">সংক্ষিপ্ত প্রশ্ন — ২ মার্ক</span>
+                      <div><Label>প্রশ্ন</Label><RichTextEditor value={form.question} onChange={(v) => setForm({ ...form, question: v })} placeholder="সংক্ষিপ্ত প্রশ্নটি এখানে লিখুন..." minHeight="140px" /></div>
+                      <div><Label>উত্তর (ঐচ্ছিক)</Label><RichTextEditor value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} placeholder="নমুনা উত্তর লিখুন..." minHeight="120px" /></div>
+                      <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="100px" /></div>
+                    </>
+                  )}
+                  {form.type === "descriptive" && (
+                    <div className="space-y-4">
+                      <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">বর্ণনামূলক প্রশ্ন — ১০ মার্ক (ক = ৩, খ = ৭)</span>
+                      <div><Label>ক) প্রশ্ন (নম্বর: ৩)</Label><RichTextEditor value={form.desc_q_ka} onChange={(v) => setForm({ ...form, desc_q_ka: v })} placeholder="প্রশ্ন ক লিখুন..." minHeight="140px" /></div>
+                      <div><Label>ক) উত্তর (ঐচ্ছিক)</Label><RichTextEditor value={form.desc_ans_ka} onChange={(v) => setForm({ ...form, desc_ans_ka: v })} placeholder="উত্তর ক লিখুন..." minHeight="100px" /></div>
+                      <div><Label>খ) প্রশ্ন (নম্বর: ৭)</Label><RichTextEditor value={form.desc_q_kha} onChange={(v) => setForm({ ...form, desc_q_kha: v })} placeholder="প্রশ্ন খ লিখুন..." minHeight="140px" /></div>
+                      <div><Label>খ) উত্তর (ঐচ্ছিক)</Label><RichTextEditor value={form.desc_ans_kha} onChange={(v) => setForm({ ...form, desc_ans_kha: v })} placeholder="উত্তর খ লিখুন..." minHeight="100px" /></div>
+                      <div><Label>ব্যাখ্যা (ঐচ্ছিক)</Label><RichTextEditor value={form.explanation} onChange={(v) => setForm({ ...form, explanation: v })} placeholder="ব্যাখ্যা লিখুন..." minHeight="100px" /></div>
+                    </div>
+                  )}
+                </>
+              )}
+              {/* References */}
+              <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+                <p className="text-sm font-semibold text-muted-foreground">রেফারেন্স এবং মেটাডাটা</p>
+                <ReferenceInput label="বোর্ড রেফারেন্স" nameLabel="বোর্ড" namePlaceholder="যেমন: কু. বো." nameKey="board" value={form.board_references} onChange={(refs) => setForm({ ...form, board_references: refs as any })} />
+                <ReferenceInput label="বিশ্ববিদ্যালয় রেফারেন্স" nameLabel="বিশ্ববিদ্যালয়" namePlaceholder="যেমন: ঢাকা বিশ্ববিদ্যালয়" nameKey="name" value={form.university_references} onChange={(refs) => setForm({ ...form, university_references: refs as any })} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setFullPageCreate(false)}>বাতিল</Button>
+              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+                {form.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
