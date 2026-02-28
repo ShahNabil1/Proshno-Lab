@@ -231,7 +231,7 @@ export default function AdminQuestions() {
       const { error } = await supabase.from("questions").insert(payloads as any);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : "গ্রুপ তৈরি হয়েছে");
-      setDialogOpen(false);
+      setFullPageCreate(false);
       fetchItems();
       return;
     }
@@ -313,7 +313,11 @@ export default function AdminQuestions() {
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success("তৈরি হয়েছে");
     }
-    setDialogOpen(false);
+    if (editItem) {
+      setDialogOpen(false);
+    } else {
+      setFullPageCreate(false);
+    }
     fetchItems();
   };
 
