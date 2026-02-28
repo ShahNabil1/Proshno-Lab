@@ -1481,7 +1481,8 @@ export default function QuestionPaperView() {
                           <span><LatexRenderer text={q.question} /></span>
                         </div>
                       )}
-                    </div>
+                        </div>
+                      </div>
                   );
                 })}
               </div>
