@@ -270,6 +270,26 @@
     break-after: avoid;
   }
 
+  /* Tables & images inside paper */
+  [data-print-paper] table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 4px 0;
+  }
+  [data-print-paper] th,
+  [data-print-paper] td {
+    border: 1px solid #333;
+    padding: 2px 6px;
+    font-size: 0.85em;
+  }
+  [data-print-paper] th {
+    font-weight: 600;
+  }
+  [data-print-paper] img {
+    max-width: 100%;
+    height: auto;
+  }
+
   /* Hide sidebar, nav, buttons, alerts */
   aside,
   nav,
