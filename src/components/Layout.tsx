@@ -12,11 +12,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
-{ path: "/", label: "হোম" },
-
-{ path: "/pricing", label: "মূল্য তালিকা" },
-{ path: "/demo", label: "ডেমো" }];
 
 
 export default function Layout({ children }: {children: React.ReactNode;}) {
