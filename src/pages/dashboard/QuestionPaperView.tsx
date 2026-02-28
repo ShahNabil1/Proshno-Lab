@@ -853,14 +853,26 @@ export default function QuestionPaperView() {
       <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
         {!isMobile && (
           <div className="mb-4 flex items-center gap-3 max-w-[800px] mx-auto">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
+            <Button variant="outline" size="sm" onClick={() => {
+              sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
+              sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
+              if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
+              sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              navigate("/dashboard/create?add_to_paper=true");
+            }}>
               <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
           </div>
         )}
         {isMobile && (
           <div className="mb-3 flex items-center gap-2">
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/dashboard/create")}>
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
+              sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
+              sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
+              if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
+              sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              navigate("/dashboard/create?add_to_paper=true");
+            }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
           </div>
