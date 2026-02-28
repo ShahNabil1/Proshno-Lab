@@ -1213,7 +1213,7 @@ export default function QuestionPaperView() {
                           <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                              <span style={{ flex: 1 }}>{q.question.includes("<") ? <span dangerouslySetInnerHTML={{ __html: stripPTags(q.question) }} /> : <LatexRenderer text={q.question} />}</span>
+                              <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
                       {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25 }}>
@@ -1222,8 +1222,7 @@ export default function QuestionPaperView() {
                                 const cleaned = stripPTags(val);
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
                                 const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                const isHtml = cleaned.includes("<");
-                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1256,8 +1255,7 @@ export default function QuestionPaperView() {
                               const cleaned = stripPTags(val);
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
                               const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                              const isHtml = cleaned.includes("<");
-                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1306,8 +1304,7 @@ export default function QuestionPaperView() {
                                     const cleaned = stripPTags(val);
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
                                     const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                    const isHtml = cleaned.includes("<");
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
@@ -1396,7 +1393,7 @@ export default function QuestionPaperView() {
                         <div style={{ flex: 1 }}>
                           {q.stimulus_text ? (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                              <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                              <LatexRenderer text={q.stimulus_text} />
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
                             </div>
                           ) : (
@@ -1432,7 +1429,7 @@ export default function QuestionPaperView() {
                               <div>
                                 {showStem && (
                                   <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
-                                    <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
+                                    <LatexRenderer text={cData.stem} />
                                   </p>
                                 )}
                                 {keys.map((key, si) => {
@@ -1442,7 +1439,7 @@ export default function QuestionPaperView() {
                                     <div key={si} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.5 }}>
                                       <div style={{ display: "flex", gap: "4px", flex: 1 }}>
                                         <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
-                                        <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: text }} />
+                                        <span style={{ flex: 1 }}><LatexRenderer text={text} /></span>
                                       </div>
                                       <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
                                     </div>
@@ -1501,7 +1498,7 @@ export default function QuestionPaperView() {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4, marginBottom: "2px" }}>
                               <div style={{ display: "flex", gap: "4px", flex: 1 }}>
                                 <span style={{ flexShrink: 0 }}>(ক)</span>
-                                <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: dData.desc_q_ka }} />
+                                <span style={{ flex: 1 }}><LatexRenderer text={dData.desc_q_ka} /></span>
                               </div>
                               <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৩</span>
                             </div>
@@ -1510,7 +1507,7 @@ export default function QuestionPaperView() {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4 }}>
                               <div style={{ display: "flex", gap: "4px", flex: 1 }}>
                                 <span style={{ flexShrink: 0 }}>(খ)</span>
-                                <span style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: dData.desc_q_kha }} />
+                                <span style={{ flex: 1 }}><LatexRenderer text={dData.desc_q_kha} /></span>
                               </div>
                               <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৭</span>
                             </div>
