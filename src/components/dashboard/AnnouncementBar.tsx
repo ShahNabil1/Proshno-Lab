@@ -48,14 +48,11 @@ export default function AnnouncementBar() {
 
         {/* Infinite marquee */}
         <div className="flex-1 overflow-hidden relative mask-marquee">
-          <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] group-hover:[animation-play-state:paused]">
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2">
+          <div className="flex whitespace-nowrap marquee-track">
+            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-4">
               {marqueeText}
             </span>
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2" aria-hidden="true">
-              {marqueeText}
-            </span>
-            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-2" aria-hidden="true">
+            <span className="text-sm font-semibold text-white tracking-wide drop-shadow-sm px-4" aria-hidden="true">
               {marqueeText}
             </span>
           </div>
@@ -75,17 +72,23 @@ export default function AnnouncementBar() {
       </div>
 
       <style>{`
+        .marquee-track {
+          animation: marquee 20s linear infinite;
+        }
+        .group:hover .marquee-track {
+          animation-play-state: paused;
+        }
         @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-33.33%); }
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
         .mask-marquee {
-          mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
         }
       `}</style>
     </div>
