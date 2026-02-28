@@ -1216,7 +1216,7 @@ export default function QuestionPaperView() {
                               <span style={{ flex: 1 }}>{q.question.includes("<") ? <span dangerouslySetInnerHTML={{ __html: stripPTags(q.question) }} /> : <LatexRenderer text={q.question} />}</span>
                       {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25 }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
                                 const cleaned = stripPTags(val);
@@ -1250,7 +1250,7 @@ export default function QuestionPaperView() {
                         <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                         <div style={{ flex: 1 }}>
                           <span><LatexRenderer text={q.question} /></span>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25 }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
                               const cleaned = stripPTags(val);
@@ -1300,7 +1300,7 @@ export default function QuestionPaperView() {
                               <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
                                 <span><LatexRenderer text={q.question} /></span>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25 }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const cleaned = stripPTags(val);
