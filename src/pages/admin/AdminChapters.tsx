@@ -550,13 +550,26 @@ export default function AdminChapters() {
                 <TableBody>
                   {paginatedQuestions.map((q) => (
                     <TableRow key={q.id}>
-                      <TableCell className="text-muted-foreground">{q.id}</TableCell>
-                      <TableCell className="max-w-[300px]"><div className="truncate"><LatexRenderer text={q.question} /></div></TableCell>
-                      <TableCell>
+                      <TableCell className="text-muted-foreground align-top">{q.id}</TableCell>
+                      <TableCell className="max-w-[400px]">
+                        <div className="space-y-1">
+                          <div><LatexRenderer text={q.question} /></div>
+                          {q.type === "mcq" && (q.option_a || q.option_b || q.option_c || q.option_d) && (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1 pl-1">
+                              {q.option_a && <div><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.option_a} /></div>}
+                              {q.option_b && <div><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.option_b} /></div>}
+                              {q.option_c && <div><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.option_c} /></div>}
+                              {q.option_d && <div><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.option_d} /></div>}
+                              {q.correct_answer && <div className="col-span-2 text-emerald-600 font-semibold">সঠিক উত্তর: {q.correct_answer}</div>}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
                         <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">{typeLabelsMap[q.type] || q.type}</span>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{q.topics?.name || "—"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-sm text-muted-foreground align-top">{q.topics?.name || "—"}</TableCell>
+                      <TableCell className="text-right align-top">
                         <Button variant="ghost" size="icon" onClick={() => openEditQuestion(q)}><Pencil className="w-4 h-4 text-emerald-600" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(q.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
