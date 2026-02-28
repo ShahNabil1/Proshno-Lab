@@ -338,8 +338,8 @@
 
 /* Paper preview: constrain images */
 [data-print-paper] img {
-  max-width: 50px;
-  max-height: 45px;
+  max-width: 80px;
+  max-height: 70px;
   height: auto;
   width: auto;
   object-fit: contain;
