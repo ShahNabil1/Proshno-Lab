@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, BookOpen, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, AlertTriangle, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
@@ -30,6 +30,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   const [formParentId, setFormParentId] = useState("");
   const [formSubjectCode, setFormSubjectCode] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null; name: string }>({ open: false, id: null, name: "" });
+  const [filterClassId, setFilterClassId] = useState("");
   const fetchItems = async () => {
     let query: any;
     if (parentTable && parentKey) {
@@ -130,6 +131,21 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
         <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন যোগ করুন</Button>
       </div>
 
+      {/* Class filter for subjects */}
+      {table === "subjects" && parents.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <select
+            className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+            value={filterClassId}
+            onChange={(e) => setFilterClassId(e.target.value)}
+          >
+            <option value="">সকল শ্রেণী</option>
+            {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -143,7 +159,10 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {(table === "subjects" && filterClassId
+                ? items.filter(item => String(item.class_id) === filterClassId)
+                : items
+              ).map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
