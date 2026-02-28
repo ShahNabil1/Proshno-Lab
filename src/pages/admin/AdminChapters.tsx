@@ -33,6 +33,7 @@ export default function AdminChapters() {
   const { hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
+  const [chapterQuestionCounts, setChapterQuestionCounts] = useState<Record<number, number>>({});
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [allSubjects, setAllSubjects] = useState<SubjectItem[]>([]);
