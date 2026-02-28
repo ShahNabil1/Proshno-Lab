@@ -229,7 +229,7 @@ export default function AdminChapters() {
   const paginatedQuestions = filteredQuestions.slice((qSafePage - 1) * ITEMS_PER_PAGE, qSafePage * ITEMS_PER_PAGE);
 
   // === Add Question Modal ===
-  const openAddQuestion = (chapter: ChapterItem) => {
+  const openAddQuestion = (chapter: ChapterItem, returnTo: "main" | "questions" = "main") => {
     setAddQChapter(chapter);
     setIsGroupedMcq(false); setStimulusText("");
     setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
@@ -241,7 +241,7 @@ export default function AdminChapters() {
       desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
       board_references: [], university_references: [],
     });
-    setAddQDialogOpen(true);
+    setAddQFullPage({ chapter, returnTo });
     // Load topics for this chapter
     setAddQLoadingTopics(true);
     supabase.from("topics").select("id, name").eq("chapter_id", chapter.id).order("name")
