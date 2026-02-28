@@ -95,56 +95,22 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             }
           </nav>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("md:hidden", textColor)}
-            onClick={() => setMobileOpen(!mobileOpen)}>
-
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-        </div>
-
-        <AnimatePresence>
-          {mobileOpen &&
-          <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden overflow-hidden bg-card border-t border-border">
-
-              <div className="container py-4 flex flex-col gap-2">
-                <Button
-                  onClick={handleCreateQuestion}
-                  className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg gap-2"
-                >
-                  <PenLine className="w-4 h-4" />
-                  প্রশ্ন তৈরী করুন
+          {/* Mobile: simple button instead of hamburger menu */}
+          <div className="md:hidden flex items-center gap-2">
+            {user ?
+              <Link to="/dashboard">
+                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-4 rounded-lg">
+                  ড্যাশবোর্ড
                 </Button>
-                {user &&
-                  <div className="flex flex-col gap-2 mt-1">
-                    <Link to="/dashboard">
-                      <Button variant="outline" className="w-full font-heading font-medium rounded-lg">
-                        ড্যাশবোর্ড
-                      </Button>
-                    </Link>
-                    <div className="flex gap-2">
-                      <Link to="/profile" className="flex-1">
-                        <Button variant="outline" className="w-full gap-2 rounded-lg">
-                          <User className="w-4 h-4" /> প্রোফাইল
-                        </Button>
-                      </Link>
-                      <Button variant="outline" onClick={signOut} className="gap-2 rounded-lg">
-                        <LogOut className="w-4 h-4" /> লগআউট
-                      </Button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </motion.nav>
-          }
-        </AnimatePresence>
+              </Link>
+            :
+              <Link to="/login">
+                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-4 rounded-lg">
+                  লগইন করুন
+                </Button>
+              </Link>
+            }
+          </div>
       </header>
 
       <main className="flex-1">{children}</main>
