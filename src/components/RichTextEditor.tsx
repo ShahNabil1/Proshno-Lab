@@ -59,6 +59,10 @@ export default function RichTextEditor({
   const [mathModalOpen, setMathModalOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
+  const [tableHeaderRow, setTableHeaderRow] = useState(true);
   const [cloudinaryConfig, setCloudinaryConfig] = useState<{ cloudName: string; uploadPreset: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
