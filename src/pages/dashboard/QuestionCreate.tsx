@@ -770,9 +770,16 @@ export default function QuestionCreate() {
   // ─── STEP 1: Form ───
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
-        <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
-      </div>
+      {addToPaper ? (
+        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-6 text-center mb-6">
+          <h1 className="font-heading text-xl font-bold text-foreground">📝 বিদ্যমান প্রশ্নপত্রে আরও প্রশ্ন যুক্ত করুন</h1>
+          <p className="text-sm text-muted-foreground mt-1">নতুন প্রশ্ন সিলেক্ট করে "প্রশ্নপত্র দেখুন" ক্লিক করলে আগের প্রশ্নের সাথে যুক্ত হবে</p>
+        </div>
+      ) : (
+        <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
+          <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-6 space-y-4">
