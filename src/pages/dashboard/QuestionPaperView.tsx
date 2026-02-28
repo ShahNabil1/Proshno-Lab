@@ -1167,12 +1167,12 @@ export default function QuestionPaperView() {
                               <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
                                 const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1199,12 +1199,12 @@ export default function QuestionPaperView() {
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                         <div style={{ flex: 1 }}>
                           <span><LatexRenderer text={q.question} /></span>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
                               const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1246,12 +1246,12 @@ export default function QuestionPaperView() {
                               <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
                                 <span><LatexRenderer text={q.question} /></span>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 10px", fontSize: "0.88em", lineHeight: 1.3 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 4px", fontSize: "0.88em", lineHeight: 1.15 }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
                                     const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "3px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "2px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span> <LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
