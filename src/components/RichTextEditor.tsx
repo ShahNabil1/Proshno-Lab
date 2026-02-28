@@ -106,12 +106,7 @@ export default function RichTextEditor({
   const insertMathSymbol = useCallback(
     (tex: string) => {
       if (!editor) return;
-      try {
-        const html = katex.renderToString(tex, { throwOnError: false, displayMode: false });
-        editor.chain().focus().insertContent(html).run();
-      } catch {
-        editor.chain().focus().insertContent(`$${tex}$`).run();
-      }
+      editor.chain().focus().insertContent(`$${tex}$`).run();
     },
     [editor]
   );
