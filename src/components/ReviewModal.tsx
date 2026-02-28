@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export default function ReviewModal({ onSuccess }: { onSuccess?: () => void }) {
-  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [designation, setDesignation] = useState("");
@@ -21,14 +20,6 @@ export default function ReviewModal({ onSuccess }: { onSuccess?: () => void }) {
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!user || !open) return;
-    const meta = user.user_metadata;
-    setName(meta?.full_name || meta?.name || "");
-    supabase.from("institutes").select("name").eq("owner_id", user.id).maybeSingle()
-      .then(({ data }) => { if (data) setInstitution(data.name || ""); });
-  }, [user, open]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
