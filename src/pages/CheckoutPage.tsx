@@ -9,6 +9,10 @@ import { toast } from "sonner";
 import { Copy, Check, ShoppingCart } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import logoImg from "@/assets/logo.png";
+import bkashLogo from "@/assets/bkash-logo.webp";
+import nagadLogo from "@/assets/nagad-logo.png";
+import rocketLogo from "@/assets/rocket-logo.png";
+import upayLogo from "@/assets/upay-logo.webp";
 
 const BKASH_NUMBER = "01933520904";
 const WHATSAPP_NUMBER = "8801933520904";
@@ -287,10 +291,18 @@ export default function CheckoutPage() {
               <SelectValue placeholder="কোনটাতে সেন্ড করেছেন?" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bkash">বিকাশ</SelectItem>
-              <SelectItem value="nagad">নগদ</SelectItem>
-              <SelectItem value="rocket">রকেট</SelectItem>
-              <SelectItem value="upay">উপায়</SelectItem>
+              <SelectItem value="bkash">
+                <span className="flex items-center gap-2"><img src={bkashLogo} alt="bKash" className="h-4 object-contain" /> বিকাশ</span>
+              </SelectItem>
+              <SelectItem value="nagad">
+                <span className="flex items-center gap-2"><img src={nagadLogo} alt="Nagad" className="h-4 object-contain" /> নগদ</span>
+              </SelectItem>
+              <SelectItem value="rocket">
+                <span className="flex items-center gap-2"><img src={rocketLogo} alt="Rocket" className="h-4 object-contain" /> রকেট</span>
+              </SelectItem>
+              <SelectItem value="upay">
+                <span className="flex items-center gap-2"><img src={upayLogo} alt="Upay" className="h-4 object-contain" /> উপায়</span>
+              </SelectItem>
             </SelectContent>
           </Select>
 
