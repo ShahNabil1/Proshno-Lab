@@ -92,6 +92,18 @@ export default function QuestionCreate() {
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
+
+  // Load existing paper question IDs when in add_to_paper mode
+  useEffect(() => {
+    if (addToPaper) {
+      const raw = sessionStorage.getItem("existingPaperQuestions");
+      if (raw) {
+        const ids = (JSON.parse(raw) as QuestionRow[]).map(q => q.id);
+        setExistingQuestionIds(new Set(ids));
+      }
+    }
+  }, [addToPaper]);
 
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState("");
