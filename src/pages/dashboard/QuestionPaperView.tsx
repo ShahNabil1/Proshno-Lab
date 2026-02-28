@@ -14,6 +14,8 @@ import LatexRenderer from "@/components/LatexRenderer";
 import FloatingToolbar from "@/components/FloatingToolbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuestionRow {
   id: number;
