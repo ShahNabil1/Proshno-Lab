@@ -642,6 +642,9 @@ export default function AdminChapters() {
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
+                        <ReferenceBadges boardRefs={q.board_references} uniRefs={q.university_references} />
+                      </TableCell>
+                      <TableCell className="align-top">
                         <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">{typeLabelsMap[q.type] || q.type}</span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground align-top">{q.topics?.name || "—"}</TableCell>
