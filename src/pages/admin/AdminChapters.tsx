@@ -586,6 +586,20 @@ export default function AdminChapters() {
                               {q.correct_answer && <div className="col-span-2 text-emerald-600 font-semibold">সঠিক উত্তর: {q.correct_answer}</div>}
                             </div>
                           )}
+                          {q.type === "cq" && q.creative_data && (
+                            <div className="space-y-1 text-xs text-muted-foreground mt-1 pl-1 border-l-2 border-emerald-200 ml-1">
+                              {q.creative_data.q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.q_ka} /></div>}
+                              {q.creative_data.q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.q_kha} /></div>}
+                              {q.creative_data.q_ga && <div className="pl-2"><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.creative_data.q_ga} /></div>}
+                              {q.creative_data.q_gha && <div className="pl-2"><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.creative_data.q_gha} /></div>}
+                            </div>
+                          )}
+                          {q.type === "descriptive" && q.creative_data && (
+                            <div className="space-y-1 text-xs text-muted-foreground mt-1 pl-1 border-l-2 border-emerald-200 ml-1">
+                              {q.creative_data.desc_q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.desc_q_ka} /></div>}
+                              {q.creative_data.desc_q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.desc_q_kha} /></div>}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="align-top">
