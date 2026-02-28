@@ -60,25 +60,19 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) =>
-            <Link key={item.path} to={item.path}>
-                <button
-                className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  location.pathname === item.path ?
-                  "bg-primary/10 text-primary" :
-                  cn("hover:bg-primary/5", mutedTextColor)
-                )}>
-
-                  {item.label}
-                </button>
-              </Link>
-            )}
-            {user ?
-            <div className="flex items-center gap-2 ml-3">
+          <nav className="hidden md:flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={handleCreateQuestion}
+              className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg gap-2"
+            >
+              <PenLine className="w-4 h-4" />
+              প্রশ্ন তৈরী করুন
+            </Button>
+            {user &&
+              <div className="flex items-center gap-2">
                 <Link to="/dashboard">
-                  <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
+                  <Button variant="ghost" size="sm" className={cn("font-heading font-medium", mutedTextColor)}>
                     ড্যাশবোর্ড
                   </Button>
                 </Link>
@@ -91,13 +85,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button variant="ghost" size="icon" className={cn(mutedTextColor)} onClick={signOut}>
                   <LogOut className="w-4 h-4" />
                 </Button>
-              </div> :
-
-            <Link to="/login" className="ml-3">
-                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
-                  লগইন করুন
-                </Button>
-              </Link>
+              </div>
             }
           </nav>
 
