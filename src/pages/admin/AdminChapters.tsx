@@ -635,10 +635,10 @@ export default function AdminChapters() {
                           <div><LatexRenderer text={q.question} /></div>
                           {q.type === "mcq" && (q.option_a || q.option_b || q.option_c || q.option_d) && (
                             <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1 pl-1">
-                              {q.option_a && <div><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.option_a} /></div>}
-                              {q.option_b && <div><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.option_b} /></div>}
-                              {q.option_c && <div><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.option_c} /></div>}
-                              {q.option_d && <div><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.option_d} /></div>}
+                              {q.option_a && <div><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.option_a} inline /></div>}
+                              {q.option_b && <div><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.option_b} inline /></div>}
+                              {q.option_c && <div><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.option_c} inline /></div>}
+                              {q.option_d && <div><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.option_d} inline /></div>}
                               {q.correct_answer && <div className="col-span-2 text-emerald-600 font-semibold">সঠিক উত্তর: {q.correct_answer}</div>}
                             </div>
                           )}
