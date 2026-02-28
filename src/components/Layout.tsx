@@ -188,14 +188,15 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </div>
 
           {/* Developer Credit */}
-          <div className="mt-6 pt-5 border-t border-white/5 text-center">
-            <p className="text-white/30 text-xs group inline-flex items-center gap-1.5 transition-all duration-500 hover:text-white/70">
-              Developed with ❤️ by{" "}
+          <div className="mt-6 pt-5 border-t border-white/10 text-center">
+            <p className="text-white/50 text-sm group inline-flex items-center gap-2 transition-all duration-500 hover:text-white/80">
+              <span className="text-base">⚡</span>
+              Developed by{" "}
               <a
                 href="https://www.shahnabil.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative font-heading font-semibold text-white/50 transition-all duration-500 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#f9ce34] group-hover:via-[#ee2a7b] group-hover:to-[#6228d7]"
+                className="relative font-heading font-bold text-white/70 text-base underline underline-offset-4 decoration-white/20 transition-all duration-500 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#f9ce34] group-hover:via-[#ee2a7b] group-hover:to-[#6228d7] group-hover:decoration-[#ee2a7b]"
               >
                 Shahriar Nabil
               </a>
