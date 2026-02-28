@@ -227,10 +227,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-white/40 text-sm">© ২০২৬ eExamapp — সর্বস্বত্ব সংরক্ষিত</p>
             <div className="flex items-center gap-4">
-              <img src={bkashLogo} alt="bKash" className="h-8 w-auto object-contain rounded-md bg-white px-2 py-1.5" loading="eager" />
-              <img src={nagadLogo} alt="Nagad" className="h-8 w-auto object-contain rounded-md bg-white px-2 py-1.5" loading="eager" />
-              <img src={rocketLogo} alt="Rocket" className="h-8 w-auto object-contain rounded-md bg-white px-2 py-1.5" loading="eager" />
-              <img src={upayLogo} alt="Upay" className="h-8 w-auto object-contain rounded-md bg-white px-2 py-1.5" loading="eager" />
+              <img src={bkashLogo} alt="bKash" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
+              <img src={nagadLogo} alt="Nagad" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
+              <img src={rocketLogo} alt="Rocket" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
+              <img src={upayLogo} alt="Upay" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
             </div>
           </div>
         </div>
