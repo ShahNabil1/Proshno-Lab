@@ -94,16 +94,11 @@ export default function Index() {
             
             </p>
 
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/demo">
+            <div className="flex justify-center">
+              <Link to="/login">
                 <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold text-base px-8 h-12 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] hover:shadow-[0_6px_28px_hsl(155_72%_44%/0.4)] transition-shadow">
-                  ডেমো প্রশ্ন তৈরি
+                  প্রশ্ন তৈরি করুন
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-              <Link to="/pricing">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-heading font-semibold text-base px-8 h-12 rounded-xl">
-                  মূল্য তালিকা দেখুন
                 </Button>
               </Link>
             </div>
