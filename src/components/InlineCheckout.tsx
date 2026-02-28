@@ -16,7 +16,7 @@ import rocketLogo from "@/assets/rocket-logo.png";
 import upayLogo from "@/assets/upay-logo.webp";
 
 const BKASH_NUMBER = "01933520904";
-const WHATSAPP_NUMBER = "8801933520904";
+const WHATSAPP_NUMBER = "8801340345787";
 
 export interface SelectedPackageItem {
   id: number;
