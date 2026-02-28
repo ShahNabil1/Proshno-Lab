@@ -159,7 +159,10 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {(table === "subjects" && filterClassId
+                ? items.filter(item => String(item.class_id) === filterClassId)
+                : items
+              ).map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
