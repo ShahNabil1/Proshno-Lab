@@ -193,7 +193,36 @@ export default function QuestionPaperView() {
 
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
-    if (paperId) {
+    const qData = sessionStorage.getItem("viewPaperQuestions");
+    const mData = sessionStorage.getItem("viewPaperMeta");
+    const savedSettings = sessionStorage.getItem("viewPaperSettings");
+
+    if (qData && mData) {
+      // Prioritize sessionStorage (fresh generation or returning from "add more")
+      const parsedQuestions = JSON.parse(qData);
+      const parsedMeta = JSON.parse(mData);
+      setQuestions(parsedQuestions);
+      setMeta(parsedMeta);
+      if (savedSettings) {
+        setSettings(prev => ({ ...prev, ...JSON.parse(savedSettings) }));
+        sessionStorage.removeItem("viewPaperSettings");
+      }
+
+      if (paperId) {
+        // Returning to existing paper with new questions — update it
+        setCurrentPaperId(paperId);
+        const paperData = {
+          question_ids: parsedQuestions.map((q: any) => q.id),
+          meta: parsedMeta as any,
+        };
+        supabase.from("saved_papers").update(paperData as any).eq("id", paperId).then(() => {});
+      } else {
+        // Auto-save new paper
+        autoSavePaper(parsedMeta, parsedQuestions, settings);
+      }
+      sessionStorage.removeItem("viewPaperQuestions");
+      sessionStorage.removeItem("viewPaperMeta");
+    } else if (paperId) {
       // Load saved paper from DB
       setCurrentPaperId(paperId);
       supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
@@ -201,33 +230,17 @@ export default function QuestionPaperView() {
           if (!data) return;
           setMeta(data.meta as any);
           if (data.settings) setSettings(prev => ({ ...prev, ...(data.settings as any) }));
-          // Fetch actual questions by IDs
           const ids = data.question_ids as number[];
           if (ids.length > 0) {
             supabase.from("questions").select("*").in("id", ids)
               .then(({ data: qData }) => {
                 if (qData) {
-                  // Preserve original order
                   const qMap = new Map(qData.map(q => [q.id, q]));
                   setQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]);
                 }
               });
           }
         });
-    } else {
-      const qData = sessionStorage.getItem("viewPaperQuestions");
-      const mData = sessionStorage.getItem("viewPaperMeta");
-      if (qData && mData) {
-        const parsedQuestions = JSON.parse(qData);
-        const parsedMeta = JSON.parse(mData);
-        setQuestions(parsedQuestions);
-        setMeta(parsedMeta);
-        // Auto-save new paper immediately
-        autoSavePaper(parsedMeta, parsedQuestions, settings);
-        // Clear sessionStorage so refresh doesn't duplicate
-        sessionStorage.removeItem("viewPaperQuestions");
-        sessionStorage.removeItem("viewPaperMeta");
-      }
     }
   }, [searchParams]);
 
@@ -853,14 +866,26 @@ export default function QuestionPaperView() {
       <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
         {!isMobile && (
           <div className="mb-4 flex items-center gap-3 max-w-[800px] mx-auto">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
+            <Button variant="outline" size="sm" onClick={() => {
+              sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
+              sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
+              if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
+              sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              navigate("/dashboard/create?add_to_paper=true");
+            }}>
               <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
           </div>
         )}
         {isMobile && (
           <div className="mb-3 flex items-center gap-2">
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate("/dashboard/create")}>
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => {
+              sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
+              sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
+              if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
+              sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              navigate("/dashboard/create?add_to_paper=true");
+            }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
           </div>

@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceBadges from "@/components/ReferenceBadges";
 
@@ -71,6 +71,8 @@ const boardList = [
 export default function QuestionCreate() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const addToPaper = searchParams.get("add_to_paper") === "true";
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     programName: "",
@@ -90,6 +92,18 @@ export default function QuestionCreate() {
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
+
+  // Load existing paper question IDs when in add_to_paper mode
+  useEffect(() => {
+    if (addToPaper) {
+      const raw = sessionStorage.getItem("existingPaperQuestions");
+      if (raw) {
+        const ids = (JSON.parse(raw) as QuestionRow[]).map(q => q.id);
+        setExistingQuestionIds(new Set(ids));
+      }
+    }
+  }, [addToPaper]);
 
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState("");
@@ -205,11 +219,15 @@ export default function QuestionCreate() {
 
       const { data, error } = await query;
       if (error) throw error;
-      if (!data || data.length === 0) {
-        toast.info("এই ফিল্টারে কোনো প্রশ্ন পাওয়া যায়নি");
+      // Filter out questions already in the paper
+      const filtered = addToPaper
+        ? (data || []).filter(q => !existingQuestionIds.has(q.id))
+        : data || [];
+      if (filtered.length === 0) {
+        toast.info("এই ফিল্টারে কোনো নতুন প্রশ্ন পাওয়া যায়নি");
         return;
       }
-      const shuffled = data.sort(() => Math.random() - 0.5);
+      const shuffled = filtered.sort(() => Math.random() - 0.5);
       setQuestions(shuffled);
       setSelectedIds(new Set());
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
@@ -378,8 +396,42 @@ export default function QuestionCreate() {
       toast.error("আগে প্রশ্ন সিলেক্ট ও সেভ করুন");
       return;
     }
-    handleSaveAndView();
-    navigate("/dashboard/view-paper");
+
+    if (addToPaper) {
+      // Merge new selections with existing paper questions
+      const existingQsRaw = sessionStorage.getItem("existingPaperQuestions");
+      const existingMetaRaw = sessionStorage.getItem("existingPaperMeta");
+      const existingSettingsRaw = sessionStorage.getItem("existingPaperSettings");
+      const existingPaperId = sessionStorage.getItem("existingPaperId");
+      const existingQs: QuestionRow[] = existingQsRaw ? JSON.parse(existingQsRaw) : [];
+      const existingIds = new Set(existingQs.map(q => q.id));
+
+      // Add only new questions (avoid duplicates)
+      const newSelected = questions.filter(q => selectedIds.has(q.id) && !existingIds.has(q.id));
+      const mergedQuestions = [...existingQs, ...newSelected];
+
+      sessionStorage.setItem("viewPaperQuestions", JSON.stringify(mergedQuestions));
+      if (existingMetaRaw) sessionStorage.setItem("viewPaperMeta", existingMetaRaw);
+      if (existingSettingsRaw) sessionStorage.setItem("viewPaperSettings", existingSettingsRaw);
+
+      // Clean up
+      sessionStorage.removeItem("existingPaperQuestions");
+      sessionStorage.removeItem("existingPaperMeta");
+      sessionStorage.removeItem("existingPaperSettings");
+      sessionStorage.removeItem("existingPaperId");
+
+      toast.success(`${newSelected.length}টি নতুন প্রশ্ন যুক্ত হয়েছে!`);
+
+      // Navigate back — if there was a paper_id, update it; otherwise fresh view
+      if (existingPaperId) {
+        navigate(`/dashboard/view-paper?paper_id=${existingPaperId}`);
+      } else {
+        navigate("/dashboard/view-paper");
+      }
+    } else {
+      handleSaveAndView();
+      navigate("/dashboard/view-paper");
+    }
   };
 
   // Group topics by chapter
@@ -718,9 +770,16 @@ export default function QuestionCreate() {
   // ─── STEP 1: Form ───
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
-        <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
-      </div>
+      {addToPaper ? (
+        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-6 text-center mb-6">
+          <h1 className="font-heading text-xl font-bold text-foreground">📝 বিদ্যমান প্রশ্নপত্রে আরও প্রশ্ন যুক্ত করুন</h1>
+          <p className="text-sm text-muted-foreground mt-1">নতুন প্রশ্ন সিলেক্ট করে "প্রশ্নপত্র দেখুন" ক্লিক করলে আগের প্রশ্নের সাথে যুক্ত হবে</p>
+        </div>
+      ) : (
+        <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
+          <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-6 space-y-4">
