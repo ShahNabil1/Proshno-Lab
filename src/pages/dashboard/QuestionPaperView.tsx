@@ -66,6 +66,11 @@ const padBangla = (n: number): string => {
   return s.length < 2 ? "০" + s : s;
 };
 
+/* Strip wrapping <p> tags from option values to keep them inline */
+const stripPTags = (html: string): string => {
+  return html.replace(/^<p>([\s\S]*?)<\/p>$/i, "$1").trim();
+};
+
 export default function QuestionPaperView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
