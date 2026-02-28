@@ -101,7 +101,7 @@ export default function CheckoutPage() {
       return;
     }
     if (!transactionId.trim()) {
-      toast.error("ট্রাঞ্জেকশন আইডি লিখুন");
+      toast.error("যে নাম্বার থেকে টাকা পাঠিয়েছেন সেটি লিখুন");
       return;
     }
 
@@ -308,7 +308,7 @@ export default function CheckoutPage() {
 
           {paymentMethod &&
           <Input
-            placeholder="ট্রাঞ্জেকশন আইডি লিখুন"
+            placeholder="যে নাম্বার থেকে টাকা পাঠিয়েছেন সেটি লিখুন"
             value={transactionId}
             onChange={(e) => setTransactionId(e.target.value)}
             className="bg-muted/30" />
