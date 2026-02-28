@@ -96,7 +96,7 @@ export default function Index() {
 
             <div className="flex justify-center">
               <Link to={user ? "/dashboard/create" : "/login"}>
-                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold text-base px-8 h-12 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] hover:shadow-[0_6px_28px_hsl(155_72%_44%/0.4)] transition-shadow">
+                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold text-lg px-10 h-14 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] hover:shadow-[0_6px_28px_hsl(155_72%_44%/0.4)] transition-shadow">
                   প্রশ্ন তৈরি করুন
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
