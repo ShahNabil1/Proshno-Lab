@@ -542,6 +542,53 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          created_at: string
+          designation: string
+          id: number
+          image_url: string | null
+          institution: string
+          name: string
+          rating: number
+          status: string
+          teacher_id: string | null
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          designation?: string
+          id?: never
+          image_url?: string | null
+          institution?: string
+          name: string
+          rating?: number
+          status?: string
+          teacher_id?: string | null
+          text: string
+        }
+        Update: {
+          created_at?: string
+          designation?: string
+          id?: never
+          image_url?: string | null
+          institution?: string
+          name?: string
+          rating?: number
+          status?: string
+          teacher_id?: string | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_papers: {
         Row: {
           chapter_names: string[]
