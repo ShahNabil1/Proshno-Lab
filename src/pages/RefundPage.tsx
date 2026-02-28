@@ -17,15 +17,6 @@ export default function RefundPage() {
               </p>
             </section>
 
-            <section>
-              <h2 className="font-heading text-lg font-semibold text-foreground mb-3">২. রিফান্ড পাওয়ার যোগ্যতা</h2>
-              <ul className="list-disc list-inside space-y-2 ml-2">
-                <li>ক্রয়ের ৭ দিনের মধ্যে রিফান্ড আবেদন করতে হবে।</li>
-                <li>সেবা ব্যবহার না করে থাকলে সম্পূর্ণ রিফান্ড পাওয়া যাবে।</li>
-                <li>আংশিক ব্যবহারের ক্ষেত্রে আনুপাতিক রিফান্ড বিবেচনা করা হবে।</li>
-                <li>প্রযুক্তিগত ত্রুটির কারণে সেবা ব্যবহার করতে না পারলে সম্পূর্ণ রিফান্ড প্রদান করা হবে।</li>
-              </ul>
-            </section>
 
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৩. রিফান্ড অযোগ্য ক্ষেত্রসমূহ</h2>
