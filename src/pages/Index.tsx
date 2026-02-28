@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, AlignLeft, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap
-} from "lucide-react";
+  Zap, Shield, BarChart3, GraduationCap } from
+"lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -15,22 +15,22 @@ const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const },
-  }),
+    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const }
+  })
 };
 
 const stats = [
-  { value: "৩০,০০০+", label: "শিক্ষা প্রতিষ্ঠান যুক্ত", icon: Users },
-  { value: "২,২০০+", label: "প্রশ্ন তৈরি হচ্ছে প্রতিদিন", icon: FileCheck },
-  { value: "৫ লক্ষ+", label: "মোট প্রশ্ন তৈরি হয়েছে", icon: BarChart3 },
-];
+{ value: "৩০,০০০+", label: "শিক্ষা প্রতিষ্ঠান যুক্ত", icon: Users },
+{ value: "২,২০০+", label: "প্রশ্ন তৈরি হচ্ছে প্রতিদিন", icon: FileCheck },
+{ value: "৫ লক্ষ+", label: "মোট প্রশ্ন তৈরি হয়েছে", icon: BarChart3 }];
+
 
 const categories = [
-  { icon: BookOpen, label: "বোর্ড প্রশ্ন" },
-  { icon: FileText, label: "নির্বাচনী পরীক্ষার প্রশ্ন" },
-  { icon: GraduationCap, label: "এডমিশন" },
-  { icon: Shield, label: "মেডিকেল" },
-];
+{ icon: BookOpen, label: "বোর্ড প্রশ্ন" },
+{ icon: FileText, label: "নির্বাচনী পরীক্ষার প্রশ্ন" },
+{ icon: GraduationCap, label: "এডমিশন" },
+{ icon: Shield, label: "মেডিকেল" }];
+
 
 
 
@@ -39,26 +39,26 @@ const categories = [
 export default function Index() {
   const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [faqs, setFaqs] = useState<{ id: number; question: string; answer: string }[]>([]);
-  const [reviews, setReviews] = useState<{ id: number; name: string; designation: string; institution: string; image_url: string; rating: number; text: string }[]>([]);
+  const [faqs, setFaqs] = useState<{id: number;question: string;answer: string;}[]>([]);
+  const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
 
   const fetchReviews = () => {
-    supabase
-      .from("reviews")
-      .select("id, name, designation, institution, image_url, rating, text")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(6)
-      .then(({ data }) => { if (data) setReviews(data as any); });
+    supabase.
+    from("reviews").
+    select("id, name, designation, institution, image_url, rating, text").
+    eq("status", "approved").
+    order("created_at", { ascending: false }).
+    limit(6).
+    then(({ data }) => {if (data) setReviews(data as any);});
   };
 
   useEffect(() => {
-    supabase
-      .from("faqs")
-      .select("id, question, answer")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => { if (data) setFaqs(data as any); });
+    supabase.
+    from("faqs").
+    select("id, question, answer").
+    eq("is_active", true).
+    order("sort_order", { ascending: true }).
+    then(({ data }) => {if (data) setFaqs(data as any);});
     fetchReviews();
   }, []);
 
@@ -90,8 +90,8 @@ export default function Index() {
             </h1>
 
             <p className="text-lg md:text-xl text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
-              ৩য় থেকে দ্বাদশ শ্রেণির প্রশ্ন তৈরি করুন মাত্র ১ ক্লিকে।
-              শিক্ষক ও শিক্ষার্থীদের জন্য সম্পূর্ণ ডিজিটাল সমাধান।
+               ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্ন তৈরি করুন মাত্র ১ ক্লিকে। শিক্ষক ও শিক্ষার্থীদের জন্য সম্পূর্ণ স্মার্ট সমাধান।
+            
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center">
@@ -115,15 +115,15 @@ export default function Index() {
       <section className="py-16 md:py-20 bg-background relative -mt-10 z-10">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto -mt-6">
-            {stats.map((s, i) => (
-              <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {stats.map((s, i) =>
+            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="glass-card-light rounded-2xl p-7 text-center hover-lift">
                   <s.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
                   <div className="font-heading font-extrabold text-3xl md:text-4xl text-foreground mb-1">{s.value}</div>
                   <div className="text-muted-foreground text-sm">{s.label}</div>
                 </div>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -144,21 +144,21 @@ export default function Index() {
             {/* Left: Question cards */}
             <motion.div custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="space-y-4">
               {[
-                { q: "বাংলাদেশের রাজধানী কোনটি?", opts: ["চট্টগ্রাম", "ঢাকা", "খুলনা", "রাজশাহী"], selected: true },
-                { q: "সূর্য কেন আলো দেয়?", opts: ["তাপ বিকিরণ", "পরমাণু বিস্ফোরণ", "নিউক্লিয়ার ফিউশন", "বৈদ্যুতিক তরঙ্গ"], selected: false },
-                { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"], selected: false },
-              ].map((item, i) => (
-                <div key={i} className={`rounded-xl border-2 p-5 transition-all cursor-pointer ${item.selected ? "border-primary bg-primary/5 shadow-[0_0_0_1px_hsl(155_72%_44%/0.2)]" : "border-border bg-card hover:border-primary/30"}`}>
+              { q: "বাংলাদেশের রাজধানী কোনটি?", opts: ["চট্টগ্রাম", "ঢাকা", "খুলনা", "রাজশাহী"], selected: true },
+              { q: "সূর্য কেন আলো দেয়?", opts: ["তাপ বিকিরণ", "পরমাণু বিস্ফোরণ", "নিউক্লিয়ার ফিউশন", "বৈদ্যুতিক তরঙ্গ"], selected: false },
+              { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"], selected: false }].
+              map((item, i) =>
+              <div key={i} className={`rounded-xl border-2 p-5 transition-all cursor-pointer ${item.selected ? "border-primary bg-primary/5 shadow-[0_0_0_1px_hsl(155_72%_44%/0.2)]" : "border-border bg-card hover:border-primary/30"}`}>
                   <p className="font-medium text-foreground text-sm mb-3">{i + 1}. {item.q}</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {item.opts.map((o, oi) => (
-                      <span key={oi} className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md">
+                    {item.opts.map((o, oi) =>
+                  <span key={oi} className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md">
                         {String.fromCharCode(0x0995 + oi)}. {o}
                       </span>
-                    ))}
+                  )}
                   </div>
                 </div>
-              ))}
+              )}
             </motion.div>
 
             {/* Right: PDF preview mock */}
@@ -175,22 +175,22 @@ export default function Index() {
                   </div>
                   <div className="space-y-4">
                     {[
-                      { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"] },
-                      { q: "বাংলাদেশের জাতীয় পতাকার রং কী কী?", opts: [] },
-                    ].map((item, i) => (
-                      <div key={i}>
+                    { q: "নোবেল পুরস্কার কবে থেকে প্রদান করা শুরু হয়?", opts: ["১৮৯৫", "১৯০১", "১৯১০", "১৯২৫"] },
+                    { q: "বাংলাদেশের জাতীয় পতাকার রং কী কী?", opts: [] }].
+                    map((item, i) =>
+                    <div key={i}>
                         <p className="text-xs text-foreground font-medium mb-1.5">{i + 1}. {item.q}</p>
-                        {item.opts.length > 0 && (
-                          <div className="grid grid-cols-2 gap-1">
-                            {item.opts.map((o, oi) => (
-                              <span key={oi} className="text-[11px] text-muted-foreground">
+                        {item.opts.length > 0 &&
+                      <div className="grid grid-cols-2 gap-1">
+                            {item.opts.map((o, oi) =>
+                        <span key={oi} className="text-[11px] text-muted-foreground">
                                 {String.fromCharCode(0x0995 + oi)}. {o}
                               </span>
-                            ))}
-                          </div>
                         )}
+                          </div>
+                      }
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
@@ -215,8 +215,8 @@ export default function Index() {
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">সারাদেশে যেকোনো পাবলিক পরীক্ষা হওয়া মাত্র সবার আগে প্রশ্ন আপডেট হয়</p>
           </motion.div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {categories.map((cat, i) => (
-              <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {categories.map((cat, i) =>
+            <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="bg-card rounded-2xl p-6 text-center hover-lift cursor-pointer group shadow-premium">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                     <cat.icon className="w-6 h-6 text-primary" />
@@ -224,7 +224,7 @@ export default function Index() {
                   <span className="text-sm font-medium text-foreground">{cat.label}</span>
                 </div>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -236,23 +236,23 @@ export default function Index() {
             <p className="text-muted-foreground text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {reviews.map((t, i) => (
-              <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {reviews.map((t, i) =>
+            <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <div className="bg-card rounded-2xl p-7 shadow-premium hover-lift h-full flex flex-col">
                   <div className="flex items-center gap-0.5 mb-4">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
-                    ))}
+                    {Array.from({ length: 5 }).map((_, j) =>
+                  <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
+                  )}
                   </div>
                   <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">"{t.text}"</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-border">
-                    {t.image_url ? (
-                      <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
+                    {t.image_url ?
+                  <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" /> :
+
+                  <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
                         {t.name.charAt(0)}
                       </div>
-                    )}
+                  }
                     <div>
                       <p className="font-heading font-semibold text-sm text-foreground">{t.name}</p>
                       <p className="text-xs text-muted-foreground">{t.designation}{t.institution ? `, ${t.institution}` : ""}</p>
@@ -260,7 +260,7 @@ export default function Index() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+            )}
           </div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-10">
             <ReviewModal onSuccess={fetchReviews} />
@@ -275,30 +275,30 @@ export default function Index() {
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
           </motion.div>
           <div className="space-y-0">
-            {faqs.map((faq, i) => (
-              <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            {faqs.map((faq, i) =>
+            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group"
-                >
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group">
+
                   <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 <AnimatePresence>
-                  {openFaq === i && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
+                  {openFaq === i &&
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden">
+
                       <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
-                  )}
+                }
                 </AnimatePresence>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -329,6 +329,6 @@ export default function Index() {
           </motion.div>
         </div>
       </section>
-    </div>
-  );
+    </div>);
+
 }
