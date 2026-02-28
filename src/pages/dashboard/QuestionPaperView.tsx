@@ -872,21 +872,32 @@ export default function QuestionPaperView() {
           }}
         >
           {/* ===== WATERMARK ===== */}
-          {settings.showWatermark && (settings.watermarkText || meta.instituteName) && (
+          {settings.showWatermark && (
             <div style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%) rotate(-35deg)",
-              fontSize: `${settings.watermarkSize || 30}px`,
-              fontWeight: 900,
               opacity: (settings.watermarkOpacity || 40) / 100,
-              whiteSpace: "nowrap",
               pointerEvents: "none",
               zIndex: 0,
-              color: "#000",
             }}>
-              {settings.watermarkText || meta.instituteName}
+              {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
+                <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
+                  width: `${settings.watermarkSize || 100}px`,
+                  height: "auto",
+                  objectFit: "contain",
+                }} />
+              ) : (settings.watermarkText || meta.instituteName) ? (
+                <span style={{
+                  fontSize: `${settings.watermarkSize || 30}px`,
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                  color: "#000",
+                }}>
+                  {settings.watermarkText || meta.instituteName}
+                </span>
+              ) : null}
             </div>
           )}
 
