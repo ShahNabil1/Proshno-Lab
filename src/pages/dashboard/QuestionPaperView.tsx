@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Settings, Plus, Minus, Save } from "lucide-react";
+import { Download, Settings, Plus, Minus, Save, Pencil } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -76,6 +77,7 @@ export default function QuestionPaperView() {
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
   const [activeQuestionId, setActiveQuestionId] = useState<number | null>(null);
+  const [editingMode, setEditingMode] = useState(false);
 
   // Settings
   const [settings, setSettings] = useState({
@@ -156,13 +158,14 @@ export default function QuestionPaperView() {
   }, [searchParams]);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
+    if (!editingMode) return;
     e.stopPropagation();
     const el = e.currentTarget;
     el.contentEditable = "true";
     el.focus();
     setActiveEditEl(el);
     setActiveQuestionId(questionId ?? null);
-  }, []);
+  }, [editingMode]);
 
   const handleCloseToolbar = useCallback(() => {
     if (activeEditEl) {
@@ -345,7 +348,7 @@ export default function QuestionPaperView() {
     return refs.length > 0 ? `[${refs.join(", ")}]` : "";
   };
 
-  const editableClass = "outline-none cursor-text";
+  const editableClass = editingMode ? "outline-none cursor-text" : "outline-none cursor-default";
 
   /* Paper size widths for preview */
   const paperPreviewWidths: Record<PaperSize, string> = {
@@ -429,8 +432,16 @@ export default function QuestionPaperView() {
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
             <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
           </Button>
-          <span className="text-xs text-muted-foreground">💡 যেকোনো টেক্সটে ক্লিক করে সরাসরি এডিট করুন</span>
         </div>
+
+        {editingMode && (
+          <Alert className="mb-4 border-emerald-300 bg-emerald-50 text-emerald-900">
+            <Pencil className="h-4 w-4 text-emerald-600" />
+            <AlertDescription className="text-xs" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+              এডিটিং মোড অন করা হয়েছে। আপনি এখন সরাসরি প্রশ্নে ক্লিক করে যেকোনো লেখা পরিবর্তন করতে পারবেন। মনে রাখবেন, এই পরিবর্তনগুলো ডাটাবেসে সেভ হবে না। তাই এডিট শেষ করে প্রশ্নটি অবশ্যই ডাউনলোড করে নিন।
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div
           className="mx-auto font-paper"
@@ -1238,6 +1249,19 @@ export default function QuestionPaperView() {
                       <SelectItem value="timesnewroman">Times New Roman</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-1.5">
+                      <Pencil className="h-3.5 w-3.5 text-emerald-600" /> এডিটিং মোড
+                    </span>
+                    <Switch checked={editingMode} onCheckedChange={(v) => {
+                      setEditingMode(v);
+                      if (!v) handleCloseToolbar();
+                      if (v) toast.info("এডিটিং মোড অন হয়েছে");
+                    }} />
+                  </div>
                 </div>
 
                 <div className="mb-3">
