@@ -512,9 +512,24 @@ export default function QuestionCreate() {
             প্রশ্নে ভুল পেলে রিপোর্ট করে eExamapp কে সমৃদ্ধ করুন ।
           </div>
 
-          {/* Mobile filter search */}
-          <div className="lg:hidden">
-            <Input placeholder="কিওয়ার্ড সার্চ করুন" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
+          {/* Mobile filter button + search */}
+          <div className="lg:hidden flex gap-2">
+            <Input placeholder="কিওয়ার্ড সার্চ করুন" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} className="flex-1" />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <SlidersHorizontal className="h-4 w-4 mr-1.5" /> ফিল্টার
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
+                <SheetHeader>
+                  <SheetTitle className="font-heading">এডভান্সড ফিল্টার মেনু</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(85vh-60px)] pr-2 mt-4">
+                  {filterSidebarContent}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
           </div>
 
           <div className="space-y-4">
