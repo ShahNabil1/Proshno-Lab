@@ -196,7 +196,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 href="https://www.shahnabil.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative font-heading font-bold text-white/70 text-base underline underline-offset-4 decoration-white/20 transition-all duration-500 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#f9ce34] group-hover:via-[#ee2a7b] group-hover:to-[#6228d7] group-hover:decoration-[#ee2a7b]"
+                className="relative font-bold text-white/70 text-base underline underline-offset-4 decoration-white/20 transition-all duration-500 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#f9ce34] group-hover:via-[#ee2a7b] group-hover:to-[#6228d7] group-hover:decoration-[#ee2a7b] italic"
+                style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
               >
                 Shahriar Nabil
               </a>
