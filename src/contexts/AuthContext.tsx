@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   session: Session | null;
@@ -17,22 +16,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialised, setInitialised] = useState(false);
 
   useEffect(() => {
-    // First get the existing session – this is the authoritative source on refresh
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      setInitialised(true);
     });
 
-    // Then listen for future changes (sign-in, sign-out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      // Only set loading false here if getSession already resolved
       setLoading(false);
     });
 
@@ -53,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const popup = window.open(data.url, "oauth", "width=500,height=600");
 
     if (!popup) {
-      // Fallback to redirect if popup blocked
       window.location.href = data.url;
       return;
     }
@@ -67,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("message", messageHandler);
 
-    // Also poll for popup close (user may complete OAuth without postMessage)
     const pollTimer = setInterval(async () => {
       if (popup.closed) {
         clearInterval(pollTimer);
