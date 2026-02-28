@@ -677,24 +677,7 @@ export default function AdminChapters() {
           </div>
         )}
 
-        {/* Add Question Dialog */}
-        <Dialog open={addQDialogOpen} onOpenChange={setAddQDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle style={{ fontFamily: FONT }}>নতুন প্রশ্ন যুক্ত করুন</DialogTitle>
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: FONT }}>
-                {className} • {subjectName} • {ch.name}
-              </p>
-            </DialogHeader>
-            {renderQuestionForm()}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddQDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
-                {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Add Question Dialog removed - using full page view */}
 
         {/* Edit Question Dialog */}
         <Dialog open={editQDialogOpen} onOpenChange={setEditQDialogOpen}>
@@ -856,26 +839,6 @@ export default function AdminChapters() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add Question Dialog (from main table) */}
-      <Dialog open={addQDialogOpen && !questionsView} onOpenChange={setAddQDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle style={{ fontFamily: FONT }}>নতুন প্রশ্ন যুক্ত করুন</DialogTitle>
-            {addQChapter && (
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: FONT }}>
-                {(addQChapter as any).subjects?.classes?.name} • {(addQChapter as any).subjects?.name} • {addQChapter.name}
-              </p>
-            )}
-          </DialogHeader>
-          {renderQuestionForm()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddQDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
-              {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
