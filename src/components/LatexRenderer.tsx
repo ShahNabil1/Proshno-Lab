@@ -12,12 +12,12 @@ interface LatexRendererProps {
  * Renders text with inline LaTeX expressions wrapped in $...$ or $$...$$.
  * Non-LaTeX text is rendered as-is.
  */
-export default function LatexRenderer({ text, className = "" }: LatexRendererProps) {
+export default function LatexRenderer({ text, className = "", inline = false }: LatexRendererProps) {
   const html = useMemo(() => {
     if (!text) return "";
     // Match $$...$$ (display) and $...$ (inline)
-    return text.replace(/\$\$([\s\S]*?)\$\$|\$([\s\S]*?)\$/g, (match, display, inline) => {
-      const expr = display ?? inline;
+    return text.replace(/\$\$([\s\S]*?)\$\$|\$([\s\S]*?)\$/g, (match, display, inlineExpr) => {
+      const expr = display ?? inlineExpr;
       const isDisplay = display !== undefined;
       try {
         return katex.renderToString(expr, {
@@ -31,8 +31,10 @@ export default function LatexRenderer({ text, className = "" }: LatexRendererPro
     });
   }, [text]);
 
+  const Tag = inline ? "span" : "div";
+
   return (
-    <div
+    <Tag
       className={`latex-renderer ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
