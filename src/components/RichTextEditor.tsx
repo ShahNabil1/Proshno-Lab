@@ -354,6 +354,37 @@ export default function RichTextEditor({
         onClose={() => setMathModalOpen(false)}
         onInsert={insertMathSymbol}
       />
+
+      {/* Table Insert Dialog */}
+      {tableDialogOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50" onClick={() => setTableDialogOpen(false)}>
+          <div className="bg-background rounded-lg border shadow-lg p-5 w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold">টেবিল তৈরি করুন</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-muted-foreground">রো সংখ্যা</label>
+                <input type="number" min={1} max={50} value={tableRows} onChange={(e) => setTableRows(Number(e.target.value))}
+                  className="w-full mt-1 h-9 rounded-md border border-input bg-background px-3 text-sm" />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">কলাম সংখ্যা</label>
+                <input type="number" min={1} max={20} value={tableCols} onChange={(e) => setTableCols(Number(e.target.value))}
+                  className="w-full mt-1 h-9 rounded-md border border-input bg-background px-3 text-sm" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="tbl-header" checked={tableHeaderRow} onChange={(e) => setTableHeaderRow(e.target.checked)} className="rounded" />
+              <label htmlFor="tbl-header" className="text-sm">হেডার রো</label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setTableDialogOpen(false)}
+                className="px-3 py-1.5 text-sm rounded-md border border-input hover:bg-accent">বাতিল</button>
+              <button type="button" onClick={confirmInsertTable}
+                className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90">যোগ করুন</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
