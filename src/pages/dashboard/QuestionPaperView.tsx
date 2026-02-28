@@ -509,7 +509,7 @@ export default function QuestionPaperView() {
           ref={paperRef}
           data-print-paper
           style={{
-            width: paperPreviewWidths[settings.paperSize],
+            width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
             lineHeight: 1.35,
             userSelect: "none",
