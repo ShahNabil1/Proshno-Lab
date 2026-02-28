@@ -52,13 +52,13 @@ export default function CheckoutPage() {
     setName(meta?.full_name || meta?.name || "");
     setEmail(user.email || "");
 
-    supabase.from("institutes").select("name, phone").eq("owner_id", user.id).maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setInstitute(data.name || "");
-          setPhone(data.phone || "");
-        }
-      });
+    supabase.from("institutes").select("name, phone").eq("owner_id", user.id).maybeSingle().
+    then(({ data }) => {
+      if (data) {
+        setInstitute(data.name || "");
+        setPhone(data.phone || "");
+      }
+    });
   }, [user]);
 
   // Fetch all subjects for this class when "সকল বিষয়" is selected
@@ -68,21 +68,21 @@ export default function CheckoutPage() {
       return;
     }
     // Fetch other packages for the same class_name to show what subjects are included
-    supabase
-      .from("pricing_packages")
-      .select("subject_name")
-      .eq("class_name", packageClasses)
-      .eq("type", "class")
-      .eq("is_active", true)
-      .neq("subject_name", "সকল বিষয়")
-      .order("sort_order")
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setAllSubjects(data.map((d: any) => d.subject_name));
-        } else {
-          setAllSubjects([]);
-        }
-      });
+    supabase.
+    from("pricing_packages").
+    select("subject_name").
+    eq("class_name", packageClasses).
+    eq("type", "class").
+    eq("is_active", true).
+    neq("subject_name", "সকল বিষয়").
+    order("sort_order").
+    then(({ data }) => {
+      if (data && data.length > 0) {
+        setAllSubjects(data.map((d: any) => d.subject_name));
+      } else {
+        setAllSubjects([]);
+      }
+    });
   }, [packageClasses, packageSubject]);
 
   const copyNumber = () => {
@@ -121,8 +121,8 @@ export default function CheckoutPage() {
           discount,
           total_price: totalPrice,
           payment_method: paymentMethod,
-          transaction_id: transactionId.trim(),
-        },
+          transaction_id: transactionId.trim()
+        }
       });
 
       if (error) throw error;
@@ -159,8 +159,8 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -169,8 +169,8 @@ export default function CheckoutPage() {
         {/* Header */}
         <div className="bg-card rounded-t-2xl border border-b-0 p-6 text-center">
           <img src={logoImg} alt="eExamapp" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
-          <h1 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">
-            ১ ক্লিকে প্রশ্ন তৈরীর সফটওয়্যার !
+          <h1 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!
+
           </h1>
           <p className="text-primary font-heading font-semibold mt-1">বিষয় - চেক আউট</p>
           <div className="flex justify-between text-sm text-muted-foreground mt-4">
@@ -187,21 +187,21 @@ export default function CheckoutPage() {
           <p className="font-heading text-lg font-semibold text-primary mt-1">
             মূল্য: {packagePrice} টাকা
           </p>
-          {packageSubject && (
-            <div className="mt-3 bg-muted/50 rounded-lg p-3 text-left">
+          {packageSubject &&
+          <div className="mt-3 bg-muted/50 rounded-lg p-3 text-left">
               <p className="text-sm font-semibold text-muted-foreground">বিষয়সমূহ: {packageClasses}</p>
-              {packageSubject === "সকল বিষয়" && allSubjects.length > 0 ? (
-                <div className="mt-1 space-y-0.5">
+              {packageSubject === "সকল বিষয়" && allSubjects.length > 0 ?
+            <div className="mt-1 space-y-0.5">
                   <p className="text-sm font-semibold text-primary">• সকল বিষয় (নিচের বিষয়গুলো অন্তর্ভুক্ত):</p>
-                  {allSubjects.map((s, i) => (
-                    <p key={i} className="text-sm ml-4">— {s}</p>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm mt-1">• {packageSubject}</p>
+                  {allSubjects.map((s, i) =>
+              <p key={i} className="text-sm ml-4">— {s}</p>
               )}
+                </div> :
+
+            <p className="text-sm mt-1">• {packageSubject}</p>
+            }
             </div>
-          )}
+          }
         </div>
 
         {/* Checkout Info */}
@@ -242,30 +242,30 @@ export default function CheckoutPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="bg-muted/30"
-            readOnly={!!user}
-          />
+            readOnly={!!user} />
+
           <div className="grid grid-cols-2 gap-3">
             <Input
               placeholder="মোবাইল নাম্বার দিন"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="bg-muted/30"
-            />
+              className="bg-muted/30" />
+
             <Input
               placeholder="জিমেইল দিন ..."
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-muted/30"
-              readOnly={!!user}
-            />
+              readOnly={!!user} />
+
           </div>
           <Input
             placeholder="প্রতিষ্ঠানের নাম"
             value={institute}
             onChange={(e) => setInstitute(e.target.value)}
-            className="bg-muted/30"
-          />
+            className="bg-muted/30" />
+
 
           {/* Send Money */}
           <p className="text-sm text-muted-foreground pt-2">
@@ -278,8 +278,8 @@ export default function CheckoutPage() {
             <Button
               variant="ghost"
               className="h-full px-4 rounded-none bg-primary/20 hover:bg-primary/30 text-primary font-bold"
-              onClick={copyNumber}
-            >
+              onClick={copyNumber}>
+
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copied ? "কপি হয়েছে" : "COPY"}
             </Button>
@@ -306,69 +306,69 @@ export default function CheckoutPage() {
             </SelectContent>
           </Select>
 
-          {paymentMethod && (
-            <Input
-              placeholder="ট্রাঞ্জেকশন আইডি লিখুন"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              className="bg-muted/30"
-            />
-          )}
+          {paymentMethod &&
+          <Input
+            placeholder="ট্রাঞ্জেকশন আইডি লিখুন"
+            value={transactionId}
+            onChange={(e) => setTransactionId(e.target.value)}
+            className="bg-muted/30" />
+
+          }
 
           {/* Coupon */}
           <div className="flex gap-2">
             <Input
               placeholder="কুপন কোড (যদি থাকে)"
               value={coupon}
-              onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); setDiscount(0); }}
+              onChange={(e) => {setCoupon(e.target.value);setCouponApplied(false);setDiscount(0);}}
               className="flex-1 bg-muted/30 font-mono uppercase"
-              disabled={couponApplied}
-            />
-            {couponApplied ? (
-              <Button variant="outline" className="font-heading text-destructive" onClick={() => { setCoupon(""); setCouponApplied(false); setDiscount(0); }}>
+              disabled={couponApplied} />
+
+            {couponApplied ?
+            <Button variant="outline" className="font-heading text-destructive" onClick={() => {setCoupon("");setCouponApplied(false);setDiscount(0);}}>
                 সরান
-              </Button>
-            ) : (
-              <Button variant="outline" className="font-heading" disabled={couponLoading || !coupon.trim()} onClick={async () => {
-                setCouponLoading(true);
-                try {
-                  const { data, error } = await supabase
-                    .from("coupons")
-                    .select("*")
-                    .eq("code", coupon.trim().toUpperCase())
-                    .eq("is_active", true)
-                    .maybeSingle();
+              </Button> :
 
-                  if (error || !data) { toast.error("কুপন কোড সঠিক নয়"); return; }
+            <Button variant="outline" className="font-heading" disabled={couponLoading || !coupon.trim()} onClick={async () => {
+              setCouponLoading(true);
+              try {
+                const { data, error } = await supabase.
+                from("coupons").
+                select("*").
+                eq("code", coupon.trim().toUpperCase()).
+                eq("is_active", true).
+                maybeSingle();
 
-                  const c = data as any;
-                  if (c.expires_at && new Date(c.expires_at) < new Date()) { toast.error("কুপনের মেয়াদ শেষ"); return; }
-                  if (c.use_limit !== null && c.used_count >= c.use_limit) { toast.error("কুপনের ব্যবহার সীমা শেষ"); return; }
-                  if (packagePrice < c.min_purchase) { toast.error(`ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন`); return; }
-                  const pkgKey = `${packageClasses}__${packageSubject || "সকল বিষয়"}`;
-                  if (c.applicable_packages && c.applicable_packages.length > 0 && !c.applicable_packages.includes(pkgKey)) {
-                    toast.error("এই প্যাকেজে কুপনটি প্রযোজ্য নয়"); return;
-                  }
-                  let disc = 0;
-                  if (c.discount_type === "percentage") {
-                    disc = Math.round(packagePrice * c.discount_value / 100);
-                    if (c.max_discount && disc > c.max_discount) disc = c.max_discount;
-                  } else {
-                    disc = c.discount_value;
-                  }
-                  disc = Math.min(disc, packagePrice);
-                  setDiscount(disc);
-                  setCouponApplied(true);
-                  toast.success(`কুপন প্রয়োগ হয়েছে! ৳${disc} ডিসকাউন্ট`);
-                } catch { toast.error("সমস্যা হয়েছে"); } finally { setCouponLoading(false); }
-              }}>
+                if (error || !data) {toast.error("কুপন কোড সঠিক নয়");return;}
+
+                const c = data as any;
+                if (c.expires_at && new Date(c.expires_at) < new Date()) {toast.error("কুপনের মেয়াদ শেষ");return;}
+                if (c.use_limit !== null && c.used_count >= c.use_limit) {toast.error("কুপনের ব্যবহার সীমা শেষ");return;}
+                if (packagePrice < c.min_purchase) {toast.error(`ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন`);return;}
+                const pkgKey = `${packageClasses}__${packageSubject || "সকল বিষয়"}`;
+                if (c.applicable_packages && c.applicable_packages.length > 0 && !c.applicable_packages.includes(pkgKey)) {
+                  toast.error("এই প্যাকেজে কুপনটি প্রযোজ্য নয়");return;
+                }
+                let disc = 0;
+                if (c.discount_type === "percentage") {
+                  disc = Math.round(packagePrice * c.discount_value / 100);
+                  if (c.max_discount && disc > c.max_discount) disc = c.max_discount;
+                } else {
+                  disc = c.discount_value;
+                }
+                disc = Math.min(disc, packagePrice);
+                setDiscount(disc);
+                setCouponApplied(true);
+                toast.success(`কুপন প্রয়োগ হয়েছে! ৳${disc} ডিসকাউন্ট`);
+              } catch {toast.error("সমস্যা হয়েছে");} finally {setCouponLoading(false);}
+            }}>
                 {couponLoading ? "যাচাই..." : "প্রয়োগ করুন"}
               </Button>
-            )}
+            }
           </div>
-          {couponApplied && (
-            <p className="text-xs text-primary font-medium">✅ কুপন "{coupon.toUpperCase()}" প্রয়োগ হয়েছে — ৳{discount} ডিসকাউন্ট</p>
-          )}
+          {couponApplied &&
+          <p className="text-xs text-primary font-medium">✅ কুপন "{coupon.toUpperCase()}" প্রয়োগ হয়েছে — ৳{discount} ডিসকাউন্ট</p>
+          }
 
           <p className="text-xs text-center text-muted-foreground pt-1">
             By confirming, I agree to the{" "}
@@ -381,8 +381,8 @@ export default function CheckoutPage() {
           <Button
             className="w-full gradient-green text-white border-0 font-heading text-lg h-12 rounded-xl"
             onClick={handleSubmit}
-            disabled={submitting}
-          >
+            disabled={submitting}>
+
             <ShoppingCart className="w-5 h-5 mr-2" />
             {submitting ? "জমা হচ্ছে..." : "এখনই কিনুন"}
           </Button>
@@ -404,13 +404,13 @@ export default function CheckoutPage() {
             </p>
             <Button
               className="gradient-green text-white border-0 font-heading rounded-xl h-11 px-8"
-              asChild
-            >
+              asChild>
+
               <a
                 href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`আমি "${packageClasses} - ${packageSubject || "সকল বিষয়"}" প্যাকেজটি কিনতে চাই।`)}`}
                 target="_blank"
-                rel="noopener noreferrer"
-              >
+                rel="noopener noreferrer">
+
                 <WhatsAppIcon />
                 WhatsApp এ যোগাযোগ করুন
               </a>
@@ -420,6 +420,6 @@ export default function CheckoutPage() {
 
         <div className="bg-card rounded-b-2xl border border-t-0 p-4" />
       </div>
-    </div>
-  );
+    </div>);
+
 }
