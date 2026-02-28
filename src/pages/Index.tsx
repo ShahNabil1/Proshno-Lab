@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -32,13 +33,6 @@ const categories = [
 
 
 
-const faqs = [
-  { q: "eExamapp এর সেবা সমূহ কি কি?", a: "আমরা ১ ক্লিকে প্রশ্ন তৈরি, অধ্যায়ভিত্তিক eExamapp, অনলাইন পরীক্ষা এবং OMR মূল্যায়ন সেবা প্রদান করি।" },
-  { q: "১ ক্লিকে প্রশ্ন তৈরীতে কি কি কাস্টমাইজ করা যাবে?", a: "শ্রেণি, বিষয়, অধ্যায়, প্রশ্নের ধরন, নম্বর বণ্টন, সময় এবং প্রতিষ্ঠানের তথ্য কাস্টমাইজ করা যায়।" },
-  { q: "কি কি উপায়ে প্রশ্ন বাছাই করা যাবে?", a: "শ্রেণি, বিষয়, অধ্যায়, বোর্ড, সাল এবং প্রশ্নের ধরন অনুযায়ী ফিল্টার করে প্রশ্ন বাছাই করা যায়।" },
-  { q: "OMR Evaluator Features কি কি?", a: "স্বয়ংক্রিয় OMR শীট মূল্যায়ন, ফলাফল বিশ্লেষণ, মেরিট লিস্ট তৈরি এবং রিপোর্ট জেনারেশন।" },
-  { q: "সাবস্ক্রিপশন এর মেয়াদ, লিমিট আছে কি?", a: "প্যাকেজ ভেদে মেয়াদ ও লিমিট ভিন্ন। বিস্তারিত মূল্য তালিকা পাতায় দেখুন।" },
-];
 
 const testimonials = [
   { name: "রাহাত হোসেন", role: "সহকারী শিক্ষক, রাজশাহী", text: "eExamapp ব্যবহার করে প্রশ্নপত্র তৈরি করা এখন অনেক সহজ হয়ে গেছে। সময় বাঁচে এবং মান বজায় থাকে।" },
@@ -49,6 +43,18 @@ const testimonials = [
 export default function Index() {
   const { user, loading } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<{ id: number; question: string; answer: string }[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("faqs")
+      .select("id, question, answer")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data) setFaqs(data as any);
+      });
+  }, []);
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
 
@@ -259,7 +265,7 @@ export default function Index() {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group"
                 >
-                  <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.q}</span>
+                  <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 <AnimatePresence>
@@ -271,7 +277,7 @@ export default function Index() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.a}</p>
+                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
