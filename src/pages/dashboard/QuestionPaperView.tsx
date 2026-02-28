@@ -77,6 +77,8 @@ export default function QuestionPaperView() {
   const [saving, setSaving] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const isMobile = useIsMobile();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
