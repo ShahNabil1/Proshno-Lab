@@ -25,7 +25,9 @@ import {
   List, ListOrdered, Indent, Outdent,
   ImageIcon, TableIcon, Link as LinkIcon,
   Undo2, Redo2, Subscript as SubIcon, Superscript as SupIcon,
-  Maximize2, Palette, Highlighter, Sigma
+  Maximize2, Palette, Highlighter, Sigma,
+  Plus, Minus, Trash2, Merge, SplitSquareHorizontal,
+  ArrowDownToLine, ArrowUpToLine, ArrowLeftToLine, ArrowRightToLine
 } from "lucide-react";
 import MathSymbolsModal from "./MathSymbolsModal";
 import LatexRenderer from "./LatexRenderer";
