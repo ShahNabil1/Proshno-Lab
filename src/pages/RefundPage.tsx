@@ -18,15 +18,6 @@ export default function RefundPage() {
             </section>
 
 
-            <section>
-              <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৩. রিফান্ড অযোগ্য ক্ষেত্রসমূহ</h2>
-              <ul className="list-disc list-inside space-y-2 ml-2">
-                <li>৭ দিনের পর রিফান্ড আবেদন করলে।</li>
-                <li>সেবার শর্তাবলী লঙ্ঘনের কারণে অ্যাকাউন্ট বন্ধ হলে।</li>
-                <li>বিশেষ ছাড় বা প্রোমোশনাল অফারে ক্রয়কৃত সাবস্ক্রিপশন।</li>
-                <li>ফ্রি ট্রায়াল থেকে স্বয়ংক্রিয় নবায়নের ক্ষেত্রে (পূর্ব নোটিশ প্রদান সাপেক্ষে)।</li>
-              </ul>
-            </section>
 
             <section>
               <h2 className="font-heading text-lg font-semibold text-foreground mb-3">৪. রিফান্ড প্রক্রিয়া</h2>
