@@ -337,15 +337,22 @@ export default function AdminTeachers() {
           {/* Page Permissions */}
           <div>
             <h4 className="font-semibold text-sm mb-2">পেইজ পারমিশন</h4>
-            <div className="space-y-2">
-              {ADMIN_PAGES.map((page) => (
-                <div key={page.value} className="flex items-center gap-3">
-                  <Checkbox
-                    id={page.value}
-                    checked={selectedPages.includes(page.value)}
-                    onCheckedChange={() => togglePage(page.value)}
-                  />
-                  <Label htmlFor={page.value} className="cursor-pointer text-sm">{page.label}</Label>
+            <div className="space-y-4">
+              {ADMIN_PAGE_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{group.label}</p>
+                  <div className="space-y-1.5 pl-1">
+                    {group.pages.map((page) => (
+                      <div key={page.value} className="flex items-center gap-3">
+                        <Checkbox
+                          id={page.value}
+                          checked={selectedPages.includes(page.value)}
+                          onCheckedChange={() => togglePage(page.value)}
+                        />
+                        <Label htmlFor={page.value} className="cursor-pointer text-sm">{page.label}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
