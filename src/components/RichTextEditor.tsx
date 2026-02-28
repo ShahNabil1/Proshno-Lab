@@ -304,6 +304,25 @@ export default function RichTextEditor({
         </button>
       </div>
 
+      {/* Table context toolbar */}
+      {editor.isActive("table") && (
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-accent/30 px-1.5 py-1 text-xs">
+          <span className="text-[10px] text-muted-foreground font-semibold mr-1">টেবিল:</span>
+          <ToolBtn icon={<ArrowDownToLine className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().addRowAfter().run()} title="নিচে রো যোগ" />
+          <ToolBtn icon={<ArrowUpToLine className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().addRowBefore().run()} title="উপরে রো যোগ" />
+          <ToolBtn icon={<ArrowRightToLine className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().addColumnAfter().run()} title="ডানে কলাম যোগ" />
+          <ToolBtn icon={<ArrowLeftToLine className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().addColumnBefore().run()} title="বামে কলাম যোগ" />
+          <Sep />
+          <ToolBtn icon={<Minus className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().deleteRow().run()} title="রো মুছুন" />
+          <ToolBtn icon={<Strikethrough className="h-3.5 w-3.5 rotate-90" />} onClick={() => editor.chain().focus().deleteColumn().run()} title="কলাম মুছুন" />
+          <Sep />
+          <ToolBtn icon={<Merge className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().mergeCells().run()} title="সেল মার্জ" />
+          <ToolBtn icon={<SplitSquareHorizontal className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().splitCell().run()} title="সেল স্প্লিট" />
+          <Sep />
+          <ToolBtn icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => editor.chain().focus().deleteTable().run()} title="টেবিল মুছুন" />
+        </div>
+      )}
+
       {/* Editor content */}
       <div className={`overflow-y-auto ${isFullscreen ? "flex-1" : ""}`} style={{ minHeight: isFullscreen ? undefined : minHeight }}>
         <EditorContent editor={editor} className="w-full" />
