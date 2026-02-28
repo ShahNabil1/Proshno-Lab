@@ -380,8 +380,42 @@ export default function QuestionCreate() {
       toast.error("আগে প্রশ্ন সিলেক্ট ও সেভ করুন");
       return;
     }
-    handleSaveAndView();
-    navigate("/dashboard/view-paper");
+
+    if (addToPaper) {
+      // Merge new selections with existing paper questions
+      const existingQsRaw = sessionStorage.getItem("existingPaperQuestions");
+      const existingMetaRaw = sessionStorage.getItem("existingPaperMeta");
+      const existingSettingsRaw = sessionStorage.getItem("existingPaperSettings");
+      const existingPaperId = sessionStorage.getItem("existingPaperId");
+      const existingQs: QuestionRow[] = existingQsRaw ? JSON.parse(existingQsRaw) : [];
+      const existingIds = new Set(existingQs.map(q => q.id));
+
+      // Add only new questions (avoid duplicates)
+      const newSelected = questions.filter(q => selectedIds.has(q.id) && !existingIds.has(q.id));
+      const mergedQuestions = [...existingQs, ...newSelected];
+
+      sessionStorage.setItem("viewPaperQuestions", JSON.stringify(mergedQuestions));
+      if (existingMetaRaw) sessionStorage.setItem("viewPaperMeta", existingMetaRaw);
+      if (existingSettingsRaw) sessionStorage.setItem("viewPaperSettings", existingSettingsRaw);
+
+      // Clean up
+      sessionStorage.removeItem("existingPaperQuestions");
+      sessionStorage.removeItem("existingPaperMeta");
+      sessionStorage.removeItem("existingPaperSettings");
+      sessionStorage.removeItem("existingPaperId");
+
+      toast.success(`${newSelected.length}টি নতুন প্রশ্ন যুক্ত হয়েছে!`);
+
+      // Navigate back — if there was a paper_id, update it; otherwise fresh view
+      if (existingPaperId) {
+        navigate(`/dashboard/view-paper?paper_id=${existingPaperId}`);
+      } else {
+        navigate("/dashboard/view-paper");
+      }
+    } else {
+      handleSaveAndView();
+      navigate("/dashboard/view-paper");
+    }
   };
 
   // Group topics by chapter
