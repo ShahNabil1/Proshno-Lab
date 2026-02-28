@@ -1116,6 +1116,7 @@ export default function QuestionPaperView() {
 
           {/* Address moved to header */}
         </div>
+        </div> {/* end scaling wrapper */}
       </div>
 
       {/* ===== SETTINGS SIDEBAR ===== */}
