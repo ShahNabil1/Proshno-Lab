@@ -149,7 +149,7 @@ export default function ReviewModal({ onSuccess }: { onSuccess?: () => void }) {
                   />
                 </button>
               ))}
-              <span className="text-sm text-muted-foreground ml-2">{rating}/৫</span>
+              <span className="text-sm text-muted-foreground ml-2">{"০১২৩৪৫৬৭৮৯"[rating]}/৫</span>
             </div>
           </div>
 
