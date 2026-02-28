@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -425,7 +425,7 @@ export default function QuestionPaperView() {
       />
 
       {/* Paper preview */}
-      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]">
+      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
         <div className="mb-4 flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/create")}>
             <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
@@ -441,12 +441,19 @@ export default function QuestionPaperView() {
           </Alert>
         )}
 
+        {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
+        <div style={{
+          width: paperPreviewWidths[settings.paperSize],
+          transformOrigin: "top left",
+          transform: `scale(${paperScale})`,
+          marginBottom: `calc((${paperScale} - 1) * -50%)`,
+        }}>
         <div
-          className="mx-auto font-paper"
+          className="font-paper"
           ref={paperRef}
           data-print-paper
           style={{
-            maxWidth: paperPreviewWidths[settings.paperSize],
+            width: paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
             lineHeight: 1.35,
             userSelect: "none",
