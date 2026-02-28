@@ -66,6 +66,11 @@ const padBangla = (n: number): string => {
   return s.length < 2 ? "০" + s : s;
 };
 
+/* Strip wrapping <p> tags from option values to keep them inline */
+const stripPTags = (html: string): string => {
+  return html.replace(/^<p>([\s\S]*?)<\/p>$/i, "$1").trim();
+};
+
 export default function QuestionPaperView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1165,15 +1170,17 @@ export default function QuestionPaperView() {
                           <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                              <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
+                              <span style={{ flex: 1 }}>{q.question.includes("<") ? <span dangerouslySetInnerHTML={{ __html: stripPTags(q.question) }} /> : <LatexRenderer text={q.question} />}</span>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
+                                const cleaned = stripPTags(val);
                                 const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                const isHtml = cleaned.includes("<");
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                               })}
                             </div>
                           </div>
@@ -1203,9 +1210,11 @@ export default function QuestionPaperView() {
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
+                              const cleaned = stripPTags(val);
                               const label = ["ক", "খ", "গ", "ঘ"][oi];
-                              const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                              const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                              const isHtml = cleaned.includes("<");
+                              return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                             })}
                           </div>
                         </div>
@@ -1251,9 +1260,11 @@ export default function QuestionPaperView() {
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.25, paddingLeft: "0.2rem" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
+                                    const cleaned = stripPTags(val);
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === val?.trim();
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={val} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                    const isHtml = cleaned.includes("<");
+                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "1px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span>{isHtml ? <span dangerouslySetInnerHTML={{ __html: cleaned }} /> : <LatexRenderer text={cleaned} />}{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
                               </div>
