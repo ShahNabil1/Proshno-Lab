@@ -655,7 +655,7 @@ export default function AdminChapters() {
                     </TableRow>
                   ))}
                   {filteredQuestions.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
