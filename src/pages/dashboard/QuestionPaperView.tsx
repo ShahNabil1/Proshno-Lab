@@ -1352,7 +1352,7 @@ export default function QuestionPaperView() {
                         </div>
                       </div>
                       {subQuestions.length > 0 && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           {subQuestions.map((sq: any, si: number) => {
                             const label = subLabels[si] || "";
                             const marks = subMarksMap[si] || "";
@@ -1370,7 +1370,7 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
                             <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
                           </p>
@@ -1393,7 +1393,7 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && !cData?.stem && q.stimulus_text && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           {(() => {
                             const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
                             return keys.map((key, si) => {
