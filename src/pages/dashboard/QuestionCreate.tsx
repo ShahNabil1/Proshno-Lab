@@ -49,6 +49,7 @@ interface QuestionRow {
   chapter_id: number;
   stimulus_group_id?: string | null;
   stimulus_text?: string | null;
+  creative_data?: any;
 }
 
 // Special search categories
