@@ -69,10 +69,12 @@ export default function QuestionPaperView() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const [saving, setSaving] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
