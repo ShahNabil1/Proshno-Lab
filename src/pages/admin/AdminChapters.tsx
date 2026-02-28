@@ -60,7 +60,8 @@ export default function AdminChapters() {
   const [qCurrentPage, setQCurrentPage] = useState(1);
 
   // "Add Question" modal
-  const [addQDialogOpen, setAddQDialogOpen] = useState(false);
+  const [addQDialogOpen, setAddQDialogOpen] = useState(false); // kept for edit dialog compatibility
+  const [addQFullPage, setAddQFullPage] = useState<{ chapter: ChapterItem; returnTo: "main" | "questions" } | null>(null);
   const [addQChapter, setAddQChapter] = useState<ChapterItem | null>(null);
   const [addQTopics, setAddQTopics] = useState<any[]>([]);
   const [addQLoadingTopics, setAddQLoadingTopics] = useState(false);
@@ -228,7 +229,7 @@ export default function AdminChapters() {
   const paginatedQuestions = filteredQuestions.slice((qSafePage - 1) * ITEMS_PER_PAGE, qSafePage * ITEMS_PER_PAGE);
 
   // === Add Question Modal ===
-  const openAddQuestion = (chapter: ChapterItem) => {
+  const openAddQuestion = (chapter: ChapterItem, returnTo: "main" | "questions" = "main") => {
     setAddQChapter(chapter);
     setIsGroupedMcq(false); setStimulusText("");
     setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
@@ -240,7 +241,7 @@ export default function AdminChapters() {
       desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
       board_references: [], university_references: [],
     });
-    setAddQDialogOpen(true);
+    setAddQFullPage({ chapter, returnTo });
     // Load topics for this chapter
     setAddQLoadingTopics(true);
     supabase.from("topics").select("id, name").eq("chapter_id", chapter.id).order("name")
@@ -304,8 +305,10 @@ export default function AdminChapters() {
       const { error } = await supabase.from("questions").insert(payloads as any);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success(`${validQs.length}টি MCQ তৈরি হয়েছে`);
-      setAddQDialogOpen(false);
-      if (questionsView) openQuestionsView(questionsView.chapter);
+      const returnCtx = addQFullPage;
+      setAddQFullPage(null);
+      if (returnCtx?.returnTo === "questions" && questionsView) openQuestionsView(questionsView.chapter);
+      else fetchChapters();
       return;
     }
 
@@ -361,8 +364,10 @@ export default function AdminChapters() {
       const { error } = await supabase.from("questions").insert(payload);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success("তৈরি হয়েছে");
-      setAddQDialogOpen(false);
-      if (questionsView) openQuestionsView(questionsView.chapter);
+      const returnCtx = addQFullPage;
+      setAddQFullPage(null);
+      if (returnCtx?.returnTo === "questions" && questionsView) openQuestionsView(questionsView.chapter);
+      else fetchChapters();
     }
   };
 
@@ -519,6 +524,38 @@ export default function AdminChapters() {
     </div>
   );
 
+  // === "Add Question" Full Page View ===
+  if (addQFullPage) {
+    const ch = addQFullPage.chapter;
+    const className = (ch as any).subjects?.classes?.name || "—";
+    const subjectName = (ch as any).subjects?.name || "—";
+
+    return (
+      <div style={{ fontFamily: FONT }}>
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setAddQFullPage(null)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">নতুন প্রশ্ন যুক্ত করুন</h1>
+            <p className="text-sm text-muted-foreground">{className} • {subjectName} • {ch.name}</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            {renderQuestionForm()}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setAddQFullPage(null)} style={{ fontFamily: FONT }}>বাতিল</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
+                {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // === "See All Questions" View ===
   if (questionsView) {
     const ch = questionsView.chapter;
@@ -533,7 +570,7 @@ export default function AdminChapters() {
             <h1 className="text-xl font-bold">{ch.name} — সকল প্রশ্ন</h1>
             <p className="text-sm text-muted-foreground">{className} • {subjectName}</p>
           </div>
-          <Button className="ml-auto gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => openAddQuestion(ch)}>
+          <Button className="ml-auto gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => openAddQuestion(ch, "questions")}>
             <Plus className="w-4 h-4" /> নতুন প্রশ্ন যুক্ত করুন
           </Button>
         </div>
@@ -640,24 +677,7 @@ export default function AdminChapters() {
           </div>
         )}
 
-        {/* Add Question Dialog */}
-        <Dialog open={addQDialogOpen} onOpenChange={setAddQDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle style={{ fontFamily: FONT }}>নতুন প্রশ্ন যুক্ত করুন</DialogTitle>
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: FONT }}>
-                {className} • {subjectName} • {ch.name}
-              </p>
-            </DialogHeader>
-            {renderQuestionForm()}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddQDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
-                {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Add Question Dialog removed - using full page view */}
 
         {/* Edit Question Dialog */}
         <Dialog open={editQDialogOpen} onOpenChange={setEditQDialogOpen}>
@@ -819,26 +839,6 @@ export default function AdminChapters() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add Question Dialog (from main table) */}
-      <Dialog open={addQDialogOpen && !questionsView} onOpenChange={setAddQDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle style={{ fontFamily: FONT }}>নতুন প্রশ্ন যুক্ত করুন</DialogTitle>
-            {addQChapter && (
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: FONT }}>
-                {(addQChapter as any).subjects?.classes?.name} • {(addQChapter as any).subjects?.name} • {addQChapter.name}
-              </p>
-            )}
-          </DialogHeader>
-          {renderQuestionForm()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddQDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleSaveQuestion(false)} style={{ fontFamily: FONT }}>
-              {qForm.type === "mcq" && isGroupedMcq ? `${groupedQuestions.length}টি MCQ তৈরি করুন` : "তৈরি করুন"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
