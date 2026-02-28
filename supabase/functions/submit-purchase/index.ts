@@ -24,6 +24,7 @@ serve(async (req) => {
       coupon_code, discount, total_price,
       payment_method, transaction_id,
       logged_in_user_id,
+      selected_packages,
     } = body;
 
     if (!teacher_email || !teacher_name || !payment_method || !transaction_id) {
@@ -34,9 +35,7 @@ serve(async (req) => {
 
     let teacherId = logged_in_user_id || null;
 
-    // If not logged in, find or create user
     if (!teacherId) {
-      // Check if user exists by email
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existing = existingUsers?.users?.find(
         (u) => u.email?.toLowerCase() === teacher_email.toLowerCase()
@@ -45,7 +44,6 @@ serve(async (req) => {
       if (existing) {
         teacherId = existing.id;
       } else {
-        // Create new user with a random password (they'll use Google OAuth)
         const randomPassword = crypto.randomUUID() + "Aa1!";
         const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
           email: teacher_email,
@@ -64,7 +62,6 @@ serve(async (req) => {
       }
     }
 
-    // Insert purchase request with teacher_id
     const { error: insertErr } = await supabaseAdmin.from("purchase_requests").insert({
       teacher_id: teacherId,
       teacher_name,
@@ -80,6 +77,7 @@ serve(async (req) => {
       payment_method,
       transaction_id,
       status: "pending",
+      selected_packages: selected_packages || [],
     });
 
     if (insertErr) {
@@ -89,7 +87,6 @@ serve(async (req) => {
       });
     }
 
-    // Increment coupon usage if applicable
     if (coupon_code) {
       await supabaseAdmin.rpc("increment_coupon_usage", { coupon_code: coupon_code.toUpperCase() });
     }
