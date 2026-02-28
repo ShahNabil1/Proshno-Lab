@@ -701,6 +701,93 @@ export type Database = {
           },
         ]
       }
+      suggestion_assignments: {
+        Row: {
+          created_at: string
+          id: number
+          package_id: number
+          suggestion_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          package_id: number
+          suggestion_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          package_id?: number
+          suggestion_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggestion_assignments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggestion_assignments_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suggestions: {
+        Row: {
+          class_id: number
+          created_at: string
+          description: string
+          id: number
+          is_active: boolean
+          question_ids: number[]
+          subject_id: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: number
+          created_at?: string
+          description?: string
+          id?: never
+          is_active?: boolean
+          question_ids?: number[]
+          subject_id: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: number
+          created_at?: string
+          description?: string
+          id?: never
+          is_active?: boolean
+          question_ids?: number[]
+          subject_id?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggestions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggestions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teachers: {
         Row: {
           created_at: string
