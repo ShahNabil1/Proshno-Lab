@@ -403,7 +403,7 @@ export default function AdminSuggestions() {
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">{typeLabel[q.type] || q.type}</Badge>
                           <span className="text-[10px] text-muted-foreground">#{q.id}</span>
                         </div>
-                        <div className="text-sm line-clamp-2"><LatexRenderer content={q.question} /></div>
+                        <div className="text-sm line-clamp-2"><LatexRenderer text={q.question} /></div>
                       </div>
                     </label>
                   );

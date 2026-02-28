@@ -261,14 +261,14 @@ function SuggestionPreview({ questions }: { questions: Question[] }) {
                   <div className="flex gap-2">
                     <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
                     <div className="flex-1">
-                      <LatexRenderer content={q.question} />
+                      <LatexRenderer text={q.question} />
                       <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 mt-1 pl-0">
                         {["a", "b", "c", "d"].map((opt, i) => {
                           const val = q[`option_${opt}` as keyof Question] as string;
                           if (!val) return null;
                           return (
                             <span key={opt} className="text-sm">
-                              {banglaOption[i]}. <LatexRenderer content={val} />
+                              {banglaOption[i]}. <LatexRenderer text={val} />
                             </span>
                           );
                         })}
@@ -292,7 +292,7 @@ function SuggestionPreview({ questions }: { questions: Question[] }) {
               return (
                 <div key={q.id} className="flex gap-2">
                   <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
-                  <div className="flex-1"><LatexRenderer content={q.question} /></div>
+                  <div className="flex-1"><LatexRenderer text={q.question} /></div>
                 </div>
               );
             })}
@@ -313,13 +313,13 @@ function SuggestionPreview({ questions }: { questions: Question[] }) {
                   <div className="flex gap-2">
                     <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
                     <div className="flex-1">
-                      <LatexRenderer content={q.question} />
+                      <LatexRenderer text={q.question} />
                       {parts.length > 0 && (
                         <div className="mt-1.5 space-y-0.5 pl-2">
                           {parts.map((p: any, i: number) => (
                             <div key={i} className="flex gap-2">
                               <span className="shrink-0">{banglaOption[i]})</span>
-                              <span className="flex-1"><LatexRenderer content={p.question || p.text || ""} /></span>
+                              <span className="flex-1"><LatexRenderer text={p.question || p.text || ""} /></span>
                               <span className="text-muted-foreground shrink-0">{toBanglaNum(p.marks || 0)}</span>
                             </div>
                           ))}
@@ -347,13 +347,13 @@ function SuggestionPreview({ questions }: { questions: Question[] }) {
                   <div className="flex gap-2">
                     <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
                     <div className="flex-1">
-                      <LatexRenderer content={q.question} />
+                      <LatexRenderer text={q.question} />
                       {parts.length > 0 && (
                         <div className="mt-1.5 space-y-0.5 pl-2">
                           {parts.map((p: any, i: number) => (
                             <div key={i} className="flex gap-2">
                               <span className="shrink-0">{banglaOption[i]})</span>
-                              <span className="flex-1"><LatexRenderer content={p.question || p.text || ""} /></span>
+                              <span className="flex-1"><LatexRenderer text={p.question || p.text || ""} /></span>
                               <span className="text-muted-foreground shrink-0">{toBanglaNum(p.marks || 0)}</span>
                             </div>
                           ))}
