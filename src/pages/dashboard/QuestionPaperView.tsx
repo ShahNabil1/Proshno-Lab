@@ -263,14 +263,19 @@ export default function QuestionPaperView() {
     });
     handleCloseToolbar();
 
-    // Set dynamic page size via data attribute on <html>
+    // Inject dynamic @page size via a <style> tag
     const pageSizeMap: Record<PaperSize, string> = {
       A4: "210mm 297mm",
       Letter: "8.5in 11in",
       Legal: "8.5in 14in",
       A5: "148mm 210mm",
     };
-    document.documentElement.setAttribute("data-print-size", pageSizeMap[settings.paperSize]);
+    const printStyle = document.createElement("style");
+    printStyle.id = "dynamic-print-page-size";
+    printStyle.textContent = `@media print { @page { size: ${pageSizeMap[settings.paperSize]} portrait; } }`;
+    // Remove any previous one
+    document.getElementById("dynamic-print-page-size")?.remove();
+    document.head.appendChild(printStyle);
 
     // Wait for images/LaTeX to finish rendering
     const images = paperRef.current.querySelectorAll("img");
@@ -282,9 +287,10 @@ export default function QuestionPaperView() {
     );
 
     Promise.all(imagePromises).then(() => {
-      // Small delay for KaTeX rendering
       setTimeout(() => {
         window.print();
+        // Cleanup after print
+        printStyle.remove();
       }, 300);
     });
   };
