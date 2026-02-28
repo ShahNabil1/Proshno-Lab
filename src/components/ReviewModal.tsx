@@ -112,21 +112,19 @@ export default function ReviewModal({ onSuccess }: { onSuccess?: () => void }) {
           {/* Image upload */}
           <div>
             <Label className="text-xs">প্রোফাইল ছবি (ঐচ্ছিক)</Label>
-            <div className="flex items-center gap-3 mt-1">
+            <label className="flex items-center gap-3 mt-1 cursor-pointer">
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
               {imageUrl ? (
                 <img src={imageUrl} alt="preview" className="w-12 h-12 rounded-full object-cover border" />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors">
                   <Upload className="w-4 h-4" />
                 </div>
               )}
-              <label className="cursor-pointer">
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                <span className="text-sm text-primary hover:underline">
-                  {uploading ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> আপলোড হচ্ছে...</span> : "ছবি আপলোড করুন"}
-                </span>
-              </label>
-            </div>
+              <span className="text-sm text-primary hover:underline">
+                {uploading ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> আপলোড হচ্ছে...</span> : "ছবি আপলোড করুন"}
+              </span>
+            </label>
           </div>
 
           {/* Star rating */}
