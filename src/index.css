@@ -293,8 +293,13 @@
     font-weight: 600;
   }
   [data-print-paper] img {
-    max-width: 100%;
+    max-width: 220px;
+    max-height: 180px;
     height: auto;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    margin: 4px 0;
   }
 
   /* Hide sidebar, nav, buttons, alerts */
