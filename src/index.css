@@ -213,6 +213,13 @@
   /* Dynamic page size from data attribute */
   @page {
     margin: 12mm 15mm;
+    /* Hide browser default header/footer (date, URL, page number, title) */
+    @top-left { content: none; }
+    @top-right { content: none; }
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+    @top-center { content: none; }
+    @bottom-center { content: none; }
   }
 
   /* Hide everything except the paper */
