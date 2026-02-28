@@ -31,8 +31,8 @@ export default function LatexRenderer({ text, className = "" }: LatexRendererPro
   }, [text]);
 
   return (
-    <span
-      className={className}
+    <div
+      className={`latex-renderer ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
