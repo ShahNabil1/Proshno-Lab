@@ -226,7 +226,9 @@
     visibility: visible !important;
   }
 
-  [data-print-paper] {
+  /* Reset scaling wrapper and paper for print */
+  [data-print-paper],
+  [data-print-paper-wrapper] {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -235,13 +237,11 @@
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
-    font-family: 'SolaimanLipi', 'Arial', sans-serif !important;
     transform: none !important;
   }
 
-  /* Reset the scaling wrapper during print */
   [data-print-paper] {
-    transform: none !important;
+    font-family: 'SolaimanLipi', 'Arial', sans-serif !important;
   }
 
   /* Prevent question blocks from splitting across pages */
@@ -277,16 +277,4 @@
   }
 }
 
-/* Dynamic @page sizes using CSS custom properties set via JS */
-:root[data-print-size="210mm 297mm"] {
-  @media print { @page { size: 210mm 297mm portrait; } }
-}
-:root[data-print-size="8.5in 11in"] {
-  @media print { @page { size: 8.5in 11in portrait; } }
-}
-:root[data-print-size="8.5in 14in"] {
-  @media print { @page { size: 8.5in 14in portrait; } }
-}
-:root[data-print-size="148mm 210mm"] {
-  @media print { @page { size: 148mm 210mm portrait; } }
-}
+/* Dynamic @page sizes are injected via JS in handleDownload */
