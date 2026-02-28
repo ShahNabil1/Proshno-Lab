@@ -172,7 +172,7 @@ export default function CheckoutPage() {
           <h1 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!
 
           </h1>
-          <p className="text-primary font-heading font-semibold mt-1">বিষয় - চেক আউট</p>
+          
           <div className="flex justify-between text-sm text-muted-foreground mt-4">
             <span>মেয়াদ — ১ বছর</span>
             <span>লিমিট — আনলিমিটেড প্রশ্ন তৈরি</span>
