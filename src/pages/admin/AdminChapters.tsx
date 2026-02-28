@@ -747,6 +747,11 @@ export default function AdminChapters() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteTarget(item)} className="gap-2 text-destructive">
                             <Trash2 className="w-4 h-4" /> মুছে ফেলুন
+                            {(chapterQuestionCounts[item.id] || 0) > 0 && (
+                              <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-destructive/10 text-destructive border-destructive/20">
+                                {chapterQuestionCounts[item.id]}টি প্রশ্ন
+                              </Badge>
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
