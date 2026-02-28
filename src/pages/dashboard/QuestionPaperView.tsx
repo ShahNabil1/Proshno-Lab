@@ -1335,23 +1335,24 @@ export default function QuestionPaperView() {
                   const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
                   return (
                     <div key={q.id} className={editableClass} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                      {q.stimulus_text && (
-                        <div style={{ marginBottom: "4px", padding: "4px 0" }}>
-                          <span style={{ fontWeight: 600 }}>{padBangla(num)}।</span>{" "}
-                          <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
-                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
+                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(num)}।</span>
+                        <div style={{ flex: 1 }}>
+                          {q.stimulus_text ? (
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                              <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                              <span><LatexRenderer text={q.question} /></span>
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65, marginLeft: "8px" }}>{refStr}</span>}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {!q.stimulus_text && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
-                          <span style={{ fontWeight: 600, flex: 1 }}>
-                            <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
-                          </span>
-                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
-                        </div>
-                      )}
+                      </div>
                       {subQuestions.length > 0 && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           {subQuestions.map((sq: any, si: number) => {
                             const label = subLabels[si] || "";
                             const marks = subMarksMap[si] || "";
@@ -1369,7 +1370,7 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && cData?.stem && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           <p style={{ fontStyle: "italic", marginBottom: "2px" }}>
                             <span dangerouslySetInnerHTML={{ __html: cData.stem }} />
                           </p>
@@ -1392,7 +1393,7 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                       {(!subQuestions || subQuestions.length === 0) && !cData?.stem && q.stimulus_text && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div style={{ paddingLeft: "2.2rem" }}>
                           {(() => {
                             const keys = usesMathMarks ? ["q_ka", "q_kha", "q_ga"] : ["q_ka", "q_kha", "q_ga", "q_gha"];
                             return keys.map((key, si) => {
@@ -1447,14 +1448,14 @@ export default function QuestionPaperView() {
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px", marginBottom: "2px" }}>
-                        <span style={{ fontWeight: 600 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
+                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>
                           {padBangla(num)}।
                         </span>
+                        <div style={{ flex: 1 }}>
                         {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.72em", whiteSpace: "nowrap", flexShrink: 0, opacity: 0.65 }}>{refStr}</span>}
-                      </div>
                       {dData && (
-                        <div style={{ marginLeft: "18px" }}>
+                        <div>
                           {dData.desc_q_ka && (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4, marginBottom: "2px" }}>
                               <div style={{ display: "flex", gap: "4px", flex: 1 }}>
@@ -1480,6 +1481,8 @@ export default function QuestionPaperView() {
                           <span><LatexRenderer text={q.question} /></span>
                         </div>
                       )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
