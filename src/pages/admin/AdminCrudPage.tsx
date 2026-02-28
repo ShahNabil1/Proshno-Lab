@@ -99,6 +99,23 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
 
   const handleDelete = async () => {
     if (!deleteConfirm.id) return;
+    // Check for dependent questions before deleting classes or subjects
+    if (table === "classes") {
+      const { count } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("class_id", deleteConfirm.id);
+      if (count && count > 0) {
+        toast.error(`এই শ্রেণীতে ${count}টি প্রশ্ন আছে। আগে প্রশ্নগুলো মুছুন, তারপর শ্রেণী মুছতে পারবেন।`);
+        setDeleteConfirm({ open: false, id: null, name: "" });
+        return;
+      }
+    }
+    if (table === "subjects") {
+      const { count } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("subject_id", deleteConfirm.id);
+      if (count && count > 0) {
+        toast.error(`এই বিষয়ে ${count}টি প্রশ্ন আছে। আগে প্রশ্নগুলো মুছুন, তারপর বিষয় মুছতে পারবেন।`);
+        setDeleteConfirm({ open: false, id: null, name: "" });
+        return;
+      }
+    }
     const { error } = await (supabase.from(table) as any).delete().eq("id", deleteConfirm.id);
     if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
     toast.success("মুছে ফেলা হয়েছে");
