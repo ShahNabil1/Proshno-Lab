@@ -305,8 +305,10 @@ export default function AdminChapters() {
       const { error } = await supabase.from("questions").insert(payloads as any);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success(`${validQs.length}টি MCQ তৈরি হয়েছে`);
-      setAddQDialogOpen(false);
-      if (questionsView) openQuestionsView(questionsView.chapter);
+      const returnCtx = addQFullPage;
+      setAddQFullPage(null);
+      if (returnCtx?.returnTo === "questions" && questionsView) openQuestionsView(questionsView.chapter);
+      else fetchChapters();
       return;
     }
 
@@ -362,8 +364,10 @@ export default function AdminChapters() {
       const { error } = await supabase.from("questions").insert(payload);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
       toast.success("তৈরি হয়েছে");
-      setAddQDialogOpen(false);
-      if (questionsView) openQuestionsView(questionsView.chapter);
+      const returnCtx = addQFullPage;
+      setAddQFullPage(null);
+      if (returnCtx?.returnTo === "questions" && questionsView) openQuestionsView(questionsView.chapter);
+      else fetchChapters();
     }
   };
 
