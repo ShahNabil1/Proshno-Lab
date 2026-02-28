@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0">
           <img src={logoImg} alt="eExamapp" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">
-            e<span className="text-gradient-green">Examapp</span>
+            eExam<span className="text-gradient-green">app</span>
           </span>
         </div>
 
