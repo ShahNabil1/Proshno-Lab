@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronRight, LogOut, User } from "lucide-react";
+import { Menu, X, ChevronRight, LogOut, User, PenLine } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import logoImg from "@/assets/logo.png";
 import bkashLogo from "@/assets/bkash-logo.webp";
@@ -11,19 +12,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
-{ path: "/", label: "হোম" },
-
-{ path: "/pricing", label: "মূল্য তালিকা" },
-{ path: "/demo", label: "ডেমো" }];
 
 
 export default function Layout({ children }: {children: React.ReactNode;}) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHeroPage = location.pathname === "/";
+
+  const handleCreateQuestion = () => {
+    if (user) {
+      navigate("/dashboard/create");
+    } else {
+      navigate("/login");
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -55,25 +60,19 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) =>
-            <Link key={item.path} to={item.path}>
-                <button
-                className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  location.pathname === item.path ?
-                  "bg-primary/10 text-primary" :
-                  cn("hover:bg-primary/5", mutedTextColor)
-                )}>
-
-                  {item.label}
-                </button>
-              </Link>
-            )}
-            {user ?
-            <div className="flex items-center gap-2 ml-3">
+          <nav className="hidden md:flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={handleCreateQuestion}
+              className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg gap-2"
+            >
+              <PenLine className="w-4 h-4" />
+              প্রশ্ন তৈরী করুন
+            </Button>
+            {user &&
+              <div className="flex items-center gap-2">
                 <Link to="/dashboard">
-                  <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
+                  <Button variant="ghost" size="sm" className={cn("font-heading font-medium", mutedTextColor)}>
                     ড্যাশবোর্ড
                   </Button>
                 </Link>
@@ -86,13 +85,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button variant="ghost" size="icon" className={cn(mutedTextColor)} onClick={signOut}>
                   <LogOut className="w-4 h-4" />
                 </Button>
-              </div> :
-
-            <Link to="/login" className="ml-3">
-                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
-                  লগইন করুন
-                </Button>
-              </Link>
+              </div>
             }
           </nav>
 
@@ -115,26 +108,18 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             transition={{ duration: 0.2 }}
             className="md:hidden overflow-hidden bg-card border-t border-border">
 
-              <div className="container py-4 flex flex-col gap-1">
-                {navItems.map((item) =>
-              <Link key={item.path} to={item.path}>
-                    <button
-                  className={cn(
-                    "w-full text-left px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between transition-colors",
-                    location.pathname === item.path ?
-                    "bg-primary/10 text-primary" :
-                    "text-foreground hover:bg-muted"
-                  )}>
-
-                      {item.label}
-                      <ChevronRight className="w-4 h-4 opacity-40" />
-                    </button>
-                  </Link>
-              )}
-                {user ?
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="container py-4 flex flex-col gap-2">
+                <Button
+                  onClick={handleCreateQuestion}
+                  className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg gap-2"
+                >
+                  <PenLine className="w-4 h-4" />
+                  প্রশ্ন তৈরী করুন
+                </Button>
+                {user &&
+                  <div className="flex flex-col gap-2 mt-1">
                     <Link to="/dashboard">
-                      <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
+                      <Button variant="outline" className="w-full font-heading font-medium rounded-lg">
                         ড্যাশবোর্ড
                       </Button>
                     </Link>
@@ -148,14 +133,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                         <LogOut className="w-4 h-4" /> লগআউট
                       </Button>
                     </div>
-                  </div> :
-
-              <Link to="/login" className="mt-2">
-                    <Button className="w-full gradient-green text-primary-foreground border-0 font-heading font-semibold rounded-lg">
-                      লগইন করুন
-                    </Button>
-                  </Link>
-              }
+                  </div>
+                }
               </div>
             </motion.nav>
           }
