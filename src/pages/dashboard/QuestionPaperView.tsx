@@ -432,6 +432,12 @@ export default function QuestionPaperView() {
     return `সময়— ${toBanglaNum(hours)} ঘন্টা ${toBanglaNum(rem)} মিনিট`;
   };
 
+  const shouldStackOptions = (q: QuestionRow) => {
+    const opts = [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean);
+    const maxLen = Math.max(...opts.map(o => stripPTags(o || "").length));
+    return maxLen > 30;
+  };
+
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
       case "bracket": return `(${label})`;
@@ -1366,7 +1372,7 @@ export default function QuestionPaperView() {
                               <span style={{ flex: 1 }}><LatexRenderer text={q.question} /></span>
                       {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                               {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                 const val = q[key]; if (!val) return null;
                                 const cleaned = stripPTags(val);
@@ -1400,7 +1406,7 @@ export default function QuestionPaperView() {
                         <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                         <div style={{ flex: 1 }}>
                           <span><LatexRenderer text={q.question} /></span>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
                               const cleaned = stripPTags(val);
@@ -1454,7 +1460,7 @@ export default function QuestionPaperView() {
                               <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
                                 <span><LatexRenderer text={q.question} /></span>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const cleaned = stripPTags(val);
