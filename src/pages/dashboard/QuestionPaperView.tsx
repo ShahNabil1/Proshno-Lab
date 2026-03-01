@@ -1089,7 +1089,7 @@ export default function QuestionPaperView() {
             )}
             {/* ===== SHEET: Instructor, Profile, Topic inside header ===== */}
             {settings.showSheet && settings.sheetInstructorName && meta.teacherName && (
-              <p style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }}>
+              <p className={editableClass} style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 ইন্সট্রাক্টর: {meta.teacherName}
               </p>
             )}
