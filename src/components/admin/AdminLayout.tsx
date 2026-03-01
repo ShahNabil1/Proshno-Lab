@@ -18,7 +18,7 @@ const allSidebarItems = [
   { path: "/admin/chapters", label: "অধ্যায়", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/questions", label: "প্রশ্ন", icon: FileText, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/topics", label: "টপিক", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
-  { path: "/admin/suggestions", label: "সাজেশন", icon: ClipboardList, group: "একাডেমিক ম্যানেজমেন্ট" },
+  
 
   { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/faqs", label: "FAQ", icon: HelpCircle, group: "কন্টেন্ট ম্যানেজমেন্ট" },
