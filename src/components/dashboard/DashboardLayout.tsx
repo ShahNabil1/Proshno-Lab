@@ -105,8 +105,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));
   }, [user]);
 
+  // Redirect if current page is hidden
+  const currentPath = location.pathname;
+  const isPageHidden = hiddenPages.length > 0 && hiddenPages.includes(currentPath);
+  
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPageHidden) return <Navigate to="/dashboard" replace />;
   if (isBanned) return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="text-center space-y-4 max-w-md">
