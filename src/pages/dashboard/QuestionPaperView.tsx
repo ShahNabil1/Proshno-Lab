@@ -1526,6 +1526,12 @@ export default function QuestionPaperView() {
                         <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
                       </span>
                       {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                    {settings.showAnswerSheet && q.explanation && (
+                      <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
+                        <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
+                        <LatexRenderer text={q.explanation} />
+                      </div>
+                    )}
                     </div>
                   );
                 })}
