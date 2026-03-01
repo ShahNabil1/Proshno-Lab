@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Building2,
-  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag, Package, Flag, HelpCircle, Star, ClipboardList
+  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag, Package, Flag, HelpCircle, Star, ClipboardList, Wrench
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,11 +33,14 @@ const allSidebarItems = [
   { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
+
+  { path: "/admin/advanced", label: "অ্যাডভান্সড", icon: Wrench, group: "ডেভেলপার", developerOnly: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isDeveloper, setIsDeveloper] = useState(false);
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
@@ -46,6 +49,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!user) return;
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
+    supabase.rpc("has_role", { _user_id: user.id, _role: "developer" })
+      .then(({ data }) => setIsDeveloper(!!data));
     
     supabase.from("user_roles").select("allowed_pages").eq("user_id", user.id).eq("role", "admin").maybeSingle()
       .then(({ data }) => {
@@ -57,10 +62,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
-  // Filter sidebar items based on allowed_pages (null = full access for super admin)
-  const visibleItems = allowedPages
+  // Filter sidebar items based on allowed_pages and developer role
+  const visibleItems = (allowedPages
     ? allSidebarItems.filter(item => allowedPages.includes(item.path))
-    : allSidebarItems;
+    : allSidebarItems
+  ).filter(item => !(item as any).developerOnly || isDeveloper);
 
   // Check if current route is allowed
   const currentPath = location.pathname;
