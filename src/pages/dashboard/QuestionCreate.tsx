@@ -682,7 +682,7 @@ export default function QuestionCreate() {
                   {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
                     const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
                     const subFields = q.type === "descriptive"
-                      ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }]
+                      ? [{ key: "desc_q_ka", label: "ক" }, { key: "desc_q_kha", label: "খ" }]
                       : data?.is_math
                         ? [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }]
                         : [{ key: "q_ka", label: "ক" }, { key: "q_kha", label: "খ" }, { key: "q_ga", label: "গ" }, { key: "q_gha", label: "ঘ" }];
