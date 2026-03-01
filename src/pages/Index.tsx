@@ -125,14 +125,14 @@ export default function Index() {
             <motion.div custom={1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <div className="relative group rounded-2xl overflow-hidden border border-primary/20 hover-lift shadow-premium">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative rounded-2xl bg-card p-7 h-full">
+                <div className="relative rounded-2xl bg-card p-7 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <PenTool className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="font-heading font-bold text-lg text-foreground">প্রশ্ন তৈরির প্যাকেজ</h3>
+                    <h3 className="font-heading font-bold text-lg text-foreground">প্রশ্ন তৈরী করার প্যাকেজ</h3>
                   </div>
-                  <p className="text-muted-foreground text-sm mb-5 leading-relaxed">১ ক্লিকে কাস্টম প্রশ্নপত্র তৈরি করুন — MCQ, সৃজনশীল, সংক্ষিপ্ত সবকিছু।</p>
+                  <p className="text-muted-foreground text-sm mb-5 leading-relaxed flex-1">১ ক্লিকে কাস্টম প্রশ্নপত্র তৈরি করুন — MCQ, সৃজনশীল, সংক্ষিপ্ত সবকিছু।</p>
                   <div className="flex flex-wrap gap-2 mb-5">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                       <CheckCircle2 className="w-3.5 h-3.5" /> ৬ষ্ঠ - ১২শ শ্রেণী
@@ -142,8 +142,8 @@ export default function Index() {
                     </span>
                   </div>
                   <Link to="/pricing">
-                    <Button variant="outline" className="w-full rounded-xl font-heading font-semibold border-primary/30 text-primary hover:bg-primary/5 gap-2">
-                      প্যাকেজ দেখুন <ChevronRight className="w-4 h-4" />
+                    <Button className="w-full rounded-xl font-heading font-semibold gradient-green text-white border-0 gap-2 h-11 shadow-[0_4px_16px_hsl(155_72%_44%/0.25)]">
+                      Buy Now <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
                 </div>
@@ -152,16 +152,16 @@ export default function Index() {
 
             {/* Card 2: রেডি প্রশ্ন প্যাকেজ */}
             <motion.div custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-              <div className="relative group rounded-2xl overflow-hidden border border-primary/20 hover-lift shadow-premium">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative rounded-2xl bg-card p-7 h-full">
+              <div className="relative group rounded-2xl overflow-hidden border border-border hover-lift shadow-premium">
+                <div className="absolute inset-0 bg-gradient-to-br from-muted/50 via-transparent to-muted/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative rounded-2xl bg-card p-7 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-primary" />
                     </div>
                     <h3 className="font-heading font-bold text-lg text-foreground">রেডি প্রশ্ন প্যাকেজ</h3>
                   </div>
-                  <p className="text-muted-foreground text-sm mb-5 leading-relaxed">বিশেষজ্ঞ শিক্ষকদের তৈরি রেডিমেড প্রশ্নপত্র — ডাউনলোড করে সরাসরি ব্যবহার করুন।</p>
+                  <p className="text-muted-foreground text-sm mb-5 leading-relaxed flex-1">বিশেষজ্ঞ শিক্ষকদের তৈরি রেডিমেড প্রশ্নপত্র — ডাউনলোড করে সরাসরি ব্যবহার করুন।</p>
                   <div className="flex flex-wrap gap-2 mb-5">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-muted text-muted-foreground border border-border">
                       <Zap className="w-3.5 h-3.5" /> ৬ষ্ঠ - ১২শ শ্রেণী (শীঘ্রই)
@@ -170,15 +170,22 @@ export default function Index() {
                       <Zap className="w-3.5 h-3.5" /> ৩য় - ৫ম শ্রেণী (শীঘ্রই)
                     </span>
                   </div>
-                  <Link to="/pricing">
-                    <Button variant="outline" className="w-full rounded-xl font-heading font-semibold border-primary/30 text-primary hover:bg-primary/5 gap-2">
-                      প্যাকেজ দেখুন <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Button disabled className="w-full rounded-xl font-heading font-semibold gap-2 h-11 bg-muted text-muted-foreground border border-border cursor-not-allowed">
+                    Coming Soon
+                  </Button>
                 </div>
               </div>
             </motion.div>
           </div>
+
+          {/* সম্পূর্ণ মূল্য তালিকা বাটন */}
+          <motion.div custom={3} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mt-8">
+            <Link to="/pricing">
+              <Button variant="outline" size="lg" className="rounded-xl font-heading font-semibold border-primary/30 text-primary hover:bg-primary/5 gap-2 px-8 h-12">
+                সম্পূর্ণ মূল্য তালিকা <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
