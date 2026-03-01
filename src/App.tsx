@@ -117,7 +117,7 @@ const App = () => (
             <Route path="/admin/announcements" element={<AdminLayout><AdminAnnouncements /></AdminLayout>} />
             <Route path="/admin/faqs" element={<AdminLayout><AdminFaqs /></AdminLayout>} />
             <Route path="/admin/reviews" element={<AdminLayout><AdminReviews /></AdminLayout>} />
-            <Route path="/admin/suggestions" element={<AdminLayout><AdminSuggestions /></AdminLayout>} />
+            
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
