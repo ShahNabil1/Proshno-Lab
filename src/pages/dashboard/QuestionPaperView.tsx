@@ -1252,10 +1252,14 @@ export default function QuestionPaperView() {
               </div>
 
               {/* Regular standalone MCQs in grid */}
-              {standalone.length > 0 && (
+              {standalone.length > 0 && (() => {
+                const rowCount = Math.ceil(standalone.length / settings.columns);
+                return (
                 <div style={{
                   display: "grid",
+                  gridTemplateRows: `repeat(${rowCount}, auto)`,
                   gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
+                  gridAutoFlow: "column",
                   columnGap: "0", rowGap: "2px",
                 }}>
                   {standalone.map((q) => {
