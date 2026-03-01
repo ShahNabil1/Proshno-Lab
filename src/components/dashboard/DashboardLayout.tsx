@@ -79,12 +79,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
   const { cloudBackupEnabled } = useCloudBackup();
+  const hiddenPages = useDashboardHiddenPages();
 
-  // Filter sidebar based on cloud backup setting
+  // Filter sidebar based on cloud backup setting AND hidden pages
   const sidebarGroups = baseSidebarGroups
     .map(group => ({
       ...group,
-      items: group.items.filter(item => !(item as any).requiresCloudBackup || cloudBackupEnabled),
+      items: group.items.filter(item => {
+        if ((item as any).requiresCloudBackup && !cloudBackupEnabled) return false;
+        if (hiddenPages.includes(item.path)) return false;
+        return true;
+      }),
     }))
     .filter(group => group.items.length > 0);
 
