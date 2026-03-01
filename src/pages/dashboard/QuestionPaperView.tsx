@@ -1056,7 +1056,7 @@ export default function QuestionPaperView() {
               </p>
             )}
             {settings.showSubjectCode && (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "8px", fontSize: "0.95em", margin: "1px 0 0" }}>
+              <div className={editableClass} style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "8px", fontSize: "0.95em", margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
                   বিষয় কোড :
                   <span style={{ display: "inline-flex", gap: "0" }}>
