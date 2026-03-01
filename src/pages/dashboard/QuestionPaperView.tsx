@@ -1452,7 +1452,14 @@ export default function QuestionPaperView() {
           })()}
 
           {/* ===== SHORT SECTION (2nd) ===== */}
-          {shortQuestions.length > 0 && (
+          {shortQuestions.length > 0 && (() => {
+            const shortToAnswer = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
+            const shortTotalMarks = shortToAnswer * 2;
+            const shortMarksLine = `${toBanglaNum(shortToAnswer)} x ${toBanglaNum(2)} = ${toBanglaNum(shortTotalMarks)}`;
+            const shortInstruction = shortQuestions.length === shortToAnswer
+              ? ""
+              : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`;
+            return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "3px" }}>
                 <span
@@ -1464,9 +1471,14 @@ export default function QuestionPaperView() {
                   সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
                 </span>
                 <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                  {`${toBanglaNum(shortQuestions.length)} x ${toBanglaNum(2)} = ${toBanglaNum(shortQuestions.length * 2)}`}
+                  {shortMarksLine}
                 </span>
               </div>
+              {shortInstruction && (
+                <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
+                  <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{shortInstruction}</span>
+                </div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                 {shortQuestions.map((q, idx) => {
                   const num = idx + 1;
@@ -1489,7 +1501,8 @@ export default function QuestionPaperView() {
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ===== CQ SECTION (3rd) ===== */}
           {cqQuestions.length > 0 && (
@@ -1589,7 +1602,14 @@ export default function QuestionPaperView() {
           )}
 
           {/* ===== DESCRIPTIVE SECTION (4th) ===== */}
-          {descriptiveQuestions.length > 0 && (
+          {descriptiveQuestions.length > 0 && (() => {
+            const descToAnswer = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
+            const descTotalMarks = descToAnswer * 10;
+            const descMarksLine = `${toBanglaNum(10)} x ${toBanglaNum(descToAnswer)} = ${toBanglaNum(descTotalMarks)}`;
+            const descInstruction = descriptiveQuestions.length === descToAnswer
+              ? ""
+              : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`;
+            return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "4px" }}>
                 <span
@@ -1601,9 +1621,14 @@ export default function QuestionPaperView() {
                   প্র্যাক্টিস অংশঃ বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
                 </span>
                 <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                  {`${toBanglaNum(10)} x ${toBanglaNum(descriptiveQuestions.length)} = ${toBanglaNum(descriptiveQuestions.length * 10)}`}
+                  {descMarksLine}
                 </span>
               </div>
+              {descInstruction && (
+                <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
+                  <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{descInstruction}</span>
+                </div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {descriptiveQuestions.map((q, idx) => {
                   const num = idx + 1;
@@ -1657,7 +1682,8 @@ export default function QuestionPaperView() {
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Address moved to header */}
         </div>
