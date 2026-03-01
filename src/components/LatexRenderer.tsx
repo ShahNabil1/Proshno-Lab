@@ -31,8 +31,10 @@ export default function LatexRenderer({ text, className = "", inline = false }: 
     });
   }, [text]);
 
+  const Tag = inline ? "span" : "div";
+
   return (
-    <div
+    <Tag
       className={`latex-renderer ${inline ? "latex-renderer--inline" : ""} ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />

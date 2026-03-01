@@ -19,10 +19,10 @@ export default function ShortPage() {
         {mockShort.map((q, idx) => (
           <div key={q.id} className="bg-card rounded-xl shadow-sm p-5 border border-border">
             <div className="flex items-start justify-between gap-4">
-              <p className="text-foreground font-body">
+               <p className="text-foreground font-body">
                 <span className="text-primary font-bold mr-2">{idx + 1}.</span>
-                <LatexRenderer text={q.question} />
-              </p>
+                <LatexRenderer text={q.question} inline />
+               </p>
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <ReferenceBadges boardRefs={q.board_references} uniRefs={q.university_references} />
                 <div className="flex gap-2">

@@ -660,7 +660,7 @@ export default function QuestionCreate() {
                     </div>
                   </div>
                   <div className="font-medium mb-3">
-                    <LatexRenderer text={`${idx + 1}. ${q.question}`} />
+                    <LatexRenderer text={`${idx + 1}. ${q.question}`} inline />
                   </div>
                   {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
@@ -672,7 +672,7 @@ export default function QuestionCreate() {
                         const isAnswer = q.correct_answer === val || q.correct_answer === label;
                         return (
                           <div key={key} className={`flex items-center gap-2 p-2 rounded text-sm ${isAnswer ? "bg-green-100 text-green-800 font-semibold dark:bg-green-900 dark:text-green-200" : "bg-muted/50"}`}>
-                            <span className="font-medium">{label})</span> <LatexRenderer text={val} />
+                            <span className="font-medium">{label})</span> <LatexRenderer text={val} inline />
                           </div>
                         );
                       })}
@@ -696,7 +696,7 @@ export default function QuestionCreate() {
                           return (
                             <div key={f.key} className="text-sm">
                               <span className="font-semibold">({f.label}) </span>
-                              <LatexRenderer text={val} />
+                              <LatexRenderer text={val} inline />
                             </div>
                           );
                         })}
