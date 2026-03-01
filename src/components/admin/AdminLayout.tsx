@@ -80,11 +80,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
-  // Filter sidebar items based on allowed_pages and developer role
+  // Filter sidebar items based on allowed_pages, developer role, and admin hidden pages
   const visibleItems = (allowedPages
     ? allSidebarItems.filter(item => allowedPages.includes(item.path))
     : allSidebarItems
-  ).filter(item => !(item as any).developerOnly || isDeveloper);
+  )
+    .filter(item => !(item as any).developerOnly || isDeveloper)
+    .filter(item => isDeveloper || !adminHiddenPages.includes(item.path));
 
   // Check if current route is allowed
   const currentPath = location.pathname;
