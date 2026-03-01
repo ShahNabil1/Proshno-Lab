@@ -112,7 +112,7 @@ export default function Index() {
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
             <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-3">আমাদের মূল্য তালিকা</h2>
-            <p className="text-muted-foreground mb-0 max-w-md mx-auto">
+            <p className="text-muted-foreground mb-0 max-w-2xl mx-auto">
               সাশ্রয়ী মূল্যে সকল বিষয়ের প্রশ্নব্যাংক — আপনার প্রয়োজন অনুযায়ী প্যাকেজ বেছে নিন
             </p>
           </motion.div>
