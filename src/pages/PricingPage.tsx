@@ -232,9 +232,9 @@ export default function PricingPage() {
                                     <TableCell className="font-semibold">৳{toBengaliDigits(pkg.price)}/-</TableCell>
                                     <TableCell className="text-center">
                                       {isComingSoon ? (
-                                        <Badge className="bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-yellow-400/15 text-amber-600 border-amber-400/40 text-[10px] gap-1.5 px-2.5 py-0.5 shadow-sm shadow-amber-500/10 animate-pulse font-bold">
-                                          <Clock className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
-                                        </Badge>
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 shadow-md shadow-amber-400/40 animate-bounce" style={{ animationDuration: '2s' }}>
+                                          <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
+                                        </span>
                                       ) : isSelected ? (
                                         <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">নির্বাচিত</Badge>
                                       ) : null}
