@@ -659,9 +659,15 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  <div className="font-medium mb-3">
-                    <LatexRenderer text={`${idx + 1}. ${q.question}`} inline />
-                  </div>
+                  {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
+                  {q.type !== "descriptive" && (
+                    <div className="font-medium mb-3">
+                      <LatexRenderer text={`${idx + 1}. ${q.question}`} inline />
+                    </div>
+                  )}
+                  {q.type === "descriptive" && (
+                    <span className="font-medium">{idx + 1}. </span>
+                  )}
                   {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
