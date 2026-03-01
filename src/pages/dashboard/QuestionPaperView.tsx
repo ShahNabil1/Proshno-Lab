@@ -854,9 +854,9 @@ export default function QuestionPaperView() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Size</span>
-                  <span className="text-xs font-medium">{settings.watermarkSize}{settings.watermarkType === "logo" ? "px" : ""}</span>
+                  <span className="text-xs font-medium">{settings.watermarkSize}{settings.watermarkType === "logo" ? "%" : ""}</span>
                 </div>
-                <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 40 : 12} max={settings.watermarkType === "logo" ? 800 : 80} step={settings.watermarkType === "logo" ? 10 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
+                <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 5 : 12} max={settings.watermarkType === "logo" ? 100 : 80} step={settings.watermarkType === "logo" ? 5 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
               </div>
               {settings.watermarkType === "text" ? (
                 <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
@@ -1003,7 +1003,7 @@ export default function QuestionPaperView() {
             }}>
               {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
                 <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
-                  width: `${settings.watermarkSize || 100}px`,
+                  width: `${settings.watermarkSize || 15}%`,
                   maxWidth: "none",
                   height: "auto",
                   objectFit: "contain",
