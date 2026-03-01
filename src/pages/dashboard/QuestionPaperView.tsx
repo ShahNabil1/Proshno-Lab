@@ -1248,7 +1248,7 @@ export default function QuestionPaperView() {
                 >
                   বহুনির্বাচনি অংশ:
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>{mcqMarksLine}</span>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
 
               {/* Regular standalone MCQs in grid */}
