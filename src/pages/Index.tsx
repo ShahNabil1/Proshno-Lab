@@ -178,9 +178,11 @@ export default function Index() {
                       <Zap className="w-3.5 h-3.5" /> ৩য় - ৫ম শ্রেণী (শীঘ্রই)
                     </span>
                   </div>
-                  <Button disabled className="w-full rounded-xl font-heading font-semibold gap-2 h-11 bg-muted text-muted-foreground border border-border cursor-not-allowed">
+                  <button disabled className="w-full rounded-xl font-heading font-semibold gap-2 h-11 cursor-not-allowed relative overflow-hidden flex items-center justify-center text-sm text-white" style={{ background: "linear-gradient(135deg, hsl(35 92% 50%), hsl(25 95% 53%), hsl(35 92% 50%))", backgroundSize: "200% 200%", animation: "comingSoonShimmer 2s ease-in-out infinite" }}>
+                    <Zap className="w-4 h-4" />
                     Coming Soon
-                  </Button>
+                    <span className="absolute inset-0 rounded-xl" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)", backgroundSize: "200% 100%", animation: "comingSoonGlow 2s linear infinite" }} />
+                  </button>
                 </div>
               </div>
             </motion.div>
