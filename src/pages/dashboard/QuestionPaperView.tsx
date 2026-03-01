@@ -1395,7 +1395,7 @@ export default function QuestionPaperView() {
                 >
                   সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {`${toBanglaNum(shortQuestions.length)} x ${toBanglaNum(2)} = ${toBanglaNum(shortQuestions.length * 2)}`}
                 </span>
               </div>
