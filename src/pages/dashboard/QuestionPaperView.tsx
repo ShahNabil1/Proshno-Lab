@@ -877,7 +877,7 @@ export default function QuestionPaperView() {
                       const reader = new FileReader();
                       reader.onload = (ev) => {
                         updateSetting("watermarkLogoUrl", ev.target?.result as string);
-                        if (settings.watermarkSize < 40) updateSetting("watermarkSize", 100);
+                        if (settings.watermarkSize < 5 || settings.watermarkSize > 100) updateSetting("watermarkSize", 50);
                       };
                       reader.readAsDataURL(file);
                     }} />
