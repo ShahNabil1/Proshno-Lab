@@ -1296,16 +1296,19 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", paddingBottom: "2px", marginBottom: "4px" }}>
+              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  বহুনির্বাচনি অংশ:
+                  বহুনির্বাচনি অংশ (প্রতিটি প্রশ্নের মান ১)
                 </span>
-                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "4px" }}>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>&nbsp;</span>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
 
               {/* Regular standalone MCQs in grid */}
@@ -1462,7 +1465,7 @@ export default function QuestionPaperView() {
               : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`;
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "3px" }}>
+              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="short-title"
@@ -1471,6 +1474,9 @@ export default function QuestionPaperView() {
                 >
                   সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
                 </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "3px" }}>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>&nbsp;</span>
                 <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {shortMarksLine}
                 </span>
@@ -1612,15 +1618,18 @@ export default function QuestionPaperView() {
               : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`;
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700, fontSize: "0.9em", marginBottom: "4px" }}>
+              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="desc-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  প্র্যাক্টিস অংশঃ বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
+                  বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
                 </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "4px" }}>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>&nbsp;</span>
                 <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {descMarksLine}
                 </span>
