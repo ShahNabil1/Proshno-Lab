@@ -153,6 +153,14 @@ export default function Index() {
             {/* Card 2: রেডি প্রশ্ন প্যাকেজ */}
             <motion.div custom={2} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
               <div className="relative group rounded-2xl overflow-hidden border border-border hover-lift shadow-premium">
+                {/* Coming Soon animated badge */}
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="relative inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full text-white overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(35 92% 50%), hsl(25 95% 53%), hsl(35 92% 50%))", backgroundSize: "200% 200%", animation: "comingSoonShimmer 2s ease-in-out infinite" }}>
+                    <Zap className="w-3.5 h-3.5" />
+                    Coming Soon
+                    <span className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)", backgroundSize: "200% 100%", animation: "comingSoonGlow 2s linear infinite" }} />
+                  </span>
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-br from-muted/50 via-transparent to-muted/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative rounded-2xl bg-card p-7 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-4">
