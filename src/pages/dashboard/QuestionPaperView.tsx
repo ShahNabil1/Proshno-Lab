@@ -1244,7 +1244,7 @@ export default function QuestionPaperView() {
               onClick={handleEditableClick}
               suppressContentEditableWarning
             >
-              সময়— ৫৫ মিনিট
+              {formatTime(totalTimeMinutes)}
             </span>
             <span
               className={editableClass}
