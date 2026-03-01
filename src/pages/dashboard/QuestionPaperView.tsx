@@ -188,6 +188,10 @@ export default function QuestionPaperView() {
       const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
       if (error) throw error;
       setCurrentPaperId(data.id);
+      // Update URL with paper_id so refresh works
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.set("paper_id", data.id);
+      window.history.replaceState({}, "", `${window.location.pathname}?${newParams.toString()}`);
     } catch (err) {
       console.error("Auto-save failed:", err);
     }
