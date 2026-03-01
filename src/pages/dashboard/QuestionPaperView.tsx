@@ -977,11 +977,11 @@ export default function QuestionPaperView() {
                 fontWeight: 700,
                 marginBottom: "6px",
               }}>
-                <span style={{
+                <span className={editableClass} style={{
                   border: "1.5px solid #000",
                   padding: "2px 8px",
                   lineHeight: 1.4,
-                }}>প্রাপ্ত নম্বর</span>
+                }} onClick={handleEditableClick} suppressContentEditableWarning>প্রাপ্ত নম্বর</span>
                 <span style={{
                   border: "1.5px solid #000",
                   borderLeft: "none",
@@ -1056,7 +1056,7 @@ export default function QuestionPaperView() {
               </p>
             )}
             {settings.showSubjectCode && (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "8px", fontSize: "0.95em", margin: "1px 0 0" }}>
+              <div className={editableClass} style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "8px", fontSize: "0.95em", margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
                   বিষয় কোড :
                   <span style={{ display: "inline-flex", gap: "0" }}>
@@ -1089,7 +1089,7 @@ export default function QuestionPaperView() {
             )}
             {/* ===== SHEET: Instructor, Profile, Topic inside header ===== */}
             {settings.showSheet && settings.sheetInstructorName && meta.teacherName && (
-              <p style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }}>
+              <p className={editableClass} style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 ইন্সট্রাক্টর: {meta.teacherName}
               </p>
             )}
@@ -1105,7 +1105,7 @@ export default function QuestionPaperView() {
               </p>
             )}
             {settings.showSheet && settings.sheetTopic && meta.topicNames && meta.topicNames.length > 0 && (
-              <p style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }}>
+              <p className={editableClass} style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 লেকচার টপিক: {meta.topicNames.join(", ")}
               </p>
             )}
@@ -1123,12 +1123,12 @@ export default function QuestionPaperView() {
               position: "relative",
             }}>
               {settings.sheetLectureNumber && (
-                <span style={{ fontWeight: 600 }}>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>
                   লেকচার নম্বরঃ {settings.sheetLectureNumberText || "১"}
                 </span>
               )}
               {settings.sheetDate && (
-                <span style={{ fontWeight: 600, marginLeft: "auto" }}>
+                <span className={editableClass} style={{ fontWeight: 600, marginLeft: "auto" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   Date: {new Date().toLocaleDateString("en-US", { timeZone: "Asia/Dhaka", month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
@@ -1193,11 +1193,11 @@ export default function QuestionPaperView() {
                 fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
               }}
             >
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>শিক্ষার্থীর নাম:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>শিক্ষার্থীর নাম:</span>
               <span style={{ flex: 1, borderBottom: "1.5px dotted #000", minWidth: "80px" }}>&nbsp;</span>
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>শাখা:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>শাখা:</span>
               <span style={{ borderBottom: "1.5px dotted #000", minWidth: "80px", width: "120px" }}>&nbsp;</span>
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>রোল:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>রোল:</span>
               <span style={{ borderBottom: "1.5px dotted #000", minWidth: "60px", width: "100px" }}>&nbsp;</span>
             </div>
           )}
@@ -1248,7 +1248,7 @@ export default function QuestionPaperView() {
                 >
                   বহুনির্বাচনি অংশ:
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>{mcqMarksLine}</span>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
 
               {/* Regular standalone MCQs in grid */}
@@ -1333,7 +1333,7 @@ export default function QuestionPaperView() {
                 const stimulusHtml = groupQs[0]?.stimulus_text || "";
                 return (
                   <div key={groupId} style={{ marginTop: "8px" }}>
-                    <p style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }}>
+                    <p className={editableClass} style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }} onClick={handleEditableClick} suppressContentEditableWarning>
                       নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:
                     </p>
                     {stimulusHtml && (
@@ -1395,7 +1395,7 @@ export default function QuestionPaperView() {
                 >
                   সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {`${toBanglaNum(shortQuestions.length)} x ${toBanglaNum(2)} = ${toBanglaNum(shortQuestions.length * 2)}`}
                 </span>
               </div>
@@ -1437,8 +1437,8 @@ export default function QuestionPaperView() {
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "6px" }}>
-                <span style={{ fontWeight: 600 }}>{cqInstruction}</span>
-                <span style={{ fontWeight: 600 }}>{cqMarksLine}</span>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqInstruction}</span>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqMarksLine}</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {cqQuestions.map((q, idx) => {
@@ -1532,7 +1532,7 @@ export default function QuestionPaperView() {
                 >
                   প্র্যাক্টিস অংশঃ বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {`${toBanglaNum(10)} x ${toBanglaNum(descriptiveQuestions.length)} = ${toBanglaNum(descriptiveQuestions.length * 10)}`}
                 </span>
               </div>
