@@ -1386,8 +1386,9 @@ export default function QuestionPaperView() {
                         );
                       })}
                     </div>
+                      );
+                    })()}
                   </div>
-                );
               })}
             </div>
             );
