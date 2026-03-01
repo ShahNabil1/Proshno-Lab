@@ -92,6 +92,11 @@ export default function PricingPage() {
         next.delete(pkg.id);
       } else {
         next.set(pkg.id, { id: pkg.id, class_name: pkg.class_name, subject_name: pkg.subject_name, price: pkg.price });
+        // If selecting "সকল বিষয়", remove individual subjects of same class
+        if (pkg.subject_name === "সকল বিষয়") {
+          const sameClassPkgs = classPackages.filter(p => p.class_name === pkg.class_name && p.subject_name !== "সকল বিষয়");
+          sameClassPkgs.forEach(p => next.delete(p.id));
+        }
       }
       return next;
     });
@@ -211,17 +216,23 @@ export default function PricingPage() {
                             <TableBody>
                               {cls.packages.map((pkg) => {
                                 const isSelected = selectedPkgs.has(pkg.id);
-                                const isComingSoon = pkg.is_coming_soon;
+                                const allSubjectPkg = cls.packages.find(p => p.subject_name === "সকল বিষয়");
+                                const allSubjectSelected = allSubjectPkg ? selectedPkgs.has(allSubjectPkg.id) : false;
+                                const allSubjectComingSoon = allSubjectPkg?.is_coming_soon;
+                                const isIndividualSubject = pkg.subject_name !== "সকল বিষয়";
+                                const isComingSoon = pkg.is_coming_soon || (isIndividualSubject && allSubjectComingSoon);
+                                const isDisabledByAllSubject = isIndividualSubject && allSubjectSelected;
+                                const isDisabled = isComingSoon || isDisabledByAllSubject;
                                 return (
                                   <TableRow
                                     key={pkg.id}
-                                    className={`cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : ""} ${isComingSoon ? "opacity-60 cursor-not-allowed" : "hover:bg-muted/30"}`}
-                                    onClick={() => !isComingSoon && togglePackage(pkg)}
+                                    className={`cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : ""} ${isDisabled ? "opacity-60 cursor-not-allowed" : "hover:bg-muted/30"}`}
+                                    onClick={() => !isDisabled && togglePackage(pkg)}
                                   >
                                     <TableCell>
                                       <Checkbox
-                                        checked={isSelected}
-                                        disabled={isComingSoon}
+                                        checked={isSelected && !isDisabledByAllSubject}
+                                        disabled={isDisabled}
                                         onCheckedChange={() => togglePackage(pkg)}
                                         onClick={(e) => e.stopPropagation()}
                                       />
@@ -235,6 +246,8 @@ export default function PricingPage() {
                                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 shadow-md shadow-amber-400/40 animate-bounce" style={{ animationDuration: '2s' }}>
                                           <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                                         </span>
+                                      ) : isDisabledByAllSubject ? (
+                                        <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">অন্তর্ভুক্ত</Badge>
                                       ) : isSelected ? (
                                         <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">নির্বাচিত</Badge>
                                       ) : null}

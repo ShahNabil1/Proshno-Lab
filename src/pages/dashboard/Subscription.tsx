@@ -123,7 +123,14 @@ export default function Subscription() {
     setSelectedPkgs((prev) => {
       const next = new Map(prev);
       if (next.has(pkg.id)) next.delete(pkg.id);
-      else next.set(pkg.id, { id: pkg.id, class_name: pkg.class_name, subject_name: pkg.subject_name, price: pkg.price });
+      else {
+        next.set(pkg.id, { id: pkg.id, class_name: pkg.class_name, subject_name: pkg.subject_name, price: pkg.price });
+        // If selecting "সকল বিষয়", remove individual subjects of same class
+        if (pkg.subject_name === "সকল বিষয়") {
+          const sameClassPkgs = classPkgs.filter(p => p.class_name === pkg.class_name && p.subject_name !== "সকল বিষয়");
+          sameClassPkgs.forEach(p => next.delete(p.id));
+        }
+      }
       return next;
     });
   };
@@ -332,25 +339,36 @@ export default function Subscription() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {pkgs.map((pkg) => {
                         const bought = isPurchased(pkg);
-                        const isComingSoon = pkg.is_coming_soon;
+                        const allSubjectPkg = pkgs.find(p => p.subject_name === "সকল বিষয়");
+                        const allSubjectSelected = allSubjectPkg ? selectedPkgs.has(allSubjectPkg.id) : false;
+                        const allSubjectComingSoon = allSubjectPkg?.is_coming_soon;
+                        const isIndividualSubject = pkg.subject_name !== "সকল বিষয়";
+                        const isComingSoon = pkg.is_coming_soon || (isIndividualSubject && allSubjectComingSoon);
+                        const isDisabledByAllSubject = isIndividualSubject && (allSubjectSelected || isPurchased(allSubjectPkg!));
+                        const allSubjectBought = allSubjectPkg ? isPurchased(allSubjectPkg) : false;
+                        const effectivelyBought = bought || (isIndividualSubject && allSubjectBought);
                         const isSelected = selectedPkgs.has(pkg.id);
+                        const isDisabled = isComingSoon || isDisabledByAllSubject || effectivelyBought;
                         return (
                           <Card
                             key={pkg.id}
-                            className={`transition-all cursor-pointer ${isSelected ? "border-primary/40 bg-primary/5 shadow-sm" : bought ? "border-primary/40 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.2)]" : isComingSoon ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"}`}
-                            onClick={() => !bought && !isComingSoon && togglePackage(pkg)}
+                            className={`transition-all cursor-pointer ${isSelected && !isDisabledByAllSubject ? "border-primary/40 bg-primary/5 shadow-sm" : effectivelyBought ? "border-primary/40 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.2)]" : isDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"}`}
+                            onClick={() => !isDisabled && togglePackage(pkg)}
                           >
                             <CardContent className="p-4 relative">
-                              {bought && (
+                              {effectivelyBought && (
                                 <Badge className="absolute top-2 right-2 gradient-green text-primary-foreground border-0 text-[9px] px-1.5 py-0">সক্রিয়</Badge>
                               )}
-                              {isComingSoon && (
+                              {isComingSoon && !effectivelyBought && (
                                 <Badge className="absolute top-2 right-2 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-yellow-400/15 text-amber-600 border-amber-400/40 text-[9px] px-2 py-0.5 gap-1 shadow-sm shadow-amber-500/10 animate-pulse font-bold">
                                   <Clock className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                                 </Badge>
                               )}
+                              {isDisabledByAllSubject && !effectivelyBought && !isComingSoon && (
+                                <Badge className="absolute top-2 right-2 bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0">অন্তর্ভুক্ত</Badge>
+                              )}
                               <div className="flex items-start gap-3">
-                                {!bought && !isComingSoon && (
+                                {!isDisabled && (
                                   <Checkbox
                                     checked={isSelected}
                                     onCheckedChange={() => togglePackage(pkg)}
