@@ -1333,7 +1333,7 @@ export default function QuestionPaperView() {
                 const stimulusHtml = groupQs[0]?.stimulus_text || "";
                 return (
                   <div key={groupId} style={{ marginTop: "8px" }}>
-                    <p style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }}>
+                    <p className={editableClass} style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }} onClick={handleEditableClick} suppressContentEditableWarning>
                       নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:
                     </p>
                     {stimulusHtml && (
