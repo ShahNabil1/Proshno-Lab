@@ -1004,6 +1004,7 @@ export default function QuestionPaperView() {
               {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
                 <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
                   width: `${settings.watermarkSize || 100}px`,
+                  maxWidth: "none",
                   height: "auto",
                   objectFit: "contain",
                 }} />
