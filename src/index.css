@@ -346,13 +346,17 @@
 [data-print-paper] .latex-renderer table {
   display: table;
 }
-[data-print-paper] .latex-renderer img {
+[data-print-paper] .latex-renderer img:not([width]) {
   display: block;
   max-width: 80px;
   max-height: 70px;
   height: auto;
   width: auto;
   object-fit: contain;
+  margin: 4px 0;
+}
+[data-print-paper] .latex-renderer img[width] {
+  display: block;
   margin: 4px 0;
 }
 
@@ -365,13 +369,17 @@
   margin: 0;
 }
 
-/* Paper preview: constrain images */
-[data-print-paper] img {
+/* Paper preview: constrain images without explicit size */
+[data-print-paper] img:not([width]) {
   max-width: 80px;
   max-height: 70px;
   height: auto;
   width: auto;
   object-fit: contain;
+  display: block;
+  margin: 4px 0;
+}
+[data-print-paper] img[width] {
   display: block;
   margin: 4px 0;
 }
@@ -393,9 +401,13 @@
   background: hsl(var(--muted));
   font-weight: 600;
 }
-.latex-renderer img {
+.latex-renderer img:not([width]) {
   max-width: 100%;
   height: auto;
+  border-radius: 0.25rem;
+  margin: 0.25rem 0;
+}
+.latex-renderer img[width] {
   border-radius: 0.25rem;
   margin: 0.25rem 0;
 }

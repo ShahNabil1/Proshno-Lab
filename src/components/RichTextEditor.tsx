@@ -6,7 +6,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
-import Image from "@tiptap/extension-image";
+import { ResizableImage } from "./ResizableImageExtension";
 import Link from "@tiptap/extension-link";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
@@ -87,7 +87,7 @@ export default function RichTextEditor({
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
-      Image.configure({ inline: true, allowBase64: true }),
+      ResizableImage,
       Link.configure({ openOnClick: false }),
       Table.configure({ resizable: true }),
       TableRow,
@@ -122,7 +122,7 @@ export default function RichTextEditor({
       // Fallback: prompt for URL
       const url = prompt("ইমেজ URL দিন:");
       if (url && editor) {
-        editor.chain().focus().setImage({ src: url }).run();
+        editor.chain().focus().insertContent({ type: "image", attrs: { src: url } }).run();
       }
       return;
     }
@@ -146,7 +146,7 @@ export default function RichTextEditor({
         );
         const data = await res.json();
         if (data.secure_url) {
-          editor.chain().focus().setImage({ src: data.secure_url }).run();
+          editor.chain().focus().insertContent({ type: "image", attrs: { src: data.secure_url } }).run();
           toast.success("ইমেজ যোগ হয়েছে!");
         } else {
           toast.error("আপলোড ব্যর্থ");
