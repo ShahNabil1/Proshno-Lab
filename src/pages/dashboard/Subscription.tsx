@@ -267,9 +267,9 @@ export default function Subscription() {
                 <Card key={pkg.id} className={`relative overflow-hidden transition-all ${bought ? "border-primary/40 shadow-[0_0_15px_-3px_hsl(var(--primary)/0.25)]" : "border-primary/20 bg-gradient-to-br from-primary/5 to-accent/20 hover:shadow-md"}`}>
                   <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-3 py-0.5 rounded-bl-lg">সেরা অফার</div>
                   {isComingSoon && (
-                    <div className="absolute top-0 left-0">
-                      <Badge className="rounded-none rounded-br-lg bg-amber-500 text-white border-0 text-[10px] font-heading gap-1">
-                        <Clock className="w-3 h-3" /> Coming Soon
+                    <div className="absolute top-0 left-0 z-10">
+                      <Badge className="rounded-none rounded-br-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white border-0 text-[10px] font-heading gap-1.5 px-3 py-1 shadow-lg shadow-amber-500/30 animate-pulse">
+                        <Clock className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                       </Badge>
                     </div>
                   )}
@@ -345,8 +345,8 @@ export default function Subscription() {
                                 <Badge className="absolute top-2 right-2 gradient-green text-primary-foreground border-0 text-[9px] px-1.5 py-0">সক্রিয়</Badge>
                               )}
                               {isComingSoon && (
-                                <Badge className="absolute top-2 right-2 bg-amber-500/10 text-amber-600 border-amber-500/30 text-[9px] px-1.5 py-0 gap-1">
-                                  <Clock className="w-2.5 h-2.5" /> Coming Soon
+                                <Badge className="absolute top-2 right-2 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-yellow-400/15 text-amber-600 border-amber-400/40 text-[9px] px-2 py-0.5 gap-1 shadow-sm shadow-amber-500/10 animate-pulse font-bold">
+                                  <Clock className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                                 </Badge>
                               )}
                               <div className="flex items-start gap-3">
