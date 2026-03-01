@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCloudBackup } from "@/hooks/useCloudBackup";
 
 interface QuestionRow {
   id: number;
@@ -170,8 +171,12 @@ export default function QuestionPaperView() {
     return containerWidth / paperWidthPx;
   }, [containerWidth, paperWidthPx]);
 
+  // Cloud backup hook
+  const { cloudBackupEnabled } = useCloudBackup();
+
   // Auto-save helper
   const autoSavePaper = useCallback(async (paperMeta: PaperMeta, paperQuestions: QuestionRow[], paperSettings: typeof settings) => {
+    if (!cloudBackupEnabled) return; // Skip if cloud backup disabled
     if (!user || !paperMeta || paperQuestions.length === 0) return;
     try {
       const paperData = {
@@ -195,7 +200,7 @@ export default function QuestionPaperView() {
     } catch (err) {
       console.error("Auto-save failed:", err);
     }
-  }, [user]);
+  }, [user, cloudBackupEnabled]);
 
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
@@ -214,7 +219,7 @@ export default function QuestionPaperView() {
         sessionStorage.removeItem("viewPaperSettings");
       }
 
-      if (paperId) {
+      if (paperId && cloudBackupEnabled) {
         // Returning to existing paper with new questions — update it
         setCurrentPaperId(paperId);
         const paperData = {
@@ -222,7 +227,7 @@ export default function QuestionPaperView() {
           meta: parsedMeta as any,
         };
         supabase.from("saved_papers").update(paperData as any).eq("id", paperId).then(() => {});
-      } else {
+      } else if (cloudBackupEnabled) {
         // Auto-save new paper
         autoSavePaper(parsedMeta, parsedQuestions, settings);
       }
@@ -1731,9 +1736,11 @@ export default function QuestionPaperView() {
                 <Button className="flex-1 gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={handleDownload}>
                   <Download className="h-4 w-4 mr-2" /> ডাউনলোড
                 </Button>
-                <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
-                  <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
-                </Button>
+                {cloudBackupEnabled && (
+                  <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
+                    <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
+                  </Button>
+                )}
               </div>
 
               {settingsContent}
@@ -1755,9 +1762,11 @@ export default function QuestionPaperView() {
               <Button className="flex-1 gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={() => { setSettingsOpen(false); handleDownload(); }}>
                 <Download className="h-4 w-4 mr-2" /> ডাউনলোড
               </Button>
-              <Button variant="outline" className="font-heading font-semibold" onClick={() => { handleSavePaper(); }} disabled={saving}>
-                <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
-              </Button>
+              {cloudBackupEnabled && (
+                <Button variant="outline" className="font-heading font-semibold" onClick={() => { handleSavePaper(); }} disabled={saving}>
+                  <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
+                </Button>
+              )}
             </div>
             {settingsContent}
           </div>

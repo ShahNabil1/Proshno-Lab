@@ -40,6 +40,7 @@ const allSidebarItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isDeveloper, setIsDeveloper] = useState(false);
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
@@ -48,6 +49,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!user) return;
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
+    supabase.rpc("has_role", { _user_id: user.id, _role: "developer" })
+      .then(({ data }) => setIsDeveloper(!!data));
     
     supabase.from("user_roles").select("allowed_pages").eq("user_id", user.id).eq("role", "admin").maybeSingle()
       .then(({ data }) => {
@@ -59,10 +62,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
-  // Filter sidebar items based on allowed_pages (null = full access for super admin)
-  const visibleItems = allowedPages
+  // Filter sidebar items based on allowed_pages and developer role
+  const visibleItems = (allowedPages
     ? allSidebarItems.filter(item => allowedPages.includes(item.path))
-    : allSidebarItems;
+    : allSidebarItems
+  ).filter(item => !(item as any).developerOnly || isDeveloper);
 
   // Check if current route is allowed
   const currentPath = location.pathname;
