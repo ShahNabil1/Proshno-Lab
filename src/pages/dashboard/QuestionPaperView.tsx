@@ -1628,6 +1628,33 @@ export default function QuestionPaperView() {
                               </div>
                             );
                           })()}
+                          {/* CQ Answers when answer sheet is on */}
+                          {settings.showAnswerSheet && (() => {
+                            const cData2 = q.creative_data;
+                            if (!cData2) return null;
+                            const usesMath2 = isMathSubject || cData2.is_math === true;
+                            const ansKeys = usesMath2 ? ["ans_ka", "ans_kha", "ans_ga"] : ["ans_ka", "ans_kha", "ans_ga", "ans_gha"];
+                            const ansLabels = usesMath2 ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
+                            // Also check sub_questions for answers
+                            const subQs = cData2.sub_questions || [];
+                            const hasAnyAnswer = ansKeys.some(k => cData2[k]) || subQs.some((sq: any) => sq.answer);
+                            if (!hasAnyAnswer) return null;
+                            return (
+                              <div style={{ marginTop: "6px", padding: "6px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
+                                <span style={{ fontWeight: 700, color: "#047857", display: "block", marginBottom: "4px" }}>উত্তর:</span>
+                                {ansKeys.map((key, ai) => {
+                                  const ansText = cData2[key] || (subQs[ai] && subQs[ai].answer) || "";
+                                  if (!ansText) return null;
+                                  return (
+                                    <div key={ai} style={{ marginBottom: "4px", lineHeight: 1.5 }}>
+                                      <span style={{ fontWeight: 600 }}>({ansLabels[ai]}) </span>
+                                      <LatexRenderer text={ansText} />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
