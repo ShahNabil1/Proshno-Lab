@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, AlignLeft, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap } from
+  Zap, Shield, BarChart3, GraduationCap, Clock } from
 "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -153,7 +153,7 @@ export default function Index() {
                 {/* Coming Soon animated badge */}
                 <div className="absolute top-4 right-4 z-10">
                   <span className="relative inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full text-white overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(35 92% 50%), hsl(25 95% 53%), hsl(35 92% 50%))", backgroundSize: "200% 200%", animation: "comingSoonShimmer 2s ease-in-out infinite" }}>
-                    <Zap className="w-3.5 h-3.5" />
+                    <Clock className="w-3.5 h-3.5" />
                     Coming Soon
                     <span className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)", backgroundSize: "200% 100%", animation: "comingSoonGlow 2s linear infinite" }} />
                   </span>
@@ -176,7 +176,7 @@ export default function Index() {
                     </span>
                   </div>
                   <button disabled className="w-full rounded-xl font-heading font-semibold gap-2 h-11 cursor-not-allowed relative overflow-hidden flex items-center justify-center text-sm text-white" style={{ background: "linear-gradient(135deg, hsl(35 92% 50%), hsl(25 95% 53%), hsl(35 92% 50%))", backgroundSize: "200% 200%", animation: "comingSoonShimmer 2s ease-in-out infinite" }}>
-                    <Zap className="w-4 h-4" />
+                    <Clock className="w-4 h-4" />
                     Coming Soon
                     <span className="absolute inset-0 rounded-xl" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)", backgroundSize: "200% 100%", animation: "comingSoonGlow 2s linear infinite" }} />
                   </button>
