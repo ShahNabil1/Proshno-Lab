@@ -1252,18 +1252,22 @@ export default function QuestionPaperView() {
               </div>
 
               {/* Regular standalone MCQs in grid */}
-              {standalone.length > 0 && (
+              {standalone.length > 0 && (() => {
+                const rowCount = Math.ceil(standalone.length / settings.columns);
+                return (
                 <div style={{
                   display: "grid",
+                  gridTemplateRows: `repeat(${rowCount}, auto)`,
                   gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
+                  gridAutoFlow: "column",
                   columnGap: "0", rowGap: "2px",
                 }}>
-                  {standalone.map((q) => {
+                  {standalone.map((q, itemIdx) => {
                     mcqNumber++;
                     const idx = mcqNumber;
                     const isDuplicate = duplicateIds.has(q.id);
                     const refStr = formatRefs(q);
-                    const colIdx = (idx - 1) % settings.columns;
+                    const colIdx = Math.floor(itemIdx / rowCount);
                     const showLeftBorder = colIdx > 0 && settings.columnDivider;
                     return (
                     <div key={q.id} className={editableClass} style={{
@@ -1294,7 +1298,8 @@ export default function QuestionPaperView() {
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
 
               {/* Standalone MCQs with optional stimulus (not grouped) */}
               {standaloneWithStimulus.map((q) => {
@@ -1341,15 +1346,20 @@ export default function QuestionPaperView() {
                         <LatexRenderer text={stimulusHtml} />
                       </div>
                     )}
+                    {(() => {
+                      const groupRowCount = Math.ceil(groupQs.length / settings.columns);
+                      return (
                     <div style={{
                       display: "grid",
+                      gridTemplateRows: `repeat(${groupRowCount}, auto)`,
                       gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
+                      gridAutoFlow: "column",
                       columnGap: "0", rowGap: "2px",
                     }}>
-                      {groupQs.map((q) => {
+                      {groupQs.map((q, gi) => {
                         mcqNumber++;
                         const idx = mcqNumber;
-                        const colIdx = (groupQs.indexOf(q)) % settings.columns;
+                        const colIdx = Math.floor(gi / groupRowCount);
                         const showLeftBorder = colIdx > 0 && settings.columnDivider;
                         return (
                           <div key={q.id} className={editableClass} style={{
@@ -1376,6 +1386,8 @@ export default function QuestionPaperView() {
                         );
                       })}
                     </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
