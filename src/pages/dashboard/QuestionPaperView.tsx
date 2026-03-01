@@ -1741,6 +1741,31 @@ export default function QuestionPaperView() {
                           <span><LatexRenderer text={q.question} /></span>
                         </div>
                       )}
+                          {/* Descriptive Answers when answer sheet is on */}
+                          {settings.showAnswerSheet && (() => {
+                            const dd = q.creative_data;
+                            const hasDescAns = dd && (dd.desc_ans_ka || dd.desc_ans_kha);
+                            const hasExpl = q.explanation;
+                            if (!hasDescAns && !hasExpl) return null;
+                            return (
+                              <div style={{ marginTop: "6px", padding: "6px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
+                                <span style={{ fontWeight: 700, color: "#047857", display: "block", marginBottom: "4px" }}>উত্তর:</span>
+                                {dd?.desc_ans_ka && (
+                                  <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
+                                    <span style={{ fontWeight: 600 }}>(ক) </span>
+                                    <LatexRenderer text={dd.desc_ans_ka} />
+                                  </div>
+                                )}
+                                {dd?.desc_ans_kha && (
+                                  <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
+                                    <span style={{ fontWeight: 600 }}>(খ) </span>
+                                    <LatexRenderer text={dd.desc_ans_kha} />
+                                  </div>
+                                )}
+                                {!hasDescAns && hasExpl && <LatexRenderer text={q.explanation!} />}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
