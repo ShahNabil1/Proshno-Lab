@@ -107,26 +107,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ STATS ══════ */}
-      <section className="py-16 md:py-20 bg-background relative -mt-10 z-10">
-        <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto -mt-6">
-            {stats.map((s, i) =>
-            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="glass-card-light rounded-2xl p-7 text-center hover-lift">
-                  <s.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
-                  <div className="font-heading font-extrabold text-3xl md:text-4xl text-foreground mb-1">{s.value}</div>
-                  <div className="text-muted-foreground text-sm">{s.label}</div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </section>
-
-
       {/* ══════ PRICING CTA ══════ */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-background relative -mt-10 z-10">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center">
             <div className="max-w-2xl mx-auto relative overflow-hidden rounded-3xl gradient-hero p-10 md:p-14">
@@ -151,6 +133,23 @@ export default function Index() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ══════ STATS ══════ */}
+      <section className="py-16 md:py-20 bg-background">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto">
+            {stats.map((s, i) =>
+            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                <div className="glass-card-light rounded-2xl p-7 text-center hover-lift">
+                  <s.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
+                  <div className="font-heading font-extrabold text-3xl md:text-4xl text-foreground mb-1">{s.value}</div>
+                  <div className="text-muted-foreground text-sm">{s.label}</div>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </section>
 
