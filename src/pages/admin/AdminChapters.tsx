@@ -631,8 +631,9 @@ export default function AdminChapters() {
                     <TableRow key={q.id}>
                       <TableCell className="text-muted-foreground align-top">{q.id}</TableCell>
                       <TableCell className="max-w-[400px]">
-                        <div className="space-y-1">
-                          <div><LatexRenderer text={q.question} /></div>
+                         <div className="space-y-1">
+                          {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
+                          {q.type !== "descriptive" && <div><LatexRenderer text={q.question} inline /></div>}
                           {q.type === "mcq" && (q.option_a || q.option_b || q.option_c || q.option_d) && (
                             <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-1 pl-1">
                               {q.option_a && <div><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.option_a} inline /></div>}
@@ -644,16 +645,16 @@ export default function AdminChapters() {
                           )}
                           {q.type === "cq" && q.creative_data && (
                             <div className="space-y-1 text-xs text-muted-foreground mt-1 pl-1 border-l-2 border-emerald-200 ml-1">
-                              {q.creative_data.q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.q_ka} /></div>}
-                              {q.creative_data.q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.q_kha} /></div>}
-                              {q.creative_data.q_ga && <div className="pl-2"><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.creative_data.q_ga} /></div>}
-                              {q.creative_data.q_gha && <div className="pl-2"><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.creative_data.q_gha} /></div>}
+                              {q.creative_data.q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.q_ka} inline /></div>}
+                              {q.creative_data.q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.q_kha} inline /></div>}
+                              {q.creative_data.q_ga && <div className="pl-2"><span className="font-semibold text-foreground">গ)</span> <LatexRenderer text={q.creative_data.q_ga} inline /></div>}
+                              {q.creative_data.q_gha && <div className="pl-2"><span className="font-semibold text-foreground">ঘ)</span> <LatexRenderer text={q.creative_data.q_gha} inline /></div>}
                             </div>
                           )}
                           {q.type === "descriptive" && q.creative_data && (
-                            <div className="space-y-1 text-xs text-muted-foreground mt-1 pl-1 border-l-2 border-emerald-200 ml-1">
-                              {q.creative_data.desc_q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.desc_q_ka} /></div>}
-                              {q.creative_data.desc_q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.desc_q_kha} /></div>}
+                            <div className="space-y-1 text-xs text-muted-foreground pl-1 border-l-2 border-emerald-200">
+                              {q.creative_data.desc_q_ka && <div className="pl-2"><span className="font-semibold text-foreground">ক)</span> <LatexRenderer text={q.creative_data.desc_q_ka} inline /></div>}
+                              {q.creative_data.desc_q_kha && <div className="pl-2"><span className="font-semibold text-foreground">খ)</span> <LatexRenderer text={q.creative_data.desc_q_kha} inline /></div>}
                             </div>
                           )}
                         </div>
