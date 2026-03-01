@@ -92,8 +92,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const currentPath = location.pathname;
   const isRouteAllowed = !allowedPages || allowedPages.some(p => currentPath === p || currentPath.startsWith(p + "/"));
   
-  if (!isRouteAllowed && currentPath !== "/admin") {
-    // Redirect to first allowed page
+  // Check if route is hidden for non-developers
+  const isAdminPageHidden = !isDeveloper && adminHiddenPages.includes(currentPath);
+
+  if ((!isRouteAllowed && currentPath !== "/admin") || isAdminPageHidden) {
     const firstAllowed = allowedPages?.[0] || "/admin";
     return <Navigate to={firstAllowed} replace />;
   }
