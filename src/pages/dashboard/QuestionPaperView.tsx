@@ -143,6 +143,8 @@ export default function QuestionPaperView() {
     watermarkLogoUrl: "",
     watermarkType: "text" as "text" | "logo",
     cqToAnswer: 0, // 0 means auto (all)
+    shortToAnswer: 0,
+    descToAnswer: 0,
   });
 
   // Measure container width for responsive scaling
@@ -402,7 +404,9 @@ export default function QuestionPaperView() {
   const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
 
   const cqToAnswerForTotal = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
-  const totalMarks = mcqQuestions.length + shortQuestions.length * 2 + cqToAnswerForTotal * 10 + descriptiveQuestions.length * 10;
+  const shortToAnswerForTotal = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
+  const descToAnswerForTotal = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
+  const totalMarks = mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
 
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
@@ -543,6 +547,58 @@ export default function QuestionPaperView() {
                   }}
                 />
                 <span className="text-xs text-muted-foreground">/ {toBanglaNum(cqQuestions.length)}টি</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* সংক্ষিপ্ত প্রশ্ন সেটিংস */}
+      {shortQuestions.length > 0 && (
+        <div className="border-b border-border pb-3 mb-3">
+          <h4 className="font-heading font-bold text-sm mb-2">সংক্ষিপ্ত প্রশ্ন</h4>
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">কতটি প্রশ্নের উত্তর দিতে হবে?</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={shortQuestions.length}
+                  className="h-8 text-sm w-20"
+                  value={settings.shortToAnswer || shortQuestions.length}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || 0;
+                    updateSetting("shortToAnswer", v);
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">/ {toBanglaNum(shortQuestions.length)}টি</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* বর্ণনামূলক প্রশ্ন সেটিংস */}
+      {descriptiveQuestions.length > 0 && (
+        <div className="border-b border-border pb-3 mb-3">
+          <h4 className="font-heading font-bold text-sm mb-2">বর্ণনামূলক প্রশ্ন</h4>
+          <div className="space-y-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">কতটি প্রশ্নের উত্তর দিতে হবে?</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number"
+                  min={1}
+                  max={descriptiveQuestions.length}
+                  className="h-8 text-sm w-20"
+                  value={settings.descToAnswer || descriptiveQuestions.length}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || 0;
+                    updateSetting("descToAnswer", v);
+                  }}
+                />
+                <span className="text-xs text-muted-foreground">/ {toBanglaNum(descriptiveQuestions.length)}টি</span>
               </div>
             </div>
           </div>
