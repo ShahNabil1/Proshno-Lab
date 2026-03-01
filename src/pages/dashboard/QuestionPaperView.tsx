@@ -692,7 +692,6 @@ export default function QuestionPaperView() {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="bangla">সোলাইমান লিপি</SelectItem>
-              <SelectItem value="solaimanlipi">সোলাইমান লিপি</SelectItem>
               <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
               <SelectItem value="timesnewroman">Times New Roman</SelectItem>
             </SelectContent>
