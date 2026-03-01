@@ -1262,12 +1262,12 @@ export default function QuestionPaperView() {
                   gridAutoFlow: "column",
                   columnGap: "0", rowGap: "2px",
                 }}>
-                  {standalone.map((q) => {
+                  {standalone.map((q, itemIdx) => {
                     mcqNumber++;
                     const idx = mcqNumber;
                     const isDuplicate = duplicateIds.has(q.id);
                     const refStr = formatRefs(q);
-                    const colIdx = (idx - 1) % settings.columns;
+                    const colIdx = Math.floor(itemIdx / rowCount);
                     const showLeftBorder = colIdx > 0 && settings.columnDivider;
                     return (
                     <div key={q.id} className={editableClass} style={{
