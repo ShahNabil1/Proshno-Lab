@@ -1,0 +1,1 @@
+INSERT INTO public.app_settings (key, value) VALUES ('admin_hidden_pages', '[]'::jsonb) ON CONFLICT (key) DO NOTHING;
