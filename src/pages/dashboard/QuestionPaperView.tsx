@@ -856,7 +856,7 @@ export default function QuestionPaperView() {
                   <span className="text-xs text-muted-foreground">Size</span>
                   <span className="text-xs font-medium">{settings.watermarkSize}{settings.watermarkType === "logo" ? "px" : ""}</span>
                 </div>
-                <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 40 : 12} max={settings.watermarkType === "logo" ? 300 : 80} step={settings.watermarkType === "logo" ? 10 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
+                <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 40 : 12} max={settings.watermarkType === "logo" ? 800 : 80} step={settings.watermarkType === "logo" ? 10 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
               </div>
               {settings.watermarkType === "text" ? (
                 <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
