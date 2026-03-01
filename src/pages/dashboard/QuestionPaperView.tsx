@@ -416,6 +416,17 @@ export default function QuestionPaperView() {
   const descToAnswerForTotal = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
   const totalMarks = mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
 
+  // Calculate total time: MCQ=1min, CQ=10min, Short=2min, Descriptive=10min
+  const totalTimeMinutes = mcqQuestions.length * 1 + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
+  const formatTime = (mins: number): string => {
+    if (mins === 0) return "সময়— ০ মিনিট";
+    const hours = Math.floor(mins / 60);
+    const rem = mins % 60;
+    if (hours === 0) return `সময়— ${toBanglaNum(rem)} মিনিট`;
+    if (rem === 0) return `সময়— ${toBanglaNum(hours)} ঘন্টা`;
+    return `সময়— ${toBanglaNum(hours)} ঘন্টা ${toBanglaNum(rem)} মিনিট`;
+  };
+
   const getOptionLabel = (label: string) => {
     switch (settings.optionStyle) {
       case "bracket": return `(${label})`;
