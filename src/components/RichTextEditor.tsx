@@ -6,7 +6,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
-import Image from "@tiptap/extension-image";
+import { ResizableImage } from "./ResizableImageExtension";
 import Link from "@tiptap/extension-link";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
@@ -87,7 +87,7 @@ export default function RichTextEditor({
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
-      Image.configure({ inline: true, allowBase64: true }),
+      ResizableImage,
       Link.configure({ openOnClick: false }),
       Table.configure({ resizable: true }),
       TableRow,
