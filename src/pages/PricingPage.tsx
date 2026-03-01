@@ -138,9 +138,9 @@ export default function PricingPage() {
                         <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/20 hover:shadow-lg transition-all hover-lift">
                           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-3 py-0.5 rounded-bl-lg">সেরা অফার</div>
                           {pkg.is_coming_soon && (
-                            <div className="absolute top-0 left-0">
-                              <Badge className="rounded-none rounded-br-lg bg-amber-500 text-white border-0 text-[10px] font-heading gap-1">
-                                <Clock className="w-3 h-3" /> Coming Soon
+                            <div className="absolute top-0 left-0 z-10">
+                              <Badge className="rounded-none rounded-br-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white border-0 text-[10px] font-heading gap-1.5 px-3 py-1 shadow-lg shadow-amber-500/30 animate-pulse">
+                                <Clock className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                               </Badge>
                             </div>
                           )}
@@ -232,8 +232,8 @@ export default function PricingPage() {
                                     <TableCell className="font-semibold">৳{toBengaliDigits(pkg.price)}/-</TableCell>
                                     <TableCell className="text-center">
                                       {isComingSoon ? (
-                                        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px] gap-1">
-                                          <Clock className="w-3 h-3" /> Coming Soon
+                                        <Badge className="bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-yellow-400/15 text-amber-600 border-amber-400/40 text-[10px] gap-1.5 px-2.5 py-0.5 shadow-sm shadow-amber-500/10 animate-pulse font-bold">
+                                          <Clock className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
                                         </Badge>
                                       ) : isSelected ? (
                                         <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">নির্বাচিত</Badge>
