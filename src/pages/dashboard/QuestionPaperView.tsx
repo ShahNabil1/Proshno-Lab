@@ -1193,11 +1193,11 @@ export default function QuestionPaperView() {
                 fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
               }}
             >
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>শিক্ষার্থীর নাম:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>শিক্ষার্থীর নাম:</span>
               <span style={{ flex: 1, borderBottom: "1.5px dotted #000", minWidth: "80px" }}>&nbsp;</span>
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>শাখা:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>শাখা:</span>
               <span style={{ borderBottom: "1.5px dotted #000", minWidth: "80px", width: "120px" }}>&nbsp;</span>
-              <span style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }}>রোল:</span>
+              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>রোল:</span>
               <span style={{ borderBottom: "1.5px dotted #000", minWidth: "60px", width: "100px" }}>&nbsp;</span>
             </div>
           )}
