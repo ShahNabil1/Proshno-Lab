@@ -42,6 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isDeveloper, setIsDeveloper] = useState(false);
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
+  const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -56,6 +57,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then(({ data }) => {
         setAllowedPages((data as any)?.allowed_pages || null);
       });
+
+    // Fetch admin hidden pages
+    supabase.from("app_settings").select("value").eq("key", "admin_hidden_pages").maybeSingle()
+      .then(({ data }) => {
+        const hidden = data?.value;
+        setAdminHiddenPages(Array.isArray(hidden) ? (hidden as string[]) : []);
+      });
+
+    // Real-time listener for admin hidden pages
+    const channel = supabase.channel("admin_hidden_pages_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings", filter: "key=eq.admin_hidden_pages" }, (payload: any) => {
+        const hidden = payload.new?.value;
+        setAdminHiddenPages(Array.isArray(hidden) ? (hidden as string[]) : []);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   if (loading || isAdmin === null) return null;
