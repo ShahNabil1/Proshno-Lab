@@ -783,11 +783,9 @@ export default function QuestionCreate() {
           <p className="text-sm text-muted-foreground text-center mb-2">নিচের ইনপুট ফিল্ড গুলো ফিল্ড সিলেক্ট করে সাবমিট করুন</p>
           <div className="space-y-3">
             <div>
-              <Label>প্রোগ্রাম/পরীক্ষার নাম লিখুন *</Label>
               <Input placeholder="প্রোগ্রাম/পরীক্ষার নাম" value={form.programName} onChange={(e) => setForm({ ...form, programName: e.target.value })} />
             </div>
             <div>
-              <Label>শ্রেণী</Label>
               <Select value={form.classId} onValueChange={(v) => setForm({ ...form, classId: v, subjectId: "", chapterIds: [] })}>
                 <SelectTrigger><SelectValue placeholder="শ্রেণী সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
@@ -796,7 +794,6 @@ export default function QuestionCreate() {
               </Select>
             </div>
             <div onClick={!form.classId ? () => setWarningDialog("subject") : undefined}>
-              <Label>বিষয়</Label>
               <Select value={form.subjectId} onValueChange={(v) => setForm({ ...form, subjectId: v, chapterIds: [] })} disabled={!form.classId}>
                 <SelectTrigger><SelectValue placeholder="বিষয় সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
@@ -808,7 +805,7 @@ export default function QuestionCreate() {
             {/* Multi-select chapter list */}
             <div onClick={!form.subjectId ? () => setWarningDialog("chapter") : undefined}>
               <div className="flex items-center justify-between mb-1">
-                <Label>অধ্যায় সিলেক্ট করুন</Label>
+                <span className="text-sm font-medium">অধ্যায় সিলেক্ট করুন</span>
                 {form.chapterIds.length > 0 && (
                   <span className="text-xs text-muted-foreground">{form.chapterIds.length}টি সিলেক্টেড</span>
                 )}
