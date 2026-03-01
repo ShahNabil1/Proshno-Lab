@@ -1128,7 +1128,7 @@ export default function QuestionPaperView() {
                 </span>
               )}
               {settings.sheetDate && (
-                <span style={{ fontWeight: 600, marginLeft: "auto" }}>
+                <span className={editableClass} style={{ fontWeight: 600, marginLeft: "auto" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   Date: {new Date().toLocaleDateString("en-US", { timeZone: "Asia/Dhaka", month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
