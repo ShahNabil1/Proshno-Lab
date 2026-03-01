@@ -977,11 +977,11 @@ export default function QuestionPaperView() {
                 fontWeight: 700,
                 marginBottom: "6px",
               }}>
-                <span style={{
+                <span className={editableClass} style={{
                   border: "1.5px solid #000",
                   padding: "2px 8px",
                   lineHeight: 1.4,
-                }}>প্রাপ্ত নম্বর</span>
+                }} onClick={handleEditableClick} suppressContentEditableWarning>প্রাপ্ত নম্বর</span>
                 <span style={{
                   border: "1.5px solid #000",
                   borderLeft: "none",
