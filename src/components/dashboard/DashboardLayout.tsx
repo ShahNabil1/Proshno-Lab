@@ -11,8 +11,9 @@ import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
+import { useCloudBackup } from "@/hooks/useCloudBackup";
 
-const sidebarGroups = [
+const baseSidebarGroups = [
   {
     label: "সার্বিক চিত্র",
     items: [
@@ -29,7 +30,7 @@ const sidebarGroups = [
   {
     label: "ব্যবস্থাপনা",
     items: [
-      { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText },
+      { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText, requiresCloudBackup: true },
     ],
   },
   {
@@ -55,6 +56,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
   const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
+  const { cloudBackupEnabled } = useCloudBackup();
+
+  // Filter sidebar based on cloud backup setting
+  const sidebarGroups = baseSidebarGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => !(item as any).requiresCloudBackup || cloudBackupEnabled),
+    }))
+    .filter(group => group.items.length > 0);
 
   useEffect(() => {
     if (!user) return;
