@@ -1532,7 +1532,7 @@ export default function QuestionPaperView() {
                 >
                   প্র্যাক্টিস অংশঃ বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
                 </span>
-                <span style={{ fontWeight: 600, fontSize: "0.95em" }}>
+                <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {`${toBanglaNum(10)} x ${toBanglaNum(descriptiveQuestions.length)} = ${toBanglaNum(descriptiveQuestions.length * 10)}`}
                 </span>
               </div>
