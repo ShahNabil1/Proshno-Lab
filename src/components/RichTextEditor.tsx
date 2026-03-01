@@ -122,7 +122,7 @@ export default function RichTextEditor({
       // Fallback: prompt for URL
       const url = prompt("ইমেজ URL দিন:");
       if (url && editor) {
-        editor.chain().focus().setImage({ src: url }).run();
+        editor.chain().focus().insertContent({ type: "image", attrs: { src: url } }).run();
       }
       return;
     }
@@ -146,7 +146,7 @@ export default function RichTextEditor({
         );
         const data = await res.json();
         if (data.secure_url) {
-          editor.chain().focus().setImage({ src: data.secure_url }).run();
+          editor.chain().focus().insertContent({ type: "image", attrs: { src: data.secure_url } }).run();
           toast.success("ইমেজ যোগ হয়েছে!");
         } else {
           toast.error("আপলোড ব্যর্থ");

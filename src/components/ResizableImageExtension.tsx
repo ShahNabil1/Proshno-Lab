@@ -207,16 +207,4 @@ export const ResizableImage = Node.create({
     return ReactNodeViewRenderer(ResizableImageComponent);
   },
 
-  addCommands() {
-    return {
-      setImage:
-        (options: { src: string; alt?: string; title?: string; width?: number; height?: number }) =>
-        ({ commands }: any) => {
-          return commands.insertContent({
-            type: this.name,
-            attrs: options,
-          });
-        },
-    };
-  },
 });
