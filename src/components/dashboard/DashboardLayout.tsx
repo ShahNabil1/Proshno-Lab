@@ -49,6 +49,28 @@ const baseSidebarGroups = [
   },
 ];
 
+function useDashboardHiddenPages() {
+  const [hiddenPages, setHiddenPages] = useState<string[]>([]);
+  useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "dashboard_hidden_pages").maybeSingle()
+      .then(({ data }) => {
+        const val = data?.value;
+        if (Array.isArray(val)) setHiddenPages(val as string[]);
+      });
+
+    const channel = supabase
+      .channel("dashboard_hidden_pages_realtime")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings", filter: "key=eq.dashboard_hidden_pages" }, (payload) => {
+        const val = (payload.new as any)?.value;
+        if (Array.isArray(val)) setHiddenPages(val as string[]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+  return hiddenPages;
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
