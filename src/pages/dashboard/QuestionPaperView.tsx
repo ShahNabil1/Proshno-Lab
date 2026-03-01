@@ -1105,7 +1105,7 @@ export default function QuestionPaperView() {
               </p>
             )}
             {settings.showSheet && settings.sheetTopic && meta.topicNames && meta.topicNames.length > 0 && (
-              <p style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }}>
+              <p className={editableClass} style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
                 লেকচার টপিক: {meta.topicNames.join(", ")}
               </p>
             )}
