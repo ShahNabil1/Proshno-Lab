@@ -1298,7 +1298,8 @@ export default function QuestionPaperView() {
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
 
               {/* Standalone MCQs with optional stimulus (not grouped) */}
               {standaloneWithStimulus.map((q) => {
