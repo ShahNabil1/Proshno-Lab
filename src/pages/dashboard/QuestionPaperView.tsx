@@ -1123,7 +1123,7 @@ export default function QuestionPaperView() {
               position: "relative",
             }}>
               {settings.sheetLectureNumber && (
-                <span style={{ fontWeight: 600 }}>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>
                   লেকচার নম্বরঃ {settings.sheetLectureNumberText || "১"}
                 </span>
               )}
