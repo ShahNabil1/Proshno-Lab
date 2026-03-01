@@ -1437,8 +1437,8 @@ export default function QuestionPaperView() {
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "6px" }}>
-                <span style={{ fontWeight: 600 }}>{cqInstruction}</span>
-                <span style={{ fontWeight: 600 }}>{cqMarksLine}</span>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqInstruction}</span>
+                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqMarksLine}</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {cqQuestions.map((q, idx) => {
