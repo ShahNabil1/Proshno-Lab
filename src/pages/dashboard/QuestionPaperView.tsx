@@ -1303,8 +1303,16 @@ export default function QuestionPaperView() {
 
           {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (() => {
+            // Helper: detect বহুপদী সমাপ্তিসূচক (multi-completion) questions with i., ii., iii.
+            const isMultiCompletionQ = (text: string) => {
+              const stripped = text.replace(/<[^>]*>/g, "");
+              return /(?:^|\s)i[.\s].*(?:^|\s)ii[.\s].*(?:^|\s)iii[.\s]/s.test(stripped)
+                || /(?:^|\s)i\).*(?:^|\s)ii\).*(?:^|\s)iii\)/s.test(stripped);
+            };
+
             // Group MCQs: separate standalone vs grouped by stimulus_group_id
             const standaloneWithStimulus: QuestionRow[] = []; // single MCQ with optional stimulus
+            const multiCompletion: QuestionRow[] = []; // বহুপদী সমাপ্তিসূচক
             const grouped = new Map<string, QuestionRow[]>();
             const standalone: QuestionRow[] = [];
 
@@ -1315,6 +1323,8 @@ export default function QuestionPaperView() {
                 grouped.get(q.stimulus_group_id)!.push(q);
               } else if (hasStimulus) {
                 standaloneWithStimulus.push(q);
+              } else if (isMultiCompletionQ(q.question)) {
+                multiCompletion.push(q);
               } else {
                 standalone.push(q);
               }
@@ -1389,6 +1399,39 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                 </div>
                 );
               })()}
+
+              {/* Multi-completion MCQs (বহুপদী সমাপ্তিসূচক) — full width */}
+              {multiCompletion.map((q) => {
+                mcqNumber++;
+                const idx = mcqNumber;
+                const isDuplicate = duplicateIds.has(q.id);
+                const refStr = formatRefs(q);
+                return (
+                  <div key={q.id} className={editableClass} style={{
+                    marginTop: "4px", marginBottom: "2px",
+                    background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                  }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                      <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                          <div style={{ flex: 1 }}><LatexRenderer text={q.question} /></div>
+                          {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "2px" }}>
+                          {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                            const val = q[key]; if (!val) return null;
+                            const cleaned = stripPTags(val);
+                            const label = ["ক", "খ", "গ", "ঘ"][oi];
+                            const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                            return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
 
               {/* Standalone MCQs with optional stimulus (not grouped) */}
               {standaloneWithStimulus.map((q) => {
