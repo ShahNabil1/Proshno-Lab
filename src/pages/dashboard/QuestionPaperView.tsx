@@ -1341,12 +1341,7 @@ export default function QuestionPaperView() {
 
           {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (() => {
-            // Helper: detect বহুপদী সমাপ্তিসূচক (multi-completion) questions with i., ii., iii.
-            const isMultiCompletionQ = (text: string) => {
-              const stripped = text.replace(/<[^>]*>/g, "");
-              return /(?:^|[^a-zA-Z])i[.\s].*(?:^|[^a-zA-Z])ii[.\s].*(?:^|[^a-zA-Z])iii[.\s]/s.test(stripped)
-                || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped);
-            };
+            // Note: isMultiCompletionQ detection removed — all MCQs treated uniformly
 
             // Group MCQs: separate standalone vs grouped by stimulus_group_id
             const standaloneWithStimulus: QuestionRow[] = []; // single MCQ with optional stimulus
