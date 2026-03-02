@@ -1058,16 +1058,19 @@ export default function QuestionPaperView() {
               position: "absolute",
               top: "50%",
               left: "50%",
-              transform: "translate(-50%, -50%) rotate(-35deg)",
+              transform: "translate(-50%, -50%)",
               opacity: (settings.watermarkOpacity || 40) / 100,
               pointerEvents: "none",
               zIndex: 0,
               width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}>
               {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
                 <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
                   width: `${settings.watermarkSize || 15}%`,
-                  maxWidth: "none",
+                  maxWidth: "100%",
                   height: "auto",
                   objectFit: "contain",
                 }} />
