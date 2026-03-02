@@ -1080,6 +1080,7 @@ export default function QuestionPaperView() {
                   fontWeight: 900,
                   whiteSpace: "nowrap",
                   color: "#000",
+                  transform: "rotate(-35deg)",
                 }}>
                   {settings.watermarkText || meta.instituteName}
                 </span>
