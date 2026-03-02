@@ -1447,7 +1447,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                     <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                       <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                        <div className="mc-block-question" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
                           <div style={{ flex: 1 }}><LatexRenderer text={q.question} /></div>
                           {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                         </div>
