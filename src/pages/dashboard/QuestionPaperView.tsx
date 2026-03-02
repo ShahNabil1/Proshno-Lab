@@ -231,8 +231,8 @@ export default function QuestionPaperView() {
         // Auto-save new paper
         autoSavePaper(parsedMeta, parsedQuestions, settings);
       }
-      sessionStorage.removeItem("viewPaperQuestions");
-      sessionStorage.removeItem("viewPaperMeta");
+      // Don't remove sessionStorage here — keep for page refresh
+      // It will be cleared on unmount (navigation away)
     } else if (paperId) {
       // Load saved paper from DB
       setCurrentPaperId(paperId);
@@ -254,6 +254,39 @@ export default function QuestionPaperView() {
         });
     }
   }, [searchParams]);
+
+  // Clear sessionStorage only when navigating away (not on refresh)
+  useEffect(() => {
+    return () => {
+      // Component unmount due to navigation — clear paper data
+      // On refresh, beforeunload fires but React unmount won't clear because the page reloads
+    };
+  }, []);
+
+  // Clear sessionStorage on navigation (popstate / route change) but not refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Mark that this is a refresh/close, not a navigation
+      sessionStorage.setItem("viewPaper_isRefresh", "true");
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    // If returning from a refresh, remove the flag
+    const isRefresh = sessionStorage.getItem("viewPaper_isRefresh");
+    if (isRefresh) {
+      sessionStorage.removeItem("viewPaper_isRefresh");
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // If unmounting without beforeunload (React navigation), clear data
+      if (!sessionStorage.getItem("viewPaper_isRefresh")) {
+        sessionStorage.removeItem("viewPaperQuestions");
+        sessionStorage.removeItem("viewPaperMeta");
+        sessionStorage.removeItem("viewPaperSettings");
+      }
+    };
+  }, []);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     if (!editingMode) return;
