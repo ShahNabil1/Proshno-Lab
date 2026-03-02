@@ -1350,7 +1350,6 @@ export default function QuestionPaperView() {
 
             // Group MCQs: separate standalone vs grouped by stimulus_group_id
             const standaloneWithStimulus: QuestionRow[] = []; // single MCQ with optional stimulus
-            const multiCompletion: QuestionRow[] = []; // বহুপদী সমাপ্তিসূচক
             const grouped = new Map<string, QuestionRow[]>();
             const standalone: QuestionRow[] = [];
 
@@ -1361,8 +1360,6 @@ export default function QuestionPaperView() {
                 grouped.get(q.stimulus_group_id)!.push(q);
               } else if (hasStimulus) {
                 standaloneWithStimulus.push(q);
-              } else if (isMultiCompletionQ(q.question)) {
-                multiCompletion.push(q);
               } else {
                 standalone.push(q);
               }
