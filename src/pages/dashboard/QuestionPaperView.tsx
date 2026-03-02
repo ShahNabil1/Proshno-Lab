@@ -231,8 +231,8 @@ export default function QuestionPaperView() {
         // Auto-save new paper
         autoSavePaper(parsedMeta, parsedQuestions, settings);
       }
-      sessionStorage.removeItem("viewPaperQuestions");
-      sessionStorage.removeItem("viewPaperMeta");
+      // Don't remove sessionStorage here — keep for page refresh
+      // It will be cleared on unmount (navigation away)
     } else if (paperId) {
       // Load saved paper from DB
       setCurrentPaperId(paperId);
