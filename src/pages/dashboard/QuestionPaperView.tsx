@@ -1388,49 +1388,105 @@ export default function QuestionPaperView() {
                 <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
 
-              {/* Regular standalone + multi-completion MCQs in unified grid */}
+              {/* Regular standalone + multi-completion MCQs */}
               {(() => {
-                // Combine standalone and multiCompletion, preserving original order
                 const allRegular = [...standalone, ...multiCompletion];
                 const mcqOrderMap = new Map(mcqQuestions.map((q, i) => [q.id, i]));
                 allRegular.sort((a, b) => (mcqOrderMap.get(a.id) ?? 0) - (mcqOrderMap.get(b.id) ?? 0));
-                
                 if (allRegular.length === 0) return null;
                 
                 const multiCompletionIds = new Set(multiCompletion.map(q => q.id));
-                const gridOnlyCount = allRegular.filter(q => !multiCompletionIds.has(q.id)).length;
-                const rowCount = Math.ceil(gridOnlyCount / settings.columns);
                 
-                let gridItemIndex = 0;
+                // Split into chunks: consecutive regular → grid, multiCompletion → full-width
+                const chunks: { type: 'grid' | 'full'; questions: typeof allRegular }[] = [];
+                let currentGridChunk: typeof allRegular = [];
                 
-                return (
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
-                    columnGap: "0", rowGap: "2px",
-                  }}>
-                    {allRegular.map((q) => {
-                      mcqNumber++;
-                      const idx = mcqNumber;
-                      const isDuplicate = duplicateIds.has(q.id);
-                      const refStr = formatRefs(q);
-                      const isMC = multiCompletionIds.has(q.id);
-                      
-                      if (isMC) {
+                allRegular.forEach(q => {
+                  if (multiCompletionIds.has(q.id)) {
+                    if (currentGridChunk.length > 0) {
+                      chunks.push({ type: 'grid', questions: [...currentGridChunk] });
+                      currentGridChunk = [];
+                    }
+                    chunks.push({ type: 'full', questions: [q] });
+                  } else {
+                    currentGridChunk.push(q);
+                  }
+                });
+                if (currentGridChunk.length > 0) {
+                  chunks.push({ type: 'grid', questions: currentGridChunk });
+                }
+                
+                // Pre-calculate numbering: assign sequential numbers to all
+                const numberMap = new Map<number, number>();
+                let tempNum = mcqNumber;
+                allRegular.forEach(q => { tempNum++; numberMap.set(q.id, tempNum); });
+                mcqNumber = tempNum;
+                
+                return chunks.map((chunk, chunkIdx) => {
+                  if (chunk.type === 'full') {
+                    const q = chunk.questions[0];
+                    const idx = numberMap.get(q.id)!;
+                    const isDuplicate = duplicateIds.has(q.id);
+                    const refStr = formatRefs(q);
+                    return (
+                      <div key={q.id} className={editableClass} style={{
+                        marginTop: "4px", marginBottom: "2px",
+                        background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                      }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                          <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                          <div style={{ flex: 1 }}>
+                            <div className="mc-block-question" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                              <div style={{ flex: 1 }}><LatexRenderer text={q.question} /></div>
+                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "2px" }}>
+                              {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                const val = q[key]; if (!val) return null;
+                                const cleaned = stripPTags(val);
+                                const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Grid chunk — column-first layout
+                  const gridQs = chunk.questions;
+                  const rowCount = Math.ceil(gridQs.length / settings.columns);
+                  return (
+                    <div key={`grid-${chunkIdx}`} style={{
+                      display: "grid",
+                      gridTemplateRows: `repeat(${rowCount}, auto)`,
+                      gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
+                      gridAutoFlow: "column",
+                      columnGap: "0", rowGap: "2px",
+                    }}>
+                      {gridQs.map((q, itemIdx) => {
+                        const idx = numberMap.get(q.id)!;
+                        const isDuplicate = duplicateIds.has(q.id);
+                        const refStr = formatRefs(q);
+                        const colIdx = Math.floor(itemIdx / rowCount);
+                        const showLeftBorder = colIdx > 0 && settings.columnDivider;
                         return (
                           <div key={q.id} className={editableClass} style={{
-                            gridColumn: `1 / -1`,
-                            marginTop: "4px", marginBottom: "2px",
+                            padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < settings.columns - 1 ? "4px" : "0",
+                            borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
                             background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                            marginBottom: "1px",
                           }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                               <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
-                                <div className="mc-block-question" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
                                   <div style={{ flex: 1 }}><LatexRenderer text={q.question} /></div>
                                   {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                                 </div>
-                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "2px" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const cleaned = stripPTags(val);
@@ -1443,46 +1499,10 @@ export default function QuestionPaperView() {
                             </div>
                           </div>
                         );
-                      }
-                      
-                      // Regular grid item — place column-first manually
-                      const colIdx = Math.floor(gridItemIndex / rowCount);
-                      const rowIdx = gridItemIndex % rowCount;
-                      gridItemIndex++;
-                      const showLeftBorder = colIdx > 0 && settings.columnDivider;
-                      
-                      return (
-                        <div key={q.id} className={editableClass} style={{
-                          gridRow: rowIdx + 1,
-                          gridColumn: colIdx + 1,
-                          padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < settings.columns - 1 ? "4px" : "0",
-                          borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
-                          background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
-                          marginBottom: "1px",
-                        }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                                <div style={{ flex: 1 }}><LatexRenderer text={q.question} /></div>
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
-                              </div>
-                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
-                                {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                                  const val = q[key]; if (!val) return null;
-                                  const cleaned = stripPTags(val);
-                                  const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                  const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                  return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
+                      })}
+                    </div>
+                  );
+                });
               })()}
 
               {/* Standalone MCQs with optional stimulus (not grouped) */}
