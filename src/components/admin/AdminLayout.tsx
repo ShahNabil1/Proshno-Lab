@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Building2,
-  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag, Package, Flag, HelpCircle, Star, ClipboardList, Wrench
+  CreditCard, MessageSquare, GraduationCap, Menu, LogOut, Settings, Tag, Package, Flag, HelpCircle, Star, ClipboardList, Wrench, BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 
 const allSidebarItems = [
   { path: "/admin", label: "ড্যাশবোর্ড", icon: LayoutDashboard, group: "ওভারভিউ" },
+  { path: "/admin/analytics", label: "এনালিটিক্স", icon: BarChart3, group: "ওভারভিউ" },
 
   { path: "/admin/classes", label: "শ্রেণী", icon: GraduationCap, group: "একাডেমিক ম্যানেজমেন্ট" },
   { path: "/admin/subjects", label: "বিষয়", icon: BookOpen, group: "একাডেমিক ম্যানেজমেন্ট" },
