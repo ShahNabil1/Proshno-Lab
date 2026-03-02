@@ -659,7 +659,8 @@ export default function QuestionCreate() {
                   {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
                   {q.type !== "descriptive" && (
                     <div className="font-medium mb-3">
-                      <LatexRenderer text={`${idx + 1}. ${q.question}`} inline />
+                      <span>{idx + 1}. </span>
+                      <LatexRenderer text={q.question} />
                     </div>
                   )}
                   {q.type === "descriptive" && (
