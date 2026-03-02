@@ -58,6 +58,23 @@ export default function AdminAnalytics() {
 
   useEffect(() => { fetchEvents(); }, [dateRange]);
 
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("analytics-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "analytics_events" },
+        (payload) => {
+          const newEvent = payload.new as AnalyticsEvent;
+          setEvents((prev) => [newEvent, ...prev].slice(0, 1000));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Unique event names for filter
   const eventNames = useMemo(() => {
     const names = new Set(events.map(e => e.event_name));
