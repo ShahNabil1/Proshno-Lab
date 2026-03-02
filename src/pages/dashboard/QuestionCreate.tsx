@@ -660,7 +660,7 @@ export default function QuestionCreate() {
                   {q.type !== "descriptive" && (
                     <div className="font-medium mb-3">
                       <span>{idx + 1}. </span>
-                      <LatexRenderer text={q.question} />
+                      <LatexRenderer text={q.question} inline />
                     </div>
                   )}
                   {q.type === "descriptive" && (
