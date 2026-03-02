@@ -1062,6 +1062,7 @@ export default function QuestionPaperView() {
               opacity: (settings.watermarkOpacity || 40) / 100,
               pointerEvents: "none",
               zIndex: 0,
+              width: "100%",
             }}>
               {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
                 <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
