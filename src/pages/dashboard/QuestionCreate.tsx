@@ -336,16 +336,13 @@ export default function QuestionCreate() {
         return /<img\s/i.test(text) || /cloudinary\.com/i.test(text) || /res\.cloudinary/i.test(text);
       });
     } else if (filterSpecial === "multi_completion") {
-      // Multiple completion: MCQs linked to a stimulus with 2+ questions sharing it
-      const stimulusCounts: Record<string, number> = {};
-      questions.forEach(q => {
-        if (q.stimulus_group_id) {
-          stimulusCounts[q.stimulus_group_id] = (stimulusCounts[q.stimulus_group_id] || 0) + 1;
-        }
+      // বহুপদী সমাপ্তিসূচক: MCQs containing Roman numeral items (i., ii., iii.)
+      result = result.filter(r => {
+        if (r.type !== "mcq") return false;
+        const stripped = r.question.replace(/<[^>]*>/g, "");
+        return (/(?:^|\s)i[.\s].*(?:^|\s)ii[.\s].*(?:^|\s)iii[.\s]/s.test(stripped)
+          || /(?:^|\s)i\).*(?:^|\s)ii\).*(?:^|\s)iii\)/s.test(stripped));
       });
-      result = result.filter(r =>
-        r.type === "mcq" && r.stimulus_group_id && (stimulusCounts[r.stimulus_group_id] || 0) >= 2
-      );
     } else if (filterSpecial === "assertion") {
       // Uniform information-based: has board refs but only 1 unique board (same info repeated)
       result = result.filter(r => {
@@ -662,7 +659,8 @@ export default function QuestionCreate() {
                   {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
                   {q.type !== "descriptive" && (
                     <div className="font-medium mb-3">
-                      <LatexRenderer text={`${idx + 1}. ${q.question}`} inline />
+                      <span>{idx + 1}. </span>
+                      <LatexRenderer text={q.question} />
                     </div>
                   )}
                   {q.type === "descriptive" && (
