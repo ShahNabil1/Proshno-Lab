@@ -206,13 +206,11 @@ export default function RichTextEditor({
 
         <button
           type="button"
-          onClick={() => {
-            const formula = prompt("সূত্র বা সমীকরণ লিখুন (LaTeX):");
-            if (formula) insertMathSymbol(formula);
-          }}
+          onClick={() => insertMathSymbol("\\therefore")}
           className="px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-accent rounded"
+          title="সুতরাং (∴)"
         >
-          সূত্রাবলি
+          সুতরাং
         </button>
 
         <Sep />
