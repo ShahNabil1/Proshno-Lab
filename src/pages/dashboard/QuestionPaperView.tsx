@@ -1306,8 +1306,8 @@ export default function QuestionPaperView() {
             // Helper: detect বহুপদী সমাপ্তিসূচক (multi-completion) questions with i., ii., iii.
             const isMultiCompletionQ = (text: string) => {
               const stripped = text.replace(/<[^>]*>/g, "");
-              return /(?:^|\s)i[.\s].*(?:^|\s)ii[.\s].*(?:^|\s)iii[.\s]/s.test(stripped)
-                || /(?:^|\s)i\).*(?:^|\s)ii\).*(?:^|\s)iii\)/s.test(stripped);
+              return /(?:^|[^a-zA-Z])i[.\s].*(?:^|[^a-zA-Z])ii[.\s].*(?:^|[^a-zA-Z])iii[.\s]/s.test(stripped)
+                || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped);
             };
 
             // Group MCQs: separate standalone vs grouped by stimulus_group_id
