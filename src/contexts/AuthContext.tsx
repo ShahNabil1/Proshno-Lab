@@ -41,43 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: window.location.origin + "/auth/callback",
-        skipBrowserRedirect: true,
       },
     });
-
-    if (error || !data?.url) return;
-
-    const popup = window.open(data.url, "oauth", "width=500,height=600");
-
-    if (!popup) {
-      window.location.href = data.url;
-      return;
-    }
-
-    const messageHandler = (event: MessageEvent) => {
-      if (event.origin === window.location.origin && event.data?.type === "oauth-complete") {
-        popup?.close();
-        window.removeEventListener("message", messageHandler);
-        window.location.reload();
-      }
-    };
-    window.addEventListener("message", messageHandler);
-
-    const pollTimer = setInterval(async () => {
-      if (popup.closed) {
-        clearInterval(pollTimer);
-        window.removeEventListener("message", messageHandler);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setSession(session);
-          setUser(session.user);
-        }
-      }
-    }, 500);
   };
 
   const signOut = async () => {
