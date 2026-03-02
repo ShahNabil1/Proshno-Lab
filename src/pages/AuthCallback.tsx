@@ -1,22 +1,17 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AuthCallback() {
+  const navigate = useNavigate();
+
   useEffect(() => {
-    // Wait for Supabase to process the OAuth tokens from the URL hash
     supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        // Notify the opener window and close this popup
-        if (window.opener) {
-          window.opener.postMessage({ type: "oauth-complete" }, window.location.origin);
-          window.close();
-        } else {
-          // Not a popup, redirect to dashboard
-          window.location.href = "/dashboard";
-        }
+        navigate("/dashboard", { replace: true });
       }
     });
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
