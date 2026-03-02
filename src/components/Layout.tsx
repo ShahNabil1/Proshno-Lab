@@ -11,6 +11,7 @@ import upayLogo from "@/assets/upay-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { analytics } from "@/lib/analytics";
 
 
 
@@ -38,6 +39,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
   useEffect(() => {
     setMobileOpen(false);
+    analytics.pageView(location.pathname, document.title);
   }, [location.pathname]);
 
   const headerBg = scrolled ?

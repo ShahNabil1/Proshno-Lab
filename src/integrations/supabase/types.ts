@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          client_timestamp: string | null
+          created_at: string
+          event_name: string
+          id: number
+          ip_address: string | null
+          page_path: string | null
+          page_url: string | null
+          params: Json | null
+          referrer: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          client_timestamp?: string | null
+          created_at?: string
+          event_name: string
+          id?: number
+          ip_address?: string | null
+          page_path?: string | null
+          page_url?: string | null
+          params?: Json | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          client_timestamp?: string | null
+          created_at?: string
+          event_name?: string
+          id?: number
+          ip_address?: string | null
+          page_path?: string | null
+          page_url?: string | null
+          params?: Json | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string
