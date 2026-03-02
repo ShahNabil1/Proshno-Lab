@@ -340,8 +340,8 @@ export default function QuestionCreate() {
       result = result.filter(r => {
         if (r.type !== "mcq") return false;
         const stripped = r.question.replace(/<[^>]*>/g, "");
-        return (/(?:^|\s)i[.\s].*(?:^|\s)ii[.\s].*(?:^|\s)iii[.\s]/s.test(stripped)
-          || /(?:^|\s)i\).*(?:^|\s)ii\).*(?:^|\s)iii\)/s.test(stripped));
+        return (/(?:^|[^a-zA-Z])i[.\s].*(?:^|[^a-zA-Z])ii[.\s].*(?:^|[^a-zA-Z])iii[.\s]/s.test(stripped)
+          || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped));
       });
     } else if (filterSpecial === "assertion") {
       // Uniform information-based: has board refs but only 1 unique board (same info repeated)
