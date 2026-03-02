@@ -342,6 +342,18 @@
 [data-print-paper] .latex-renderer br {
   display: none;
 }
+/* Restore block <p> for multi-completion (বহুপদী সমাপ্তিসূচক) questions */
+[data-print-paper] .mc-block-question .latex-renderer {
+  display: block;
+}
+[data-print-paper] .mc-block-question .latex-renderer p {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+[data-print-paper] .mc-block-question .latex-renderer br {
+  display: initial;
+}
 /* Restore block for tables/images inside paper latex */
 [data-print-paper] .latex-renderer table {
   display: table;
