@@ -1625,7 +1625,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                             </div>
                           ) : (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                              <span><LatexRenderer text={q.question} /></span>
+                              <span><LatexRenderer text={stripPTags(q.question)} /></span>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
                             </div>
                           )}
@@ -1785,7 +1785,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                       )}
                       {!dData && (
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                          <span><LatexRenderer text={q.question} /></span>
+                          <span><LatexRenderer text={stripPTags(q.question)} /></span>
                         </div>
                       )}
                           {/* Descriptive Answers when answer sheet is on */}
