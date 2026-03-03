@@ -67,15 +67,15 @@ const padBangla = (n: number): string => {
   return s.length < 2 ? "০" + s : s;
 };
 
-/* Strip wrapping <p> tags from option values to keep them inline */
+/* Strip wrapping <p> tags from option values, preserving line breaks */
 const stripPTags = (html: string): string => {
-  // Remove all wrapping <p>...</p> tags, handle multiple paragraphs
+  // Convert </p><p> boundaries to <br> to preserve line breaks
   let cleaned = html
-    .replace(/<p[^>]*>/gi, "")
-    .replace(/<\/p>/gi, " ")
+    .replace(/<\/p>\s*<p[^>]*>/gi, "<br/>")
+    .replace(/^<p[^>]*>/i, "")
+    .replace(/<\/p>$/i, "")
     .trim();
-  // Remove trailing/leading whitespace artifacts
-  return cleaned.replace(/\s+/g, " ").trim();
+  return cleaned;
 };
 
 export default function QuestionPaperView() {
