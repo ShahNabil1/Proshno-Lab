@@ -1568,10 +1568,10 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                         </span>
                         {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                       </div>
-                      {settings.showAnswerSheet && q.explanation && (
+                      {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
                           <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
-                          <LatexRenderer text={q.explanation} />
+                          <LatexRenderer text={q.correct_answer || q.explanation || ""} />
                         </div>
                       )}
                     </div>
