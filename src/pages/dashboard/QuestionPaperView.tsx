@@ -1561,24 +1561,19 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                   const num = idx + 1;
                   const refStr = formatRefs(q);
                   return (
-                    <div
-                      key={q.id}
-                      className={editableClass}
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}
-                      data-editable={`short-${q.id}`}
-                      onClick={(e) => handleEditableClick(e, q.id)}
-                      suppressContentEditableWarning
-                    >
-                      <span>
-                        <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
-                      </span>
-                      {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
-                    {settings.showAnswerSheet && q.explanation && (
-                      <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
-                        <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
-                        <LatexRenderer text={q.explanation} />
+                    <div key={q.id} className={editableClass} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}>
+                        <span>
+                          <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
+                        </span>
+                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                       </div>
-                    )}
+                      {settings.showAnswerSheet && q.explanation && (
+                        <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
+                          <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
+                          <LatexRenderer text={q.explanation} />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
