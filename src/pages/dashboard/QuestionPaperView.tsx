@@ -1409,7 +1409,7 @@ export default function QuestionPaperView() {
                           <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                              <div style={{ flex: 1 }}><LatexRenderer text={stripPTags(q.question)} /></div>
+                              <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
                               {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
@@ -1446,7 +1446,7 @@ export default function QuestionPaperView() {
                       <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                         <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                         <div style={{ flex: 1 }}>
-                          <div><LatexRenderer text={stripPTags(q.question)} /></div>
+                          <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
                           <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                             {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                               const val = q[key]; if (!val) return null;
@@ -1500,7 +1500,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                             <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                               <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
-                                <span><LatexRenderer text={stripPTags(q.question)} /></span>
+                                <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
                                 <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
