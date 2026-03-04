@@ -1041,7 +1041,6 @@ export default function QuestionPaperView() {
           className="font-paper"
           ref={paperRef}
           data-print-paper
-          data-paper-size={settings.paperSize}
           style={{
             width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
             fontSize: `${settings.fontSize}px`,
