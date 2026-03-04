@@ -1860,7 +1860,8 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
           })()}
 
           {/* Address moved to header */}
-        </div>
+          </div> {/* end inner padding wrapper */}
+        </div> {/* end data-print-paper */}
         </div> {/* end scaling wrapper */}
       </div>
 
