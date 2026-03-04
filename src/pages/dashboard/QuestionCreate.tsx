@@ -637,7 +637,8 @@ export default function QuestionCreate() {
           </div>
 
           <div className="space-y-4">
-            {filteredQuestions.map((q, idx) => (
+            {paginatedQuestions.map((q, idx) => {
+              const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
               <Card key={q.id} className={`transition-colors cursor-pointer ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`} onClick={() => toggleQuestion(q.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
