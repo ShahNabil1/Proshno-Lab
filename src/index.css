@@ -309,7 +309,6 @@
   [role="alert"] {
     display: none !important;
   }
-}
 
 /* Dynamic @page size is now injected via JS in handleDownload */
 
