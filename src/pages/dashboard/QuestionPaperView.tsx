@@ -166,6 +166,18 @@ export default function QuestionPaperView() {
     return map[settings.paperSize];
   }, [settings.paperSize]);
 
+  // Page height in px based on paper aspect ratio (proportional to width)
+  const paperHeightPx = useMemo(() => {
+    // width(mm) → height(mm): A4=210×297, Letter=216×279, Legal=216×356, A5=148×210
+    const map: Record<PaperSize, number> = {
+      A4: Math.round(780 * 297 / 210),    // ~1103
+      Letter: Math.round(800 * 279 / 216), // ~1033
+      Legal: Math.round(800 * 356 / 216),  // ~1319
+      A5: Math.round(560 * 210 / 148),     // ~795
+    };
+    return map[settings.paperSize];
+  }, [settings.paperSize]);
+
   const paperScale = useMemo(() => {
     if (!containerWidth || containerWidth >= paperWidthPx) return 1;
     return containerWidth / paperWidthPx;
