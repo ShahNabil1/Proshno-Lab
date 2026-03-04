@@ -229,11 +229,23 @@
     top: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 28px 44px !important;
+    padding: 20px 36px !important;
     margin: 0 !important;
     box-shadow: none !important;
     font-family: 'SolaimanLipi', 'Arial', sans-serif !important;
     transform: none !important;
+    overflow: visible !important;
+  }
+
+  /* A5 specific: reduce font size and padding to fit smaller page */
+  [data-print-paper][data-paper-size="A5"] {
+    padding: 12px 20px !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+  [data-print-paper][data-paper-size="A5"] img:not([width]) {
+    max-width: 60px !important;
+    max-height: 50px !important;
   }
 
   /* Reset the scaling wrapper during print */
