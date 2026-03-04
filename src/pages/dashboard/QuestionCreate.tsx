@@ -81,7 +81,7 @@ export default function QuestionCreate() {
     subjectId: "",
     chapterIds: [] as string[],
     type: "mcq",
-    count: "10",
+    count: "100",
   });
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
