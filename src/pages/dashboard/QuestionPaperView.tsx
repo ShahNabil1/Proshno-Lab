@@ -380,7 +380,7 @@ export default function QuestionPaperView() {
     document.getElementById("dynamic-print-page-size")?.remove();
     const styleEl = document.createElement("style");
     styleEl.id = "dynamic-print-page-size";
-    styleEl.textContent = `@page { size: ${pageSizeMap[settings.paperSize]} portrait !important; margin: 12mm 15mm !important; }`;
+    styleEl.textContent = `@media print { @page { size: ${pageSizeMap[settings.paperSize]} portrait !important; } }`;
     document.head.appendChild(styleEl);
 
     // Wait for images/LaTeX to finish rendering
