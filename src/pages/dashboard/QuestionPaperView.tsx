@@ -1060,10 +1060,9 @@ export default function QuestionPaperView() {
             lineHeight: 1.35,
             userSelect: "none",
             WebkitUserSelect: "none",
-            padding: isMobile ? "12px 10px" : "28px 44px",
+            padding: 0,
             color: "#000",
             background: "#fff",
-            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             fontFamily: settings.fontLang === "solaimanlipi"
               ? "'SolaimanLipi', 'Arial', sans-serif"
               : settings.fontLang === "kalpurush"
@@ -1073,10 +1072,28 @@ export default function QuestionPaperView() {
               : "'SolaimanLipi', 'Arial', sans-serif",
             textAlign: settings.textAlign,
             position: "relative",
-            overflow: "hidden",
+            overflow: "visible",
+            // Repeating background to show page boundaries
+            backgroundImage: isMobile ? 'none' : `
+              linear-gradient(to bottom,
+                #fff 0px,
+                #fff ${paperHeightPx - 1}px,
+                #d1d5db ${paperHeightPx - 1}px,
+                #d1d5db ${paperHeightPx}px,
+                transparent ${paperHeightPx}px,
+                transparent ${paperHeightPx + 12}px,
+                #fff ${paperHeightPx + 12}px
+              )
+            `,
+            backgroundSize: isMobile ? 'auto' : `100% ${paperHeightPx + 12}px`,
+            backgroundRepeat: 'repeat-y',
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
           }}
         >
-          {/* ===== WATERMARK ===== */}
+          {/* Inner padding wrapper */}
+          <div style={{
+            padding: isMobile ? "12px 10px" : "28px 44px",
+          }}>
           {settings.showWatermark && (
             <div style={{
               position: "absolute",
