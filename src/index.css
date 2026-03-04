@@ -260,13 +260,23 @@
     height: auto !important;
   }
 
-  /* Prevent question blocks from splitting across pages */
-  [data-print-paper] [data-editable] {
+  /* Prevent small question blocks (MCQ, Short) from splitting */
+  [data-print-paper] [data-editable^="mcq-"],
+  [data-print-paper] [data-editable^="short-"],
+  [data-print-paper] [data-editable="mcq-title"],
+  [data-print-paper] [data-editable="short-title"] {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  /* Section headers (title + marks) must stay with first question */
+  /* Allow large blocks (CQ, Descriptive) to split across pages */
+  [data-print-paper] [data-editable^="cq-"],
+  [data-print-paper] [data-editable^="desc-"] {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  /* Section headers must stay with next content */
   [data-print-paper] [data-section-header] {
     page-break-after: avoid !important;
     break-after: avoid !important;
