@@ -210,6 +210,10 @@
 
 /* ===== PRINT / PDF EXPORT ===== */
 @media print {
+  /* Page margins - size is set dynamically via JS */
+  @page {
+    margin: 12mm 15mm;
+  }
 
   /* Hide everything except the paper */
   body * {

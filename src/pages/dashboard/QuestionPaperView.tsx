@@ -380,7 +380,6 @@ export default function QuestionPaperView() {
     document.getElementById("dynamic-print-page-size")?.remove();
     const styleEl = document.createElement("style");
     styleEl.id = "dynamic-print-page-size";
-    // Use @page at top level (not inside @media print) — @page is print-only by spec
     styleEl.textContent = `@page { size: ${pageSizeMap[settings.paperSize]} portrait !important; margin: 12mm 15mm !important; }`;
     document.head.appendChild(styleEl);
 
@@ -394,10 +393,10 @@ export default function QuestionPaperView() {
     );
 
     Promise.all(imagePromises).then(() => {
-      // Delay to ensure dynamic @page style is parsed by browser before print dialog
+      // Small delay for KaTeX rendering
       setTimeout(() => {
         window.print();
-      }, 500);
+      }, 300);
     });
   };
 
