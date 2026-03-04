@@ -256,11 +256,6 @@
     margin-bottom: 0 !important;
     overflow: visible !important;
   }
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 0 !important;
-  }
 
   /* Prevent question blocks from splitting across pages */
   [data-print-paper] [data-editable] {
