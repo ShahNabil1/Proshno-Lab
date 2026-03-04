@@ -369,19 +369,14 @@ export default function QuestionPaperView() {
     });
     handleCloseToolbar();
 
-    // Inject dynamic @page size style
+    // Set dynamic page size via data attribute on <html>
     const pageSizeMap: Record<PaperSize, string> = {
       A4: "210mm 297mm",
       Letter: "8.5in 11in",
       Legal: "8.5in 14in",
       A5: "148mm 210mm",
     };
-    // Remove any previous dynamic print style
-    document.getElementById("dynamic-print-page-size")?.remove();
-    const styleEl = document.createElement("style");
-    styleEl.id = "dynamic-print-page-size";
-    styleEl.textContent = `@media print { @page { size: ${pageSizeMap[settings.paperSize]} portrait !important; } }`;
-    document.head.appendChild(styleEl);
+    document.documentElement.setAttribute("data-print-size", pageSizeMap[settings.paperSize]);
 
     // Wait for images/LaTeX to finish rendering
     const images = paperRef.current.querySelectorAll("img");
