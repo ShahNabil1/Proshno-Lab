@@ -232,12 +232,19 @@
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
-    padding: 20px 36px !important;
+    padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
     font-family: 'SolaimanLipi', 'Arial', sans-serif !important;
     transform: none !important;
     overflow: visible !important;
+    background-image: none !important;
+    background-color: #fff !important;
+  }
+
+  /* Inner padding wrapper in print */
+  [data-print-paper] > div:first-child {
+    padding: 20px 36px !important;
   }
 
   /* A5 specific: reduce font size and padding to fit smaller page */
