@@ -371,23 +371,18 @@ export default function QuestionPaperView() {
 
     // Inject dynamic @page size style
     const pageSizeMap: Record<PaperSize, string> = {
-      A4: "A4 portrait",
-      Letter: "letter portrait",
-      Legal: "legal portrait",
-      A5: "A5 portrait",
+      A4: "210mm 297mm",
+      Letter: "8.5in 11in",
+      Legal: "8.5in 14in",
+      A5: "148mm 210mm",
     };
-    // Remove ALL existing dynamic print styles to avoid conflicts
-    document.querySelectorAll("[data-dynamic-print-style]").forEach(el => el.remove());
+    // Remove any previous dynamic print style
     document.getElementById("dynamic-print-page-size")?.remove();
-    
     const styleEl = document.createElement("style");
     styleEl.id = "dynamic-print-page-size";
-    styleEl.setAttribute("data-dynamic-print-style", "true");
-    // @page size property uses CSS named sizes (A4, letter, legal) — no !important needed
-    styleEl.textContent = `@page { size: ${pageSizeMap[settings.paperSize]}; margin: 12mm 15mm; }`;
+    // Use @page at top level (not inside @media print) — @page is print-only by spec
+    styleEl.textContent = `@page { size: ${pageSizeMap[settings.paperSize]} portrait !important; margin: 12mm 15mm !important; }`;
     document.head.appendChild(styleEl);
-    
-    console.log("[Print] Paper size set to:", settings.paperSize, "->", pageSizeMap[settings.paperSize]);
 
     // Wait for images/LaTeX to finish rendering
     const images = paperRef.current.querySelectorAll("img");
