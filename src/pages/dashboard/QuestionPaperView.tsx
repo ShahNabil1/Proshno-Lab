@@ -1049,7 +1049,7 @@ export default function QuestionPaperView() {
               : "'SolaimanLipi', 'Arial', sans-serif",
             textAlign: settings.textAlign,
             position: "relative",
-            overflow: "hidden",
+            overflow: "visible",
           }}
         >
           {/* ===== WATERMARK ===== */}
