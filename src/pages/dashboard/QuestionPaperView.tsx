@@ -1365,7 +1365,7 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
