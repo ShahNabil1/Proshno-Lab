@@ -273,6 +273,14 @@
     break-inside: avoid;
   }
 
+  /* Section headers (title + marks) must stay with first question */
+  [data-print-paper] [data-section-header] {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
   /* Prevent orphan lines */
   [data-print-paper] p,
   [data-print-paper] div {
