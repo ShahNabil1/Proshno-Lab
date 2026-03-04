@@ -359,6 +359,11 @@ export default function QuestionCreate() {
   };
 
   const filteredQuestions = getFilteredQuestions();
+  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterTopicIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
