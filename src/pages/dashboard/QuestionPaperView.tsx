@@ -1365,7 +1365,7 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
@@ -1535,7 +1535,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
               : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`;
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="short-title"
@@ -1585,7 +1585,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
           {/* ===== CQ SECTION (3rd) ===== */}
           {cqQuestions.length > 0 && (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="cq-title"
@@ -1716,7 +1716,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
               : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`;
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
                 <span
                   className={editableClass}
                   data-editable="desc-title"
