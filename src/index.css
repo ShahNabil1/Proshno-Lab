@@ -309,21 +309,8 @@
   [role="alert"] {
     display: none !important;
   }
-}
 
-/* Dynamic @page sizes using CSS custom properties set via JS */
-:root[data-print-size="210mm 297mm"] {
-  @media print { @page { size: 210mm 297mm portrait; } }
-}
-:root[data-print-size="8.5in 11in"] {
-  @media print { @page { size: 8.5in 11in portrait; } }
-}
-:root[data-print-size="8.5in 14in"] {
-  @media print { @page { size: 8.5in 14in portrait; } }
-}
-:root[data-print-size="148mm 210mm"] {
-  @media print { @page { size: 148mm 210mm portrait; } }
-}
+/* Dynamic @page size is now injected via JS in handleDownload */
 
 /* Paper view: normalize Tiptap HTML inside paper */
 [data-print-paper] .latex-renderer {

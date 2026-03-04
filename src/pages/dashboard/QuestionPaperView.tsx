@@ -369,14 +369,19 @@ export default function QuestionPaperView() {
     });
     handleCloseToolbar();
 
-    // Set dynamic page size via data attribute on <html>
+    // Inject dynamic @page size style
     const pageSizeMap: Record<PaperSize, string> = {
       A4: "210mm 297mm",
       Letter: "8.5in 11in",
       Legal: "8.5in 14in",
       A5: "148mm 210mm",
     };
-    document.documentElement.setAttribute("data-print-size", pageSizeMap[settings.paperSize]);
+    // Remove any previous dynamic print style
+    document.getElementById("dynamic-print-page-size")?.remove();
+    const styleEl = document.createElement("style");
+    styleEl.id = "dynamic-print-page-size";
+    styleEl.textContent = `@media print { @page { size: ${pageSizeMap[settings.paperSize]} portrait !important; } }`;
+    document.head.appendChild(styleEl);
 
     // Wait for images/LaTeX to finish rendering
     const images = paperRef.current.querySelectorAll("img");
