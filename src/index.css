@@ -293,12 +293,10 @@
     font-weight: 600;
   }
   [data-print-paper] img {
-    max-width: 50px;
-    max-height: 45px;
-    height: auto;
-    width: auto;
+    max-width: 100% !important;
+    height: auto !important;
     object-fit: contain;
-    display: block;
+    display: inline-block;
     margin: 4px 0;
   }
 
