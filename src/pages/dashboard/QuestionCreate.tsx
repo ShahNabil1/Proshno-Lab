@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save, SlidersHorizontal } from "lucide-react";
+import { CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -113,7 +113,8 @@ export default function QuestionCreate() {
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   // Report modal states
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportQuestionId, setReportQuestionId] = useState<number | null>(null);
@@ -358,6 +359,11 @@ export default function QuestionCreate() {
   };
 
   const filteredQuestions = getFilteredQuestions();
+  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterTopicIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
@@ -631,7 +637,9 @@ export default function QuestionCreate() {
           </div>
 
           <div className="space-y-4">
-            {filteredQuestions.map((q, idx) => (
+            {paginatedQuestions.map((q, idx) => {
+              const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
+              return (
               <Card key={q.id} className={`transition-colors cursor-pointer ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`} onClick={() => toggleQuestion(q.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -656,17 +664,15 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
                   {q.type !== "descriptive" && (
                     <div className="font-medium mb-3 flex items-baseline gap-0">
-                      <span className="shrink-0">{idx + 1}. </span>
+                      <span className="shrink-0">{globalIdx + 1}. </span>
                       <div className="flex-1"><LatexRenderer text={q.question} /></div>
                     </div>
                   )}
                   {q.type === "descriptive" && (
-                    <span className="font-medium">{idx + 1}. </span>
+                    <span className="font-medium">{globalIdx + 1}. </span>
                   )}
-                  {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
                       {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
@@ -682,7 +688,6 @@ export default function QuestionCreate() {
                       })}
                     </div>
                   )}
-                  {/* CQ / Descriptive sub-questions */}
                   {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
                     const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
                     const subFields = q.type === "descriptive"
@@ -709,11 +714,60 @@ export default function QuestionCreate() {
                   })()}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
             {filteredQuestions.length === 0 && (
               <p className="text-center text-muted-foreground py-8">কোনো প্রশ্ন পাওয়া যায়নি</p>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> আগের
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, i, arr) => {
+                    const prev = arr[i - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    return (
+                      <span key={p} className="flex items-center gap-1">
+                        {showEllipsis && <span className="px-1 text-muted-foreground">...</span>}
+                        <Button
+                          variant={p === currentPage ? "default" : "outline"}
+                          size="sm"
+                          className="w-9 h-9 p-0"
+                          onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        >
+                          {p}
+                        </Button>
+                      </span>
+                    );
+                  })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
+                পরের <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+          {filteredQuestions.length > 0 && (
+            <p className="text-center text-xs text-muted-foreground pb-2">
+              মোট {filteredQuestions.length}টি প্রশ্নের মধ্যে {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuestions.length)} দেখাচ্ছে
+            </p>
+          )}
         </div>
 
         {/* Right sidebar - Advanced Filter */}
