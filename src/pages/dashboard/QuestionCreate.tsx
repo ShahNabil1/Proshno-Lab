@@ -720,6 +720,54 @@ export default function QuestionCreate() {
               <p className="text-center text-muted-foreground py-8">কোনো প্রশ্ন পাওয়া যায়নি</p>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> আগের
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, i, arr) => {
+                    const prev = arr[i - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    return (
+                      <span key={p} className="flex items-center gap-1">
+                        {showEllipsis && <span className="px-1 text-muted-foreground">...</span>}
+                        <Button
+                          variant={p === currentPage ? "default" : "outline"}
+                          size="sm"
+                          className="w-9 h-9 p-0"
+                          onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        >
+                          {p}
+                        </Button>
+                      </span>
+                    );
+                  })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
+                পরের <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+          {filteredQuestions.length > 0 && (
+            <p className="text-center text-xs text-muted-foreground pb-2">
+              মোট {filteredQuestions.length}টি প্রশ্নের মধ্যে {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuestions.length)} দেখাচ্ছে
+            </p>
+          )}
         </div>
 
         {/* Right sidebar - Advanced Filter */}
