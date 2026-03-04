@@ -166,18 +166,6 @@ export default function QuestionPaperView() {
     return map[settings.paperSize];
   }, [settings.paperSize]);
 
-  // Page height in px based on paper aspect ratio (proportional to width)
-  const paperHeightPx = useMemo(() => {
-    // width(mm) → height(mm): A4=210×297, Letter=216×279, Legal=216×356, A5=148×210
-    const map: Record<PaperSize, number> = {
-      A4: Math.round(780 * 297 / 210),    // ~1103
-      Letter: Math.round(800 * 279 / 216), // ~1033
-      Legal: Math.round(800 * 356 / 216),  // ~1319
-      A5: Math.round(560 * 210 / 148),     // ~795
-    };
-    return map[settings.paperSize];
-  }, [settings.paperSize]);
-
   const paperScale = useMemo(() => {
     if (!containerWidth || containerWidth >= paperWidthPx) return 1;
     return containerWidth / paperWidthPx;
@@ -1060,9 +1048,10 @@ export default function QuestionPaperView() {
             lineHeight: 1.35,
             userSelect: "none",
             WebkitUserSelect: "none",
-            padding: 0,
+            padding: isMobile ? "12px 10px" : "28px 44px",
             color: "#000",
             background: "#fff",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             fontFamily: settings.fontLang === "solaimanlipi"
               ? "'SolaimanLipi', 'Arial', sans-serif"
               : settings.fontLang === "kalpurush"
@@ -1072,28 +1061,10 @@ export default function QuestionPaperView() {
               : "'SolaimanLipi', 'Arial', sans-serif",
             textAlign: settings.textAlign,
             position: "relative",
-            overflow: "visible",
-            // Repeating background to show page boundaries
-            backgroundImage: isMobile ? 'none' : `
-              linear-gradient(to bottom,
-                #fff 0px,
-                #fff ${paperHeightPx - 1}px,
-                #d1d5db ${paperHeightPx - 1}px,
-                #d1d5db ${paperHeightPx}px,
-                transparent ${paperHeightPx}px,
-                transparent ${paperHeightPx + 12}px,
-                #fff ${paperHeightPx + 12}px
-              )
-            `,
-            backgroundSize: isMobile ? 'auto' : `100% ${paperHeightPx + 12}px`,
-            backgroundRepeat: 'repeat-y',
-            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
+            overflow: "hidden",
           }}
         >
-          {/* Inner padding wrapper */}
-          <div style={{
-            padding: isMobile ? "12px 10px" : "28px 44px",
-          }}>
+          {/* ===== WATERMARK ===== */}
           {settings.showWatermark && (
             <div style={{
               position: "absolute",
@@ -1860,8 +1831,7 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
           })()}
 
           {/* Address moved to header */}
-          </div> {/* end inner padding wrapper */}
-        </div> {/* end data-print-paper */}
+        </div>
         </div> {/* end scaling wrapper */}
       </div>
 
