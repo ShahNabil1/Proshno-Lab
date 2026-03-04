@@ -639,6 +639,7 @@ export default function QuestionCreate() {
           <div className="space-y-4">
             {paginatedQuestions.map((q, idx) => {
               const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
+              return (
               <Card key={q.id} className={`transition-colors cursor-pointer ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`} onClick={() => toggleQuestion(q.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -663,17 +664,15 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  {/* For descriptive, don't show q.question as it duplicates desc_q_ka */}
                   {q.type !== "descriptive" && (
                     <div className="font-medium mb-3 flex items-baseline gap-0">
-                      <span className="shrink-0">{idx + 1}. </span>
+                      <span className="shrink-0">{globalIdx + 1}. </span>
                       <div className="flex-1"><LatexRenderer text={q.question} /></div>
                     </div>
                   )}
                   {q.type === "descriptive" && (
-                    <span className="font-medium">{idx + 1}. </span>
+                    <span className="font-medium">{globalIdx + 1}. </span>
                   )}
-                  {/* MCQ options */}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
                       {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
@@ -689,7 +688,6 @@ export default function QuestionCreate() {
                       })}
                     </div>
                   )}
-                  {/* CQ / Descriptive sub-questions */}
                   {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
                     const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
                     const subFields = q.type === "descriptive"
@@ -716,7 +714,8 @@ export default function QuestionCreate() {
                   })()}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
             {filteredQuestions.length === 0 && (
               <p className="text-center text-muted-foreground py-8">কোনো প্রশ্ন পাওয়া যায়নি</p>
             )}
