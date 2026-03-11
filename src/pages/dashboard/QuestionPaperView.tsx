@@ -1613,17 +1613,15 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(num)}।</span>
                         <div style={{ flex: 1 }}>
-                          {q.stimulus_text ? (
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                              <LatexRenderer text={q.stimulus_text} />
-                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
-                            </div>
-                          ) : (
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                              <span className="mc-block-question"><LatexRenderer text={q.question} /></span>
-                              {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
-                            </div>
-                          )}
+                          {(() => {
+                            const stemText = cData?.stem || q.stimulus_text || q.question;
+                            return (
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                                <span className="mc-block-question"><LatexRenderer text={stemText} /></span>
+                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
+                              </div>
+                            );
+                          })()}
                           {subQuestions.length > 0 && (
                             <div>
                               {subQuestions.map((sq: any, si: number) => {
