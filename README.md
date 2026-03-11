@@ -1,73 +1,118 @@
-# Welcome to your Lovable project
+# eExamApp — বাংলা প্রশ্নপত্র তৈরির প্ল্যাটফর্ম
 
-## Project info
+![eExamApp](https://www.eexamapp.com/og-image.png)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🌐 Live Website
 
-## How can I edit this code?
+**[https://www.eexamapp.com/](https://www.eexamapp.com/)**
 
-There are several ways of editing your application.
+## 📋 প্রজেক্ট সম্পর্কে
 
-**Use Lovable**
+**eExamApp** হলো বাংলাদেশের শিক্ষকদের জন্য তৈরি একটি পূর্ণাঙ্গ প্রশ্নপত্র তৈরির ওয়েব অ্যাপ্লিকেশন। এই প্ল্যাটফর্মের মাধ্যমে শিক্ষকরা সহজেই বহুনির্বাচনী (MCQ), সংক্ষিপ্ত (Short), সৃজনশীল (CQ) এবং বর্ণনামূলক প্রশ্ন তৈরি, সংরক্ষণ এবং প্রশ্নপত্র জেনারেট করতে পারেন।
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### ✨ প্রধান বৈশিষ্ট্যসমূহ
 
-Changes made via Lovable will be committed automatically to this repo.
+- **প্রশ্ন তৈরি ও সংরক্ষণ** — MCQ, সংক্ষিপ্ত, সৃজনশীল ও বর্ণনামূলক প্রশ্ন তৈরি করুন
+- **স্বয়ংক্রিয় প্রশ্নপত্র জেনারেশন** — অধ্যায়, বিষয় ও শ্রেণি অনুযায়ী প্রশ্নপত্র তৈরি করুন
+- **LaTeX সাপোর্ট** — গাণিতিক সমীকরণ ও সূত্র সহজেই লিখুন
+- **Rich Text Editor** — টেবিল, ছবি, লিংক সহ সম্পূর্ণ ফরম্যাটিং সাপোর্ট
+- **বোর্ড ও বিশ্ববিদ্যালয় রেফারেন্স** — প্রশ্নে বোর্ড পরীক্ষা ও ভর্তি পরীক্ষার রেফারেন্স যুক্ত করুন
+- **প্রিন্ট-রেডি প্রশ্নপত্র** — সরাসরি প্রিন্ট বা PDF ডাউনলোড করুন
+- **ক্লাউড ব্যাকআপ** — আপনার সকল প্রশ্ন ক্লাউডে সুরক্ষিত থাকে
+- **প্রতিষ্ঠান ব্যবস্থাপনা** — আপনার শিক্ষা প্রতিষ্ঠানের তথ্য সংরক্ষণ করুন
+- **সাবস্ক্রিপশন প্যাকেজ** — বিভিন্ন শ্রেণি ও বিষয়ের জন্য আলাদা প্যাকেজ
+- **সাজেশন সিস্টেম** — পরীক্ষার সাজেশন তৈরি ও শেয়ার করুন
+- **রিভিউ ও ফিডব্যাক** — ব্যবহারকারীদের মতামত ও রিভিউ সিস্টেম
+- **অ্যাডমিন ড্যাশবোর্ড** — সম্পূর্ণ অ্যাডমিন প্যানেল সহ ব্যবস্থাপনা
 
-**Use your preferred IDE**
+### 🎯 কাদের জন্য?
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- স্কুল ও কলেজের শিক্ষক
+- কোচিং সেন্টারের প্রশিক্ষক
+- প্রাইভেট টিউটর
+- শিক্ষা প্রতিষ্ঠানের পরীক্ষা বিভাগ
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠️ প্রযুক্তি
 
-Follow these steps:
+এই প্রজেক্টে ব্যবহৃত প্রযুক্তিসমূহ:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend:** React, TypeScript, Vite
+- **Styling:** Tailwind CSS, shadcn/ui
+- **Backend:** Supabase (Database, Auth, Edge Functions, Storage)
+- **Rich Text:** Tiptap Editor
+- **Math Rendering:** KaTeX
+- **Charts:** Recharts
+- **Animation:** Framer Motion
+- **Routing:** React Router
+- **State Management:** TanStack React Query
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 লোকাল সেটআপ
 
-# Step 3: Install the necessary dependencies.
-npm i
+লোকালি চালাতে চাইলে নিচের ধাপগুলো অনুসরণ করুন:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### প্রয়োজনীয়তা
+
+- Node.js (v18+)
+- npm বা bun
+
+### ইনস্টলেশন
+
+```bash
+# রিপোজিটরি ক্লোন করুন
+git clone https://github.com/eExamapp/eexamapp.git
+
+# প্রজেক্ট ডিরেক্টরিতে যান
+cd eexamapp
+
+# ডিপেন্ডেন্সি ইনস্টল করুন
+npm install
+
+# ডেভেলপমেন্ট সার্ভার চালু করুন
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+অ্যাপটি `http://localhost:5173` এ চালু হবে।
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### এনভায়রনমেন্ট ভেরিয়েবল
 
-**Use GitHub Codespaces**
+`.env` ফাইলে নিচের ভেরিয়েবলগুলো সেট করুন:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## What technologies are used for this project?
+## 📁 প্রজেক্ট স্ট্রাকচার
 
-This project is built with:
+```
+src/
+├── components/       # রিইউজেবল কম্পোনেন্ট
+│   ├── admin/        # অ্যাডমিন প্যানেল কম্পোনেন্ট
+│   ├── dashboard/    # ড্যাশবোর্ড কম্পোনেন্ট
+│   ├── icons/        # কাস্টম আইকন
+│   └── ui/           # shadcn/ui কম্পোনেন্ট
+├── contexts/         # React Context (Auth)
+├── data/             # স্ট্যাটিক ডেটা
+├── hooks/            # কাস্টম হুকস
+├── integrations/     # Supabase ইন্টিগ্রেশন
+├── lib/              # ইউটিলিটি ফাংশন
+├── pages/            # পেইজ কম্পোনেন্ট
+│   ├── admin/        # অ্যাডমিন পেইজ
+│   └── dashboard/    # ড্যাশবোর্ড পেইজ
+└── assets/           # ছবি ও অ্যাসেট
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 👨‍💻 ডেভেলপার
 
-## How can I deploy this project?
+**Shahriar Nabil**
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- 🌐 Portfolio: [shahnabil.com](https://www.shahnabil.com/)
+- 📧 যোগাযোগ: [shahnabil.com](https://www.shahnabil.com/) এ যোগাযোগ করুন
 
-## Can I connect a custom domain to my Lovable project?
+## 📄 লাইসেন্স
 
-Yes, you can!
+এই প্রজেক্টটি প্রাইভেট। সর্বস্বত্ব সংরক্ষিত © 2025 eExamApp।
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**eExamApp** দিয়ে সহজেই প্রশ্নপত্র তৈরি করুন! 🎓
