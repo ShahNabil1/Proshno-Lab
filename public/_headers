@@ -1,0 +1,2 @@
+/*
+  Content-Security-Policy: frame-ancestors 'self' https://*.lovable.app https://*.lovableproject.com https://dev.shahnabil.com
