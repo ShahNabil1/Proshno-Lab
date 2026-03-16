@@ -12,18 +12,23 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const OAUTH_COMPLETE_MESSAGE_TYPE = "oauth-complete";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const syncSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setSession(session);
+    setUser(session?.user ?? null);
+    setLoading(false);
+    return session;
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    void syncSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
@@ -41,12 +46,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const isEmbedded = window.self !== window.top;
+
+    if (!isEmbedded) {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + "/auth/callback",
+        redirectTo,
+        skipBrowserRedirect: true,
       },
     });
+
+    if (error) throw error;
+    if (!data?.url) return;
+
+    const popup = window.open(data.url, "google-oauth", "popup=yes,width=520,height=720");
+
+    if (!popup) {
+      window.alert("সাইন-ইন করতে popup allow করুন, তারপর আবার চেষ্টা করুন।");
+      return;
+    }
+
+    const cleanup = () => {
+      window.removeEventListener("message", handleMessage);
+      window.clearInterval(popupWatcher);
+    };
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.data?.type !== OAUTH_COMPLETE_MESSAGE_TYPE) {
+        return;
+      }
+
+      cleanup();
+      popup.close();
+      await syncSession();
+    };
+
+    const popupWatcher = window.setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+      }
+    }, 500);
+
+    window.addEventListener("message", handleMessage);
   };
 
   const signOut = async () => {
