@@ -209,10 +209,36 @@
 }
 
 /* ===== PRINT / PDF EXPORT ===== */
+.mcq-print-layout {
+  display: none;
+}
+
 @media print {
   /* Dynamic page size from data attribute */
   @page {
     margin: 5mm 10mm;
+  }
+
+  .mcq-screen-layout {
+    display: none !important;
+  }
+
+  .mcq-print-layout {
+    display: block !important;
+  }
+
+  [data-print-paper] .mcq-print-columns {
+    column-fill: auto !important;
+  }
+
+  [data-print-paper] .mcq-print-item {
+    display: inline-block !important;
+    width: 100% !important;
+    vertical-align: top;
+    margin-bottom: 2px;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
   }
 
   /* Hide everything except the paper */
