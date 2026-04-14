@@ -1496,44 +1496,59 @@ return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline",
                       </div>
                     )}
                     {(() => {
-                      const groupRowCount = Math.ceil(groupQs.length / settings.columns);
+                      const cols = settings.columns;
+                      const groupRowCount = Math.ceil(groupQs.length / cols);
+                      const baseNum = mcqNumber;
+                      mcqNumber += groupQs.length;
+                      const rows: (QuestionRow | null)[][] = [];
+                      for (let r = 0; r < groupRowCount; r++) {
+                        const row: (QuestionRow | null)[] = [];
+                        for (let c = 0; c < cols; c++) {
+                          const qi = c * groupRowCount + r;
+                          row.push(qi < groupQs.length ? groupQs[qi] : null);
+                        }
+                        rows.push(row);
+                      }
                       return (
-                    <div style={{
-                      display: "grid",
-                      gridTemplateRows: `repeat(${groupRowCount}, auto)`,
-                      gridTemplateColumns: settings.columns === 3 ? "1fr 1fr 1fr" : settings.columns === 2 ? "1fr 1fr" : "1fr",
-                      gridAutoFlow: "column",
-                      columnGap: "0", rowGap: "2px",
-                    }}>
-                      {groupQs.map((q, gi) => {
-                        mcqNumber++;
-                        const idx = mcqNumber;
-                        const colIdx = Math.floor(gi / groupRowCount);
-                        const showLeftBorder = colIdx > 0 && settings.columnDivider;
-                        return (
-                          <div key={q.id} className={editableClass} style={{
-                            padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < settings.columns - 1 ? "4px" : "0",
-                            borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
-                            marginBottom: "1px",
-                          }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                              <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
-                              <div style={{ flex: 1 }}>
-                                <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
-                                  {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                                    const val = q[key]; if (!val) return null;
-                                    const cleaned = stripPTags(val);
-                                    const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
-                                  })}
+                    <div>
+                      {rows.map((row, rowIdx) => (
+                        <div key={rowIdx} style={{
+                          display: "grid",
+                          gridTemplateColumns: cols === 3 ? "1fr 1fr 1fr" : cols === 2 ? "1fr 1fr" : "1fr",
+                          columnGap: "0",
+                          breakInside: "avoid",
+                        }}>
+                          {row.map((q, colIdx) => {
+                            if (!q) return <div key={colIdx} />;
+                            const globalIdx = colIdx * groupRowCount + rowIdx;
+                            const idx = baseNum + globalIdx + 1;
+                            const showLeftBorder = colIdx > 0 && settings.columnDivider;
+                            return (
+                              <div key={q.id} className={editableClass} style={{
+                                padding: "0", paddingLeft: colIdx > 0 ? "8px" : "0", paddingRight: colIdx < cols - 1 ? "4px" : "0",
+                                borderLeft: showLeftBorder ? "0.5px solid #555" : "none",
+                                marginBottom: "1px",
+                              }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                                <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                      {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                        const val = q[key]; if (!val) return null;
+                                        const cleaned = stripPTags(val);
+                                        const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                        return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                      })}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
                       );
                     })()}
