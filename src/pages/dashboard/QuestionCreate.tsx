@@ -664,15 +664,30 @@ export default function QuestionCreate() {
                       </button>
                     </div>
                   </div>
-                  {q.type !== "descriptive" && (
-                    <div className="font-medium mb-3 flex items-baseline gap-0">
-                      <span className="shrink-0">{globalIdx + 1}. </span>
-                      <div className="flex-1"><LatexRenderer text={q.question} /></div>
-                    </div>
-                  )}
-                  {q.type === "descriptive" && (
-                    <span className="font-medium">{globalIdx + 1}. </span>
-                  )}
+                  {(() => {
+                    const cData = (q.type === "cq" || q.type === "descriptive") && q.creative_data
+                      ? (typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data)
+                      : null;
+                    // For CQ, prefer creative_data.stem (full stimulus with images/tables)
+                    const displayQuestion = (q.type === "cq" && cData?.stem) ? cData.stem : q.question;
+
+                    return (
+                      <>
+                        {q.type !== "descriptive" && (
+                          <div className="font-medium mb-3 flex items-baseline gap-0">
+                            <span className="shrink-0">{globalIdx + 1}. </span>
+                            <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
+                          </div>
+                        )}
+                        {q.type === "descriptive" && (
+                          <div className="font-medium mb-3 flex items-baseline gap-0">
+                            <span className="shrink-0">{globalIdx + 1}. </span>
+                            <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
                       {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
