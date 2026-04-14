@@ -9,6 +9,7 @@ import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import EmailLogin from "./pages/EmailLogin";
+import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -74,6 +75,7 @@ const App = () => (
             <Route element={<Layout><Index /></Layout>} path="/" />
             <Route element={<Layout><Login /></Layout>} path="/login" />
             <Route element={<Layout><EmailLogin /></Layout>} path="/login/email" />
+            <Route element={<Layout><ResetPassword /></Layout>} path="/reset-password" />
             <Route element={<AuthCallback />} path="/auth/callback" />
             <Route element={<Layout><Register /></Layout>} path="/register" />
             <Route element={<Layout><Profile /></Layout>} path="/profile" />
