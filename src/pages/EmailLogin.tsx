@@ -42,6 +42,25 @@ export default function EmailLogin() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error("প্রথমে email ফিল্ডে তোমার Gmail দাও");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("পাসওয়ার্ড সেট করার লিংক ইমেইলে পাঠানো হয়েছে!");
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
@@ -83,8 +102,16 @@ export default function EmailLogin() {
           </form>
 
           <button
+            onClick={handleResetPassword}
+            disabled={submitting}
+            className="mt-3 w-full text-sm text-primary hover:underline transition-colors"
+          >
+            পাসওয়ার্ড নেই / ভুলে গেছি? পাসওয়ার্ড সেট করুন
+          </button>
+
+          <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
           </button>
