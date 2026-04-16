@@ -190,18 +190,69 @@ export default function QuestionCreate() {
       .then(({ data }) => setChapters((data as any[]) || []));
   }, [form.subjectId]);
 
-  // Check user_permissions for specific class + subject access
+  // Check access: user_permissions OR active subscriptions
   useEffect(() => {
     if (!user?.id || !form.classId || !form.subjectId) { setHasSubscription(false); return; }
-    supabase
-      .from("user_permissions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("class_id", Number(form.classId))
-      .eq("subject_id", Number(form.subjectId))
-      .limit(1)
-      .then(({ data }) => setHasSubscription(!!(data && data.length > 0)));
-  }, [user?.id, form.classId, form.subjectId]);
+
+    const checkAccess = async () => {
+      // 1) Check user_permissions table first
+      const { data: permData } = await supabase
+        .from("user_permissions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("class_id", Number(form.classId))
+        .eq("subject_id", Number(form.subjectId))
+        .limit(1);
+
+      if (permData && permData.length > 0) {
+        setHasSubscription(true);
+        return;
+      }
+
+      // 2) Check active subscriptions by matching plan name to class+subject
+      const selectedClass = classes.find(c => String(c.id) === String(form.classId));
+      const selectedSubject = subjects.find(s => String(s.id) === String(form.subjectId));
+      if (!selectedClass || !selectedSubject) { setHasSubscription(false); return; }
+
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("plan")
+        .eq("teacher_id", user.id)
+        .eq("status", "active");
+
+      if (!subs || subs.length === 0) { setHasSubscription(false); return; }
+
+      const className = selectedClass.name;
+      const subjectName = selectedSubject.name;
+
+      const hasAccess = subs.some(sub => {
+        const plan = sub.plan || "";
+        // Exact subject match: "ষষ্ঠ শ্রেণি - বিজ্ঞান" contains class name and subject name
+        if (plan.includes(className) && plan.includes(subjectName)) return true;
+        // "সকল বিষয়" plans for the class: "ষষ্ঠ শ্রেণি - সকল বিষয়"
+        if (plan.includes(className) && plan.includes("সকল বিষয়")) return true;
+        // Bundle plans like "ষষ্ঠ - দশম - সকল বিষয়" or "ষষ্ঠ - দ্বাদশ - সকল বিষয়"
+        if (plan.includes("সকল বিষয়") && plan.includes("-")) {
+          // Check if class name is within the bundle range
+          const allClassNames = classes.map(c => c.name);
+          const classIdx = allClassNames.indexOf(className);
+          // Check if any class name in the plan matches or the plan covers a range
+          const planParts = plan.split("-").map(p => p.trim());
+          const matchingClasses = allClassNames.filter(cn => planParts.some(pp => pp.includes(cn) || cn.includes(pp)));
+          if (matchingClasses.length >= 2) {
+            const startIdx = allClassNames.indexOf(matchingClasses[0]);
+            const endIdx = allClassNames.indexOf(matchingClasses[matchingClasses.length - 1]);
+            if (classIdx >= startIdx && classIdx <= endIdx) return true;
+          }
+        }
+        return false;
+      });
+
+      setHasSubscription(hasAccess);
+    };
+
+    checkAccess();
+  }, [user?.id, form.classId, form.subjectId, classes, subjects]);
 
   // Load topics when chapters selected
   useEffect(() => {
