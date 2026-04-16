@@ -231,6 +231,17 @@ export default function QuestionCreate() {
       const shuffled = filtered.sort(() => Math.random() - 0.5);
       setQuestions(shuffled);
       setSelectedIds(new Set());
+      // Set initial sidebar filter based on form type (if not "all")
+      if (form.type !== "all") {
+        const dbTypes = typeDbValues[form.type] || [form.type];
+        if (dbTypes.length === 1) {
+          setFilterType(dbTypes[0]);
+        } else {
+          setFilterType(null);
+        }
+      } else {
+        setFilterType(null);
+      }
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
       setStep("questionSet");
     } catch {
