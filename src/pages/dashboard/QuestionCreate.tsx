@@ -95,7 +95,8 @@ export default function QuestionCreate() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
 
-  // Load existing paper question IDs when in add_to_paper mode
+  // Load existing paper question IDs when in add_to_paper mode and auto-skip form
+  const [autoSkipDone, setAutoSkipDone] = useState(false);
   useEffect(() => {
     if (addToPaper) {
       const raw = sessionStorage.getItem("existingPaperQuestions");
@@ -103,8 +104,28 @@ export default function QuestionCreate() {
         const ids = (JSON.parse(raw) as QuestionRow[]).map(q => q.id);
         setExistingQuestionIds(new Set(ids));
       }
+      // Auto-fill form from context and skip to question list
+      const ctxRaw = sessionStorage.getItem("existingPaperContext");
+      if (ctxRaw && !autoSkipDone) {
+        const ctx = JSON.parse(ctxRaw);
+        setForm(prev => ({
+          ...prev,
+          classId: ctx.classId || "",
+          subjectId: ctx.subjectId || "",
+          chapterIds: ctx.chapterIds || [],
+          type: "all",
+        }));
+        setAutoSkipDone(true);
+      }
     }
   }, [addToPaper]);
+
+  // Auto-fetch questions when form is auto-filled in add_to_paper mode
+  useEffect(() => {
+    if (addToPaper && autoSkipDone && form.classId && form.subjectId && step === "form") {
+      handleCreateQuestionSet();
+    }
+  }, [addToPaper, autoSkipDone, form.classId, form.subjectId]);
 
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState("");
@@ -243,7 +264,7 @@ export default function QuestionCreate() {
         setFilterType(null);
       }
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
-      setStep("questionSet");
+      setStep(addToPaper ? "questionList" : "questionSet");
     } catch {
       toast.error("প্রশ্ন আনতে সমস্যা হয়েছে");
     } finally {
@@ -433,6 +454,7 @@ export default function QuestionCreate() {
       sessionStorage.removeItem("existingPaperMeta");
       sessionStorage.removeItem("existingPaperSettings");
       sessionStorage.removeItem("existingPaperId");
+      sessionStorage.removeItem("existingPaperContext");
 
       toast.success(`${newSelected.length}টি নতুন প্রশ্ন যুক্ত হয়েছে!`);
 
