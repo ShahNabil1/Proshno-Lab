@@ -209,15 +209,14 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      const dbTypes = typeDbValues[form.type] || [form.type];
+      // Always fetch ALL question types; client-side sidebar filter handles type filtering
       let query = supabase.from("questions").select("*")
         .eq("class_id", Number(form.classId))
-        .eq("subject_id", Number(form.subjectId))
-        .in("type", dbTypes);
+        .eq("subject_id", Number(form.subjectId));
       if (form.chapterIds.length > 0) {
         query = query.in("chapter_id", form.chapterIds.map(Number));
       }
-      query = query.limit(parseInt(form.count) || 10);
+      query = query.limit(1000);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -232,6 +231,17 @@ export default function QuestionCreate() {
       const shuffled = filtered.sort(() => Math.random() - 0.5);
       setQuestions(shuffled);
       setSelectedIds(new Set());
+      // Set initial sidebar filter based on form type (if not "all")
+      if (form.type !== "all") {
+        const dbTypes = typeDbValues[form.type] || [form.type];
+        if (dbTypes.length === 1) {
+          setFilterType(dbTypes[0]);
+        } else {
+          setFilterType(null);
+        }
+      } else {
+        setFilterType(null);
+      }
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
       setStep("questionSet");
     } catch {
