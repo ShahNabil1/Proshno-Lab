@@ -33,6 +33,9 @@ interface QuestionRow {
   creative_data?: any | null;
   stimulus_group_id?: string | null;
   stimulus_text?: string | null;
+  class_id?: number;
+  subject_id?: number;
+  chapter_id?: number;
 }
 
 interface PaperMeta {
