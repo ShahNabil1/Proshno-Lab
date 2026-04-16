@@ -705,18 +705,15 @@ export default function QuestionCreate() {
 
                     return (
                       <>
-                        {q.type !== "descriptive" && (
-                          <div className="font-medium mb-3 flex items-baseline gap-0">
-                            <span className="shrink-0">{globalIdx + 1}. </span>
-                            <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
-                          </div>
+                        {q.stimulus_text && q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 && (
+                          <div className="mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
+                            dangerouslySetInnerHTML={{ __html: q.stimulus_text }}
+                          />
                         )}
-                        {q.type === "descriptive" && (
-                          <div className="font-medium mb-3 flex items-baseline gap-0">
-                            <span className="shrink-0">{globalIdx + 1}. </span>
-                            <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
-                          </div>
-                        )}
+                        <div className="font-medium mb-3 flex items-baseline gap-0">
+                          <span className="shrink-0">{globalIdx + 1}. </span>
+                          <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
+                        </div>
                       </>
                     );
                   })()}
