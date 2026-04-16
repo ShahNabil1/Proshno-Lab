@@ -216,7 +216,7 @@ export default function QuestionCreate() {
       if (form.chapterIds.length > 0) {
         query = query.in("chapter_id", form.chapterIds.map(Number));
       }
-      query = query.limit(parseInt(form.count) || 10);
+      query = query.limit(1000);
 
       const { data, error } = await query;
       if (error) throw error;
