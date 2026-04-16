@@ -264,7 +264,7 @@ export default function QuestionCreate() {
         setFilterType(null);
       }
       toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
-      setStep("questionSet");
+      setStep(addToPaper ? "questionList" : "questionSet");
     } catch {
       toast.error("প্রশ্ন আনতে সমস্যা হয়েছে");
     } finally {
