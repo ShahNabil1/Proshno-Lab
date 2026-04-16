@@ -989,6 +989,13 @@ export default function QuestionPaperView() {
               sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              // Store context IDs so create page can skip form
+              if (questions.length > 0) {
+                const classId = String(questions[0].class_id || "");
+                const subjectId = String(questions[0].subject_id || "");
+                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
+              }
               navigate("/dashboard/create?add_to_paper=true");
             }}>
               <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
@@ -1002,6 +1009,12 @@ export default function QuestionPaperView() {
               sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
+              if (questions.length > 0) {
+                const classId = String(questions[0].class_id || "");
+                const subjectId = String(questions[0].subject_id || "");
+                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
+              }
               navigate("/dashboard/create?add_to_paper=true");
             }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
