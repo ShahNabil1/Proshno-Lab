@@ -209,11 +209,10 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      const dbTypes = typeDbValues[form.type] || [form.type];
+      // Always fetch ALL question types; client-side sidebar filter handles type filtering
       let query = supabase.from("questions").select("*")
         .eq("class_id", Number(form.classId))
-        .eq("subject_id", Number(form.subjectId))
-        .in("type", dbTypes);
+        .eq("subject_id", Number(form.subjectId));
       if (form.chapterIds.length > 0) {
         query = query.in("chapter_id", form.chapterIds.map(Number));
       }
