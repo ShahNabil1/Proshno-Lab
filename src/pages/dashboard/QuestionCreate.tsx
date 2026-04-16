@@ -454,6 +454,7 @@ export default function QuestionCreate() {
       sessionStorage.removeItem("existingPaperMeta");
       sessionStorage.removeItem("existingPaperSettings");
       sessionStorage.removeItem("existingPaperId");
+      sessionStorage.removeItem("existingPaperContext");
 
       toast.success(`${newSelected.length}টি নতুন প্রশ্ন যুক্ত হয়েছে!`);
 
