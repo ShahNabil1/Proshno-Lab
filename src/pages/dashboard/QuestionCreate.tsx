@@ -705,7 +705,7 @@ export default function QuestionCreate() {
 
                     return (
                       <>
-                        {q.stimulus_text && q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 && (
+                        {q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text)) && (
                           <div className="mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
                             dangerouslySetInnerHTML={{ __html: q.stimulus_text }}
                           />
