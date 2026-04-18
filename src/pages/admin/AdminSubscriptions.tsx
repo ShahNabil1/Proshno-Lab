@@ -90,6 +90,7 @@ export default function AdminSubscriptions() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [purchases, setPurchases] = useState<PurchaseRow[]>([]);
+  const [packages, setPackages] = useState<PricingPackageRow[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<GroupedUser | null>(null);
@@ -97,14 +98,16 @@ export default function AdminSubscriptions() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [subsRes, teachersRes, purchasesRes] = await Promise.all([
+    const [subsRes, teachersRes, purchasesRes, pkgsRes] = await Promise.all([
       supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
       supabase.from("teachers").select("id, full_name, email"),
       supabase.from("purchase_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("pricing_packages").select("id, class_name, subject_name, is_active").eq("is_active", true),
     ]);
     setSubscriptions((subsRes.data as SubscriptionRow[]) || []);
     setTeachers((teachersRes.data as TeacherRow[]) || []);
     setPurchases((purchasesRes.data as PurchaseRow[]) || []);
+    setPackages((pkgsRes.data as PricingPackageRow[]) || []);
     setLoading(false);
   }, []);
 
