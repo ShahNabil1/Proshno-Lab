@@ -224,7 +224,7 @@ export default function AdminSubscriptions() {
       {/* Details Modal */}
       <Dialog open={!!selectedUser} onOpenChange={open => !open && setSelectedUser(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          {selectedUser && <DetailsModal data={selectedUser} onRefresh={fetchAll} />}
+          {selectedUser && <DetailsModal data={selectedUser} packages={packages} onRefresh={fetchAll} />}
         </DialogContent>
       </Dialog>
     </div>
@@ -232,7 +232,7 @@ export default function AdminSubscriptions() {
 }
 
 /* ─── Details Modal ─── */
-function DetailsModal({ data, onRefresh }: { data: GroupedUser; onRefresh: () => void }) {
+function DetailsModal({ data, packages, onRefresh }: { data: GroupedUser; packages: PricingPackageRow[]; onRefresh: () => void }) {
   const { teacher, subscriptions: subs, purchases } = data;
 
   const toggleStatus = async (subId: number, current: string) => {
