@@ -7,7 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Eye, Search, Package, User, Mail, Phone, CreditCard, Calendar, Hash } from "lucide-react";
+import { Eye, Search, Package, User, Mail, Phone, CreditCard, Calendar, Hash, CheckCircle2 } from "lucide-react";
+import { planCoversSelection } from "@/lib/subscriptionMatcher";
+
+interface PricingPackageRow {
+  id: number;
+  class_name: string;
+  subject_name: string;
+  is_active: boolean;
+}
 
 interface TeacherRow {
   id: string;
