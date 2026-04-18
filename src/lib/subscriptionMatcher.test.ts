@@ -18,8 +18,8 @@ describe("normalizeSubscriptionText", () => {
 
   it("handles empty/null-like input", () => {
     expect(normalizeSubscriptionText("")).toBe("");
-    // @ts-expect-error testing runtime safety
-    expect(normalizeSubscriptionText(undefined)).toBe("");
+    expect(normalizeSubscriptionText(null as unknown as string)).toBe("");
+    expect(normalizeSubscriptionText(undefined as unknown as string)).toBe("");
   });
 });
 
