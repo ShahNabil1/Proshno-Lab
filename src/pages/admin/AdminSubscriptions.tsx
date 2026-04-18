@@ -278,27 +278,49 @@ function DetailsModal({ data, packages, onRefresh }: { data: GroupedUser; packag
           <div className="space-y-2">
             {subs.map(sub => {
               const st = getSubStatus(sub);
+              const covered = packages.filter(p => planCoversSelection(sub.plan, p.class_name, p.subject_name));
               return (
-                <div key={sub.id} className="rounded-lg border p-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{sub.plan}</span>
-                      <StatusBadge status={st} />
+                <div key={sub.id} className="rounded-lg border p-3 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{sub.plan}</span>
+                        <StatusBadge status={st} />
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          শুরু: {sub.starts_at ? new Date(sub.starts_at).toLocaleDateString("bn-BD") : "—"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          শেষ: {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString("bn-BD") : "—"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        শুরু: {sub.starts_at ? new Date(sub.starts_at).toLocaleDateString("bn-BD") : "—"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        শেষ: {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString("bn-BD") : "—"}
-                      </span>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={() => toggleStatus(sub.id, sub.status)} className="shrink-0">
+                      {sub.status === "active" ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => toggleStatus(sub.id, sub.status)} className="shrink-0">
-                    {sub.status === "active" ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
-                  </Button>
+
+                  {/* Covered packages — derived via shared subscriptionMatcher */}
+                  <div className="rounded-md bg-emerald-50 border border-emerald-200 p-2.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 mb-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      কভার করছে ({covered.length}টি প্যাকেজ)
+                    </div>
+                    {covered.length === 0 ? (
+                      <p className="text-xs text-emerald-700/80">কোনো সক্রিয় প্যাকেজ এই প্ল্যানের আওতায় পড়ে না</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {covered.map(p => (
+                          <Badge key={p.id} variant="outline" className="bg-white text-emerald-800 border-emerald-300 text-[11px] font-normal">
+                            {p.class_name} — {p.subject_name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
