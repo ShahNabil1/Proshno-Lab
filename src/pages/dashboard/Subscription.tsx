@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import InlineCheckout, { SelectedPackageItem } from "@/components/InlineCheckout";
+import { isPackagePurchased } from "@/lib/subscriptionMatcher";
 
 interface Sub {
   id: number;
@@ -97,16 +98,11 @@ export default function Subscription() {
   const expiredSubs = subs.filter(s => s.status !== "active" || (s.ends_at && new Date(s.ends_at) <= new Date()));
   const hasActive = activeSubs.length > 0;
 
-  const purchasedPlans = new Set(
-    activeSubs.map(s => s.plan.trim().toLowerCase())
-  );
+  const activePlans = activeSubs.map(s => s.plan);
 
-  const isPurchased = (pkg: PricingPkg): boolean => {
-    const className = pkg.class_name.trim().toLowerCase();
-    const combined = `${pkg.class_name} - ${pkg.subject_name}`.trim().toLowerCase();
-    return purchasedPlans.has(className) || purchasedPlans.has(combined) ||
-      Array.from(purchasedPlans).some(p => p.includes(className));
-  };
+  const isPurchased = (pkg: PricingPkg): boolean =>
+    isPackagePurchased(pkg, activePlans);
+
 
   const primarySub = activeSubs[0];
   const bundles = packages.filter(p => p.type === "bundle");
