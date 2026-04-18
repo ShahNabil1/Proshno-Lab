@@ -8,6 +8,7 @@ import MessengerIcon from "@/components/icons/MessengerIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import LatexRenderer from "@/components/LatexRenderer";
+import { hasActiveAccess } from "@/lib/subscriptionMatcher";
 
 const toBanglaNum = (n: number) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 const banglaOption = ["ক", "খ", "গ", "ঘ"];
@@ -54,53 +55,33 @@ export default function Packages() {
     if (!user) return;
     setLoading(true);
 
-    // Get user's active subscription package IDs
+    // Get user's active subscription plans
     const { data: subs } = await supabase
       .from("subscriptions")
-      .select("plan, status")
+      .select("plan, status, ends_at")
       .eq("teacher_id", user.id)
       .eq("status", "active");
 
-    if (!subs || subs.length === 0) {
+    const activePlans = (subs || [])
+      .filter(s => !s.ends_at || new Date(s.ends_at) > new Date())
+      .map(s => s.plan);
+
+    if (activePlans.length === 0) {
       setHasSubscription(false);
       setLoading(false);
       return;
     }
     setHasSubscription(true);
 
-    // Get user's permission-based package IDs
-    const { data: perms } = await supabase
-      .from("user_permissions")
-      .select("class_id, subject_id")
-      .eq("user_id", user.id);
-
-    if (!perms || perms.length === 0) {
-      setLoading(false);
-      return;
-    }
-
-    // Get matching pricing packages
+    // Get all packages, then filter via shared matcher (covers bundles, "সকল বিষয়", ranges)
     const { data: allPkgs } = await supabase
       .from("pricing_packages")
       .select("id, class_name, subject_name")
       .eq("is_active", true);
 
-    // Get all classes & subjects to map IDs to names
-    const [{ data: clsData }, { data: subData }] = await Promise.all([
-      supabase.from("classes").select("id, name"),
-      supabase.from("subjects").select("id, name"),
-    ]);
-
-    const classMap = Object.fromEntries((clsData || []).map(c => [c.id, c.name]));
-    const subjectMap = Object.fromEntries((subData || []).map(s => [s.id, s.name]));
-
-    // Match permissions to package IDs
-    const matchedPkgIds = (allPkgs || []).filter(pkg => {
-      return perms.some(p =>
-        classMap[p.class_id] === pkg.class_name &&
-        (pkg.subject_name === "সকল বিষয়" || subjectMap[p.subject_id] === pkg.subject_name)
-      );
-    }).map(p => p.id);
+    const matchedPkgIds = (allPkgs || [])
+      .filter(pkg => hasActiveAccess(activePlans, pkg.class_name, pkg.subject_name))
+      .map(p => p.id);
 
     if (matchedPkgIds.length === 0) {
       setLoading(false);

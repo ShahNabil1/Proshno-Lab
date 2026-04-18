@@ -16,6 +16,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { planCoversSelection } from "@/lib/subscriptionMatcher";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
 const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল", all: "সকল প্রকার" };
@@ -69,55 +70,6 @@ const boardList = [
   "যশোর বোর্ড", "সিলেট বোর্ড", "রাজশাহী বোর্ড", "ময়মনসিংহ বোর্ড", "চট্টগ্রাম বোর্ড",
 ];
 
-const CLASS_LEVELS = [
-  { label: "ষষ্ঠ", level: 6 },
-  { label: "সপ্তম", level: 7 },
-  { label: "অষ্টম", level: 8 },
-  { label: "নবম", level: 9 },
-  { label: "দশম", level: 10 },
-  { label: "একাদশ", level: 11 },
-  { label: "দ্বাদশ", level: 12 },
-];
-
-const normalizeSubscriptionText = (value: string) =>
-  value
-    .trim()
-    .replace(/শ্রেণি/g, "")
-    .replace(/[–—]/g, "-")
-    .replace(/\s+/g, " ");
-
-const extractClassLevels = (value: string) => {
-  const normalized = normalizeSubscriptionText(value);
-  const levels = CLASS_LEVELS
-    .filter(({ label }) => normalized.includes(label))
-    .map(({ level }) => level);
-
-  if (levels.length === 2 && normalized.includes("-") && !normalized.includes("/") && Math.abs(levels[0] - levels[1]) > 1) {
-    const start = Math.min(...levels);
-    const end = Math.max(...levels);
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }
-
-  return [...new Set(levels)].sort((a, b) => a - b);
-};
-
-const planCoversSelection = (plan: string, className: string, subjectName: string) => {
-  const normalizedPlan = normalizeSubscriptionText(plan);
-  const normalizedClass = normalizeSubscriptionText(className);
-  const normalizedSubject = normalizeSubscriptionText(subjectName);
-
-  const subjectMatches = normalizedPlan.includes(normalizedSubject) || normalizedPlan.includes("সকল বিষয়");
-  if (!subjectMatches) return false;
-
-  const selectedClassLevels = extractClassLevels(normalizedClass);
-  const planLevels = extractClassLevels(normalizedPlan);
-
-  if (selectedClassLevels.length === 0 || planLevels.length === 0) {
-    return normalizedPlan.includes(normalizedClass);
-  }
-
-  return selectedClassLevels.some((level) => planLevels.includes(level));
-};
 
 export default function QuestionCreate() {
   const { user } = useAuth();
