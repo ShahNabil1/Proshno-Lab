@@ -586,14 +586,37 @@ export default function AdminQuestions() {
             {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Total + Type-wise breakdown badges */}
+      <div className="flex flex-wrap items-center gap-2 mb-4" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
         <div
-          className="ml-auto flex items-center gap-2 h-10 px-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700"
-          style={{ fontFamily: "'SolaimanLipi', sans-serif" }}
+          className="flex items-center gap-2 h-9 px-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700"
           title="বর্তমান ফিল্টার অনুযায়ী মোট প্রশ্ন"
         >
           <span className="text-xs font-medium">মোট প্রশ্ন:</span>
           <span className="text-sm font-bold tabular-nums">{totalCount.toLocaleString("bn-BD")}</span>
         </div>
+        {[
+          { key: "mcq", label: "MCQ", color: "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" },
+          { key: "short", label: "সংক্ষিপ্ত", color: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100" },
+          { key: "cq", label: "সৃজনশীল", color: "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100" },
+          { key: "descriptive", label: "বর্ণনামূলক", color: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100" },
+        ].map((t) => {
+          const active = filterType === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilterType(active ? "" : t.key)}
+              className={`flex items-center gap-2 h-9 px-3 rounded-md border transition-colors ${t.color} ${active ? "ring-2 ring-offset-1 ring-emerald-400" : ""}`}
+              title={active ? "ক্লিক করে ফিল্টার সরান" : `${t.label} ফিল্টার করুন`}
+            >
+              <span className="text-xs font-medium">{t.label}:</span>
+              <span className="text-sm font-bold tabular-nums">{(typeCounts[t.key] || 0).toLocaleString("bn-BD")}</span>
+            </button>
+          );
+        })}
       </div>
 
       <Card>
