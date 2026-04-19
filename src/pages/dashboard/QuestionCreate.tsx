@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,6 +137,16 @@ export default function QuestionCreate() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const mainScrollRef = useRef<HTMLDivElement | null>(null);
+  // Smoothly scroll the main content column to top (works in both desktop split-scroll and mobile page-scroll)
+  const scrollMainToTop = () => {
+    const el = mainScrollRef.current;
+    if (el && el.scrollHeight > el.clientHeight) {
+      el.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
   const ITEMS_PER_PAGE = 20;
   // Report modal states
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
