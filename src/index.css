@@ -392,7 +392,7 @@
   [data-print-paper] th {
     font-weight: 600;
   }
-  [data-print-paper] img {
+  [data-print-paper] img:not([data-watermark-img]) {
     max-width: 100% !important;
     height: auto !important;
     object-fit: contain;
@@ -456,7 +456,7 @@
 [data-print-paper] .latex-renderer table {
   display: table;
 }
-[data-print-paper] .latex-renderer img:not([width]) {
+[data-print-paper] .latex-renderer img:not([width]):not([data-watermark-img]) {
   display: block;
   max-width: 80px;
   max-height: 70px;
@@ -489,8 +489,9 @@
   margin: 0;
 }
 
-/* Paper preview: constrain images without explicit size */
-[data-print-paper] img:not([width]) {
+/* Paper preview: constrain images without explicit size
+   Watermark images are exempt — they are sized via inline width %. */
+[data-print-paper] img:not([width]):not([data-watermark-img]) {
   max-width: 80px;
   max-height: 70px;
   height: auto;
