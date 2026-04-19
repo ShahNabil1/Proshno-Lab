@@ -566,6 +566,14 @@ export default function AdminQuestions() {
             {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
           </SelectContent>
         </Select>
+        <div
+          className="ml-auto flex items-center gap-2 h-10 px-3 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700"
+          style={{ fontFamily: "'SolaimanLipi', sans-serif" }}
+          title="বর্তমান ফিল্টার অনুযায়ী মোট প্রশ্ন"
+        >
+          <span className="text-xs font-medium">মোট প্রশ্ন:</span>
+          <span className="text-sm font-bold tabular-nums">{totalCount.toLocaleString("bn-BD")}</span>
+        </div>
       </div>
 
       <Card>
