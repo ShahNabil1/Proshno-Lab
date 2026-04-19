@@ -701,12 +701,77 @@ export default function QuestionCreate() {
             </div>
           </div>
 
-          {/* Live count badges — reflect current Class/Subject/Chapter(s)/Topic(s) selection */}
+          {/* Live count badges + Reset — reflect ALL sidebar filters except type itself */}
           {(() => {
-            // Apply only topic filter to base questions (type filter excluded so each badge shows its own count)
-            const base = filterTopicIds.size > 0
-              ? questions.filter(q => q.topic_id && filterTopicIds.has(q.topic_id))
-              : questions;
+            // Apply every sidebar filter EXCEPT type, so each badge shows its own true count
+            const applyNonTypeFilters = (rows: QuestionRow[]) => {
+              let result = rows;
+
+              if (filterSearch.trim()) {
+                const q = filterSearch.toLowerCase();
+                result = result.filter(r => r.question?.toLowerCase().includes(q));
+              }
+
+              if (filterTopicIds.size > 0) {
+                result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
+              }
+
+              if (filterBoards.size > 0) {
+                result = result.filter(r => {
+                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
+                  return refs.some((ref: any) => {
+                    const boardMatch = filterBoards.has(ref.board);
+                    const yearMatch = !filterYear || ref.year === filterYear;
+                    return boardMatch && yearMatch;
+                  });
+                });
+              } else if (filterYear) {
+                // Year selected without board → still narrow by year
+                result = result.filter(r => {
+                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
+                  return refs.some((ref: any) => ref.year === filterYear);
+                });
+              }
+
+              if (filterSpecial === "board") {
+                result = result.filter(r => {
+                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
+                  const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
+                  return uniqueBoards.size >= 2;
+                });
+              } else if (filterSpecial === "math") {
+                result = result.filter(r => {
+                  const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
+                  return /\$.*?\$|\\frac|\\sqrt|\\sum|\\int|\\[|\\]|\\(|\\)|\\times|\\div|\\pm|\\leq|\\geq|\\neq|\\alpha|\\beta|\\theta|\\pi/i.test(text);
+                });
+              } else if (filterSpecial === "theoretical") {
+                result = result.filter(r => {
+                  const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""}`;
+                  return !/\$.*?\$|\\frac|\\sqrt|\\sum|\\int/i.test(text);
+                });
+              } else if (filterSpecial === "diagram") {
+                result = result.filter(r => {
+                  const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
+                  return /<img\s/i.test(text) || /cloudinary\.com/i.test(text) || /res\.cloudinary/i.test(text);
+                });
+              } else if (filterSpecial === "multi_completion") {
+                result = result.filter(r => {
+                  if (r.type !== "mcq") return false;
+                  const stripped = r.question.replace(/<[^>]*>/g, "");
+                  return (/(?:^|[^a-zA-Z])i[.\s].*(?:^|[^a-zA-Z])ii[.\s].*(?:^|[^a-zA-Z])iii[.\s]/s.test(stripped)
+                    || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped));
+                });
+              } else if (filterSpecial === "assertion") {
+                result = result.filter(r => {
+                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
+                  return refs.length >= 1;
+                });
+              }
+
+              return result;
+            };
+
+            const base = applyNonTypeFilters(questions);
             const countByType = (t: string) => base.filter(q => q.type === t).length;
             const fmt = (n: number) => n.toLocaleString("bn-BD");
             const badges = [
@@ -716,8 +781,22 @@ export default function QuestionCreate() {
               { value: "cq", label: "সৃজনশীল", count: countByType("cq"), color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800" },
               { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
             ];
+
+            const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterTopicIds.size > 0
+              || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
+
+            const resetAllFilters = () => {
+              setFilterSearch("");
+              setFilterType(null);
+              setFilterTopicIds(new Set());
+              setFilterBoards(new Set());
+              setFilterYear("");
+              setFilterSpecial(null);
+              setCurrentPage(1);
+            };
+
             return (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {badges.map(b => {
                   const isActive = filterType === b.value;
                   return (
@@ -732,6 +811,17 @@ export default function QuestionCreate() {
                     </button>
                   );
                 })}
+                {hasAnyFilter && (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-destructive/30 bg-destructive/5 text-destructive text-xs font-medium transition-all hover:bg-destructive/10"
+                    title="সব ফিল্টার রিসেট করুন"
+                  >
+                    <span>↺</span>
+                    <span>রিসেট ফিল্টার</span>
+                  </button>
+                )}
               </div>
             );
           })()}
