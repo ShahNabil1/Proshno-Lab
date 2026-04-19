@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,6 +137,16 @@ export default function QuestionCreate() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const mainScrollRef = useRef<HTMLDivElement | null>(null);
+  // Smoothly scroll the main content column to top (works in both desktop split-scroll and mobile page-scroll)
+  const scrollMainToTop = () => {
+    const el = mainScrollRef.current;
+    if (el && el.scrollHeight > el.clientHeight) {
+      el.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
   const ITEMS_PER_PAGE = 20;
   // Report modal states
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -680,9 +690,9 @@ export default function QuestionCreate() {
 
     return (
       <>
-      <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
-        {/* Main content */}
-        <div className="space-y-4">
+      <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+        {/* Main content - independently scrollable on desktop */}
+        <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth animate-fade-in">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">Selected: {selectedIds.size}/{questions.length}</span>
@@ -804,10 +814,10 @@ export default function QuestionCreate() {
                       key={String(b.value)}
                       type="button"
                       onClick={() => setFilterType(b.value)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1 scale-[1.02]" : "hover:opacity-80"}`}
                     >
                       <span>{b.label}</span>
-                      <span className="font-bold tabular-nums">{fmt(b.count)}</span>
+                      <span className="font-bold tabular-nums min-w-[1.5ch] text-center">{fmt(b.count)}</span>
                     </button>
                   );
                 })}
@@ -850,7 +860,10 @@ export default function QuestionCreate() {
             </Sheet>
           </div>
 
-          <div className="space-y-4">
+          <div
+            key={`qlist-${filterType ?? "all"}-${filterSearch}-${filterYear}-${filterSpecial ?? ""}-${Array.from(filterTopicIds).sort().join(",")}-${Array.from(filterBoards).sort().join(",")}-${currentPage}`}
+            className="space-y-4 animate-fade-in"
+          >
             {paginatedQuestions.map((q, idx) => {
               const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
               return (
@@ -954,7 +967,7 @@ export default function QuestionCreate() {
                 variant="outline"
                 size="sm"
                 disabled={currentPage === 1}
-                onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => p - 1); scrollMainToTop(); }}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" /> আগের
               </Button>
@@ -971,7 +984,7 @@ export default function QuestionCreate() {
                           variant={p === currentPage ? "default" : "outline"}
                           size="sm"
                           className="w-9 h-9 p-0"
-                          onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                          onClick={() => { setCurrentPage(p); scrollMainToTop(); }}
                         >
                           {p}
                         </Button>
@@ -983,7 +996,7 @@ export default function QuestionCreate() {
                 variant="outline"
                 size="sm"
                 disabled={currentPage === totalPages}
-                onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => p + 1); scrollMainToTop(); }}
               >
                 পরের <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -996,9 +1009,9 @@ export default function QuestionCreate() {
           )}
         </div>
 
-        {/* Right sidebar - Advanced Filter */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
+        {/* Right sidebar - Advanced Filter (independently scrollable on desktop) */}
+        <aside className="hidden lg:block lg:overflow-y-auto lg:pr-1 lg:scroll-smooth">
+          <div className="space-y-4 pb-2">
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-heading font-bold text-center mb-3 border-b border-border pb-2">এডভান্সড ফিল্টার মেনু</h3>
