@@ -964,6 +964,25 @@ export default function QuestionPaperView() {
                 </div>
                 <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 5 : 12} max={settings.watermarkType === "logo" ? 100 : 80} step={settings.watermarkType === "logo" ? 5 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Rotation</span>
+                  <span className="text-xs font-medium">{settings.watermarkRotation ?? -35}°</span>
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {[-45, -35, 0, 35, 45, 90].map((deg) => (
+                    <Button
+                      key={deg}
+                      size="sm"
+                      variant={(settings.watermarkRotation ?? -35) === deg ? "default" : "outline"}
+                      className="h-6 text-[10px] px-2 flex-1 min-w-[44px]"
+                      onClick={() => updateSetting("watermarkRotation", deg)}
+                    >
+                      {deg}°
+                    </Button>
+                  ))}
+                </div>
+              </div>
               {settings.watermarkType === "text" ? (
                 <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
               ) : (
