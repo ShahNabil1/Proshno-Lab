@@ -469,9 +469,49 @@ export default function QuestionPaperView() {
   };
 
   const shouldStackOptions = (q: QuestionRow) => {
-    const opts = [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean);
-    const maxLen = Math.max(...opts.map(o => stripPTags(o || "").length));
-    return maxLen > 30;
+    const rawOpts = [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) as string[];
+    if (rawOpts.length === 0) return false;
+
+    // 1) Block-level / rich content: any option containing img / table / block-math / svg / figure / pre / hr
+    //    => always stack (these never fit nicely side-by-side)
+    const richTagRe = /<(img|table|svg|figure|pre|hr|video|iframe)\b/i;
+    const blockMathRe = /\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\begin\{(align|equation|matrix|cases|array|pmatrix|bmatrix|vmatrix)/i;
+    if (rawOpts.some(o => richTagRe.test(o) || blockMathRe.test(o))) return true;
+
+    // 2) Compute a "visual length" per option:
+    //    - strip HTML tags
+    //    - count inline LaTeX as ~its source length (LaTeX usually renders wider per char)
+    //    - count CJK / Bangla compound clusters as ~1.2x
+    const visualLen = (html: string): number => {
+      const text = stripPTags(html || "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      // Inline LaTeX bonus
+      const latexMatches: string[] = text.match(/\$[^$]+\$|\\\([^)]+\\\)/g) || [];
+      const latexBonus = latexMatches.reduce<number>((sum, m) => sum + Math.max(0, m.length * 0.3), 0);
+      return text.length + latexBonus;
+    };
+
+    const lengths = rawOpts.map(visualLen);
+    const maxLen = Math.max(...lengths);
+    const totalLen = lengths.reduce((a, b) => a + b, 0);
+    const longCount = lengths.filter(l => l > 25).length;
+
+    // 3) Threshold adapts to column count of the paper
+    //    1 col → wide page, allow longer side-by-side
+    //    2 col → moderate
+    //    3 col → narrow, stack earlier
+    const cols = settings.columns || 1;
+    const maxThreshold = cols >= 3 ? 18 : cols === 2 ? 26 : 34;
+    const totalThreshold = cols >= 3 ? 50 : cols === 2 ? 75 : 110;
+
+    // 4) Multi-line content (explicit <br> or newline) → stack
+    if (rawOpts.some(o => /<br\s*\/?>|\n/i.test(o))) return true;
+
+    // 5) Decision: stack if the longest option is too long, OR total content too dense,
+    //    OR 2+ options are individually long (would overflow the half-column)
+    return maxLen > maxThreshold || totalLen > totalThreshold || longCount >= 2;
   };
 
   const getOptionLabel = (label: string) => {
