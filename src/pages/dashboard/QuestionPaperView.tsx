@@ -1661,29 +1661,50 @@ export default function QuestionPaperView() {
                       ))}
                     </div>
 
-                    <div className="mcq-print-layout mcq-print-columns" style={printColumnStyle}>
-                      {groupQs.map((q, gi) => {
-                        const idx = groupBaseNum + gi + 1;
-                        return (
-                          <div key={`print-${q.id}`} className="mcq-print-item">
-                            <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                              <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
-                              <div style={{ flex: 1 }}>
-                                <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
-                                  {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                                    const val = q[key]; if (!val) return null;
-                                    const cleaned = stripPTags(val);
-                                    const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
-                                  })}
+                    <div
+                      className="mcq-print-layout"
+                      style={{
+                        display: "none",
+                        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                        columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
+                        alignItems: "start",
+                      }}
+                    >
+                      {Array.from({ length: cols }).map((_, colIdx) => (
+                        <div
+                          key={`print-col-${groupId}-${colIdx}`}
+                          style={{
+                            minWidth: 0,
+                            borderLeft: colIdx > 0 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                            paddingLeft: colIdx > 0 && settings.columnDivider ? "12px" : undefined,
+                          }}
+                        >
+                          {rows.map((row, rowIdx) => {
+                            const q = row[colIdx];
+                            if (!q) return null;
+                            const idx = groupBaseNum + groupQs.findIndex(item => item.id === q.id) + 1;
+                            return (
+                              <div key={`print-${q.id}-${rowIdx}`} className="mcq-print-item">
+                                <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                      {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
+                                        const val = q[key]; if (!val) return null;
+                                        const cleaned = stripPTags(val);
+                                        const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                        return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                      })}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
