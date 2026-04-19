@@ -146,6 +146,7 @@ export default function QuestionPaperView() {
     watermarkText: "",
     watermarkLogoUrl: "",
     watermarkType: "text" as "text" | "logo",
+    watermarkRotation: -35 as number,
     cqToAnswer: 0, // 0 means auto (all)
     shortToAnswer: 0,
     descToAnswer: 0,
