@@ -860,10 +860,7 @@ export default function QuestionCreate() {
             </Sheet>
           </div>
 
-          <div
-            key={`qlist-${filterType ?? "all"}-${filterSearch}-${filterYear}-${filterSpecial ?? ""}-${Array.from(filterTopicIds).sort().join(",")}-${Array.from(filterBoards).sort().join(",")}-${currentPage}`}
-            className="space-y-4 animate-fade-in"
-          >
+          <div className="space-y-4">
             {paginatedQuestions.map((q, idx) => {
               const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
               return (
