@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,12 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 export default function AdminTopics() {
   const navigate = useNavigate();
   const { filterClasses, filterSubjects, loading: permLoading } = useAdminPermissions();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter states
-  const [filterClassId, setFilterClassId] = useState("");
-  const [filterSubjectId, setFilterSubjectId] = useState("");
-  const [filterChapterId, setFilterChapterId] = useState("");
+  // Filter states — initialized from URL so they persist across navigations
+  const [filterClassId, setFilterClassId] = useState(() => searchParams.get("class_id") || "");
+  const [filterSubjectId, setFilterSubjectId] = useState(() => searchParams.get("subject_id") || "");
+  const [filterChapterId, setFilterChapterId] = useState(() => searchParams.get("chapter_id") || "");
 
   // Data for filters
   const [allClasses, setAllClasses] = useState<any[]>([]);
@@ -55,13 +56,20 @@ export default function AdminTopics() {
       .then(({ data }) => setAllSubjects(data || []));
   }, []);
 
+  // Sync filters → URL so they persist across back-navigation
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (filterClassId) params.set("class_id", filterClassId); else params.delete("class_id");
+    if (filterSubjectId) params.set("subject_id", filterSubjectId); else params.delete("subject_id");
+    if (filterChapterId) params.set("chapter_id", filterChapterId); else params.delete("chapter_id");
+    setSearchParams(params, { replace: true });
+  }, [filterClassId, filterSubjectId, filterChapterId]);
+
   // Filter: load subjects when class changes (filtered by permissions)
   const [subjects, setSubjects] = useState<any[]>([]);
   useEffect(() => {
-    if (!filterClassId) { setSubjects([]); setFilterSubjectId(""); return; }
+    if (!filterClassId) { setSubjects([]); return; }
     setLoadingSubjects(true);
-    setFilterSubjectId("");
-    setFilterChapterId("");
     const filtered = filterSubjects(allSubjects.filter(s => String(s.class_id) === filterClassId) as any);
     setSubjects(filtered);
     setLoadingSubjects(false);
@@ -69,9 +77,8 @@ export default function AdminTopics() {
 
   // Filter: load chapters when subject changes
   useEffect(() => {
-    if (!filterSubjectId) { setChapters([]); setFilterChapterId(""); return; }
+    if (!filterSubjectId) { setChapters([]); return; }
     setLoadingChapters(true);
-    setFilterChapterId("");
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
       .then(({ data }) => { setChapters(data || []); setLoadingChapters(false); });
   }, [filterSubjectId]);
@@ -183,7 +190,14 @@ export default function AdminTopics() {
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[150px]">
               <Label className="text-xs mb-1 block">শ্রেণী</Label>
-              <Select value={filterClassId} onValueChange={setFilterClassId}>
+              <Select
+                value={filterClassId}
+                onValueChange={(v) => {
+                  setFilterClassId(v);
+                  setFilterSubjectId("");
+                  setFilterChapterId("");
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="শ্রেণী নির্বাচন করুন" /></SelectTrigger>
                 <SelectContent>
                   {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
@@ -192,7 +206,14 @@ export default function AdminTopics() {
             </div>
             <div className="flex-1 min-w-[150px]">
               <Label className="text-xs mb-1 block">বিষয়</Label>
-              <Select value={filterSubjectId} onValueChange={setFilterSubjectId} disabled={!filterClassId}>
+              <Select
+                value={filterSubjectId}
+                onValueChange={(v) => {
+                  setFilterSubjectId(v);
+                  setFilterChapterId("");
+                }}
+                disabled={!filterClassId}
+              >
                 <SelectTrigger>
                   {loadingSubjects ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="বিষয় নির্বাচন করুন" />}
                 </SelectTrigger>
