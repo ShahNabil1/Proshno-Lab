@@ -246,6 +246,10 @@
   }
 
   .mcq-print-layout {
+    display: block !important;
+  }
+
+  .mcq-print-layout-grid {
     display: grid !important;
   }
 

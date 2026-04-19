@@ -1662,7 +1662,7 @@ export default function QuestionPaperView() {
                     </div>
 
                     <div
-                      className="mcq-print-layout"
+                      className="mcq-print-layout mcq-print-layout-grid"
                       style={{
                         display: "none",
                         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
