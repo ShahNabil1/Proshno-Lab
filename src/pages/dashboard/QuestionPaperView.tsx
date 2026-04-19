@@ -1579,7 +1579,7 @@ export default function QuestionPaperView() {
                       columnCount: cols,
                       columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
                       columnRule: cols > 1 && settings.columnDivider ? "0.5px solid #555" : undefined,
-                      columnFill: "auto" as const,
+                      columnFill: "balance" as const,
                     }}>
                       {groupQs.map((q, gi) => {
                         const idx = groupBaseNum + gi + 1;
