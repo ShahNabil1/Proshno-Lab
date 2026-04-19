@@ -188,7 +188,7 @@ export default function QuestionCreate() {
   // Load chapters when subject changes
   useEffect(() => {
     if (!form.subjectId) { setChapters([]); setTopics([]); return; }
-    supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).order("name")
+    supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).eq("is_active", true).order("name")
       .then(({ data }) => setChapters((data as any[]) || []));
   }, [form.subjectId]);
 
