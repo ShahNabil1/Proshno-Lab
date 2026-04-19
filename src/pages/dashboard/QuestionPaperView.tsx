@@ -488,8 +488,8 @@ export default function QuestionPaperView() {
         .replace(/\s+/g, " ")
         .trim();
       // Inline LaTeX bonus
-      const latexMatches = text.match(/\$[^$]+\$|\\\([^)]+\\\)/g) || [];
-      const latexBonus = latexMatches.reduce((sum, m) => sum + Math.max(0, m.length * 0.3), 0);
+      const latexMatches: string[] = text.match(/\$[^$]+\$|\\\([^)]+\\\)/g) || [];
+      const latexBonus = latexMatches.reduce<number>((sum, m) => sum + Math.max(0, m.length * 0.3), 0);
       return text.length + latexBonus;
     };
 
