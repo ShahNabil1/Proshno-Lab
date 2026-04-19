@@ -269,22 +269,39 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      // Always fetch ALL question types; client-side sidebar filter handles type filtering
-      let query = supabase.from("questions").select("*, chapters!inner(is_active)")
-        .eq("class_id", Number(form.classId))
-        .eq("subject_id", Number(form.subjectId))
-        .eq("chapters.is_active", true);
-      if (form.chapterIds.length > 0) {
-        query = query.in("chapter_id", form.chapterIds.map(Number));
-      }
-      query = query.limit(1000);
+      // Always fetch ALL question types; client-side sidebar filter handles type filtering.
+      // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
+      const PAGE_SIZE = 1000;
+      const buildQuery = (from: number, to: number) => {
+        let q = supabase.from("questions").select("*, chapters!inner(is_active)")
+          .eq("class_id", Number(form.classId))
+          .eq("subject_id", Number(form.subjectId))
+          .eq("chapters.is_active", true);
+        if (form.chapterIds.length > 0) {
+          q = q.in("chapter_id", form.chapterIds.map(Number));
+        }
+        return q.order("id", { ascending: true }).range(from, to);
+      };
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const allRows: any[] = [];
+      let page = 0;
+      // Loop until a page returns less than PAGE_SIZE (final page)
+      // Safety cap of 50 iterations (=> max 50,000 questions) to avoid runaway loops.
+      for (let i = 0; i < 50; i++) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await buildQuery(from, to);
+        if (error) throw error;
+        const batch = data || [];
+        allRows.push(...batch);
+        if (batch.length < PAGE_SIZE) break;
+        page++;
+      }
+
       // Filter out questions already in the paper
       const filtered = addToPaper
-        ? (data || []).filter(q => !existingQuestionIds.has(q.id))
-        : data || [];
+        ? allRows.filter(q => !existingQuestionIds.has(q.id))
+        : allRows;
       if (filtered.length === 0) {
         toast.info("এই ফিল্টারে কোনো নতুন প্রশ্ন পাওয়া যায়নি");
         return;
@@ -683,6 +700,41 @@ export default function QuestionCreate() {
                 disabled={selectedIds.size === 0}><Save size={16} /> Save</Button>
             </div>
           </div>
+
+          {/* Live count badges — reflect current Class/Subject/Chapter(s)/Topic(s) selection */}
+          {(() => {
+            // Apply only topic filter to base questions (type filter excluded so each badge shows its own count)
+            const base = filterTopicIds.size > 0
+              ? questions.filter(q => q.topic_id && filterTopicIds.has(q.topic_id))
+              : questions;
+            const countByType = (t: string) => base.filter(q => q.type === t).length;
+            const fmt = (n: number) => n.toLocaleString("bn-BD");
+            const badges = [
+              { value: null, label: "সব", count: base.length, color: "bg-primary/10 text-primary border-primary/30" },
+              { value: "mcq", label: "MCQ", count: countByType("mcq"), color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800" },
+              { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800" },
+              { value: "cq", label: "সৃজনশীল", count: countByType("cq"), color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800" },
+              { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
+            ];
+            return (
+              <div className="flex flex-wrap gap-2">
+                {badges.map(b => {
+                  const isActive = filterType === b.value;
+                  return (
+                    <button
+                      key={String(b.value)}
+                      type="button"
+                      onClick={() => setFilterType(b.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
+                    >
+                      <span>{b.label}</span>
+                      <span className="font-bold tabular-nums">{fmt(b.count)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
             প্রশ্নে ভুল পেলে রিপোর্ট করে eExamapp কে সমৃদ্ধ করুন ।
