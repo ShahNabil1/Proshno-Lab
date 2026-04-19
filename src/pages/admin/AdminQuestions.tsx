@@ -82,6 +82,7 @@ export default function AdminQuestions() {
   }, [filterChapterId]);
 
   const [totalCount, setTotalCount] = useState(0);
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({ mcq: 0, short: 0, cq: 0, descriptive: 0 });
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   // Server-side filtered + paginated; `items` already represents the current page
@@ -114,12 +115,26 @@ export default function AdminQuestions() {
       setTotalCount(count || 0);
     } else {
       // Fallback: when limited admin permissions are in play, restrict in-page rows.
-      // Note: count may be slightly off here because allowed-subject filtering is client-side,
-      // but limited admins typically only see one class/subject anyway via filterClasses/filterSubjects.
       const filtered = rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
       setItems(filtered);
       setTotalCount(count || 0);
     }
+  };
+
+  // Type-wise breakdown — respects all filters EXCEPT filterType itself, so the badges always show full distribution
+  const fetchTypeCounts = async () => {
+    const types = ["mcq", "short", "cq", "descriptive"];
+    const results = await Promise.all(types.map(async (t) => {
+      let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
+      if (filterClassId) q = q.eq("class_id", Number(filterClassId));
+      if (filterSubjectId) q = q.eq("subject_id", Number(filterSubjectId));
+      if (filterChapterId) q = q.eq("chapter_id", Number(filterChapterId));
+      if (filterTopicId) q = q.eq("topic_id", Number(filterTopicId));
+      if (searchTerm.trim()) q = q.ilike("question", `%${searchTerm.trim()}%`);
+      const { count } = await q;
+      return [t, count || 0] as const;
+    }));
+    setTypeCounts(Object.fromEntries(results));
   };
 
   useEffect(() => {
@@ -132,6 +147,11 @@ export default function AdminQuestions() {
     if (!permLoading) fetchItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permLoading, currentPage, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
+
+  useEffect(() => {
+    if (!permLoading) fetchTypeCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permLoading, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId]);
 
   useEffect(() => {
     if (!form.class_id) return;
