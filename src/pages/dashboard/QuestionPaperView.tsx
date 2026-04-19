@@ -1108,41 +1108,113 @@ export default function QuestionPaperView() {
             overflow: "visible",
           }}
         >
-          {/* ===== WATERMARK ===== */}
-          {settings.showWatermark && (
-            <div style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              opacity: (settings.watermarkOpacity || 40) / 100,
-              pointerEvents: "none",
-              zIndex: 0,
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              {settings.watermarkType === "logo" && settings.watermarkLogoUrl ? (
-                <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
-                  width: `${settings.watermarkSize || 15}%`,
-                  maxWidth: "100%",
-                  height: "auto",
-                  objectFit: "contain",
-                }} />
-              ) : (settings.watermarkText || meta.instituteName) ? (
-                <span style={{
-                  fontSize: `${settings.watermarkSize || 30}px`,
-                  fontWeight: 900,
-                  whiteSpace: "nowrap",
-                  color: "#000",
-                  transform: "rotate(-35deg)",
-                }}>
-                  {settings.watermarkText || meta.instituteName}
-                </span>
-              ) : null}
-            </div>
-          )}
+          {/* ===== WATERMARK =====
+              Two layers so the watermark appears on EVERY page:
+              1) Screen layer: tiled absolutely-positioned copies down the full paper height.
+              2) Print layer: position:fixed element — browsers repeat fixed elements on each printed page. */}
+          {settings.showWatermark && (settings.watermarkType === "logo" ? !!settings.watermarkLogoUrl : !!(settings.watermarkText || meta.instituteName)) && (() => {
+            const opacity = (settings.watermarkOpacity || 40) / 100;
+            const isLogo = settings.watermarkType === "logo" && !!settings.watermarkLogoUrl;
+            // Logo size is % of paper width; text size is px.
+            const logoSizePct = settings.watermarkSize || 15;
+            const textSizePx = settings.watermarkSize || 30;
+            const textValue = settings.watermarkText || meta.instituteName || "";
+
+            const renderMark = (key: string | number) => (
+              <div key={key} style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}>
+                {isLogo ? (
+                  <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
+                    width: `${logoSizePct}%`,
+                    height: "auto",
+                    objectFit: "contain",
+                    display: "block",
+                  }} />
+                ) : (
+                  <span style={{
+                    fontSize: `${textSizePx}px`,
+                    fontWeight: 900,
+                    whiteSpace: "nowrap",
+                    color: "#000",
+                    transform: "rotate(-35deg)",
+                    display: "inline-block",
+                  }}>
+                    {textValue}
+                  </span>
+                )}
+              </div>
+            );
+
+            // Estimate page height in screen pixels for tiling on screen view.
+            // Paper preview width matches a real paper aspect ratio, so derive height per page.
+            const aspect: Record<string, number> = {
+              a4: 297 / 210,
+              letter: 11 / 8.5,
+              legal: 14 / 8.5,
+              a5: 210 / 148,
+            };
+            const previewWidth = parseInt(String(paperPreviewWidths[settings.paperSize] || "794").replace("px", ""), 10) || 794;
+            const pageHeightPx = Math.round(previewWidth * (aspect[settings.paperSize] || aspect.a4));
+
+            return (
+              <>
+                {/* Screen tiled watermark (hidden in print) */}
+                <div
+                  data-watermark-screen
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    opacity,
+                    pointerEvents: "none",
+                    zIndex: 0,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-around",
+                    alignItems: "center",
+                    gap: `${Math.max(80, Math.round(pageHeightPx * 0.4))}px`,
+                    paddingTop: `${Math.round(pageHeightPx * 0.45)}px`,
+                  }}>
+                    {Array.from({ length: 30 }).map((_, i) => renderMark(i))}
+                  </div>
+                </div>
+
+                {/* Print watermark — position:fixed makes browsers repeat it on every printed page */}
+                <div
+                  data-watermark-print
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    opacity,
+                    pointerEvents: "none",
+                    zIndex: 0,
+                    width: "100%",
+                    display: "none",
+                  }}
+                >
+                  {renderMark("print")}
+                </div>
+              </>
+            );
+          })()}
 
           {/* ===== HEADER with optional Marks Box ===== */}
           <div style={{ position: "relative", zIndex: 1 }}>
