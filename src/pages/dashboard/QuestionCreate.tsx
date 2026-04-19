@@ -680,9 +680,9 @@ export default function QuestionCreate() {
 
     return (
       <>
-      <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6">
-        {/* Main content */}
-        <div className="space-y-4">
+      <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+        {/* Main content - independently scrollable on desktop */}
+        <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth animate-fade-in">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">Selected: {selectedIds.size}/{questions.length}</span>
