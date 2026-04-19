@@ -190,7 +190,14 @@ export default function AdminTopics() {
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[150px]">
               <Label className="text-xs mb-1 block">শ্রেণী</Label>
-              <Select value={filterClassId} onValueChange={setFilterClassId}>
+              <Select
+                value={filterClassId}
+                onValueChange={(v) => {
+                  setFilterClassId(v);
+                  setFilterSubjectId("");
+                  setFilterChapterId("");
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="শ্রেণী নির্বাচন করুন" /></SelectTrigger>
                 <SelectContent>
                   {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
@@ -199,7 +206,14 @@ export default function AdminTopics() {
             </div>
             <div className="flex-1 min-w-[150px]">
               <Label className="text-xs mb-1 block">বিষয়</Label>
-              <Select value={filterSubjectId} onValueChange={setFilterSubjectId} disabled={!filterClassId}>
+              <Select
+                value={filterSubjectId}
+                onValueChange={(v) => {
+                  setFilterSubjectId(v);
+                  setFilterChapterId("");
+                }}
+                disabled={!filterClassId}
+              >
                 <SelectTrigger>
                   {loadingSubjects ? <Loader2 className="w-4 h-4 animate-spin" /> : <SelectValue placeholder="বিষয় নির্বাচন করুন" />}
                 </SelectTrigger>
