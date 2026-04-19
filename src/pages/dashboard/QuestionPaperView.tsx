@@ -146,6 +146,7 @@ export default function QuestionPaperView() {
     watermarkText: "",
     watermarkLogoUrl: "",
     watermarkType: "text" as "text" | "logo",
+    watermarkRotation: -35 as number,
     cqToAnswer: 0, // 0 means auto (all)
     shortToAnswer: 0,
     descToAnswer: 0,
@@ -963,6 +964,25 @@ export default function QuestionPaperView() {
                 </div>
                 <Slider value={[settings.watermarkSize]} min={settings.watermarkType === "logo" ? 5 : 12} max={settings.watermarkType === "logo" ? 100 : 80} step={settings.watermarkType === "logo" ? 5 : 2} onValueChange={([v]) => updateSetting("watermarkSize", v)} />
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Rotation</span>
+                  <span className="text-xs font-medium">{settings.watermarkRotation ?? -35}°</span>
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {[-45, -35, 0, 35, 45, 90].map((deg) => (
+                    <Button
+                      key={deg}
+                      size="sm"
+                      variant={(settings.watermarkRotation ?? -35) === deg ? "default" : "outline"}
+                      className="h-6 text-[10px] px-2 flex-1 min-w-[44px]"
+                      onClick={() => updateSetting("watermarkRotation", deg)}
+                    >
+                      {deg}°
+                    </Button>
+                  ))}
+                </div>
+              </div>
               {settings.watermarkType === "text" ? (
                 <Input className="text-xs h-8" placeholder={meta?.instituteName || "জলছাপ টেক্সট লিখুন"} value={settings.watermarkText} onChange={(e) => updateSetting("watermarkText", e.target.value)} />
               ) : (
@@ -1120,6 +1140,8 @@ export default function QuestionPaperView() {
             const textSizePx = settings.watermarkSize || 30;
             const textValue = settings.watermarkText || meta.instituteName || "";
 
+            const rotation = typeof settings.watermarkRotation === "number" ? settings.watermarkRotation : -35;
+
             const renderMark = (key: string | number) => (
               <div key={key} style={{
                 width: "100%",
@@ -1129,19 +1151,27 @@ export default function QuestionPaperView() {
                 pointerEvents: "none",
               }}>
                 {isLogo ? (
-                  <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
-                    width: `${logoSizePct}%`,
-                    height: "auto",
-                    objectFit: "contain",
-                    display: "block",
-                  }} />
+                  <img
+                    src={settings.watermarkLogoUrl}
+                    alt="Watermark"
+                    data-watermark-img
+                    style={{
+                      width: `${logoSizePct}%`,
+                      maxWidth: "none",
+                      maxHeight: "none",
+                      height: "auto",
+                      objectFit: "contain",
+                      display: "block",
+                      transform: `rotate(${rotation}deg)`,
+                    }}
+                  />
                 ) : (
                   <span style={{
                     fontSize: `${textSizePx}px`,
                     fontWeight: 900,
                     whiteSpace: "nowrap",
                     color: "#000",
-                    transform: "rotate(-35deg)",
+                    transform: `rotate(${rotation}deg)`,
                     display: "inline-block",
                   }}>
                     {textValue}
