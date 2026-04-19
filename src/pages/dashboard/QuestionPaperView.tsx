@@ -1365,7 +1365,11 @@ export default function QuestionPaperView() {
             const standalone: QuestionRow[] = [];
 
             mcqQuestions.forEach(q => {
-              const hasStimulus = q.stimulus_text && q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0;
+              // Treat stimulus as present if it contains text OR rich media (image/table/svg/figure)
+              const hasStimulus = !!q.stimulus_text && (
+                q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 ||
+                /<(img|table|svg|figure)\b/i.test(q.stimulus_text)
+              );
               if (q.stimulus_group_id) {
                 if (!grouped.has(q.stimulus_group_id)) grouped.set(q.stimulus_group_id, []);
                 grouped.get(q.stimulus_group_id)!.push(q);
