@@ -1121,6 +1121,8 @@ export default function QuestionPaperView() {
             const textSizePx = settings.watermarkSize || 30;
             const textValue = settings.watermarkText || meta.instituteName || "";
 
+            const rotation = typeof settings.watermarkRotation === "number" ? settings.watermarkRotation : -35;
+
             const renderMark = (key: string | number) => (
               <div key={key} style={{
                 width: "100%",
@@ -1130,19 +1132,27 @@ export default function QuestionPaperView() {
                 pointerEvents: "none",
               }}>
                 {isLogo ? (
-                  <img src={settings.watermarkLogoUrl} alt="Watermark" style={{
-                    width: `${logoSizePct}%`,
-                    height: "auto",
-                    objectFit: "contain",
-                    display: "block",
-                  }} />
+                  <img
+                    src={settings.watermarkLogoUrl}
+                    alt="Watermark"
+                    data-watermark-img
+                    style={{
+                      width: `${logoSizePct}%`,
+                      maxWidth: "none",
+                      maxHeight: "none",
+                      height: "auto",
+                      objectFit: "contain",
+                      display: "block",
+                      transform: `rotate(${rotation}deg)`,
+                    }}
+                  />
                 ) : (
                   <span style={{
                     fontSize: `${textSizePx}px`,
                     fontWeight: 900,
                     whiteSpace: "nowrap",
                     color: "#000",
-                    transform: "rotate(-35deg)",
+                    transform: `rotate(${rotation}deg)`,
                     display: "inline-block",
                   }}>
                     {textValue}
