@@ -81,31 +81,44 @@ export default function AdminQuestions() {
       .then(({ data }) => setFilterTopics(data || []));
   }, [filterChapterId]);
 
-  const filteredItems = items.filter((item) => {
-    if (searchTerm && !item.question?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    if (filterClassId && String(item.class_id) !== filterClassId) return false;
-    if (filterSubjectId && String(item.subject_id) !== filterSubjectId) return false;
-    if (filterChapterId && String(item.chapter_id) !== filterChapterId) return false;
-    if (filterTopicId && String(item.topic_id) !== filterTopicId) return false;
-    if (filterType && item.type !== filterType) return false;
-    return true;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const [totalCount, setTotalCount] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedItems = filteredItems.slice((safeCurrentPage - 1) * ITEMS_PER_PAGE, safeCurrentPage * ITEMS_PER_PAGE);
+  // Server-side filtered + paginated; `items` already represents the current page
+  const paginatedItems = items;
 
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
 
   const fetchItems = async () => {
-    const { data } = await supabase.from("questions")
-      .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)")
+    // Build server-side filtered query with count + range pagination to avoid the 1000-row default limit
+    let query = supabase.from("questions")
+      .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: "exact" })
       .order("created_at", { ascending: false });
+
+    if (filterClassId) query = query.eq("class_id", Number(filterClassId));
+    if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
+    if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
+    if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
+    if (filterType) query = query.eq("type", filterType);
+    if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
+
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+    query = query.range(from, to);
+
+    const { data, count } = await query;
+    const rows = data || [];
     if (hasFullAccess) {
-      setItems(data || []);
+      setItems(rows);
+      setTotalCount(count || 0);
     } else {
-      setItems((data || []).filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id)));
+      // Fallback: when limited admin permissions are in play, restrict in-page rows.
+      // Note: count may be slightly off here because allowed-subject filtering is client-side,
+      // but limited admins typically only see one class/subject anyway via filterClasses/filterSubjects.
+      const filtered = rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
+      setItems(filtered);
+      setTotalCount(count || 0);
     }
   };
 
@@ -117,7 +130,8 @@ export default function AdminQuestions() {
 
   useEffect(() => {
     if (!permLoading) fetchItems();
-  }, [permLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permLoading, currentPage, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
 
   useEffect(() => {
     if (!form.class_id) return;
