@@ -814,10 +814,10 @@ export default function QuestionCreate() {
                       key={String(b.value)}
                       type="button"
                       onClick={() => setFilterType(b.value)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1 scale-[1.02]" : "hover:opacity-80"}`}
                     >
                       <span>{b.label}</span>
-                      <span className="font-bold tabular-nums">{fmt(b.count)}</span>
+                      <span className="font-bold tabular-nums min-w-[1.5ch] text-center">{fmt(b.count)}</span>
                     </button>
                   );
                 })}
