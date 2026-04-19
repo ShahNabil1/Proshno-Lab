@@ -246,7 +246,7 @@
   }
 
   .mcq-print-layout {
-    display: block !important;
+    display: grid !important;
   }
 
   [data-print-paper] .mcq-print-columns {
