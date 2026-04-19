@@ -219,7 +219,20 @@
   break-inside: avoid;
   -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
-  display: block;
+  /* inline-block + width 100% is the most reliable way to prevent
+     CSS multi-column from splitting an item across columns */
+  display: inline-block;
+  width: 100%;
+  vertical-align: top;
+}
+
+/* Inner blocks (stimulus + question body) must also resist splitting
+   so a tall stimulus never lands in a separate column from its question */
+.mcq-screen-layout .mcq-print-item > *,
+.mcq-print-columns .mcq-print-item > * {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 @media print {
