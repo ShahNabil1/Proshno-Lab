@@ -692,7 +692,7 @@ export default function QuestionCreate() {
       <>
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
         {/* Main content - independently scrollable on desktop */}
-        <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth animate-fade-in">
+        <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">Selected: {selectedIds.size}/{questions.length}</span>
@@ -814,7 +814,7 @@ export default function QuestionCreate() {
                       key={String(b.value)}
                       type="button"
                       onClick={() => setFilterType(b.value)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1 scale-[1.02]" : "hover:opacity-80"}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors duration-150 ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
                     >
                       <span>{b.label}</span>
                       <span className="font-bold tabular-nums min-w-[1.5ch] text-center">{fmt(b.count)}</span>
