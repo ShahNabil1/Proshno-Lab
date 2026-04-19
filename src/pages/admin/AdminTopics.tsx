@@ -56,13 +56,20 @@ export default function AdminTopics() {
       .then(({ data }) => setAllSubjects(data || []));
   }, []);
 
+  // Sync filters → URL so they persist across back-navigation
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (filterClassId) params.set("class_id", filterClassId); else params.delete("class_id");
+    if (filterSubjectId) params.set("subject_id", filterSubjectId); else params.delete("subject_id");
+    if (filterChapterId) params.set("chapter_id", filterChapterId); else params.delete("chapter_id");
+    setSearchParams(params, { replace: true });
+  }, [filterClassId, filterSubjectId, filterChapterId]);
+
   // Filter: load subjects when class changes (filtered by permissions)
   const [subjects, setSubjects] = useState<any[]>([]);
   useEffect(() => {
-    if (!filterClassId) { setSubjects([]); setFilterSubjectId(""); return; }
+    if (!filterClassId) { setSubjects([]); return; }
     setLoadingSubjects(true);
-    setFilterSubjectId("");
-    setFilterChapterId("");
     const filtered = filterSubjects(allSubjects.filter(s => String(s.class_id) === filterClassId) as any);
     setSubjects(filtered);
     setLoadingSubjects(false);
@@ -70,9 +77,8 @@ export default function AdminTopics() {
 
   // Filter: load chapters when subject changes
   useEffect(() => {
-    if (!filterSubjectId) { setChapters([]); setFilterChapterId(""); return; }
+    if (!filterSubjectId) { setChapters([]); return; }
     setLoadingChapters(true);
-    setFilterChapterId("");
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
       .then(({ data }) => { setChapters(data || []); setLoadingChapters(false); });
   }, [filterSubjectId]);
