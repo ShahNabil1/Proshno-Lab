@@ -213,6 +213,15 @@
   display: none;
 }
 
+/* Screen: keep MCQ items intact across columns */
+.mcq-screen-layout .mcq-print-item,
+.mcq-print-columns .mcq-print-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  display: block;
+}
+
 @media print {
   /* Dynamic page size from data attribute */
   @page {
