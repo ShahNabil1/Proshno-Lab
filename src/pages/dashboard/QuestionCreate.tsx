@@ -964,7 +964,7 @@ export default function QuestionCreate() {
                 variant="outline"
                 size="sm"
                 disabled={currentPage === 1}
-                onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => p - 1); scrollMainToTop(); }}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" /> আগের
               </Button>
@@ -981,7 +981,7 @@ export default function QuestionCreate() {
                           variant={p === currentPage ? "default" : "outline"}
                           size="sm"
                           className="w-9 h-9 p-0"
-                          onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                          onClick={() => { setCurrentPage(p); scrollMainToTop(); }}
                         >
                           {p}
                         </Button>
@@ -993,7 +993,7 @@ export default function QuestionCreate() {
                 variant="outline"
                 size="sm"
                 disabled={currentPage === totalPages}
-                onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onClick={() => { setCurrentPage(p => p + 1); scrollMainToTop(); }}
               >
                 পরের <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -1006,9 +1006,9 @@ export default function QuestionCreate() {
           )}
         </div>
 
-        {/* Right sidebar - Advanced Filter */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
+        {/* Right sidebar - Advanced Filter (independently scrollable on desktop) */}
+        <aside className="hidden lg:block lg:overflow-y-auto lg:pr-1 lg:scroll-smooth">
+          <div className="space-y-4 pb-2">
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-heading font-bold text-center mb-3 border-b border-border pb-2">এডভান্সড ফিল্টার মেনু</h3>
