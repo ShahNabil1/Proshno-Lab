@@ -270,9 +270,10 @@ export default function QuestionCreate() {
     setLoading(true);
     try {
       // Always fetch ALL question types; client-side sidebar filter handles type filtering
-      let query = supabase.from("questions").select("*")
+      let query = supabase.from("questions").select("*, chapters!inner(is_active)")
         .eq("class_id", Number(form.classId))
-        .eq("subject_id", Number(form.subjectId));
+        .eq("subject_id", Number(form.subjectId))
+        .eq("chapters.is_active", true);
       if (form.chapterIds.length > 0) {
         query = query.in("chapter_id", form.chapterIds.map(Number));
       }
