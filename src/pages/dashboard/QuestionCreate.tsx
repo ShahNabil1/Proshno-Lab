@@ -701,6 +701,41 @@ export default function QuestionCreate() {
             </div>
           </div>
 
+          {/* Live count badges — reflect current Class/Subject/Chapter(s)/Topic(s) selection */}
+          {(() => {
+            // Apply only topic filter to base questions (type filter excluded so each badge shows its own count)
+            const base = filterTopicIds.size > 0
+              ? questions.filter(q => q.topic_id && filterTopicIds.has(q.topic_id))
+              : questions;
+            const countByType = (t: string) => base.filter(q => q.type === t).length;
+            const fmt = (n: number) => n.toLocaleString("bn-BD");
+            const badges = [
+              { value: null, label: "সব", count: base.length, color: "bg-primary/10 text-primary border-primary/30" },
+              { value: "mcq", label: "MCQ", count: countByType("mcq"), color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800" },
+              { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800" },
+              { value: "cq", label: "সৃজনশীল", count: countByType("cq"), color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800" },
+              { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
+            ];
+            return (
+              <div className="flex flex-wrap gap-2">
+                {badges.map(b => {
+                  const isActive = filterType === b.value;
+                  return (
+                    <button
+                      key={String(b.value)}
+                      type="button"
+                      onClick={() => setFilterType(b.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
+                    >
+                      <span>{b.label}</span>
+                      <span className="font-bold tabular-nums">{fmt(b.count)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
             প্রশ্নে ভুল পেলে রিপোর্ট করে eExamapp কে সমৃদ্ধ করুন ।
           </div>
