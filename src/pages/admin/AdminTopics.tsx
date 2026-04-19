@@ -15,11 +15,12 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 export default function AdminTopics() {
   const navigate = useNavigate();
   const { filterClasses, filterSubjects, loading: permLoading } = useAdminPermissions();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter states
-  const [filterClassId, setFilterClassId] = useState("");
-  const [filterSubjectId, setFilterSubjectId] = useState("");
-  const [filterChapterId, setFilterChapterId] = useState("");
+  // Filter states — initialized from URL so they persist across navigations
+  const [filterClassId, setFilterClassId] = useState(() => searchParams.get("class_id") || "");
+  const [filterSubjectId, setFilterSubjectId] = useState(() => searchParams.get("subject_id") || "");
+  const [filterChapterId, setFilterChapterId] = useState(() => searchParams.get("chapter_id") || "");
 
   // Data for filters
   const [allClasses, setAllClasses] = useState<any[]>([]);
