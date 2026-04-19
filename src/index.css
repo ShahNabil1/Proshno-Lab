@@ -253,6 +253,31 @@
     display: grid !important;
   }
 
+  /* ===== WATERMARK PRINT BEHAVIOUR =====
+     Hide tiled screen watermark; show a single fixed-position watermark
+     which browsers repeat on every printed page. */
+  [data-watermark-screen] {
+    display: none !important;
+  }
+
+  [data-watermark-print] {
+    display: flex !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100vw !important;
+    height: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+  }
+
+  [data-watermark-print] img {
+    max-width: none !important;
+  }
+
   [data-print-paper] .mcq-print-columns {
     column-fill: auto !important;
   }
