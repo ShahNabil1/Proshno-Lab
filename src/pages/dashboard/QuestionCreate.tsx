@@ -132,6 +132,7 @@ export default function QuestionCreate() {
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState("");
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set());
   const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set());
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
   const [filterYear, setFilterYear] = useState("");
@@ -393,6 +394,10 @@ export default function QuestionCreate() {
       result = result.filter(r => r.type === filterType);
     }
 
+    if (filterChapterIds.size > 0) {
+      result = result.filter(r => filterChapterIds.has(r.chapter_id));
+    }
+
     if (filterTopicIds.size > 0) {
       result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
     }
@@ -461,7 +466,7 @@ export default function QuestionCreate() {
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterTopicIds, filterBoards, filterYear, filterSpecial]);
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
@@ -639,6 +644,32 @@ export default function QuestionCreate() {
           </div>
         </div>
 
+        {/* Chapter filter (from selected chapters) */}
+        {chapters.filter(c => form.chapterIds.includes(String(c.id))).length > 0 && (
+          <div className="border border-border rounded-lg p-3">
+            <h4 className="font-heading font-bold text-sm mb-3">অধ্যায়</h4>
+            <div className="space-y-1.5">
+              {chapters
+                .filter(c => form.chapterIds.includes(String(c.id)))
+                .map(c => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={filterChapterIds.has(c.id)}
+                      onCheckedChange={() => {
+                        setFilterChapterIds(prev => {
+                          const next = new Set(prev);
+                          next.has(c.id) ? next.delete(c.id) : next.add(c.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    📖 {c.name}
+                  </label>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Topics grouped by chapter */}
         {Object.keys(topicsByChapter).length > 0 && (
           <div className="border border-border rounded-lg p-3">
@@ -722,6 +753,10 @@ export default function QuestionCreate() {
                 result = result.filter(r => r.question?.toLowerCase().includes(q));
               }
 
+              if (filterChapterIds.size > 0) {
+                result = result.filter(r => filterChapterIds.has(r.chapter_id));
+              }
+
               if (filterTopicIds.size > 0) {
                 result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
               }
@@ -792,12 +827,13 @@ export default function QuestionCreate() {
               { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
             ];
 
-            const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterTopicIds.size > 0
+            const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
               || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
 
             const resetAllFilters = () => {
               setFilterSearch("");
               setFilterType(null);
+              setFilterChapterIds(new Set());
               setFilterTopicIds(new Set());
               setFilterBoards(new Set());
               setFilterYear("");
