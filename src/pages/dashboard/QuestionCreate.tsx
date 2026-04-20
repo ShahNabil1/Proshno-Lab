@@ -394,6 +394,10 @@ export default function QuestionCreate() {
       result = result.filter(r => r.type === filterType);
     }
 
+    if (filterChapterIds.size > 0) {
+      result = result.filter(r => filterChapterIds.has(r.chapter_id));
+    }
+
     if (filterTopicIds.size > 0) {
       result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
     }
