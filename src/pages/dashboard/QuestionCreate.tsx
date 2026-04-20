@@ -727,6 +727,10 @@ export default function QuestionCreate() {
                 result = result.filter(r => r.question?.toLowerCase().includes(q));
               }
 
+              if (filterChapterIds.size > 0) {
+                result = result.filter(r => filterChapterIds.has(r.chapter_id));
+              }
+
               if (filterTopicIds.size > 0) {
                 result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
               }
@@ -797,12 +801,13 @@ export default function QuestionCreate() {
               { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
             ];
 
-            const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterTopicIds.size > 0
+            const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
               || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
 
             const resetAllFilters = () => {
               setFilterSearch("");
               setFilterType(null);
+              setFilterChapterIds(new Set());
               setFilterTopicIds(new Set());
               setFilterBoards(new Set());
               setFilterYear("");
