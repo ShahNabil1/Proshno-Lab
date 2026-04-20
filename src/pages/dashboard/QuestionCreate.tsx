@@ -644,6 +644,32 @@ export default function QuestionCreate() {
           </div>
         </div>
 
+        {/* Chapter filter (from selected chapters) */}
+        {chapters.filter(c => form.chapterIds.includes(String(c.id))).length > 0 && (
+          <div className="border border-border rounded-lg p-3">
+            <h4 className="font-heading font-bold text-sm mb-3">অধ্যায়</h4>
+            <div className="space-y-1.5">
+              {chapters
+                .filter(c => form.chapterIds.includes(String(c.id)))
+                .map(c => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={filterChapterIds.has(c.id)}
+                      onCheckedChange={() => {
+                        setFilterChapterIds(prev => {
+                          const next = new Set(prev);
+                          next.has(c.id) ? next.delete(c.id) : next.add(c.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    📖 {c.name}
+                  </label>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Topics grouped by chapter */}
         {Object.keys(topicsByChapter).length > 0 && (
           <div className="border border-border rounded-lg p-3">
