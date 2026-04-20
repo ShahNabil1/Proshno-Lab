@@ -132,6 +132,7 @@ export default function QuestionCreate() {
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState("");
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set());
   const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set());
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
   const [filterYear, setFilterYear] = useState("");
