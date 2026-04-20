@@ -466,7 +466,7 @@ export default function QuestionCreate() {
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterTopicIds, filterBoards, filterYear, filterSpecial]);
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
