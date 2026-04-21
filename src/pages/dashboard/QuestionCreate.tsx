@@ -703,12 +703,12 @@ export default function QuestionCreate() {
                           {c.name}
                         </span>
                         <span
-                          className={`shrink-0 inline-flex items-center justify-center min-w-[1.85rem] px-1.5 h-[1.15rem] rounded-full text-[10.5px] font-semibold tabular-nums tracking-tight border ${
+                          className={`shrink-0 inline-flex items-center justify-center min-w-[2rem] px-2 h-[1.35rem] rounded-full text-[11.5px] font-bold tabular-nums tracking-tight border shadow-sm transition-all ${
                             isActive
-                              ? "bg-primary text-primary-foreground border-primary"
+                              ? "bg-primary text-primary-foreground border-primary shadow-primary/30"
                               : count === 0
-                                ? "bg-muted text-muted-foreground/70 border-border"
-                                : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                ? "bg-muted text-muted-foreground/60 border-border shadow-none"
+                                : "bg-primary/10 text-primary border-primary/25 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
                           }`}
                         >
                           {fmtBn(count)}
@@ -764,7 +764,7 @@ export default function QuestionCreate() {
                     <div key={chId}>
                       <div className="flex items-center justify-between mb-1.5 border-b border-border pb-1">
                         <p className="text-xs font-semibold text-muted-foreground truncate">📖 {data.chapterName}</p>
-                        <span className="text-[10.5px] font-semibold tabular-nums text-muted-foreground/80 shrink-0 ml-2">
+                        <span className="shrink-0 ml-2 inline-flex items-center justify-center min-w-[2rem] px-2 h-[1.3rem] rounded-full text-[11px] font-bold tabular-nums tracking-tight bg-primary/12 text-primary border border-primary/25 shadow-sm">
                           {fmtBn(groupTotal)}
                         </span>
                       </div>
@@ -803,12 +803,12 @@ export default function QuestionCreate() {
                                   {t.name}
                                 </span>
                                 <span
-                                  className={`shrink-0 inline-flex items-center justify-center min-w-[1.7rem] px-1.5 h-[1.05rem] rounded-full text-[10px] font-semibold tabular-nums tracking-tight border ${
+                                  className={`shrink-0 inline-flex items-center justify-center min-w-[1.85rem] px-1.5 h-[1.2rem] rounded-full text-[10.5px] font-bold tabular-nums tracking-tight border shadow-sm transition-all ${
                                     isActive
-                                      ? "bg-primary text-primary-foreground border-primary"
+                                      ? "bg-primary text-primary-foreground border-primary shadow-primary/30"
                                       : count === 0
-                                        ? "bg-muted text-muted-foreground/70 border-border"
-                                        : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                        ? "bg-muted text-muted-foreground/60 border-border shadow-none"
+                                        : "bg-primary/10 text-primary border-primary/25 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
                                   }`}
                                 >
                                   {fmtBn(count)}
@@ -842,10 +842,10 @@ export default function QuestionCreate() {
                                 টপিকবিহীন প্রশ্ন
                               </span>
                               <span
-                                className={`shrink-0 inline-flex items-center justify-center min-w-[1.7rem] px-1.5 h-[1.05rem] rounded-full text-[10px] font-semibold tabular-nums tracking-tight border ${
+                                className={`shrink-0 inline-flex items-center justify-center min-w-[1.85rem] px-1.5 h-[1.2rem] rounded-full text-[10.5px] font-bold tabular-nums tracking-tight border shadow-sm transition-all ${
                                   noneActive
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                    ? "bg-primary text-primary-foreground border-primary shadow-primary/30"
+                                    : "bg-primary/10 text-primary border-primary/25 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
                                 }`}
                               >
                                 {fmtBn(noneCount)}
