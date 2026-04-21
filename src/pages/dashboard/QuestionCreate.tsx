@@ -645,56 +645,171 @@ export default function QuestionCreate() {
         </div>
 
         {/* Chapter filter (from selected chapters) */}
-        {chapters.filter(c => form.chapterIds.includes(String(c.id))).length > 0 && (
-          <div className="border border-border rounded-lg p-3">
-            <h4 className="font-heading font-bold text-sm mb-3">অধ্যায়</h4>
-            <div className="space-y-1.5">
-              {chapters
-                .filter(c => form.chapterIds.includes(String(c.id)))
-                .map(c => (
-                  <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={filterChapterIds.has(c.id)}
-                      onCheckedChange={() => {
-                        setFilterChapterIds(prev => {
-                          const next = new Set(prev);
-                          next.has(c.id) ? next.delete(c.id) : next.add(c.id);
-                          return next;
-                        });
-                      }}
-                    />
-                    📖 {c.name}
-                  </label>
-                ))}
+        {chapters.filter(c => form.chapterIds.includes(String(c.id))).length > 0 && (() => {
+          const fmtBn = (n: number) => n.toLocaleString("bn-BD");
+          // Chapter counts respect type filter only (so toggling chapters stays intuitive)
+          const chapterPool = filterType ? questions.filter(q => q.type === filterType) : questions;
+          const chapterCount = (cid: number) => chapterPool.filter(q => q.chapter_id === cid).length;
+          return (
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-heading font-bold text-sm">অধ্যায়</h4>
+                {filterChapterIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterChapterIds(new Set())}
+                    className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    ক্লিয়ার
+                  </button>
+                )}
+              </div>
+              <div className="space-y-1">
+                {chapters
+                  .filter(c => form.chapterIds.includes(String(c.id)))
+                  .map(c => {
+                    const count = chapterCount(c.id);
+                    const isActive = filterChapterIds.has(c.id);
+                    const disabled = count === 0;
+                    return (
+                      <label
+                        key={c.id}
+                        className={`group flex items-center gap-2 text-sm rounded-md px-2 py-1.5 transition-colors ${
+                          disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : isActive
+                              ? "bg-primary/10 cursor-pointer"
+                              : "cursor-pointer hover:bg-muted/60"
+                        }`}
+                      >
+                        <Checkbox
+                          disabled={disabled}
+                          checked={isActive}
+                          onCheckedChange={() => {
+                            if (disabled) return;
+                            setFilterChapterIds(prev => {
+                              const next = new Set(prev);
+                              next.has(c.id) ? next.delete(c.id) : next.add(c.id);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className={`flex-1 leading-tight truncate ${isActive ? "font-medium text-foreground" : "text-foreground/90"}`}>
+                          {c.name}
+                        </span>
+                        <span
+                          className={`shrink-0 inline-flex items-center justify-center min-w-[1.85rem] px-1.5 h-[1.15rem] rounded-full text-[10.5px] font-semibold tabular-nums tracking-tight border ${
+                            isActive
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : count === 0
+                                ? "bg-muted text-muted-foreground/70 border-border"
+                                : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                          }`}
+                        >
+                          {fmtBn(count)}
+                        </span>
+                      </label>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Topics grouped by chapter */}
-        {Object.keys(topicsByChapter).length > 0 && (
-          <div className="border border-border rounded-lg p-3">
-            <h4 className="font-heading font-bold text-sm mb-3">টপিক</h4>
-            <div className="space-y-3">
-              {Object.entries(topicsByChapter).map(([chId, data]) => (
-                <div key={chId}>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5 border-b border-border pb-1">📖 {data.chapterName}</p>
-                  {data.topics.length === 0 ? (
-                    <p className="text-xs text-muted-foreground/70 pl-4">কোনো টপিক নেই</p>
-                  ) : (
-                    <div className="space-y-1.5 pl-4">
-                      {data.topics.map(t => (
-                        <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <Checkbox checked={filterTopicIds.has(t.id)} onCheckedChange={() => { setFilterTopicIds(prev => { const next = new Set(prev); next.has(t.id) ? next.delete(t.id) : next.add(t.id); return next; }); }} />
-                          {t.name}
-                        </label>
-                      ))}
+        {Object.keys(topicsByChapter).length > 0 && (() => {
+          const fmtBn = (n: number) => n.toLocaleString("bn-BD");
+          // Topic counts respect type + active chapter filter for accurate preview
+          const topicPool = questions.filter(q => {
+            if (filterType && q.type !== filterType) return false;
+            if (filterChapterIds.size > 0 && !filterChapterIds.has(q.chapter_id)) return false;
+            return true;
+          });
+          const topicCount = (tid: number) => topicPool.filter(q => q.topic_id === tid).length;
+          const chapterTopicTotal = (cid: number) =>
+            topicPool.filter(q => q.chapter_id === cid && q.topic_id).length;
+          return (
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-heading font-bold text-sm">টপিক</h4>
+                {filterTopicIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterTopicIds(new Set())}
+                    className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    ক্লিয়ার
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {Object.entries(topicsByChapter).map(([chId, data]) => {
+                  const groupTotal = chapterTopicTotal(Number(chId));
+                  return (
+                    <div key={chId}>
+                      <div className="flex items-center justify-between mb-1.5 border-b border-border pb-1">
+                        <p className="text-xs font-semibold text-muted-foreground truncate">📖 {data.chapterName}</p>
+                        <span className="text-[10.5px] font-semibold tabular-nums text-muted-foreground/80 shrink-0 ml-2">
+                          {fmtBn(groupTotal)}
+                        </span>
+                      </div>
+                      {data.topics.length === 0 ? (
+                        <p className="text-xs text-muted-foreground/70 pl-4">কোনো টপিক নেই</p>
+                      ) : (
+                        <div className="space-y-1 pl-2">
+                          {data.topics.map(t => {
+                            const count = topicCount(t.id);
+                            const isActive = filterTopicIds.has(t.id);
+                            const disabled = count === 0;
+                            return (
+                              <label
+                                key={t.id}
+                                className={`group flex items-center gap-2 text-sm rounded-md px-2 py-1 transition-colors ${
+                                  disabled
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : isActive
+                                      ? "bg-primary/10 cursor-pointer"
+                                      : "cursor-pointer hover:bg-muted/60"
+                                }`}
+                              >
+                                <Checkbox
+                                  disabled={disabled}
+                                  checked={isActive}
+                                  onCheckedChange={() => {
+                                    if (disabled) return;
+                                    setFilterTopicIds(prev => {
+                                      const next = new Set(prev);
+                                      next.has(t.id) ? next.delete(t.id) : next.add(t.id);
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className={`flex-1 leading-tight truncate ${isActive ? "font-medium text-foreground" : "text-foreground/90"}`}>
+                                  {t.name}
+                                </span>
+                                <span
+                                  className={`shrink-0 inline-flex items-center justify-center min-w-[1.7rem] px-1.5 h-[1.05rem] rounded-full text-[10px] font-semibold tabular-nums tracking-tight border ${
+                                    isActive
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : count === 0
+                                        ? "bg-muted text-muted-foreground/70 border-border"
+                                        : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                  }`}
+                                >
+                                  {fmtBn(count)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Board filter */}
         <div className="border border-border rounded-lg p-3">
