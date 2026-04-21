@@ -134,6 +134,7 @@ export default function QuestionCreate() {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set());
   const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set());
+  const [filterUntopicedChapterIds, setFilterUntopicedChapterIds] = useState<Set<number>>(new Set());
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
   const [filterYear, setFilterYear] = useState("");
   const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
@@ -398,8 +399,12 @@ export default function QuestionCreate() {
       result = result.filter(r => filterChapterIds.has(r.chapter_id));
     }
 
-    if (filterTopicIds.size > 0) {
-      result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
+    if (filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) {
+      result = result.filter(r => {
+        if (r.topic_id && filterTopicIds.has(r.topic_id)) return true;
+        if (!r.topic_id && filterUntopicedChapterIds.has(r.chapter_id)) return true;
+        return false;
+      });
     }
 
     if (filterBoards.size > 0) {
@@ -466,7 +471,7 @@ export default function QuestionCreate() {
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterBoards, filterYear, filterSpecial]);
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
@@ -726,16 +731,21 @@ export default function QuestionCreate() {
             return true;
           });
           const topicCount = (tid: number) => topicPool.filter(q => q.topic_id === tid).length;
+          const untopicedCount = (cid: number) =>
+            topicPool.filter(q => q.chapter_id === cid && !q.topic_id).length;
           const chapterTopicTotal = (cid: number) =>
-            topicPool.filter(q => q.chapter_id === cid && q.topic_id).length;
+            topicPool.filter(q => q.chapter_id === cid).length;
           return (
             <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-heading font-bold text-sm">টপিক</h4>
-                {filterTopicIds.size > 0 && (
+                {(filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) && (
                   <button
                     type="button"
-                    onClick={() => setFilterTopicIds(new Set())}
+                    onClick={() => {
+                      setFilterTopicIds(new Set());
+                      setFilterUntopicedChapterIds(new Set());
+                    }}
                     className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                   >
                     ক্লিয়ার
@@ -744,7 +754,12 @@ export default function QuestionCreate() {
               </div>
               <div className="space-y-3">
                 {Object.entries(topicsByChapter).map(([chId, data]) => {
-                  const groupTotal = chapterTopicTotal(Number(chId));
+                  const cidNum = Number(chId);
+                  const groupTotal = chapterTopicTotal(cidNum);
+                  const noneCount = untopicedCount(cidNum);
+                  const noneActive = filterUntopicedChapterIds.has(cidNum);
+                  const noneDisabled = noneCount === 0;
+                  const hasTopics = data.topics.length > 0;
                   return (
                     <div key={chId}>
                       <div className="flex items-center justify-between mb-1.5 border-b border-border pb-1">
@@ -753,7 +768,7 @@ export default function QuestionCreate() {
                           {fmtBn(groupTotal)}
                         </span>
                       </div>
-                      {data.topics.length === 0 ? (
+                      {!hasTopics && noneCount === 0 ? (
                         <p className="text-xs text-muted-foreground/70 pl-4">কোনো টপিক নেই</p>
                       ) : (
                         <div className="space-y-1 pl-2">
@@ -801,6 +816,42 @@ export default function QuestionCreate() {
                               </label>
                             );
                           })}
+                          {noneCount > 0 && (
+                            <label
+                              className={`group flex items-center gap-2 text-sm rounded-md px-2 py-1 transition-colors border border-dashed ${
+                                noneDisabled
+                                  ? "opacity-50 cursor-not-allowed border-border"
+                                  : noneActive
+                                    ? "bg-primary/10 border-primary/40 cursor-pointer"
+                                    : "cursor-pointer hover:bg-muted/60 border-border/70"
+                              }`}
+                            >
+                              <Checkbox
+                                disabled={noneDisabled}
+                                checked={noneActive}
+                                onCheckedChange={() => {
+                                  if (noneDisabled) return;
+                                  setFilterUntopicedChapterIds(prev => {
+                                    const next = new Set(prev);
+                                    next.has(cidNum) ? next.delete(cidNum) : next.add(cidNum);
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className={`flex-1 leading-tight truncate italic ${noneActive ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                                টপিকবিহীন প্রশ্ন
+                              </span>
+                              <span
+                                className={`shrink-0 inline-flex items-center justify-center min-w-[1.7rem] px-1.5 h-[1.05rem] rounded-full text-[10px] font-semibold tabular-nums tracking-tight border ${
+                                  noneActive
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                }`}
+                              >
+                                {fmtBn(noneCount)}
+                              </span>
+                            </label>
+                          )}
                         </div>
                       )}
                     </div>
@@ -872,8 +923,12 @@ export default function QuestionCreate() {
                 result = result.filter(r => filterChapterIds.has(r.chapter_id));
               }
 
-              if (filterTopicIds.size > 0) {
-                result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
+              if (filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) {
+                result = result.filter(r => {
+                  if (r.topic_id && filterTopicIds.has(r.topic_id)) return true;
+                  if (!r.topic_id && filterUntopicedChapterIds.has(r.chapter_id)) return true;
+                  return false;
+                });
               }
 
               if (filterBoards.size > 0) {
@@ -943,13 +998,14 @@ export default function QuestionCreate() {
             ];
 
             const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
-              || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
+              || filterUntopicedChapterIds.size > 0 || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
 
             const resetAllFilters = () => {
               setFilterSearch("");
               setFilterType(null);
               setFilterChapterIds(new Set());
               setFilterTopicIds(new Set());
+              setFilterUntopicedChapterIds(new Set());
               setFilterBoards(new Set());
               setFilterYear("");
               setFilterSpecial(null);
