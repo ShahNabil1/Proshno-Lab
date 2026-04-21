@@ -471,7 +471,7 @@ export default function QuestionCreate() {
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterBoards, filterYear, filterSpecial]);
+  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterYear, filterSpecial]);
 
   const handleSaveAndView = () => {
     if (selectedIds.size === 0) {
@@ -952,13 +952,14 @@ export default function QuestionCreate() {
             ];
 
             const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
-              || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
+              || filterUntopicedChapterIds.size > 0 || filterBoards.size > 0 || !!filterYear || filterSpecial !== null;
 
             const resetAllFilters = () => {
               setFilterSearch("");
               setFilterType(null);
               setFilterChapterIds(new Set());
               setFilterTopicIds(new Set());
+              setFilterUntopicedChapterIds(new Set());
               setFilterBoards(new Set());
               setFilterYear("");
               setFilterSpecial(null);
