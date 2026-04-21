@@ -1013,51 +1013,53 @@ export default function QuestionCreate() {
             };
 
             return (
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div
-                  role="tablist"
-                  aria-label="প্রশ্নের ধরন"
-                  className="inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/60 shadow-sm backdrop-blur-sm"
-                >
-                  {badges.map(b => {
-                    const isActive = filterType === b.value;
-                    const isDisabled = b.count === 0 && !isActive;
-                    return (
-                      <button
-                        key={String(b.value)}
-                        type="button"
-                        role="tab"
-                        aria-selected={isActive}
-                        disabled={isDisabled}
-                        onClick={() => setFilterType(b.value)}
-                        className={`relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-semibold tracking-tight transition-all duration-200 ${
-                          isActive
-                            ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
-                            : isDisabled
-                              ? "text-muted-foreground/60 cursor-not-allowed"
-                              : "text-foreground/80 hover:text-foreground hover:bg-background/70"
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full transition-opacity ${b.dot} ${isActive ? "opacity-100" : "opacity-80"}`} />
-                        <span>{b.label}</span>
-                        <span
-                          className={`inline-flex items-center justify-center min-w-[1.5rem] h-[18px] px-1.5 rounded-md text-[11px] font-bold tabular-nums tracking-tight transition-colors ${
+              <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap w-full min-w-0">
+                <div className="-mx-1 sm:mx-0 flex-1 min-w-0 overflow-x-auto sm:overflow-visible scrollbar-none">
+                  <div
+                    role="tablist"
+                    aria-label="প্রশ্নের ধরন"
+                    className="inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/60 shadow-sm backdrop-blur-sm mx-1 sm:mx-0 w-max sm:w-auto"
+                  >
+                    {badges.map(b => {
+                      const isActive = filterType === b.value;
+                      const isDisabled = b.count === 0 && !isActive;
+                      return (
+                        <button
+                          key={String(b.value)}
+                          type="button"
+                          role="tab"
+                          aria-selected={isActive}
+                          disabled={isDisabled}
+                          onClick={() => setFilterType(b.value)}
+                          className={`relative inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-lg text-[12.5px] sm:text-[13px] font-semibold tracking-tight transition-all duration-200 whitespace-nowrap shrink-0 ${
                             isActive
-                              ? "bg-primary/15 text-primary"
-                              : "bg-background text-foreground/80 border border-border"
+                              ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
+                              : isDisabled
+                                ? "text-muted-foreground/60 cursor-not-allowed"
+                                : "text-foreground/80 hover:text-foreground hover:bg-background/70"
                           }`}
                         >
-                          {fmt(b.count)}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <span className={`h-1.5 w-1.5 rounded-full transition-opacity ${b.dot} ${isActive ? "opacity-100" : "opacity-80"}`} />
+                          <span>{b.label}</span>
+                          <span
+                            className={`inline-flex items-center justify-center min-w-[1.4rem] h-[18px] px-1.5 rounded-md text-[11px] font-bold tabular-nums tracking-tight transition-colors ${
+                              isActive
+                                ? "bg-primary/15 text-primary"
+                                : "bg-background text-foreground/80 border border-border"
+                            }`}
+                          >
+                            {fmt(b.count)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 {hasAnyFilter && (
                   <button
                     type="button"
                     onClick={resetAllFilters}
-                    className="group inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] font-medium text-muted-foreground hover:text-destructive border border-dashed border-border hover:border-destructive/40 hover:bg-destructive/5 transition-all"
+                    className="group inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-lg text-[12px] sm:text-[12.5px] font-medium text-muted-foreground hover:text-destructive border border-dashed border-border hover:border-destructive/40 hover:bg-destructive/5 transition-all whitespace-nowrap shrink-0"
                     title="সব ফিল্টার রিসেট করুন"
                   >
                     <RotateCcw className="h-3.5 w-3.5 transition-transform group-hover:-rotate-180 duration-300" />
