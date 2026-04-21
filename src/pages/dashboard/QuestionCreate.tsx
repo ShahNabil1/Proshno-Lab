@@ -1092,21 +1092,53 @@ export default function QuestionCreate() {
             </Sheet>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {paginatedQuestions.map((q, idx) => {
               const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
+              const isSelected = selectedIds.has(q.id);
+              const typeMeta: Record<string, { label: string; dot: string; chip: string }> = {
+                mcq:         { label: "MCQ",          dot: "bg-blue-500",   chip: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/60 dark:border-blue-900" },
+                short:       { label: "সংক্ষিপ্ত",   dot: "bg-amber-500",  chip: "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/60 dark:border-amber-900" },
+                cq:          { label: "সৃজনশীল",     dot: "bg-purple-500", chip: "text-purple-700 bg-purple-50 border-purple-200 dark:text-purple-300 dark:bg-purple-950/60 dark:border-purple-900" },
+                descriptive: { label: "বর্ণনামূলক", dot: "bg-rose-500",   chip: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/60 dark:border-rose-900" },
+              };
+              const tm = typeMeta[q.type] ?? { label: q.type, dot: "bg-muted-foreground", chip: "text-muted-foreground bg-muted border-border" };
               return (
-              <Card key={q.id} className={`transition-colors cursor-pointer ${selectedIds.has(q.id) ? "border-primary/50 bg-primary/5" : ""}`} onClick={() => toggleQuestion(q.id)}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Checkbox checked={selectedIds.has(q.id)} onCheckedChange={() => toggleQuestion(q.id)} onClick={(e) => e.stopPropagation()} />
-                    <div className="flex items-center gap-2">
+              <Card
+                key={q.id}
+                onClick={() => toggleQuestion(q.id)}
+                className={`group relative overflow-hidden cursor-pointer border transition-all duration-200 ease-out will-change-transform ${
+                  isSelected
+                    ? "border-primary/60 shadow-[0_4px_20px_-8px_hsl(var(--primary)/0.35)] bg-gradient-to-br from-primary/[0.06] to-transparent -translate-y-px"
+                    : "border-border/70 hover:border-border hover:-translate-y-0.5 hover:shadow-md"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`pointer-events-none absolute left-0 top-0 h-full w-[3px] transition-all duration-200 ${
+                    isSelected ? "bg-primary opacity-100" : `${tm.dot} opacity-0 group-hover:opacity-70`
+                  }`}
+                />
+                <CardContent className="p-4 pl-[18px]">
+                  <div className="flex items-center justify-between mb-2.5 gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleQuestion(q.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className={`inline-flex items-center gap-1.5 h-[22px] px-2 rounded-md text-[10.5px] font-bold tracking-tight border ${tm.chip}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${tm.dot}`} />
+                        {tm.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
                       <ReferenceBadges
                         boardRefs={q.board_references as any}
                         uniRefs={q.university_references as any}
                       />
                       <button
-                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
                         title="রিপোর্ট করুন"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1116,7 +1148,7 @@ export default function QuestionCreate() {
                           setReportDialogOpen(true);
                         }}
                       >
-                        <Flag className="h-4 w-4" />
+                        <Flag className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
