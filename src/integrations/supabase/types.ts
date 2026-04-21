@@ -961,6 +961,11 @@ export type Database = {
     }
     Functions: {
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
+      can_read_question: {
+        Args: { _class_id: number; _subject_id: number }
+        Returns: boolean
+      }
+      extract_class_levels: { Args: { value: string }; Returns: number[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -971,6 +976,11 @@ export type Database = {
       increment_coupon_usage: {
         Args: { coupon_code: string }
         Returns: undefined
+      }
+      normalize_subscription_text: { Args: { value: string }; Returns: string }
+      plan_covers_selection: {
+        Args: { class_name: string; plan: string; subject_name: string }
+        Returns: boolean
       }
     }
     Enums: {
