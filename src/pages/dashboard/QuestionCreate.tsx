@@ -731,16 +731,21 @@ export default function QuestionCreate() {
             return true;
           });
           const topicCount = (tid: number) => topicPool.filter(q => q.topic_id === tid).length;
+          const untopicedCount = (cid: number) =>
+            topicPool.filter(q => q.chapter_id === cid && !q.topic_id).length;
           const chapterTopicTotal = (cid: number) =>
-            topicPool.filter(q => q.chapter_id === cid && q.topic_id).length;
+            topicPool.filter(q => q.chapter_id === cid).length;
           return (
             <div className="border border-border rounded-lg p-3">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-heading font-bold text-sm">টপিক</h4>
-                {filterTopicIds.size > 0 && (
+                {(filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) && (
                   <button
                     type="button"
-                    onClick={() => setFilterTopicIds(new Set())}
+                    onClick={() => {
+                      setFilterTopicIds(new Set());
+                      setFilterUntopicedChapterIds(new Set());
+                    }}
                     className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
                   >
                     ক্লিয়ার
