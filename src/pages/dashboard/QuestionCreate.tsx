@@ -1030,21 +1030,21 @@ export default function QuestionCreate() {
                         aria-selected={isActive}
                         disabled={isDisabled}
                         onClick={() => setFilterType(b.value)}
-                        className={`relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium tracking-tight transition-all duration-200 ${
+                        className={`relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-semibold tracking-tight transition-all duration-200 ${
                           isActive
                             ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
                             : isDisabled
-                              ? "text-muted-foreground/40 cursor-not-allowed"
-                              : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                              ? "text-muted-foreground/60 cursor-not-allowed"
+                              : "text-foreground/80 hover:text-foreground hover:bg-background/70"
                         }`}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full transition-opacity ${b.dot} ${isActive ? "opacity-100" : "opacity-60"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full transition-opacity ${b.dot} ${isActive ? "opacity-100" : "opacity-80"}`} />
                         <span>{b.label}</span>
                         <span
-                          className={`inline-flex items-center justify-center min-w-[1.5rem] h-[18px] px-1.5 rounded-md text-[11px] font-semibold tabular-nums tracking-tight transition-colors ${
+                          className={`inline-flex items-center justify-center min-w-[1.5rem] h-[18px] px-1.5 rounded-md text-[11px] font-bold tabular-nums tracking-tight transition-colors ${
                             isActive
-                              ? "bg-primary/10 text-primary"
-                              : "bg-background/80 text-muted-foreground border border-border/60"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-background text-foreground/80 border border-border"
                           }`}
                         >
                           {fmt(b.count)}
