@@ -990,11 +990,11 @@ export default function QuestionCreate() {
             const countByType = (t: string) => base.filter(q => q.type === t).length;
             const fmt = (n: number) => n.toLocaleString("bn-BD");
             const badges = [
-              { value: null, label: "সব", count: base.length, color: "bg-primary/10 text-primary border-primary/30" },
-              { value: "mcq", label: "MCQ", count: countByType("mcq"), color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800" },
-              { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800" },
-              { value: "cq", label: "সৃজনশীল", count: countByType("cq"), color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800" },
-              { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800" },
+              { value: null, label: "সব", count: base.length, dot: "bg-primary" },
+              { value: "mcq", label: "MCQ", count: countByType("mcq"), dot: "bg-blue-500" },
+              { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), dot: "bg-amber-500" },
+              { value: "cq", label: "সৃজনশীল", count: countByType("cq"), dot: "bg-purple-500" },
+              { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), dot: "bg-rose-500" },
             ];
 
             const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
@@ -1013,30 +1013,55 @@ export default function QuestionCreate() {
             };
 
             return (
-              <div className="flex flex-wrap items-center gap-2">
-                {badges.map(b => {
-                  const isActive = filterType === b.value;
-                  return (
-                    <button
-                      key={String(b.value)}
-                      type="button"
-                      onClick={() => setFilterType(b.value)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors duration-150 ${b.color} ${isActive ? "ring-2 ring-primary ring-offset-1" : "hover:opacity-80"}`}
-                    >
-                      <span>{b.label}</span>
-                      <span className="font-bold tabular-nums min-w-[1.5ch] text-center">{fmt(b.count)}</span>
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div
+                  role="tablist"
+                  aria-label="প্রশ্নের ধরন"
+                  className="inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/60 shadow-sm backdrop-blur-sm"
+                >
+                  {badges.map(b => {
+                    const isActive = filterType === b.value;
+                    const isDisabled = b.count === 0 && !isActive;
+                    return (
+                      <button
+                        key={String(b.value)}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        disabled={isDisabled}
+                        onClick={() => setFilterType(b.value)}
+                        className={`relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium tracking-tight transition-all duration-200 ${
+                          isActive
+                            ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
+                            : isDisabled
+                              ? "text-muted-foreground/40 cursor-not-allowed"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full transition-opacity ${b.dot} ${isActive ? "opacity-100" : "opacity-60"}`} />
+                        <span>{b.label}</span>
+                        <span
+                          className={`inline-flex items-center justify-center min-w-[1.5rem] h-[18px] px-1.5 rounded-md text-[11px] font-semibold tabular-nums tracking-tight transition-colors ${
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "bg-background/80 text-muted-foreground border border-border/60"
+                          }`}
+                        >
+                          {fmt(b.count)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
                 {hasAnyFilter && (
                   <button
                     type="button"
                     onClick={resetAllFilters}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-destructive/30 bg-destructive/5 text-destructive text-xs font-medium transition-all hover:bg-destructive/10"
+                    className="group inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] font-medium text-muted-foreground hover:text-destructive border border-dashed border-border hover:border-destructive/40 hover:bg-destructive/5 transition-all"
                     title="সব ফিল্টার রিসেট করুন"
                   >
-                    <span>↺</span>
-                    <span>রিসেট ফিল্টার</span>
+                    <RotateCcw className="h-3.5 w-3.5 transition-transform group-hover:-rotate-180 duration-300" />
+                    <span>রিসেট</span>
                   </button>
                 )}
               </div>
