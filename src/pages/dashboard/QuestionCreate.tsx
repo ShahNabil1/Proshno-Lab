@@ -399,8 +399,12 @@ export default function QuestionCreate() {
       result = result.filter(r => filterChapterIds.has(r.chapter_id));
     }
 
-    if (filterTopicIds.size > 0) {
-      result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
+    if (filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) {
+      result = result.filter(r => {
+        if (r.topic_id && filterTopicIds.has(r.topic_id)) return true;
+        if (!r.topic_id && filterUntopicedChapterIds.has(r.chapter_id)) return true;
+        return false;
+      });
     }
 
     if (filterBoards.size > 0) {
@@ -873,8 +877,12 @@ export default function QuestionCreate() {
                 result = result.filter(r => filterChapterIds.has(r.chapter_id));
               }
 
-              if (filterTopicIds.size > 0) {
-                result = result.filter(r => r.topic_id && filterTopicIds.has(r.topic_id));
+              if (filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) {
+                result = result.filter(r => {
+                  if (r.topic_id && filterTopicIds.has(r.topic_id)) return true;
+                  if (!r.topic_id && filterUntopicedChapterIds.has(r.chapter_id)) return true;
+                  return false;
+                });
               }
 
               if (filterBoards.size > 0) {
