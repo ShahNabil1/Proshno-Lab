@@ -754,7 +754,12 @@ export default function QuestionCreate() {
               </div>
               <div className="space-y-3">
                 {Object.entries(topicsByChapter).map(([chId, data]) => {
-                  const groupTotal = chapterTopicTotal(Number(chId));
+                  const cidNum = Number(chId);
+                  const groupTotal = chapterTopicTotal(cidNum);
+                  const noneCount = untopicedCount(cidNum);
+                  const noneActive = filterUntopicedChapterIds.has(cidNum);
+                  const noneDisabled = noneCount === 0;
+                  const hasTopics = data.topics.length > 0;
                   return (
                     <div key={chId}>
                       <div className="flex items-center justify-between mb-1.5 border-b border-border pb-1">
@@ -763,7 +768,7 @@ export default function QuestionCreate() {
                           {fmtBn(groupTotal)}
                         </span>
                       </div>
-                      {data.topics.length === 0 ? (
+                      {!hasTopics && noneCount === 0 ? (
                         <p className="text-xs text-muted-foreground/70 pl-4">কোনো টপিক নেই</p>
                       ) : (
                         <div className="space-y-1 pl-2">
@@ -811,6 +816,42 @@ export default function QuestionCreate() {
                               </label>
                             );
                           })}
+                          {noneCount > 0 && (
+                            <label
+                              className={`group flex items-center gap-2 text-sm rounded-md px-2 py-1 transition-colors border border-dashed ${
+                                noneDisabled
+                                  ? "opacity-50 cursor-not-allowed border-border"
+                                  : noneActive
+                                    ? "bg-primary/10 border-primary/40 cursor-pointer"
+                                    : "cursor-pointer hover:bg-muted/60 border-border/70"
+                              }`}
+                            >
+                              <Checkbox
+                                disabled={noneDisabled}
+                                checked={noneActive}
+                                onCheckedChange={() => {
+                                  if (noneDisabled) return;
+                                  setFilterUntopicedChapterIds(prev => {
+                                    const next = new Set(prev);
+                                    next.has(cidNum) ? next.delete(cidNum) : next.add(cidNum);
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className={`flex-1 leading-tight truncate italic ${noneActive ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                                টপিকবিহীন প্রশ্ন
+                              </span>
+                              <span
+                                className={`shrink-0 inline-flex items-center justify-center min-w-[1.7rem] px-1.5 h-[1.05rem] rounded-full text-[10px] font-semibold tabular-nums tracking-tight border ${
+                                  noneActive
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-muted-foreground border-border group-hover:border-primary/40 group-hover:text-foreground"
+                                }`}
+                              >
+                                {fmtBn(noneCount)}
+                              </span>
+                            </label>
+                          )}
                         </div>
                       )}
                     </div>
