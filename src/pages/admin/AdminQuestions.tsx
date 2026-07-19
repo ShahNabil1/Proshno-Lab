@@ -107,67 +107,84 @@ export default function AdminQuestions() {
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
 
-  const fetchItems = async () => {
-    // Build server-side filtered query with count + range pagination to avoid the 1000-row default limit
-    let query = supabase.from("questions")
-      .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: "exact" })
-      .order("created_at", { ascending: false });
+  // Reset page & selection when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, pageSize]);
 
-    if (filterClassId) query = query.eq("class_id", Number(filterClassId));
-    if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
-    if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
-    if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
-    if (filterType) query = query.eq("type", filterType);
-    if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
+  // ---- React Query: paginated items with server-side filtering + caching ----
+  const listQueryKey = [
+    "admin-questions",
+    { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, currentPage, pageSize, hasFullAccess },
+  ] as const;
 
-    const from = (currentPage - 1) * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
-    query = query.range(from, to);
+  const listQuery = useQuery({
+    queryKey: listQueryKey,
+    enabled: !permLoading,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      let query = supabase.from("questions")
+        .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: "exact" })
+        .order("created_at", { ascending: false });
+      if (filterClassId) query = query.eq("class_id", Number(filterClassId));
+      if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
+      if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
+      if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
+      if (filterType) query = query.eq("type", filterType);
+      if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+      const { data, count, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      const visible = hasFullAccess ? rows : rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
+      return { rows: visible, total: count || 0 };
+    },
+  });
 
-    const { data, count } = await query;
-    const rows = data || [];
-    if (hasFullAccess) {
-      setItems(rows);
-      setTotalCount(count || 0);
-    } else {
-      // Fallback: when limited admin permissions are in play, restrict in-page rows.
-      const filtered = rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
-      setItems(filtered);
-      setTotalCount(count || 0);
-    }
+  const items = listQuery.data?.rows ?? [];
+  const totalCount = listQuery.data?.total ?? 0;
+  const paginatedItems = items;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const typeCountsQuery = useQuery({
+    queryKey: ["admin-questions-type-counts", { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId }],
+    enabled: !permLoading,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      const types = ["mcq", "short", "cq", "descriptive"];
+      const results = await Promise.all(types.map(async (t) => {
+        let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
+        if (filterClassId) q = q.eq("class_id", Number(filterClassId));
+        if (filterSubjectId) q = q.eq("subject_id", Number(filterSubjectId));
+        if (filterChapterId) q = q.eq("chapter_id", Number(filterChapterId));
+        if (filterTopicId) q = q.eq("topic_id", Number(filterTopicId));
+        if (searchTerm.trim()) q = q.ilike("question", `%${searchTerm.trim()}%`);
+        const { count } = await q;
+        return [t, count || 0] as const;
+      }));
+      return Object.fromEntries(results) as Record<string, number>;
+    },
+  });
+  const typeCounts = typeCountsQuery.data ?? { mcq: 0, short: 0, cq: 0, descriptive: 0 };
+
+  const invalidateQuestions = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-questions-type-counts"] });
   };
-
-  // Type-wise breakdown — respects all filters EXCEPT filterType itself, so the badges always show full distribution
-  const fetchTypeCounts = async () => {
-    const types = ["mcq", "short", "cq", "descriptive"];
-    const results = await Promise.all(types.map(async (t) => {
-      let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
-      if (filterClassId) q = q.eq("class_id", Number(filterClassId));
-      if (filterSubjectId) q = q.eq("subject_id", Number(filterSubjectId));
-      if (filterChapterId) q = q.eq("chapter_id", Number(filterChapterId));
-      if (filterTopicId) q = q.eq("topic_id", Number(filterTopicId));
-      if (searchTerm.trim()) q = q.ilike("question", `%${searchTerm.trim()}%`);
-      const { count } = await q;
-      return [t, count || 0] as const;
-    }));
-    setTypeCounts(Object.fromEntries(results));
-  };
+  const fetchItems = () => invalidateQuestions();
 
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(data || []));
     supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
     supabase.from("question_categories").select("id, name").order("name").then(({ data }) => setCategories(data || []));
   }, []);
-
-  useEffect(() => {
-    if (!permLoading) fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permLoading, currentPage, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
-
-  useEffect(() => {
-    if (!permLoading) fetchTypeCounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permLoading, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId]);
 
   useEffect(() => {
     if (!form.class_id) return;
