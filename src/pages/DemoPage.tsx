@@ -332,16 +332,49 @@ export default function DemoPage() {
             {/* PDF Preview */}
             <div className="lg:col-span-2">
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
-                <div className="bg-card rounded-2xl shadow-elevated p-1 border border-border sticky top-24">
-                  <div className="rounded-xl bg-white p-5" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+                <div className="bg-card rounded-2xl shadow-elevated p-1 border border-border sticky top-24 demo-preview-card">
+
+                  {/* Customization controls (hidden in print) */}
+                  <div className="no-print p-3 border-b border-border space-y-2">
+                    <Input
+                      value={institution}
+                      onChange={(e) => setInstitution(e.target.value)}
+                      placeholder="প্রতিষ্ঠানের নাম"
+                      className="h-9 text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={examTime}
+                        onChange={(e) => setExamTime(e.target.value)}
+                        placeholder="সময় (মিনিট)"
+                        className="h-9 text-sm flex-1"
+                      />
+                      <Button size="sm" variant="outline" className="h-9" onClick={handleShuffle} disabled={questions.length === 0} title="নতুন ক্রম">
+                        <Shuffle className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-9" onClick={() => setShowAnswers(v => !v)} disabled={questions.length === 0} title={showAnswers ? "উত্তর লুকান" : "উত্তর দেখুন"}>
+                        {showAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    <Button
+                      className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
+                      onClick={handlePrint}
+                      disabled={selectedIds.size === 0}
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      প্রিন্ট / PDF ডাউনলোড
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl bg-white p-5 demo-print-area" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border no-print">
                       <FileText className="w-5 h-5 text-primary" />
                       <span className="font-heading font-semibold text-sm text-foreground">প্রশ্নপত্র প্রিভিউ</span>
                     </div>
 
                     {/* Paper header */}
                     <div className="text-center mb-3">
-                      <p className="font-bold text-sm" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>আপনার প্রতিষ্ঠানের নাম</p>
+                      <p className="font-bold text-base" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>{institution || "আপনার প্রতিষ্ঠানের নাম"}</p>
                       {selectedChapter && (
                         <p className="text-xs text-muted-foreground">
                           {selectedChapter.class_name} — {selectedChapter.subject_name}
@@ -352,11 +385,13 @@ export default function DemoPage() {
                       )}
                       {selectedIds.size > 0 && (
                         <div className="flex justify-between text-[10px] text-muted-foreground mt-2 border-t border-b border-black/20 py-1 font-semibold">
-                          <span>সময়— ৫৫ মিনিট</span>
+                          <span>সময়— {examTime || "৫৫"} মিনিট</span>
                           <span>পূর্ণমান— {toBanglaNum(totalMarks)}</span>
                         </div>
                       )}
                     </div>
+
+
 
                     {selectedIds.size === 0 ? (
                       <p className="text-center text-muted-foreground text-sm py-8">প্রশ্ন সিলেক্ট করুন</p>
