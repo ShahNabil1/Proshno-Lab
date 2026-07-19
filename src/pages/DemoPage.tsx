@@ -51,20 +51,50 @@ interface QuestionRow {
   board_references?: any;
 }
 
+const DEMO_STATE_KEY = "proshnolab.demoState.v1";
+type PersistedDemo = {
+  selectedClassId: string;
+  selectedSubjectId: string;
+  selectedChapterId: string;
+  selectedIds: number[];
+  institution: string;
+  examTime: string;
+  showAnswers: boolean;
+  shuffleSeed: number;
+  fetched: boolean;
+};
+const loadDemoState = (): Partial<PersistedDemo> => {
+  try {
+    const raw = sessionStorage.getItem(DEMO_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+};
+
 export default function DemoPage() {
   const navigate = useNavigate();
+  const initial = loadDemoState();
   const [freeChapters, setFreeChapters] = useState<FreeChapter[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
-  const [selectedChapterId, setSelectedChapterId] = useState<string>("");
+  const [selectedClassId, setSelectedClassId] = useState<string>(initial.selectedClassId ?? "");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(initial.selectedSubjectId ?? "");
+  const [selectedChapterId, setSelectedChapterId] = useState<string>(initial.selectedChapterId ?? "");
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(initial.selectedIds ?? []));
   const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
-  const [institution, setInstitution] = useState<string>("আপনার প্রতিষ্ঠানের নাম");
-  const [examTime, setExamTime] = useState<string>("৫৫");
-  const [showAnswers, setShowAnswers] = useState(false);
-  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [fetched, setFetched] = useState<boolean>(initial.fetched ?? false);
+  const [institution, setInstitution] = useState<string>(initial.institution ?? "আপনার প্রতিষ্ঠানের নাম");
+  const [examTime, setExamTime] = useState<string>(initial.examTime ?? "৫৫");
+  const [showAnswers, setShowAnswers] = useState<boolean>(initial.showAnswers ?? false);
+  const [shuffleSeed, setShuffleSeed] = useState<number>(initial.shuffleSeed ?? 0);
+
+  // Persist to sessionStorage so back-navigation restores state
+  useEffect(() => {
+    const payload: PersistedDemo = {
+      selectedClassId, selectedSubjectId, selectedChapterId,
+      selectedIds: Array.from(selectedIds),
+      institution, examTime, showAnswers, shuffleSeed, fetched,
+    };
+    try { sessionStorage.setItem(DEMO_STATE_KEY, JSON.stringify(payload)); } catch {}
+  }, [selectedClassId, selectedSubjectId, selectedChapterId, selectedIds, institution, examTime, showAnswers, shuffleSeed, fetched]);
 
 
 
@@ -142,6 +172,29 @@ export default function DemoPage() {
     setFetched(true);
     setLoading(false);
   };
+
+  // Auto-refetch questions on mount if a chapter was previously selected (back-navigation restore)
+  useEffect(() => {
+    if (initial.selectedChapterId && initial.fetched && questions.length === 0) {
+      (async () => {
+        setLoading(true);
+        const { data } = await supabase
+          .from("questions")
+          .select("id, question, option_a, option_b, option_c, option_d, correct_answer, type, stimulus_text, stimulus_group_id, creative_data, board_references")
+          .eq("chapter_id", Number(initial.selectedChapterId))
+          .limit(50);
+        if (data) {
+          setQuestions(data as QuestionRow[]);
+          // Preserve previously selected ids; if none saved, default to all
+          if (!initial.selectedIds || initial.selectedIds.length === 0) {
+            setSelectedIds(new Set(data.map((q: any) => q.id)));
+          }
+        }
+        setLoading(false);
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleQuestion = (id: number) => {
     setSelectedIds(prev => {
