@@ -513,14 +513,15 @@ export default function DemoPage() {
                         {descriptiveQuestions.length > 0 && (
                           <div>
                             <div className="border-t border-black/20 my-2" />
-                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/30 pb-1 mb-1.5">
+                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/40 pb-1 mb-1.5 demo-section-head">
                               <span>বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)</span>
                               <span>{toBanglaNum(10)} x {toBanglaNum(descriptiveQuestions.length)} = {toBanglaNum(descriptiveQuestions.length * 10)}</span>
                             </div>
                             {descriptiveQuestions.map((q, idx) => {
                               const dData = q.creative_data;
                               return (
-                                <div key={q.id} className="mb-2">
+                                <div key={q.id} className="mb-2 demo-desc-item">
+
                                   <span className="font-semibold">{padBangla(idx + 1)}।</span>
                                   {dData ? (
                                     <div className="ml-3">
