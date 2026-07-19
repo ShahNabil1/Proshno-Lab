@@ -11,7 +11,7 @@ import logoImg from "@/assets/logo.png";
 import bkashLogo from "@/assets/bkash-logo.webp";
 import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
-const WHATSAPP_NUMBER = "8801340345787";
+const WHATSAPP_NUMBER = "8801758018668";
 
 export interface SelectedPackageItem {
   id: number;

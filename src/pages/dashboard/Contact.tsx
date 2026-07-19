@@ -12,12 +12,12 @@ export default function Contact() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <Button variant="outline" className="w-full gap-2 justify-start" asChild>
-            <a href="tel:+8801340345787">
-              <Phone className="w-4 h-4" /> +880 1340-345787
+            <a href="tel:+8801758018668">
+              <Phone className="w-4 h-4" /> +880 1758-018668
             </a>
           </Button>
           <Button className="w-full gap-2 justify-start bg-green-600 hover:bg-green-700 text-white border-0" asChild>
-            <a href="https://wa.me/8801340345787" target="_blank" rel="noopener noreferrer">
+            <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
             </a>
           </Button>
