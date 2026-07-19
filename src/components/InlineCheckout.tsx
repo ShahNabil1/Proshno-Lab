@@ -236,7 +236,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
       <div className="bg-card border border-b-0 p-6 space-y-3">
         <Input placeholder="আপনার নাম ....." value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         <div className="grid grid-cols-2 gap-3">
-          <Input placeholder="মোবাইল নাম্বার দিন" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-muted/30" />
+          <Input placeholder="মোবাইল নাম্বার দিন" type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(normalizeBdPhone(e.target.value))} className="bg-muted/30" />
           <Input placeholder="জিমেইল দিন ..." type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         </div>
         <Input placeholder="প্রতিষ্ঠানের নাম" value={institute} onChange={(e) => setInstitute(e.target.value)} className="bg-muted/30" />
