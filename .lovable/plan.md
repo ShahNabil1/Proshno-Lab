@@ -1,157 +1,89 @@
-# Telegram Bot ইন্টিগ্রেশন প্ল্যান (Proshno Lab)
-
-> এইটা শুধু গাইড ও প্ল্যান — কোনো কোড এখনই লেখা হবে না। আপনি "বিল্ড করো" বললে তখন কানেক্টর enable + সব কোড বসানো হবে।
-
----
-
-## ১. Vite + Supabase-এ কোন অ্যাপ্রোচ সঠিক?
-
-আপনার প্রজেক্ট Vite (client-side React) — এখানে সরাসরি ব্রাউজার থেকে Telegram API কল করা **যাবে না**, কারণ:
-
-- Bot token/connector key ব্রাউজারে expose করা মানে যেকেউ chat_id বদলে spam পাঠাবে।
-- CORS + rate-limit issue।
-
-**সঠিক অ্যাপ্রোচ (recommended):**
-
-
-| Layer                      | কাজ                                                                                 |
-| -------------------------- | ----------------------------------------------------------------------------------- |
-| Vite frontend              | শুধু form submit → `supabase.functions.invoke("notify-telegram", { body })`         |
-| Supabase Edge Function     | Server-side এ Lovable Telegram **Connector Gateway**-এ call করে notification পাঠায় |
-| Lovable Telegram Connector | Bot token/auth automatic manage করে, token কখনো code-এ আসে না                       |
-
-
-**অর্থাৎ — Lovable Telegram Connector + Supabase Edge Function দুইটাই লাগবে**, একটার বদলে আরেকটা না। Connector = auth layer, Edge function = আপনার business logic + trigger point। Vite নিজে থেকে connector কল করতে পারে না।
+## Goal
+`/dashboard/create` পেইজে উপরে ৩টা মোড টগল যোগ করা: **অটো প্রশ্ন তৈরী**, **প্রশ্ন তৈরি**, **রেডি প্রশ্ন** — ক্লায়েন্টের স্ক্রিনশটের navy blue accent সহ।
 
 ---
 
-## ২. Feature Scope — এখন কী বানাবো
+## 1. Route/Layout পরিবর্তন
 
-### (ক) Onboarding নোটিফিকেশন
+- `/dashboard/create` এ একটা নতুন wrapper component `QuestionCreateHub.tsx` বসানো হবে, যেখানে উপরে ৩টা pill-style টগল বাটন থাকবে (স্ক্রিনশটের মতো navy outline)।
+- URL query param `?mode=auto|manual|ready` দিয়ে টগল persist হবে (রিফ্রেশে মনে রাখবে)।
+- Default mode = `auto` (নতুন হাইলাইট ফিচার)।
 
-`OnboardingModal` সফলভাবে institute insert করার পর edge function কল হবে। Admin এর Telegram-এ একটা formatted message যাবে:
+---
 
+## 2. অটো প্রশ্ন তৈরী (নতুন) — `AutoQuestionCreate.tsx`
+
+**৩ ধাপের wizard**, স্ক্রিনশটের হুবহু UI:
+
+### ধাপ ১: বিষয়
+- শ্রেণী dropdown (subscription matcher দিয়ে filtered)
+- বিষয় dropdown (permission + active)
+- অধ্যায় checkbox list (একাধিক সিলেকশন, is_active=true)
+
+### ধাপ ২: কনফিগ
+- ৪টা টাইপ চেকবক্স: MCQ, সৃজনশীল, সংক্ষিপ্ত, বর্ণনামূলক
+- চেক করলে সেই টাইপের জন্য একটা slider দেখাবে (১ থেকে সেই selection এ available count পর্যন্ত)
+- Live available count fetch করবে সিলেক্টেড chapters থেকে (একই paginated loader প্যাটার্ন যেটা এখন আছে)
+
+### ধাপ ৩: জেনারেট (সামারি)
+- Green checkmark সহ "আপনার প্রশ্নপত্র প্রস্তুত!" কার্ড
+- সারাংশ box (শ্রেণী, বিষয়, অধ্যায়, প্রতি টাইপে সংখ্যা, মোট মূল্য)
+- "আগের ধাপে যান" + "প্রশ্ন তৈরি করুন" বাটন
+- Generate করলে: প্রতিটা সিলেক্টেড type থেকে random N টা প্রশ্ন pull → existing `QuestionPaperView` state এ পাঠিয়ে `/dashboard/view-paper` এ navigate
+
+**Random selection logic:** frontend এ `.select().in('chapter_id', ...).eq('type', t).eq('is_active', true)` → shuffle → slice(N)। বড় dataset হলে paginated loader loop।
+
+**Stepper:** উপরে ৩টা tab (স্ক্রিনশটের navy fill active state)। ধাপ change হলে state preserve।
+
+---
+
+## 3. প্রশ্ন তৈরি (existing refactor) — `QuestionCreate.tsx`
+
+- বর্তমান manual selector + filter panel + question picker flow অক্ষুণ্ণ।
+- Visual refresh শুধু:
+  - Header banner navy accent (`bg-primary` → gradient tweak)
+  - Filter section এ subtle card shadow, rounded-2xl
+  - "প্রশ্ন তৈরী করুন" বাটন style match with wizard
+- Business logic কিছুই বদলাবে না।
+
+---
+
+## 4. রেডি প্রশ্ন
+
+- এই টগলে ক্লিক করলে existing `/dashboard/packages` (Packages.tsx) কেই render করবে — একই component reuse (inline, নতুন route না)।
+- Subscription না থাকলে existing lock card দেখাবে।
+
+---
+
+## Technical details
+
+**নতুন ফাইল:**
+- `src/pages/dashboard/QuestionCreateHub.tsx` — mode toggle + conditional render
+- `src/pages/dashboard/AutoQuestionCreate.tsx` — ৩-ধাপ wizard
+- `src/components/dashboard/CreateModeToggle.tsx` — ৩ pill বাটন
+
+**পরিবর্তন:**
+- `App.tsx` route: `/dashboard/create` → `QuestionCreateHub`
+- `QuestionCreate.tsx` — UI polish only (কোনো logic change না)
+
+**Shared logic:**
+- Subscription matcher (`hasActiveAccess`) দুই flow তেই
+- Chapter/subject fetching pattern existing `QuestionCreate` থেকেই copy
+- Generate করার পরে existing `QuestionPaperView` route ব্যবহার করবে (state pass via `useLocation`)
+
+**Random algorithm:**
+```ts
+const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+const pickRandom = (pool: Question[], count: number) => shuffle(pool).slice(0, count);
 ```
-🎉 নতুন রেজিস্ট্রেশন — Proshno Lab
 
-👤 শিক্ষক: {name}
-📧 ইমেইল: {email}
-📱 ফোন: {phone}
-🏫 প্রতিষ্ঠান: {institute_name}
-📍 ঠিকানা: {division} > {district} > {upazila}
-🏠 নির্দিষ্ট: {specific_address}
-🕐 সময়: {timestamp — Asia/Dhaka locale, বাংলা}
-🔗 Admin panel: proshnolab.com/admin/teachers
-```
-
-### (খ) আরও যেসব জায়গায় Telegram Bot ব্যবহার করা যায় (সুপারিশ)
-
-
-| #   | ইভেন্ট                                | Trigger                                | কেন গুরুত্বপূর্ণ                                                   |
-| --- | ------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
-| 1   | নতুন bKash পেমেন্ট সফল                | `bkash-execute-payment` success branch | রেভিনিউ রিয়েল-টাইম alert                                          |
-| 2   | পেমেন্ট failed/cancelled              | payment reconcile                      | কোন ইউজার আটকে আছে তা জানা                                         |
-| 3   | Coupon apply                          | checkout success                       | কোন coupon কতবার হিট হচ্ছে                                         |
-| 4   | নতুন Feedback/Contact/Question Report | insert trigger                         | সাপোর্ট দ্রুত response                                             |
-| 5   | নতুন Review submit                    | admin approve pending                  | moderate করতে                                                      |
-| 6   | Bulk question upload finished         | AdminQuestionsBulk শেষে                | কতটা success/failed                                                |
-| 7   | Subscription expire হচ্ছে ৩ দিনে      | scheduled cron edge function           | renewal reminder                                                   |
-| 8   | Daily summary (রাত ১১টা)              | pg_cron → edge function                | আজকের registration/revenue/questions count                         |
-| 9   | System error alert                    | edge function catch block              | production issue immediately জানা                                  |
-| 10  | ২-way Bot commands (advanced)         | Telegram webhook → edge function       | `/stats`, `/pending`, `/user <email>` — Telegram থেকেই admin query |
-
-
-প্রথমে (ক) + (খ)-এর 1, 2, 4, 8 বানানো ideal — বাকিগুলো পরে যোগ করা যাবে।
+**Color tokens:** স্ক্রিনশটের navy = existing `--primary` (emerald) এর জায়গায় কি ব্যবহার করব? স্ক্রিনশট navy blue দেখাচ্ছে কিন্তু project brand emerald green। **Emerald green এ adapt করে সব করব** (memory constraint respect করে), শুধু layout/structure স্ক্রিনশট follow করব। যদি ক্লায়েন্ট literally navy চায় সেটা confirm করতে হবে।
 
 ---
 
-## ৩. Setup Sequence — যখন "বিল্ড করো" বলবেন
+## Out of scope
+- AI-based smart generation (এখন pure random shuffle)
+- Difficulty balancing / topic distribution weights
+- Saved auto-templates
 
-**Step 1 — BotFather-এ Bot বানানো (আপনি করবেন):**
-
-1. Telegram-এ `@BotFather` খুলুন → `/newbot`
-2. নাম দিন: `Proshno Lab Notifier` (বা যা পছন্দ)
-3. Username দিন: `proshnolab_bot` (available হতে হবে, `_bot` দিয়ে শেষ)
-4. Bot token পাবেন (এটা copy করে রাখবেন কিন্তু কোথাও paste করতে হবে না — Lovable connector নিজে চাইবে)
-
-**Step 2 — Admin/Group chat_id বের করা:**
-
-- Personal notification হলে: `@userinfobot` কে message পাঠালে আপনার `chat_id` দিবে
-- Group notification হলে: bot-কে group-এ add করুন → group-এ যেকোনো message পাঠান → `@RawDataBot` দিয়ে group chat_id বের করুন (negative number, যেমন `-1001234567890`)
-- এই chat_id গুলো Supabase secret-এ রাখব: `TELEGRAM_ADMIN_CHAT_ID` (comma-separated multi-recipient support)
-
-**Step 3 — Lovable Telegram Connector enable (আমি করব):**
-
-- `standard_connectors--connect` দিয়ে `telegram` connector link — আপনাকে UI popup-এ bot token paste করতে হবে একবার
-- Enable-এর পর `TELEGRAM_API_KEY` + `LOVABLE_API_KEY` automatic edge function-এ available হবে
-
-**Step 4 — Edge Function `notify-telegram` বানানো:**
-
-- Reusable function যেটা `{ event_type, title, fields[], link? }` accept করে
-- Lovable gateway (`https://connector-gateway.lovable.dev/telegram/sendMessage`) কল করে HTML formatted message পাঠায়
-- Error surfacing (provider error → JSON return, silent fail না)
-- CORS + Zod validation
-
-**Step 5 — Trigger points integrate:**
-
-- `OnboardingModal.tsx` — insert success এর পর invoke
-- `bkash-execute-payment/index.ts` — success/fail branch-এ invoke
-- (optional এই phase-এ) feedback/report insert-এর জায়গায়
-- Silent-fail: Telegram fail করলেও user experience break হবে না
-
-**Step 6 — Daily summary (optional, later):**
-
-- `pg_cron` extension enable
-- `daily-summary` edge function schedule (রাত ১১টা Asia/Dhaka)
-- আজকের count query করে Telegram-এ পাঠায়
-
-**Step 7 — 2-way commands (optional, much later):**
-
-- `telegram-webhook` edge function (verify_jwt=false, secret_token validation সহ Skill doc pattern অনুযায়ী)
-- `setWebhook` register
-- `/stats`, `/pending_payments`, `/find_user` etc. commands handle
-
----
-
-## ৪. Security & Reliability
-
-- Bot token কখনো frontend/git-এ যাবে না — শুধু Lovable connector-এ থাকবে
-- Admin `chat_id` secret হিসেবে store (leak হলেও damage কম, তবু hardcode না)
-- Edge function-এ Zod validation — malicious payload block
-- Notification failure ≠ user action failure — try/catch দিয়ে silent log
-- Rate consideration: Telegram bot limit ~30 msg/sec — আমাদের scale-এ issue না
-- Webhook (Phase 2) হলে `X-Telegram-Bot-Api-Secret-Token` verify করা হবে (SHA-256 derived, Skill pattern অনুযায়ী)
-
----
-
-## ৫. Cost & Dependency
-
-- Telegram Bot API: **সম্পূর্ণ ফ্রি**, unlimited
-- Lovable Connector Gateway: ফ্রি (আপনার existing plan-এ included)
-- Supabase Edge Function invocations: বর্তমান quota-এর মধ্যে (নোটিফিকেশন = খুব হালকা load)
-- নতুন কোনো paid dependency নেই
-
----
-
-## ৬. Deliverables Checklist (build phase)
-
-- Lovable Telegram Connector linked
-- Secrets: `TELEGRAM_ADMIN_CHAT_ID` set
-- Edge function: `supabase/functions/notify-telegram/index.ts`
-- `config.toml`-এ function entry
-- Deploy edge function
-- `OnboardingModal.tsx` — invoke after successful insert
-- `bkash-execute-payment` — invoke on success + fail
-- Test: dummy registration → real message আসে কিনা verify
-- Error scenario test: chat_id ভুল দিলে user flow break হয় না verify
-
----
-
-## ৭. আপনার সিদ্ধান্ত দরকার (build শুরুর আগে)
-
-1. **Recipient:** personal chat নাকি group? (group হলে পরে multiple admin add করা সহজ) personal chat
-2. **Phase 1 scope:** শুধু onboarding? নাকি onboarding + payment success/fail একসাথে? প্রথমে (ক) + (খ)-এর 1, 2, 4, 8 বানানো 
-3. **Language:** message সব বাংলায় নাকি English mixed? বাংলা + ইংলিশ মিক্সড 
-4. **Daily summary** এখনই লাগবে নাকি পরে? এখনই দাও 
-
-এই ৪টার উত্তর দিয়ে "বিল্ড করো" বললে আমি step 3 থেকে শুরু করব।
+Approve করলে build শুরু করব।
