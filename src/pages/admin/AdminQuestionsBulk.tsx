@@ -204,11 +204,10 @@ export default function AdminQuestionsBulk() {
             Input পদ্ধতি বাছাই করুন
           </h2>
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+            <TabsList className="grid grid-cols-3 w-full max-w-xl">
               <TabsTrigger value="excel" className="gap-2"><FileSpreadsheet className="w-4 h-4" /> Excel</TabsTrigger>
               <TabsTrigger value="paste" className="gap-2"><ClipboardPaste className="w-4 h-4" /> Paste</TabsTrigger>
               <TabsTrigger value="ai" className="gap-2"><Sparkles className="w-4 h-4" /> AI</TabsTrigger>
-              <TabsTrigger value="manual" className="gap-2"><Plus className="w-4 h-4" /> Manual</TabsTrigger>
             </TabsList>
 
             <TabsContent value="excel" className="pt-4 space-y-3">
