@@ -44,7 +44,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
     { to: "/dashboard/create?mode=auto", label: "অটো প্রশ্ন তৈরি" },
     { to: user ? "/dashboard" : "/login", label: "ড্যাশবোর্ড" },
     { to: "/pricing", label: "প্যাকেজ" },
-    { to: "/demo", label: "টিউটোরিয়াল" },
+    { to: "/demo", label: "ডেমো" },
     { to: "/helpline", label: "হেল্পলাইন" },
   ];
 
@@ -202,7 +202,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <li><Link to="/" className="text-slate-500 hover:text-navy transition-colors">হোম</Link></li>
                 <li><Link to="/dashboard/create?mode=auto" className="text-slate-500 hover:text-navy transition-colors">অটো প্রশ্ন তৈরি</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-navy transition-colors">প্যাকেজ ও মূল্য</Link></li>
-                <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">টিউটোরিয়াল</Link></li>
+                <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">ডেমো</Link></li>
                 <li><Link to="/helpline" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
               </ul>
             </div>
