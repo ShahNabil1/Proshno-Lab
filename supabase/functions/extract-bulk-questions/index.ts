@@ -87,13 +87,17 @@ Deno.serve(async (req) => {
       ],
       response_format: {
         type: "json_schema",
-        json_schema: { name: "extract_questions", strict: true, schema: schemaFor(type) },
+        json_schema: { name: "extract_questions", strict: false, schema: schemaFor(type) },
       },
     };
 
     const resp = await fetch(GATEWAY_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": key,
+        Authorization: `Bearer ${key}`,
+      },
       body: JSON.stringify(body),
     });
 
