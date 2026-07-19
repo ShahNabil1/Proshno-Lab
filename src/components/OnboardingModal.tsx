@@ -39,12 +39,23 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
     setForm(prev => ({ ...prev, district: val, upazila: "" }));
   };
 
+  const banglaToEnglishDigits = (s: string) =>
+    s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+
+  const handlePhoneChange = (raw: string) => {
+    const converted = banglaToEnglishDigits(raw).replace(/\D/g, "").slice(0, 11);
+    setForm((prev) => ({ ...prev, phone: converted }));
+  };
+
+  const isValidBdPhone = (p: string) => /^01[3-9]\d{8}$/.test(p);
+
   const handleSubmit = async () => {
     if (!user) return;
     if (!form.name.trim()) { toast.error("প্রতিষ্ঠানের নাম দিন"); return; }
     if (!form.division) { toast.error("বিভাগ নির্বাচন করুন"); return; }
     if (!form.district) { toast.error("জেলা নির্বাচন করুন"); return; }
     if (!form.upazila) { toast.error("উপজেলা নির্বাচন করুন"); return; }
+    if (!isValidBdPhone(form.phone)) { toast.error("সঠিক ১১ ডিজিটের বাংলাদেশি ফোন নম্বর দিন (01[3-9]XXXXXXXX)"); return; }
 
     setLoading(true);
     const { error } = await supabase.from("institutes").insert({
