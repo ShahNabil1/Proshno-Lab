@@ -85,14 +85,15 @@ export default function Index() {
             </div>
 
             <h1 className="font-heading text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.15] mb-6">
+              <span className="text-gradient-green">Proshno Lab</span> —
+              <br />
               পরীক্ষার প্রশ্ন তৈরি এখন
               <br />
-              <span className="text-gradient-green">আরও সহজ, আরও দ্রুত</span>
+              <span className="text-white">আরও সহজ, আরও দ্রুত</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
-               ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্ন তৈরি করুন মাত্র ১ ক্লিকে। শিক্ষক ও শিক্ষার্থীদের জন্য সম্পূর্ণ স্মার্ট সমাধান।
-            
+            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
+              Proshno Lab একটি স্মার্ট প্রশ্নব্যাংক প্ল্যাটফর্ম। শিক্ষক, শিক্ষার্থী ও প্রতিষ্ঠানের জন্য ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির MCQ, সৃজনশীল, সংক্ষিপ্ত ও ব্যাখ্যামূলক প্রশ্ন মাত্র কয়েক ক্লিকে তৈরি, সংগঠন ও প্রিন্ট করুন।
             </p>
 
             <div className="flex justify-center">
@@ -210,6 +211,23 @@ export default function Index() {
               </motion.div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ══════ WHAT IS PROSHNO LAB ══════ */}
+      <section className="py-16 md:py-20 bg-background">
+        <div className="container max-w-3xl mx-auto text-center">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-5">
+              Proshno Lab কী?
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              Proshno Lab বাংলাদেশের শিক্ষক, শিক্ষার্থী ও শিক্ষাপ্রতিষ্ঠানের জন্য তৈরি একটি ডিজিটাল প্রশ্নব্যাংক ও প্রশ্নপত্র তৈরির প্ল্যাটফর্ম। এখানে ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির বিভিন্ন বিষয়ের MCQ, সৃজনশীল, সংক্ষিপ্ত ও ব্যাখ্যামূলক প্রশ্ন সংরক্ষণ, অনুসন্ধান, সংগঠন এবং প্রিন্ট-প্রস্তুত প্রশ্নপত্র হিসেবে তৈরি করা যায় মাত্র কয়েকটি ক্লিকে।
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed">
+              শিক্ষকরা নিজেদের প্রয়োজন অনুযায়ী ক্লাস, বিষয়, অধ্যায় ও টপিক নির্বাচন করে কাস্টমাইজড প্রশ্নপত্র তৈরি করতে পারেন; শিক্ষার্থীরা নির্দিষ্ট অধ্যায় অনুযায়ী প্র্যাকটিস করতে পারে। Proshno Lab-এর লক্ষ্য পরীক্ষার প্রস্তুতিকে আরও সহজ, দ্রুত ও কার্যকর করা।
+            </p>
+          </motion.div>
         </div>
       </section>
 
