@@ -1918,8 +1918,9 @@ export default function QuestionPaperView() {
                   const usesMathMarks = isMathSubject || cData?.is_math === true;
                   const subLabels = usesMathMarks ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
                   const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
+                  const isDuplicate = duplicateIds.has(q.id);
                   return (
-                    <div key={q.id} className={editableClass} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                    <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(num)}।</span>
                         <div style={{ flex: 1 }}>
