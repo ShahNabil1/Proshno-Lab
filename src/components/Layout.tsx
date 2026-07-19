@@ -42,81 +42,135 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
     analytics.pageView(location.pathname, document.title);
   }, [location.pathname]);
 
-  const headerBg = scrolled ?
-  "bg-card/90 backdrop-blur-xl shadow-[0_1px_3px_hsl(207_60%_15%/0.08)] border-b border-border" :
-  isHeroPage ?
-  "bg-transparent" :
-  "bg-card border-b border-border";
+  const headerBg = scrolled
+    ? "bg-white/95 backdrop-blur-xl shadow-[0_1px_0_hsl(224_25%_90%)]"
+    : isHeroPage
+    ? "bg-white/90 backdrop-blur-sm border-b border-white/40"
+    : "bg-white border-b border-border";
 
-  const textColor = !scrolled && isHeroPage ? "text-white" : "text-foreground";
-  const mutedTextColor = !scrolled && isHeroPage ? "text-white/70" : "text-muted-foreground";
+  const navLinks = [
+    { to: "/", label: "হোম" },
+    { to: "/dashboard/create?mode=auto", label: "অটো প্রশ্ন তৈরি" },
+    { to: user ? "/dashboard" : "/login", label: "ড্যাশবোর্ড" },
+    { to: "/pricing", label: "প্যাকেজ" },
+    { to: "/demo", label: "টিউটোরিয়াল" },
+    { to: "/dashboard/contact", label: "হেল্পলাইন" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
-        <div className="container flex items-center justify-between h-16 lg:h-[72px]">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src={logoImg} alt="Proshno Lab" className="w-9 h-9 rounded-lg object-contain" />
-            <span className={cn("font-heading font-bold text-xl tracking-tight", textColor)}>
-              Proshno<span className="text-gradient-green"> Lab</span>
-            </span>
+        <div className="container flex items-center justify-between h-16 lg:h-[76px]">
+          {/* Brand */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-gold/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <img
+                src={logoImg}
+                alt="Proshno Lab"
+                className="relative w-11 h-11 rounded-full object-contain ring-2 ring-navy/10 group-hover:ring-gold/50 transition-all duration-500"
+              />
+            </div>
+            <div className="leading-tight">
+              <div className="font-heading font-bold text-[22px] text-navy tracking-tight">
+                প্রশ্ন<span className="text-indigo">ল্যাব</span>
+              </div>
+              <div className="text-[10.5px] text-navy/60 -mt-0.5">
+                শিক্ষকদের জন্য <span className="text-gold font-semibold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম...
+              </div>
+            </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-3">
-            <Button
-              size="sm"
-              onClick={handleCreateQuestion}
-              className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg gap-2"
-            >
-              <PenLine className="w-4 h-4" />
-              প্রশ্ন তৈরী করুন
-            </Button>
-            {user ?
-              <div className="flex items-center gap-2">
-                <Link to="/dashboard">
-                  <Button variant="ghost" size="sm" className={cn("font-heading font-medium", mutedTextColor)}>
-                    ড্যাশবোর্ড
-                  </Button>
+          {/* Desktop nav */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {navLinks.map((l) => {
+              const active = location.pathname === l.to.split("?")[0];
+              return (
+                <Link
+                  key={l.label}
+                  to={l.to}
+                  className={cn(
+                    "relative px-3.5 py-2 text-[15px] font-medium text-navy/80 hover:text-navy transition-colors",
+                    active && "text-navy"
+                  )}
+                >
+                  <span className={cn("relative", active && "link-underline-gold pb-1")}>
+                    {l.label}
+                  </span>
                 </Link>
-                <Link to="/profile">
-                  <Button variant="ghost" size="sm" className={cn("gap-2", mutedTextColor)}>
+              );
+            })}
+          </nav>
+
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <Link to="/profile" className="hidden md:inline-flex">
+                  <Button variant="ghost" size="sm" className="gap-2 text-navy/80 hover:text-navy hover:bg-navy/5">
                     <User className="w-4 h-4" />
                     {user.user_metadata?.full_name?.split(" ")[0] || "প্রোফাইল"}
                   </Button>
                 </Link>
-                <Button variant="ghost" size="icon" className={cn(mutedTextColor)} onClick={signOut}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-navy/70 hover:text-navy hover:bg-navy/5"
+                  onClick={signOut}
+                  aria-label="Logout"
+                >
                   <LogOut className="w-4 h-4" />
                 </Button>
-              </div>
-            :
+              </>
+            ) : (
               <Link to="/login">
-                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-5 rounded-lg">
-                  লগইন করুন
+                <Button
+                  size="sm"
+                  className="btn-gold border-0 font-heading font-bold px-5 h-10 rounded-lg gap-2 shadow-sm"
+                >
+                  <User className="w-4 h-4" />
+                  লগইন
                 </Button>
               </Link>
-            }
-          </nav>
-
-          {/* Mobile: simple button instead of hamburger menu */}
-          <div className="md:hidden flex items-center gap-2">
-            {user ?
-              <Link to="/dashboard">
-                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-4 rounded-lg">
-                  ড্যাশবোর্ড
-                </Button>
-              </Link>
-            :
-              <Link to="/login">
-                <Button size="sm" className="gradient-green text-primary-foreground border-0 font-heading font-semibold px-4 rounded-lg">
-                  লগইন করুন
-                </Button>
-              </Link>
-            }
+            )}
+            {/* Mobile menu */}
+            <button
+              className="lg:hidden p-2 rounded-lg text-navy hover:bg-navy/5"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Menu"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile drawer */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="lg:hidden overflow-hidden bg-white border-t border-border"
+            >
+              <div className="container py-3 flex flex-col">
+                {navLinks.map((l) => (
+                  <Link
+                    key={l.label}
+                    to={l.to}
+                    className="px-2 py-2.5 text-[15px] font-medium text-navy/80 hover:text-navy hover:bg-navy/5 rounded-lg"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pt-16 lg:pt-[76px]">{children}</main>
 
       {/* Footer */}
       <footer className="gradient-hero text-white">
