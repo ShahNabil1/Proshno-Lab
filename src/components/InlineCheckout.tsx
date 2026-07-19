@@ -159,7 +159,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
     <div className="space-y-0">
       {/* Header */}
       <div className="bg-card rounded-t-2xl border border-b-0 p-6 text-center">
-        <img src={logoImg} alt="eExamapp" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
+        <img src={logoImg} alt="Proshno Lab" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
         <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">
           প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!
         </h2>

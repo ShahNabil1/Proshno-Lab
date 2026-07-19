@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Link to="/" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
-          <img src={logoImg} alt="eExamapp" className="w-8 h-8 rounded-lg object-contain" />
+          <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">
             eExam<span className="text-gradient-green">app</span>
           </span>

@@ -617,7 +617,7 @@ export default function QuestionCreate() {
 
         {/* Special search */}
         <div className="border border-border rounded-lg p-3">
-          <h4 className="font-heading font-bold text-sm mb-2">eExamapp স্পেশাল সার্চ</h4>
+          <h4 className="font-heading font-bold text-sm mb-2">Proshno Lab স্পেশাল সার্চ</h4>
           <div className="space-y-2">
             {specialSearchOptions.map(opt => (
               <div key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}>
@@ -1071,7 +1071,7 @@ export default function QuestionCreate() {
           })()}
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200">
-            প্রশ্নে ভুল পেলে রিপোর্ট করে eExamapp কে সমৃদ্ধ করুন ।
+            প্রশ্নে ভুল পেলে রিপোর্ট করে Proshno Lab কে সমৃদ্ধ করুন ।
           </div>
 
           {/* Mobile filter button + search */}

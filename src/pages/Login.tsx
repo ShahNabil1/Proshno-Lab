@@ -13,8 +13,8 @@ export default function Login() {
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-card p-10 text-center">
-          <img src={logoImg} alt="eExamapp" className="w-16 h-16 rounded-xl mx-auto mb-5 object-contain" />
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">eExamapp-এ স্বাগতম</h1>
+          <img src={logoImg} alt="Proshno Lab" className="w-16 h-16 rounded-xl mx-auto mb-5 object-contain" />
+          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Proshno Lab-এ স্বাগতম</h1>
           <p className="text-muted-foreground text-sm mb-8">
             আপনার গুগল অ্যাকাউন্ট দিয়ে লগইন করুন
           </p>
