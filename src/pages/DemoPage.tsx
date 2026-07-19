@@ -356,14 +356,15 @@ export default function DemoPage() {
                         {showAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Button
-                      className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
-                      onClick={handlePrint}
-                      disabled={selectedIds.size === 0}
-                    >
-                      <Printer className="w-4 h-4 mr-2" />
-                      প্রিন্ট / PDF ডাউনলোড
-                    </Button>
+                    <Link to="/register" className="block">
+                      <Button
+                        className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
+                        disabled={selectedIds.size === 0}
+                      >
+                        প্রিন্ট / ডাউনলোড করতে রেজিস্টার করুন
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
                   </div>
 
                   <div className="rounded-xl bg-white p-5 demo-print-area" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
