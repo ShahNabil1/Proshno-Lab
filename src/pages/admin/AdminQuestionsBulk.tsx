@@ -154,21 +154,21 @@ export default function AdminQuestionsBulk() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div>
               <Label>শ্রেণী *</Label>
-              <Select value={classId} onValueChange={setClassId}>
+              <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterId(""); setTopicId(""); }}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>বিষয় *</Label>
-              <Select value={subjectId} onValueChange={setSubjectId} disabled={!classId}>
+              <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterId(""); setTopicId(""); }} disabled={!classId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{subjects.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>অধ্যায় *</Label>
-              <Select value={chapterId} onValueChange={setChapterId} disabled={!subjectId}>
+              <Select value={chapterId} onValueChange={(v) => { setChapterId(v); setTopicId(""); }} disabled={!subjectId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
