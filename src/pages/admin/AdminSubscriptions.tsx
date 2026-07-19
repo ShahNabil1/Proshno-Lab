@@ -111,6 +111,31 @@ function BkashResponseCard({ data }: { data: Record<string, any> }) {
   );
 }
 
+function ReconcilePendingButton({ payments, onDone }: { payments: BkashPaymentRow[]; onDone: () => void }) {
+  const [running, setRunning] = useState(false);
+  const pending = payments.filter(p => p.status === "initiated" && p.payment_id);
+  const run = async () => {
+    if (pending.length === 0) { toast.info("কোনো চলমান পেমেন্ট নেই"); return; }
+    setRunning(true);
+    let updated = 0;
+    for (const p of pending) {
+      try {
+        const { data } = await supabase.functions.invoke("bkash-query-payment", { body: { paymentID: p.payment_id } });
+        if (data?.newStatus && data.newStatus !== "initiated") updated++;
+      } catch {}
+    }
+    setRunning(false);
+    toast.success(`${pending.length}টি যাচাই করা হয়েছে, ${updated}টি আপডেট`);
+    onDone();
+  };
+  return (
+    <Button variant="outline" size="sm" onClick={run} disabled={running || pending.length === 0}>
+      {running ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+      চলমান যাচাই ({pending.length})
+    </Button>
+  );
+}
+
 export default function AdminSubscriptions() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
@@ -177,7 +202,10 @@ export default function AdminSubscriptions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="font-heading text-2xl font-bold">সাবস্ক্রিপশন ও বিকাশ পেমেন্ট</h1>
-        <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-1.5" /> রিফ্রেশ</Button>
+        <div className="flex items-center gap-2">
+          <ReconcilePendingButton payments={payments} onDone={fetchAll} />
+          <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-1.5" /> রিফ্রেশ</Button>
+        </div>
       </div>
 
       <Card>
