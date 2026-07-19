@@ -168,13 +168,8 @@ export default function DemoPage() {
     return base.sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
   }, [questions, shuffleSeed]);
 
-  const handlePrint = () => {
-    if (selectedIds.size === 0) {
-      toast.error("প্রিন্ট করার আগে অন্তত একটি প্রশ্ন সিলেক্ট করুন");
-      return;
-    }
-    window.print();
-  };
+
+
 
   const handleShuffle = () => {
     if (questions.length === 0) return;
