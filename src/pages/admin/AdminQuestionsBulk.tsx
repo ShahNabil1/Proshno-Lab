@@ -17,6 +17,8 @@ import {
   QType, TYPE_LABELS, ParsedQuestion,
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload,
 } from "@/lib/bulkQuestions";
+import ManualMultiAdd from "@/components/admin/bulk/ManualMultiAdd";
+import AIExtract from "@/components/admin/bulk/AIExtract";
 
 const CHUNK = 50;
 
