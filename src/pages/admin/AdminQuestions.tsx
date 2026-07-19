@@ -688,7 +688,7 @@ export default function AdminQuestions() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
-            মোট {totalCount}টি প্রশ্নের মধ্যে {(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeCurrentPage * ITEMS_PER_PAGE, totalCount)} দেখানো হচ্ছে
+            মোট {totalCount}টি প্রশ্নের মধ্যে {(safeCurrentPage - 1) * pageSize + 1}–{Math.min(safeCurrentPage * pageSize, totalCount)} দেখানো হচ্ছে
           </p>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
