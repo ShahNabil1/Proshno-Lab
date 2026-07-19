@@ -177,7 +177,10 @@ export default function AdminSubscriptions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="font-heading text-2xl font-bold">সাবস্ক্রিপশন ও বিকাশ পেমেন্ট</h1>
-        <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-1.5" /> রিফ্রেশ</Button>
+        <div className="flex items-center gap-2">
+          <ReconcilePendingButton payments={payments} onDone={fetchAll} />
+          <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-1.5" /> রিফ্রেশ</Button>
+        </div>
       </div>
 
       <Card>
