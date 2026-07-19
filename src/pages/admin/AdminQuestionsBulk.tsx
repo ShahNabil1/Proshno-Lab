@@ -238,19 +238,19 @@ export default function AdminQuestionsBulk() {
             </TabsContent>
 
             <TabsContent value="ai" className="pt-4">
-              <div className="p-6 rounded-lg bg-muted/50 text-center">
-                <Sparkles className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
-                <p className="font-medium">AI-Assisted Extract</p>
-                <p className="text-sm text-muted-foreground mt-1">PDF/ছবি/text দিয়ে auto প্রশ্ন extract — শীঘ্রই আসছে</p>
-              </div>
+              {contextValid ? (
+                <AIExtract type={type} onExtracted={(qs) => setParsed((p) => [...p, ...qs])} />
+              ) : (
+                <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
+              )}
             </TabsContent>
 
             <TabsContent value="manual" className="pt-4">
-              <div className="p-6 rounded-lg bg-muted/50 text-center">
-                <Plus className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
-                <p className="font-medium">Manual Multi-Add</p>
-                <p className="text-sm text-muted-foreground mt-1">form-এ একটার পর একটা যোগ — শীঘ্রই আসছে</p>
-              </div>
+              {contextValid ? (
+                <ManualMultiAdd type={type} onAdd={(q) => setParsed((p) => [...p, q])} />
+              ) : (
+                <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
