@@ -59,6 +59,58 @@ const payStatusConfig: Record<string, { label: string; className: string }> = {
   cancelled: { label: "বাতিল", className: "bg-gray-100 text-gray-600 border-gray-300" },
 };
 
+function BkashResponseCard({ data }: { data: Record<string, any> }) {
+  const [showRaw, setShowRaw] = useState(false);
+  const fmtDate = (v?: string) => {
+    if (!v) return "—";
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? v : d.toLocaleString("bn-BD");
+  };
+  const status = String(data.transactionStatus || data.statusMessage || "").toLowerCase();
+  const isSuccess = data.statusCode === "0000" || status.includes("complet") || status.includes("success");
+  const isFail = !isSuccess && data.statusCode && data.statusCode !== "0000";
+  const rows: { label: string; value: React.ReactNode; mono?: boolean }[] = [
+    { label: "ট্রানজেকশন আইডি", value: data.trxID || "—", mono: true },
+    { label: "পেমেন্ট আইডি", value: data.paymentID || "—", mono: true },
+    { label: "ইনভয়েস", value: data.merchantInvoiceNumber || "—", mono: true },
+    { label: "গ্রাহকের নম্বর", value: data.customerMsisdn || data.payerAccount || data.payerReference || "—" },
+    { label: "পরিমাণ", value: data.amount ? `৳${Number(data.amount).toLocaleString("bn-BD")} ${data.currency || "BDT"}` : "—" },
+    { label: "রিফান্ডযোগ্য", value: data.maxRefundableAmount ? `৳${Number(data.maxRefundableAmount).toLocaleString("bn-BD")}` : "—" },
+    { label: "পেমেন্টের সময়", value: fmtDate(data.paymentExecuteTime || data.paymentCreateTime) },
+    { label: "ধরন", value: data.payerType || data.intent || "—" },
+  ];
+  return (
+    <div className="mt-2 rounded-lg border border-pink-200 bg-gradient-to-br from-pink-50/60 to-white overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-pink-100 bg-white/50">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isSuccess ? "bg-emerald-500" : isFail ? "bg-red-500" : "bg-amber-500"}`} />
+          <span className="text-xs font-semibold text-pink-900">বিকাশ পেমেন্ট বিবরণ</span>
+          {data.statusMessage && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${isSuccess ? "bg-emerald-100 text-emerald-700" : isFail ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+              {data.statusMessage}
+            </span>
+          )}
+        </div>
+        <button onClick={() => setShowRaw(v => !v)} className="text-[10px] text-muted-foreground hover:text-foreground underline">
+          {showRaw ? "সহজ ভিউ" : "কাঁচা JSON"}
+        </button>
+      </div>
+      {showRaw ? (
+        <pre className="p-2 text-[10px] overflow-x-auto bg-muted/30 max-h-64">{JSON.stringify(data, null, 2)}</pre>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 p-3 text-xs">
+          {rows.map(r => (
+            <div key={r.label} className="flex items-baseline justify-between gap-2 border-b border-dashed border-pink-100/60 pb-1">
+              <span className="text-muted-foreground shrink-0">{r.label}</span>
+              <span className={`text-right text-foreground ${r.mono ? "font-mono text-[11px]" : "font-medium"}`}>{r.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminSubscriptions() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
