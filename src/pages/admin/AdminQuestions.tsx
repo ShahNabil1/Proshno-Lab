@@ -290,8 +290,15 @@ export default function AdminQuestions() {
 
       const { error } = await supabase.from("questions").insert(payloads as any);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : "গ্রুপ তৈরি হয়েছে");
-      setFullPageCreate(false);
+      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : `${validQs.length}টি MCQ তৈরি হয়েছে`);
+      if (editItem) {
+        setFullPageCreate(false);
+      } else {
+        // Keep context, clear question content for next entry
+        setStimulusText("");
+        setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+        setForm((f) => ({ ...f, question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", board_references: [], university_references: [] }));
+      }
       fetchItems();
       return;
     }
