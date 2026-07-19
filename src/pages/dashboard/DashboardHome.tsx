@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, PlusCircle, Package, Phone } from "lucide-react";
+import { FileText, PlusCircle, Package, Phone, Megaphone } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ export default function DashboardHome() {
   const [recentQuestions, setRecentQuestions] = useState<any[]>([]);
   const [institute, setInstitute] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
