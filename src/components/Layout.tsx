@@ -17,6 +17,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHeroPage = location.pathname === "/";
+  const isDemoPage = location.pathname === "/demo";
   const navigate = useNavigate();
   void navigate;
 
