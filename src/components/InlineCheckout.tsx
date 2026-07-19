@@ -61,11 +61,18 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
     });
   }, [user]);
 
+  const sanitizeEmail = (v: string) =>
+    v.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, "").toLowerCase();
+  const sanitizeCoupon = (v: string) =>
+    v.replace(/[^\x00-\x7F]/g, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const isGmail = (v: string) => /^[a-z0-9._%+-]+@gmail\.com$/.test(v.trim().toLowerCase());
+
   const handlePay = async () => {
     if (!user) { toast.error("প্রথমে লগইন করুন"); return; }
     if (!name.trim() || !email.trim() || !phone.trim() || !institute.trim()) {
       toast.error("সকল তথ্য পূরণ করুন"); return;
     }
+    if (!isGmail(email)) { toast.error("শুধুমাত্র বৈধ @gmail.com ইমেইল ইংরেজিতে দিন"); return; }
     if (!isValidBdPhone(phone)) { toast.error(BD_PHONE_ERROR); return; }
 
     setSubmitting(true);
@@ -147,7 +154,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
         <Input placeholder="আপনার নাম ....." value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         <div className="grid grid-cols-2 gap-3">
           <Input placeholder="মোবাইল নাম্বার দিন" type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(normalizeBdPhone(e.target.value))} className="bg-muted/30" />
-          <Input placeholder="জিমেইল দিন ..." type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted/30" readOnly={!!user} />
+          <Input placeholder="আপনার gmail ঠিকানা" type="email" inputMode="email" value={email} onChange={(e) => setEmail(sanitizeEmail(e.target.value))} className="bg-muted/30" readOnly={!!user} autoComplete="email" />
         </div>
         <Input placeholder="প্রতিষ্ঠানের নাম" value={institute} onChange={(e) => setInstitute(e.target.value)} className="bg-muted/30" />
 
@@ -156,9 +163,12 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
           <Input
             placeholder="কুপন কোড (যদি থাকে)"
             value={coupon}
-            onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); setDiscount(0); }}
-            className="flex-1 bg-muted/30"
+            onChange={(e) => { setCoupon(sanitizeCoupon(e.target.value)); setCouponApplied(false); setDiscount(0); }}
+            className="flex-1 bg-muted/30 uppercase tracking-wider"
             disabled={couponApplied}
+            maxLength={32}
+            autoComplete="off"
+            spellCheck={false}
           />
           {couponApplied ? (
             <Button variant="outline" className="font-heading text-destructive" onClick={() => { setCoupon(""); setCouponApplied(false); setDiscount(0); }}>সরান</Button>
