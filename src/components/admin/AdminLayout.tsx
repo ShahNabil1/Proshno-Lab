@@ -44,6 +44,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("admin_sidebar_collapsed") === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem("admin_sidebar_collapsed", desktopCollapsed ? "1" : "0");
+  }, [desktopCollapsed]);
   const location = useLocation();
 
   useEffect(() => {
