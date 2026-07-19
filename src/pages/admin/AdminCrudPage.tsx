@@ -68,29 +68,40 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, permLoading]);
 
-  const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
+  const [bulkNames, setBulkNames] = useState("");
+  const openCreate = () => { setEditItem(null); setFormName(""); setBulkNames(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditItem(item);
     setFormName(item.name);
+    setBulkNames("");
     setFormParentId(parentKey ? String(item[parentKey]) : "");
     setFormSubjectCode(item.subject_code || "");
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
-    const payload: any = { name: formName.trim() };
-    if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
-    if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
-
     if (editItem) {
+      if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+      const payload: any = { name: formName.trim() };
+      if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
+      if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
       const { error } = await (supabase.from(table) as any).update(payload).eq("id", editItem.id);
       if (error) { toast.error("আপডেট ব্যর্থ"); return; }
       toast.success("আপডেট হয়েছে");
     } else {
-      const { error } = await (supabase.from(table) as any).insert(payload);
+      // Bulk create: one name per line
+      const names = bulkNames.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (names.length === 0) { toast.error("অন্তত একটি নাম লিখুন"); return; }
+      if (parentKey && !formParentId) { toast.error(`${parentLabel} নির্বাচন করুন`); return; }
+      const rows = names.map((name) => {
+        const p: any = { name };
+        if (parentKey && formParentId) p[parentKey] = Number(formParentId);
+        if (table === "subjects") p.subject_code = formSubjectCode.trim() || null;
+        return p;
+      });
+      const { error } = await (supabase.from(table) as any).insert(rows);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
+      toast.success(`${names.length} টি সফলভাবে যোগ হয়েছে`);
     }
     setDialogOpen(false);
     fetchItems();
