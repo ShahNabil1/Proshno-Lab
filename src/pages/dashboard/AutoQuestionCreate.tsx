@@ -112,8 +112,7 @@ export default function AutoQuestionCreate() {
           .from("questions")
           .select("id", { count: "exact", head: true })
           .in("chapter_id", ids)
-          .eq("type", t)
-          .eq("is_active", true);
+          .eq("type", t);
         return [t, count || 0] as const;
       }));
       const next = { mcq: 0, cq: 0, short: 0, descriptive: 0 } as Record<QType, number>;
@@ -162,7 +161,6 @@ export default function AutoQuestionCreate() {
           .select("id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
           .in("chapter_id", ids)
           .eq("type", t)
-          .eq("is_active", true)
           .limit(2000);
         const pool = (data || []) as any[];
         const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, counts[t]);
