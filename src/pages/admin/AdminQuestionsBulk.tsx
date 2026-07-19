@@ -33,11 +33,12 @@ export default function AdminQuestionsBulk() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
-  const [classId, setClassId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-  const [chapterId, setChapterId] = useState("");
-  const [topicId, setTopicId] = useState("");
-  const [type, setType] = useState<QType>("mcq");
+  const _init = readCtx();
+  const [classId, setClassId] = useState<string>(_init.classId || "");
+  const [subjectId, setSubjectId] = useState<string>(_init.subjectId || "");
+  const [chapterId, setChapterId] = useState<string>(_init.chapterId || "");
+  const [topicId, setTopicId] = useState<string>(_init.topicId || "");
+  const [type, setType] = useState<QType>((_init.type as QType) || "mcq");
 
   // Data
   const [parsed, setParsed] = useState<ParsedQuestion[]>([]);
@@ -46,6 +47,11 @@ export default function AdminQuestionsBulk() {
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Persist context
+  useEffect(() => {
+    localStorage.setItem(CTX_KEY, JSON.stringify({ classId, subjectId, chapterId, topicId, type }));
+  }, [classId, subjectId, chapterId, topicId, type]);
 
   useEffect(() => {
     supabase.from("classes").select("id, name").order("id").then(({ data }) => setClasses(data || []));
