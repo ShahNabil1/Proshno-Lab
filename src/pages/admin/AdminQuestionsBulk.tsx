@@ -114,8 +114,17 @@ export default function AdminQuestionsBulk() {
     const nextFailed: FailedChunk[] = [];
     let done = 0;
     let ok = 0;
+    let rowsDone = 0;
     const total = chunks.reduce((s, c) => s + c.payloads.length, 0);
-    for (const ch of chunks) {
+    setChunkProg({ done: 0, total: chunks.length, rowsDone: 0, rowsTotal: total });
+    const remaining: FailedChunk[] = [];
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const ch = chunks[idx];
+      if (cancelRef.current) {
+        // Preserve untried chunks so user can resume via retry
+        remaining.push(...chunks.slice(idx));
+        break;
+      }
       const { error } = await supabase.from("questions").insert(ch.payloads as any);
       if (error) {
         console.error("Chunk failed", ch.rows, error);
@@ -123,10 +132,12 @@ export default function AdminQuestionsBulk() {
       } else {
         ok += ch.payloads.length;
       }
-      done += ch.payloads.length;
-      setProgress(Math.round((done / total) * 100));
+      done += 1;
+      rowsDone += ch.payloads.length;
+      setProgress(Math.round((rowsDone / total) * 100));
+      setChunkProg({ done, total: chunks.length, rowsDone, rowsTotal: total });
     }
-    return { ok, nextFailed };
+    return { ok, nextFailed: [...nextFailed, ...remaining], cancelled: cancelRef.current };
   };
 
   const doSave = async () => {
@@ -135,6 +146,8 @@ export default function AdminQuestionsBulk() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
 
+    cancelRef.current = false;
+    setCancelled(false);
     setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
     const stimulusGroup = type === "mcq" && valid.some((q) => q.stimulus) ? null : null;
 
@@ -156,14 +169,17 @@ export default function AdminQuestionsBulk() {
       });
     }
 
-    const { ok, nextFailed } = await runInsertChunks(chunks);
+    const { ok, nextFailed, cancelled: wasCancelled } = await runInsertChunks(chunks);
     setSaving(false);
     setInsertedCount(ok);
     setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
     setConfirmOpen(false);
 
-    if (nextFailed.length === 0) {
+    if (wasCancelled) {
+      const pending = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.warning(`বাতিল করা হয়েছে — ${ok} সফল, ${pending} বাকি (Retry দিয়ে আবার শুরু করুন)`);
+    } else if (nextFailed.length === 0) {
       toast.success(`${ok} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
       setParsed([]); setPasteText("");
     } else {
@@ -174,19 +190,30 @@ export default function AdminQuestionsBulk() {
 
   const retryFailed = async () => {
     if (failedChunks.length === 0) return;
+    cancelRef.current = false;
+    setCancelled(false);
     setSaving(true); setProgress(0);
-    const { ok, nextFailed } = await runInsertChunks(failedChunks);
+    const { ok, nextFailed, cancelled: wasCancelled } = await runInsertChunks(failedChunks);
     setSaving(false);
     setInsertedCount((n) => n + ok);
     setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
-    if (nextFailed.length === 0) {
+    if (wasCancelled) {
+      toast.warning(`Retry বাতিল — ${ok} সফল`);
+    } else if (nextFailed.length === 0) {
       toast.success(`বাকি ${ok} টি প্রশ্নও সফলভাবে যোগ হয়েছে!`);
       setParsed([]); setPasteText("");
     } else {
       const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
       toast.error(`আবারো ${failedCount} ব্যর্থ — ${ok} সফল`);
     }
+  };
+
+  const cancelSave = () => {
+    if (!saving) return;
+    cancelRef.current = true;
+    setCancelled(true);
+    toast.info("বর্তমান chunk শেষে থামবে...");
   };
 
   const skipFailedChunk = (id: string) => {
