@@ -6,34 +6,60 @@ import MessengerIcon from "@/components/icons/MessengerIcon";
 
 export default function Contact() {
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="font-heading text-2xl font-bold text-center">যোগাযোগ</h1>
+    <section className="min-h-[calc(100vh-64px)] lg:min-h-[calc(100vh-76px)] flex items-center justify-center px-4 py-12 lg:py-16">
+      <div className="w-full max-w-lg mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="font-heading text-2xl md:text-3xl font-bold text-navy">যোগাযোগ</h1>
+          <p className="text-sm md:text-base text-slate-500">
+            যেকোনো প্রয়োজনে নিচের মাধ্যমে আমাদের সাথে যোগাযোগ করুন
+          </p>
+        </div>
 
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <Button variant="outline" className="w-full gap-2 justify-start" asChild>
-            <a href="tel:+8809696638867">
-              <Phone className="w-4 h-4" /> +8809696-638867
+        <Card className="shadow-lg border-slate-100">
+          <CardContent className="p-5 md:p-8 space-y-4">
+            <Button variant="outline" className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl" asChild>
+              <a href="tel:+8809696638867">
+                <Phone className="w-5 h-5 text-navy" />
+                <span className="font-medium">+8809696-638867</span>
+              </a>
+            </Button>
+
+            <Button
+              className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white border-0 shadow-sm transition-colors"
+              asChild
+            >
+              <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
+                <WhatsAppIcon className="w-5 h-5" />
+                <span className="font-medium">WhatsApp এ মেসেজ দিন</span>
+              </a>
+            </Button>
+
+            <Button variant="outline" className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl" asChild>
+              <a href="https://m.me/proshnolab" target="_blank" rel="noopener noreferrer">
+                <MessengerIcon className="w-5 h-5 text-[#0084FF]" />
+                <span className="font-medium">Messenger এ মেসেজ দিন</span>
+              </a>
+            </Button>
+
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase text-slate-400">
+                <span className="bg-white px-3">অথবা</span>
+              </div>
+            </div>
+
+            <a
+              href="mailto:support@proshnolab.com"
+              className="flex items-center justify-center gap-2 h-12 md:h-14 rounded-xl border border-slate-200 bg-slate-50 text-navy hover:bg-slate-100 transition-colors"
+            >
+              <Mail className="w-5 h-5" />
+              <span className="font-medium">support@proshnolab.com</span>
             </a>
-          </Button>
-          <Button className="w-full gap-2 justify-start bg-[#25D366] hover:bg-[#128C7E] text-white border-0" asChild>
-            <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
-              <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
-            </a>
-          </Button>
-          <Button variant="outline" className="w-full gap-2 justify-start" asChild>
-            <a href="https://m.me/proshnolab" target="_blank" rel="noopener noreferrer">
-              <MessengerIcon className="w-4 h-4" /> Open Messenger
-            </a>
-          </Button>
-          <div className="text-center text-sm text-muted-foreground pt-2">
-            <p>OR</p>
-            <a href="mailto:support@proshnolab.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
-              <Mail className="w-4 h-4" /> support@proshnolab.com
-            </a>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
   );
 }
