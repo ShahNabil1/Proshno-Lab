@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Menu, X, LogOut, User, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
-import bkashLogo from "@/assets/bkash-logo.webp";
-import nagadLogo from "@/assets/nagad-logo.png";
-import rocketLogo from "@/assets/rocket-logo.png";
-import upayLogo from "@/assets/upay-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
