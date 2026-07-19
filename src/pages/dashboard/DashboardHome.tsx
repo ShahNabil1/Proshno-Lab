@@ -35,6 +35,12 @@ export default function DashboardHome() {
     // Subscription from Supabase
     supabase.from("subscriptions").select("*").eq("teacher_id", user.id).maybeSingle()
       .then(({ data }) => setSubscription(data));
+
+    // Real announcements from Supabase
+    supabase.from("announcements").select("id, text, priority, created_at")
+      .eq("is_active", true).order("priority", { ascending: false })
+      .order("created_at", { ascending: false }).limit(3)
+      .then(({ data }) => setAnnouncements(data || []));
   }, [user]);
 
   return (
