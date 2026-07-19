@@ -453,10 +453,10 @@ export default function DemoPage() {
                         {cqQuestions.length > 0 && (
                           <div>
                             {(mcqQuestions.length > 0 || shortQuestions.length > 0) && <div className="border-t border-black/20 my-2" />}
-                            <div className="text-center font-bold text-[11px] underline mb-1">
+                            <div className="text-center font-bold text-[11px] underline mb-1 demo-section-head">
                               সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০)
                             </div>
-                            <div className="flex justify-between items-center text-[10px] font-semibold mb-1.5">
+                            <div className="flex justify-between items-center text-[10px] font-semibold mb-1.5 demo-paper-meta">
                               <span>সবগুলো প্রশ্নের উত্তর দাও :</span>
                               <span>{toBanglaNum(10)} x {toBanglaNum(cqQuestions.length)} = {toBanglaNum(cqQuestions.length * 10)}</span>
                             </div>
@@ -466,7 +466,8 @@ export default function DemoPage() {
                               const subMarks = isMathSubject ? [2, 4, 4] : [1, 2, 3, 4];
                               const subQuestions = cData?.sub_questions || [];
                               return (
-                                <div key={q.id} className="mb-2">
+                                <div key={q.id} className="mb-2 demo-cq-item">
+
                                   <div className="font-semibold mb-0.5">
                                     {q.stimulus_text ? (
                                       <span>{padBangla(idx + 1)}। <span dangerouslySetInnerHTML={{ __html: q.stimulus_text }} /></span>
