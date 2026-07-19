@@ -74,6 +74,13 @@ function useDashboardHiddenPages() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("dashboard_sidebar_collapsed") === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem("dashboard_sidebar_collapsed", desktopCollapsed ? "1" : "0");
+  }, [desktopCollapsed]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
   const [isBanned, setIsBanned] = useState(false);
