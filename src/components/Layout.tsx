@@ -65,12 +65,15 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 className="relative w-11 h-11 rounded-full object-contain ring-2 ring-navy/10 group-hover:ring-gold/50 transition-all duration-500"
               />
             </div>
-            <div className="leading-tight">
-              <div className="font-heading font-bold text-[22px] text-navy tracking-tight">
-                প্রশ্ন<span className="text-indigo">ল্যাব</span>
+            <div className="leading-none">
+              <div
+                className="font-bold text-[30px] lg:text-[34px] text-navy tracking-tight"
+                style={{ fontFamily: "'Hind Siliguri', 'SolaimanLipi', serif", letterSpacing: "-0.5px" }}
+              >
+                প্রশ্ন<span className="bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent italic">ল্যাব</span>
               </div>
-              <div className="text-[10.5px] text-navy/60 -mt-0.5">
-                শিক্ষকদের জন্য <span className="text-gold font-semibold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম...
+              <div className="text-[11px] lg:text-[12px] text-navy/70 mt-1 font-medium">
+                শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম...
               </div>
             </div>
           </Link>
