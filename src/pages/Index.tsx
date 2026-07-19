@@ -443,17 +443,21 @@ export default function Index() {
       </section>
 
       {/* ══════ FAQ ══════ */}
-      <section className="py-16 md:py-24 bg-slate-alt">
+      <section className="py-10 md:py-14 bg-slate-alt">
         <div className="container max-w-3xl">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy/10 text-navy text-xs font-semibold mb-4">
+              <ChevronDown className="w-3.5 h-3.5" />
+              সাধারণ জিজ্ঞাসা
+            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
           </motion.div>
-          <div className="space-y-0">
+          <div className="bg-card rounded-2xl border border-border/60 shadow-premium overflow-hidden">
             {faqs.map((faq, i) =>
-            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className={i !== faqs.length - 1 ? "border-b border-border" : ""}>
                 <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group">
+                className="w-full text-left py-4 px-5 flex items-center justify-between gap-4 group hover:bg-muted/30 transition-colors">
 
                   <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
@@ -468,7 +472,7 @@ export default function Index() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden">
 
-                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.answer}</p>
+                      <p className="text-muted-foreground text-sm pb-4 px-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
                 }
                 </AnimatePresence>
