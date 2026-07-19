@@ -165,7 +165,7 @@ export default function DashboardHome() {
                   <Phone className="w-4 h-4" /> +880 1758-018668
                 </a>
               </Button>
-              <Button className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white border-0" size="sm" asChild>
+              <Button className="w-full gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-0" size="sm" asChild>
                 <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
                   <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
                 </a>

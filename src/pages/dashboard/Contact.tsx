@@ -16,7 +16,7 @@ export default function Contact() {
               <Phone className="w-4 h-4" /> +880 1758-018668
             </a>
           </Button>
-          <Button className="w-full gap-2 justify-start bg-green-600 hover:bg-green-700 text-white border-0" asChild>
+          <Button className="w-full gap-2 justify-start bg-[#25D366] hover:bg-[#128C7E] text-white border-0" asChild>
             <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
             </a>
