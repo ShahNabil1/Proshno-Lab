@@ -52,6 +52,7 @@ interface QuestionRow {
 }
 
 export default function DemoPage() {
+  const navigate = useNavigate();
   const [freeChapters, setFreeChapters] = useState<FreeChapter[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
