@@ -175,13 +175,18 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <img src={logoImg} alt="Proshno Lab" className="w-9 h-9 rounded-lg object-contain" />
-                <span className="font-heading font-bold text-xl">Proshno Lab</span>
+                <img src={logoImg} alt="Proshno Lab" className="w-11 h-11 rounded-lg object-contain" />
+                <span
+                  className="font-bold text-[30px] tracking-tight text-white"
+                  style={{ fontFamily: "'Hind Siliguri', 'SolaimanLipi', serif", letterSpacing: "-0.5px" }}
+                >
+                  প্রশ্ন<span className="bg-gradient-to-r from-gold via-amber-300 to-gold bg-clip-text text-transparent italic">ল্যাব</span>
+                </span>
               </div>
               <p className="leading-relaxed text-green-50 text-base text-left">
-                📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢
+                শিক্ষকদের জন্য <span className="text-gold font-semibold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম
                 <br />
-                💡স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান💡
+                স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
               </p>
             </div>
 
