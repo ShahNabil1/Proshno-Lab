@@ -396,7 +396,34 @@ export default function AdminQuestionsBulk() {
               ))}
             </div>
 
-            {saving && <Progress value={progress} className="h-2" />}
+            {saving && (
+              <div className="rounded-lg border bg-emerald-50/60 border-emerald-200 p-4 space-y-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-sm">
+                    <span className="font-semibold text-emerald-800">
+                      {cancelled ? "বাতিল হচ্ছে..." : "সেভ চলছে..."}
+                    </span>
+                    <span className="ml-2 text-muted-foreground">
+                      Chunk {chunkProg.done}/{chunkProg.total} • প্রশ্ন {chunkProg.rowsDone}/{chunkProg.rowsTotal}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-emerald-800 tabular-nums">{progress}%</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelSave}
+                      disabled={cancelled}
+                      className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 gap-1"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      {cancelled ? "থামছে..." : "বাতিল"}
+                    </Button>
+                  </div>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
 
             {failedChunks.length > 0 && (
               <div className="border border-red-300 bg-red-50/60 rounded-lg p-4 space-y-3">
