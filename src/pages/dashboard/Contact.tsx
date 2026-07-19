@@ -15,28 +15,28 @@ export default function Contact() {
           </p>
         </div>
 
-        <Card className="shadow-lg border-slate-100">
-          <CardContent className="p-5 md:p-8 space-y-4">
-            <Button variant="outline" className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl" asChild>
+        <Card className="shadow-md border-slate-100">
+          <CardContent className="p-4 md:p-6 space-y-3">
+            <Button variant="outline" className="w-full gap-2 justify-center h-11 md:h-12 text-sm md:text-base rounded-lg" asChild>
               <a href="tel:+8809696638867">
-                <Phone className="w-5 h-5 text-navy" />
+                <Phone className="w-4 h-4 md:w-5 md:h-5 text-navy" />
                 <span className="font-medium">+8809696-638867</span>
               </a>
             </Button>
 
             <Button
-              className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white border-0 shadow-sm transition-colors"
+              className="w-full gap-2 justify-center h-11 md:h-12 text-sm md:text-base rounded-lg bg-[#25D366] hover:bg-[#128C7E] text-white border-0 shadow-sm transition-colors"
               asChild
             >
               <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon className="w-5 h-5" />
+                <WhatsAppIcon className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="font-medium">WhatsApp এ মেসেজ দিন</span>
               </a>
             </Button>
 
-            <Button variant="outline" className="w-full gap-3 justify-start h-12 md:h-14 text-base rounded-xl" asChild>
+            <Button variant="outline" className="w-full gap-2 justify-center h-11 md:h-12 text-sm md:text-base rounded-lg" asChild>
               <a href="https://m.me/proshnolab" target="_blank" rel="noopener noreferrer">
-                <MessengerIcon className="w-5 h-5 text-[#0084FF]" />
+                <MessengerIcon className="w-4 h-4 md:w-5 md:h-5 text-[#0084FF]" />
                 <span className="font-medium">Messenger এ মেসেজ দিন</span>
               </a>
             </Button>
@@ -52,9 +52,9 @@ export default function Contact() {
 
             <a
               href="mailto:support@proshnolab.com"
-              className="flex items-center justify-center gap-2 h-12 md:h-14 rounded-xl border border-slate-200 bg-slate-50 text-navy hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-center gap-2 h-11 md:h-12 rounded-lg border border-slate-200 bg-slate-50 text-sm md:text-base text-navy hover:bg-slate-100 transition-colors"
             >
-              <Mail className="w-5 h-5" />
+              <Mail className="w-4 h-4 md:w-5 md:h-5" />
               <span className="font-medium">support@proshnolab.com</span>
             </a>
           </CardContent>
