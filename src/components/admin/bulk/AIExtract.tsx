@@ -66,7 +66,7 @@ export default function AIExtract({ type, onExtracted }: { type: QType; onExtrac
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
         {loading ? "Extract হচ্ছে..." : "AI দিয়ে Extract"}
       </Button>
-      <p className="text-xs text-muted-foreground">Powered by Lovable AI (Gemini) — বড় ইনপুটে ৩০-৬০ সেকেন্ড লাগতে পারে</p>
+      <p className="text-xs text-muted-foreground">Powered by Gemini — বড় ইনপুটে ৩০-৬০ সেকেন্ড লাগতে পারে</p>
     </div>
   );
 }
