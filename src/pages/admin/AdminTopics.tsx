@@ -309,7 +309,7 @@ export default function AdminTopics() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন"}</DialogTitle>
+            <DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             {!editItem && (
@@ -347,15 +347,30 @@ export default function AdminTopics() {
                 </div>
               </>
             )}
-            <div>
-              <Label className="text-xs">টপিকের নাম *</Label>
-              <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
-            </div>
+            {editItem ? (
+              <div>
+                <Label className="text-xs">টপিকের নাম *</Label>
+                <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+              </div>
+            ) : (
+              <div>
+                <Label className="text-xs">টপিকের নাম (প্রতি লাইনে একটি)</Label>
+                <textarea
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background font-mono min-h-[180px]"
+                  placeholder={"টপিক ১\nটপিক ২\nটপিক ৩"}
+                  value={bulkNames}
+                  onChange={(e) => setBulkNames(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {bulkNames.split("\n").map((s) => s.trim()).filter(Boolean).length} টি এন্ট্রি
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
             <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">
-              {editItem ? "আপডেট" : "তৈরি করুন"}
+              {editItem ? "আপডেট" : "সব যোগ করুন"}
             </Button>
           </DialogFooter>
         </DialogContent>
