@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Youtube, Twitter } from "lucide-react";
+import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail } from "lucide-react";
+import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -175,20 +176,20 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               </p>
               {/* Social */}
               <div className="flex items-center gap-3 pt-1">
-                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
-                  <Facebook className="w-[18px] h-[18px]" />
+                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#1877F2]/10 transition-colors hover:scale-110">
+                  <FaFacebook className="w-[18px] h-[18px] text-[#1877F2]" />
                 </a>
-                <a href="https://instagram.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
-                  <Instagram className="w-[18px] h-[18px]" />
+                <a href="https://instagram.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#E4405F]/10 transition-colors hover:scale-110">
+                  <FaInstagram className="w-[18px] h-[18px] text-[#E4405F]" />
                 </a>
-                <a href="https://linkedin.com/company/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
-                  <Linkedin className="w-[18px] h-[18px]" />
+                <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#FF0000]/10 transition-colors hover:scale-110">
+                  <FaYoutube className="w-[18px] h-[18px] text-[#FF0000]" />
                 </a>
-                <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
-                  <Youtube className="w-[18px] h-[18px]" />
+                <a href="https://wa.me/8801340345787" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#25D366]/10 transition-colors hover:scale-110">
+                  <FaWhatsapp className="w-[18px] h-[18px] text-[#25D366]" />
                 </a>
-                <a href="https://twitter.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
-                  <Twitter className="w-[18px] h-[18px]" />
+                <a href="https://tiktok.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-black/5 transition-colors hover:scale-110">
+                  <FaTiktok className="w-[18px] h-[18px] text-black" />
                 </a>
               </div>
             </div>
