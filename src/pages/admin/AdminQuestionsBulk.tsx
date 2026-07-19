@@ -51,6 +51,10 @@ export default function AdminQuestionsBulk() {
   type FailedChunk = { id: string; payloads: any[]; rows: number[]; error: string };
   const [failedChunks, setFailedChunks] = useState<FailedChunk[]>([]);
   const [insertedCount, setInsertedCount] = useState(0);
+  // Progress detail + cancellation
+  const [chunkProg, setChunkProg] = useState({ done: 0, total: 0, rowsDone: 0, rowsTotal: 0 });
+  const cancelRef = useRef(false);
+  const [cancelled, setCancelled] = useState(false);
 
   // Persist context
   useEffect(() => {
