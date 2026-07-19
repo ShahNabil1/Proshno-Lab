@@ -413,13 +413,16 @@ export default function DemoPage() {
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px", fontSize: "10px", lineHeight: 1.3 }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
+                                        const letter = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const isCorrect = showAnswers && q.correct_answer && q.correct_answer.trim().toLowerCase() === ["a","b","c","d"][oi];
                                         return (
-                                          <span key={key}>
-                                            ({["ক", "খ", "গ", "ঘ"][oi]}) <LatexRenderer text={val} />
+                                          <span key={key} style={isCorrect ? { color: "#047857", fontWeight: 700 } : undefined}>
+                                            ({letter}) <LatexRenderer text={val} />{isCorrect ? " ✓" : ""}
                                           </span>
                                         );
                                       })}
                                     </div>
+
                                   </div>
                                 </div>
                               </div>
