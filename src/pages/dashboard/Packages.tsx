@@ -149,7 +149,7 @@ export default function Packages() {
             প্যাকেজ ক্রয় করুন, অথবা ক্রয় করার পরেও এই মেসেজ দেখে থাকলে আমাদের মেসেজ দিন
           </p>
           <Button variant="outline" className="gap-2" asChild>
-            <a href="https://m.me/eexamapp" target="_blank" rel="noopener noreferrer">
+            <a href="https://m.me/proshnolab" target="_blank" rel="noopener noreferrer">
               <MessengerIcon className="w-4 h-4" /> Messenger
             </a>
           </Button>
@@ -200,7 +200,7 @@ export default function Packages() {
 
           {/* Print header */}
           <div className="hidden print:block text-center mb-6" style={{ fontFamily: "'SolaimanLipi', serif" }}>
-            <h1 className="text-xl font-bold">eExamapp সাজেশন</h1>
+            <h1 className="text-xl font-bold">Proshno Lab সাজেশন</h1>
             <h2 className="text-lg font-semibold mt-1">{previewSuggestion?.title}</h2>
           </div>
 

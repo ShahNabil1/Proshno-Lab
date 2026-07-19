@@ -22,14 +22,14 @@ export default function Contact() {
             </a>
           </Button>
           <Button variant="outline" className="w-full gap-2 justify-start" asChild>
-            <a href="https://m.me/eexamapp" target="_blank" rel="noopener noreferrer">
+            <a href="https://m.me/proshnolab" target="_blank" rel="noopener noreferrer">
               <MessengerIcon className="w-4 h-4" /> Open Messenger
             </a>
           </Button>
           <div className="text-center text-sm text-muted-foreground pt-2">
             <p>OR</p>
-            <a href="mailto:hello@eexamapp.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
-              <Mail className="w-4 h-4" /> hello@eexamapp.com
+            <a href="mailto:hello@proshnolab.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
+              <Mail className="w-4 h-4" /> hello@proshnolab.com
             </a>
           </div>
         </CardContent>

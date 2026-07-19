@@ -71,7 +71,7 @@ export default function PrivacyPage() {
               <p>
                 প্রাইভেসি সম্পর্কে কোনো প্রশ্ন বা উদ্বেগ থাকলে আমাদের সাথে যোগাযোগ করুন:
               </p>
-              <p className="mt-2">ইমেইল: hello@eexamapp.com</p>
+              <p className="mt-2">ইমেইল: hello@proshnolab.com</p>
             </section>
           </div>
         </motion.div>

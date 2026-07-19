@@ -317,7 +317,7 @@ export default function Index() {
               আজই শুরু করুন !
             </h2>
             <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">
-              বাংলাদেশের সবচেয়ে বড় ডিজিটাল eExamapp প্ল্যাটফর্মে যোগ দিন
+              বাংলাদেশের সবচেয়ে বড় ডিজিটাল Proshno Lab প্ল্যাটফর্মে যোগ দিন
             </p>
             <div className="flex justify-center">
               <Link to="/register">

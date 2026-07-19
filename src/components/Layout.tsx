@@ -56,7 +56,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
         <div className="container flex items-center justify-between h-16 lg:h-[72px]">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
+            <img src={logoImg} alt="Proshno Lab" className="w-9 h-9 rounded-lg object-contain" />
             <span className={cn("font-heading font-bold text-xl tracking-tight", textColor)}>
               eExam<span className="text-gradient-green">app</span>
             </span>
@@ -124,8 +124,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div className="md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
-                <img src={logoImg} alt="eExamapp" className="w-9 h-9 rounded-lg object-contain" />
-                <span className="font-heading font-bold text-xl">eExamapp</span>
+                <img src={logoImg} alt="Proshno Lab" className="w-9 h-9 rounded-lg object-contain" />
+                <span className="font-heading font-bold text-xl">Proshno Lab</span>
               </div>
               <p className="leading-relaxed text-green-50 text-base text-left">
                 📢 প্রশ্ন তৈরি করার স্মার্ট সমাধান!📢
@@ -164,15 +164,15 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 </li>
                 <li className="flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
-                  <a href="mailto:hello@eexamapp.com" className="hover:text-white transition-colors">hello@eexamapp.com</a>
+                  <a href="mailto:hello@proshnolab.com" className="hover:text-white transition-colors">hello@proshnolab.com</a>
                 </li>
               </ul>
               {/* Social icons */}
               <div className="flex items-center gap-3 mt-4">
-                <a href="https://www.facebook.com/eexamapp" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#1877F2]" aria-label="Facebook">
+                <a href="https://www.facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#1877F2]" aria-label="Facebook">
                   <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
                 </a>
-                <a href="https://www.youtube.com/@eExamapp" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#FF0000]" aria-label="YouTube">
+                <a href="https://www.youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" className="group p-2 rounded-lg bg-white/10 transition-all hover:bg-[#FF0000]" aria-label="YouTube">
                   <svg className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                 </a>
               </div>
@@ -180,7 +180,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </div>
 
           <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-white/40 text-sm">© ২০২৬ eExamapp — সর্বস্বত্ব সংরক্ষিত</p>
+            <p className="text-white/40 text-sm">© ২০২৬ Proshno Lab — সর্বস্বত্ব সংরক্ষিত</p>
             <div className="flex items-center gap-4">
               <img src={bkashLogo} alt="bKash" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
               <img src={nagadLogo} alt="Nagad" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
