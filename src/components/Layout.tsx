@@ -58,7 +58,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           <Link to="/" className="flex items-center gap-2.5">
             <img src={logoImg} alt="Proshno Lab" className="w-9 h-9 rounded-lg object-contain" />
             <span className={cn("font-heading font-bold text-xl tracking-tight", textColor)}>
-              eExam<span className="text-gradient-green">app</span>
+              Proshno<span className="text-gradient-green"> Lab</span>
             </span>
           </Link>
 
