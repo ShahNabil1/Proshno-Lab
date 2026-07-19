@@ -684,11 +684,44 @@ export default function AdminQuestions() {
         })}
       </div>
 
+      {/* Bulk actions + page size */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <>
+              <span className="text-sm text-muted-foreground">
+                <span className="font-bold text-foreground">{selectedIds.size.toLocaleString("bn-BD")}</span>টি নির্বাচিত
+              </span>
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>নির্বাচন সরান</Button>
+              <Button variant="destructive" size="sm" className="gap-2" onClick={() => setBulkDeleteOpen(true)}>
+                <Trash2 className="w-4 h-4" /> নির্বাচিত ডিলিট
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">প্রতি পেজে:</span>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="w-[110px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map(n => <SelectItem key={n} value={String(n)}>{n.toLocaleString("bn-BD")}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[42px]">
+                  <Checkbox
+                    checked={allOnPageSelected ? true : (someOnPageSelected ? "indeterminate" : false)}
+                    onCheckedChange={(c) => toggleSelectAllOnPage(!!c)}
+                    aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
+                  />
+                </TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>প্রশ্ন</TableHead>
                 <TableHead>টাইপ</TableHead>
@@ -700,7 +733,14 @@ export default function AdminQuestions() {
             </TableHeader>
             <TableBody>
               {paginatedItems.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} data-state={selectedIds.has(item.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={(c) => toggleRow(item.id, !!c)}
+                      aria-label={`প্রশ্ন ${item.id} নির্বাচন`}
+                    />
+                  </TableCell>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     <LatexRenderer text={item.question} />
@@ -716,7 +756,9 @@ export default function AdminQuestions() {
                 </TableRow>
               ))}
               {paginatedItems.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  {listQuery.isFetching ? "লোড হচ্ছে..." : "কোনো প্রশ্ন নেই"}
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
