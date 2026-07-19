@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
+import logoImg from "@/assets/proshnolab-logo.png";
 
 export default function Login() {
   const { signInWithGoogle, user, loading } = useAuth();
