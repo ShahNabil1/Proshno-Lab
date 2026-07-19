@@ -398,24 +398,6 @@ export default function Index() {
         </div>
       </section>
 
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">আমাদের SmartApp শিক্ষা কার্যক্রমকে সমৃদ্ধ করেছে</h2>
-            <p className="text-muted-foreground text-lg max-w-lg mx-auto">দেশজুড়ে প্রতিটি পাবলিক পরীক্ষার প্রশ্ন।</p>
-          </motion.div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {categories.map((cat, i) =>
-            <motion.div key={i} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="bg-card rounded-2xl p-6 text-center hover-lift cursor-pointer group shadow-premium">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <cat.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground">{cat.label}</span>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </section>
-
        <section className="py-16 md:py-24 bg-background">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
