@@ -113,6 +113,18 @@ Deno.serve(async (req) => {
         bkash_response: execData,
         error_message: msg,
       }).eq("id", paymentRow.id);
+      notifyTelegram({
+        event_type: "payment_failed",
+        title: "❌ পেমেন্ট Failed — bKash",
+        fields: [
+          { label: "👤 User", value: user.email },
+          { label: "🏫 Institute", value: paymentRow.institute_name },
+          { label: "💰 Amount", value: `৳${paymentRow.amount}` },
+          { label: "🆔 Payment ID", value: paymentRow.payment_id },
+          { label: "⚠️ Reason", value: msg },
+        ],
+        link: { label: "Admin → Subscriptions", url: "https://proshnolab.com/admin/subscriptions" },
+      });
       return json({ status: "failed", error: msg, details: execData }, 400);
     }
 
