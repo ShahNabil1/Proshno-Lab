@@ -96,9 +96,11 @@ export default function Index() {
               </div>
 
               <h1 className="font-heading font-bold text-white leading-[1.18] text-3xl sm:text-4xl md:text-5xl lg:text-[3.15rem] mb-6">
-                প্রশ্ন তৈরি করতে এখনও হাজার হাজার টাকা{" "}
+                প্রশ্ন তৈরি করতে এখনও হাজার
                 <br />
-                ও ঘণ্টার পর ঘণ্টা সময় নষ্ট হচ্ছে?
+                হাজার টাকা ও ঘণ্টার পর ঘণ্টা
+                <br />
+                সময় নষ্ট হচ্ছে?
               </h1>
 
               <p className="text-white/85 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
