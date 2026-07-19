@@ -346,7 +346,7 @@ export default function Index() {
                     {t.image_url ?
                   <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" /> :
 
-                  <div className="w-10 h-10 rounded-full gradient-green flex items-center justify-center text-white font-heading font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full gradient-navy flex items-center justify-center text-white font-heading font-bold text-sm">
                         {t.name.charAt(0)}
                       </div>
                   }
