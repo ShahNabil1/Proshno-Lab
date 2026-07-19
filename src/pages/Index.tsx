@@ -96,11 +96,9 @@ export default function Index() {
               </div>
 
               <h1 className="font-heading font-bold text-white leading-[1.18] text-3xl sm:text-4xl md:text-5xl lg:text-[3.15rem] mb-6">
-                প্রশ্ন তৈরি করতে এখনও হাজার
-                <br />
-                হাজার টাকা ও ঘণ্টার পর ঘণ্টা
-                <br />
-                সময় নষ্ট হচ্ছে?
+                <span className="block">প্রশ্ন তৈরি করতে এখনও হাজার</span>
+                <span className="block">হাজার টাকা ও ঘণ্টার পর ঘণ্টা</span>
+                <span className="block">সময় নষ্ট হচ্ছে?</span>
               </h1>
 
               <p className="text-white/85 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
@@ -464,19 +462,19 @@ export default function Index() {
                   <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
-                <AnimatePresence initial={false}>
-                  {openFaq === i &&
-                <motion.div
-                  key="content"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden">
-
+                <AnimatePresence initial={false} mode="wait">
+                  {openFaq === i && (
+                    <motion.div
+                      key={`faq-content-${faq.id}`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
                       <p className="text-muted-foreground text-sm pb-4 px-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
-                }
+                  )}
                 </AnimatePresence>
               </motion.div>
             )}
