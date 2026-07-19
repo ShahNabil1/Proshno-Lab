@@ -44,6 +44,7 @@ import AdminHome from "./pages/admin/AdminHome";
 import AdminCrudPage from "./pages/admin/AdminCrudPage";
 import AdminTeachers from "./pages/admin/AdminTeachers";
 import AdminQuestions from "./pages/admin/AdminQuestions";
+import AdminQuestionsBulk from "./pages/admin/AdminQuestionsBulk";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
