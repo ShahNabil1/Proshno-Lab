@@ -39,6 +39,7 @@ export default function AdminTopics() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [formName, setFormName] = useState("");
+  const [bulkNames, setBulkNames] = useState("");
   // Modal hierarchy
   const [modalClassId, setModalClassId] = useState("");
   const [modalSubjectId, setModalSubjectId] = useState("");
