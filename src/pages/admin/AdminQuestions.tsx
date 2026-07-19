@@ -204,7 +204,7 @@ export default function AdminQuestions() {
     setIsGroupedMcq(false);
     setStimulusText("");
     setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
-    setForm({ class_id: "", subject_id: "", chapter_id: "", topic_id: "", category_id: "", type: "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] });
+    setForm((prev) => ({ class_id: prev.class_id || "", subject_id: prev.subject_id || "", chapter_id: prev.chapter_id || "", topic_id: prev.topic_id || "", category_id: prev.category_id || "", type: prev.type || "mcq", question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "", cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "", desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "", board_references: [], university_references: [] }));
     setFullPageCreate(true);
   };
 
@@ -290,8 +290,15 @@ export default function AdminQuestions() {
 
       const { error } = await supabase.from("questions").insert(payloads as any);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : "গ্রুপ তৈরি হয়েছে");
-      setFullPageCreate(false);
+      toast.success(editItem ? "গ্রুপ আপডেট হয়েছে" : `${validQs.length}টি MCQ তৈরি হয়েছে`);
+      if (editItem) {
+        setFullPageCreate(false);
+      } else {
+        // Keep context, clear question content for next entry
+        setStimulusText("");
+        setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+        setForm((f) => ({ ...f, question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "", board_references: [], university_references: [] }));
+      }
       fetchItems();
       return;
     }
@@ -376,7 +383,17 @@ export default function AdminQuestions() {
     if (editItem) {
       setDialogOpen(false);
     } else {
-      setFullPageCreate(false);
+      // Stay on create page; keep class/subject/chapter/topic/category/type, clear only question content
+      setStimulusText("");
+      setGroupedQuestions([{ question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "" }]);
+      setForm((f) => ({
+        ...f,
+        question: "", option_a: "", option_b: "", option_c: "", option_d: "", correct_answer: "", explanation: "",
+        cq_stem: "", cq_q_ka: "", cq_q_kha: "", cq_q_ga: "", cq_q_gha: "",
+        cq_ans_ka: "", cq_ans_kha: "", cq_ans_ga: "", cq_ans_gha: "",
+        desc_q_ka: "", desc_q_kha: "", desc_ans_ka: "", desc_ans_kha: "",
+        board_references: [], university_references: [],
+      }));
     }
     fetchItems();
   };
