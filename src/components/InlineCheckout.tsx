@@ -61,11 +61,18 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
     });
   }, [user]);
 
+  const sanitizeEmail = (v: string) =>
+    v.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, "").toLowerCase();
+  const sanitizeCoupon = (v: string) =>
+    v.replace(/[^\x00-\x7F]/g, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const isGmail = (v: string) => /^[a-z0-9._%+-]+@gmail\.com$/.test(v.trim().toLowerCase());
+
   const handlePay = async () => {
     if (!user) { toast.error("প্রথমে লগইন করুন"); return; }
     if (!name.trim() || !email.trim() || !phone.trim() || !institute.trim()) {
       toast.error("সকল তথ্য পূরণ করুন"); return;
     }
+    if (!isGmail(email)) { toast.error("শুধুমাত্র বৈধ @gmail.com ইমেইল ইংরেজিতে দিন"); return; }
     if (!isValidBdPhone(phone)) { toast.error(BD_PHONE_ERROR); return; }
 
     setSubmitting(true);
