@@ -798,6 +798,48 @@ export default function AdminQuestions() {
         </div>
       )}
 
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>নির্বাচিত প্রশ্নসমূহ ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              আপনি <span className="font-bold text-foreground">{selectedIds.size.toLocaleString("bn-BD")}</span>টি প্রশ্ন চিরতরে মুছে ফেলতে চলেছেন। এই কাজটি ফেরানো যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmBulkDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "ডিলিট হচ্ছে..." : `হ্যাঁ, ${selectedIds.size.toLocaleString("bn-BD")}টি ডিলিট করুন`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single delete confirmation */}
+      <AlertDialog open={singleDeleteId != null} onOpenChange={(o) => !o && setSingleDeleteId(null)}>
+        <AlertDialogContent style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>প্রশ্নটি ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই কাজটি ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmSingleDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "ডিলিট হচ্ছে..." : "হ্যাঁ, ডিলিট করুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editItem ? "প্রশ্ন সম্পাদনা" : "নতুন প্রশ্ন"}</DialogTitle></DialogHeader>
