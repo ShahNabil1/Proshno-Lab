@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
+import logoImg from "@/assets/proshnolab-logo.png";
 
 export default function Login() {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -13,8 +13,8 @@ export default function Login() {
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-card p-10 text-center">
-          <img src={logoImg} alt="Proshno Lab" className="w-16 h-16 rounded-xl mx-auto mb-5 object-contain" />
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">
+          <img src={logoImg} alt="Proshno Lab" className="w-48 sm:w-56 mx-auto mb-6 object-contain drop-shadow-md" />
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 whitespace-nowrap">
             প্রশ্ন তৈরি করতে ফ্রি অ্যাকাউন্টে লগইন করুন
           </h1>
           <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
