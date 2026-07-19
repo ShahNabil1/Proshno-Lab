@@ -173,6 +173,29 @@ export default function DemoPage() {
     setLoading(false);
   };
 
+  // Auto-refetch questions on mount if a chapter was previously selected (back-navigation restore)
+  useEffect(() => {
+    if (initial.selectedChapterId && initial.fetched && questions.length === 0) {
+      (async () => {
+        setLoading(true);
+        const { data } = await supabase
+          .from("questions")
+          .select("id, question, option_a, option_b, option_c, option_d, correct_answer, type, stimulus_text, stimulus_group_id, creative_data, board_references")
+          .eq("chapter_id", Number(initial.selectedChapterId))
+          .limit(50);
+        if (data) {
+          setQuestions(data as QuestionRow[]);
+          // Preserve previously selected ids; if none saved, default to all
+          if (!initial.selectedIds || initial.selectedIds.length === 0) {
+            setSelectedIds(new Set(data.map((q: any) => q.id)));
+          }
+        }
+        setLoading(false);
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleQuestion = (id: number) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
