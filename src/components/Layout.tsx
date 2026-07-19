@@ -227,24 +227,21 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               </ul>
             </div>
 
-            {/* Developer credit / mini */}
-            <div className="flex flex-col justify-between">
-              <div>
-                <h4 className="font-heading font-bold text-navy text-base mb-4">ডেভেলপার ক্রেডিট</h4>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  Designed & Developed with{" "}
-                  <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400 inline-block align-text-bottom" />{" "}
-                  by{" "}
-                  <a
-                    href="https://www.shahnabil.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-slate-700 hover:text-navy transition-colors"
-                  >
-                    Shahriar Nabil
-                  </a>
-                </p>
-              </div>
+            {/* Developer credit */}
+            <div className="flex items-end justify-end">
+              <p className="text-xs text-slate-400 inline-flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                Designed & Developed with{" "}
+                <Heart className="w-3 h-3 text-rose-400 fill-rose-400 inline-block" />{" "}
+                by{" "}
+                <a
+                  href="https://www.shahnabil.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-slate-600 hover:text-navy transition-colors"
+                >
+                  Shahriar Nabil
+                </a>
+              </p>
             </div>
           </div>
 
