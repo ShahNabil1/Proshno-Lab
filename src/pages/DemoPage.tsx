@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
 
@@ -351,15 +351,14 @@ export default function DemoPage() {
                         {showAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Link to="/register" className="block">
-                      <Button
-                        className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
-                        disabled={selectedIds.size === 0}
-                      >
-                        প্রিন্ট / ডাউনলোড করতে রেজিস্টার করুন
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
+                    <Button
+                      type="button"
+                      onClick={() => navigate("/register")}
+                      className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
+                    >
+                      প্রিন্ট / ডাউনলোড করতে রেজিস্টার করুন
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
                   </div>
 
                   <div className="rounded-xl bg-white p-5 demo-print-area" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
