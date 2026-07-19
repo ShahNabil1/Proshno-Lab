@@ -111,10 +111,6 @@ function BkashResponseCard({ data }: { data: Record<string, any> }) {
   );
 }
 
-export default function AdminSubscriptions() {
-  // (component starts below)
-}
-
 function ReconcilePendingButton({ payments, onDone }: { payments: BkashPaymentRow[]; onDone: () => void }) {
   const [running, setRunning] = useState(false);
   const pending = payments.filter(p => p.status === "initiated" && p.payment_id);
@@ -140,7 +136,7 @@ function ReconcilePendingButton({ payments, onDone }: { payments: BkashPaymentRo
   );
 }
 
-function _AdminSubscriptionsImpl() {
+export default function AdminSubscriptions() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [payments, setPayments] = useState<BkashPaymentRow[]>([]);
