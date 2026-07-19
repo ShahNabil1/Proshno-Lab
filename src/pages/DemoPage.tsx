@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Printer, Shuffle, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Shuffle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
