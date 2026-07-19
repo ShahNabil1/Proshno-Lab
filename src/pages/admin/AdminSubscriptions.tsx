@@ -112,6 +112,35 @@ function BkashResponseCard({ data }: { data: Record<string, any> }) {
 }
 
 export default function AdminSubscriptions() {
+  // (component starts below)
+}
+
+function ReconcilePendingButton({ payments, onDone }: { payments: BkashPaymentRow[]; onDone: () => void }) {
+  const [running, setRunning] = useState(false);
+  const pending = payments.filter(p => p.status === "initiated" && p.payment_id);
+  const run = async () => {
+    if (pending.length === 0) { toast.info("কোনো চলমান পেমেন্ট নেই"); return; }
+    setRunning(true);
+    let updated = 0;
+    for (const p of pending) {
+      try {
+        const { data } = await supabase.functions.invoke("bkash-query-payment", { body: { paymentID: p.payment_id } });
+        if (data?.newStatus && data.newStatus !== "initiated") updated++;
+      } catch {}
+    }
+    setRunning(false);
+    toast.success(`${pending.length}টি যাচাই করা হয়েছে, ${updated}টি আপডেট`);
+    onDone();
+  };
+  return (
+    <Button variant="outline" size="sm" onClick={run} disabled={running || pending.length === 0}>
+      {running ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+      চলমান যাচাই ({pending.length})
+    </Button>
+  );
+}
+
+function _AdminSubscriptionsImpl() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [payments, setPayments] = useState<BkashPaymentRow[]>([]);
