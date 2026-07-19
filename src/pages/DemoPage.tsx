@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Printer, Shuffle, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Shuffle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -168,13 +168,8 @@ export default function DemoPage() {
     return base.sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
   }, [questions, shuffleSeed]);
 
-  const handlePrint = () => {
-    if (selectedIds.size === 0) {
-      toast.error("প্রিন্ট করার আগে অন্তত একটি প্রশ্ন সিলেক্ট করুন");
-      return;
-    }
-    window.print();
-  };
+
+
 
   const handleShuffle = () => {
     if (questions.length === 0) return;
@@ -356,14 +351,15 @@ export default function DemoPage() {
                         {showAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
-                    <Button
-                      className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
-                      onClick={handlePrint}
-                      disabled={selectedIds.size === 0}
-                    >
-                      <Printer className="w-4 h-4 mr-2" />
-                      প্রিন্ট / PDF ডাউনলোড
-                    </Button>
+                    <Link to="/register" className="block">
+                      <Button
+                        className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
+                        disabled={selectedIds.size === 0}
+                      >
+                        প্রিন্ট / ডাউনলোড করতে রেজিস্টার করুন
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
                   </div>
 
                   <div className="rounded-xl bg-white p-5 demo-print-area" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
