@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search, X, ArrowLeft } from "lucide-react";
@@ -20,9 +23,11 @@ import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
+const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
+const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size";
 
 export default function AdminQuestions() {
-  const [items, setItems] = useState<any[]>([]);
+  const queryClient = useQueryClient();
   const [allClasses, setAllClasses] = useState<any[]>([]);
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -42,7 +47,18 @@ export default function AdminQuestions() {
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
   const [filterTopics, setFilterTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return 100;
+    const stored = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : 100;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize)); } catch {}
+  }, [pageSize]);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [isGroupedMcq, setIsGroupedMcq] = useState(false);
   const [groupedQuestions, setGroupedQuestions] = useState<Array<{
@@ -81,77 +97,87 @@ export default function AdminQuestions() {
       .then(({ data }) => setFilterTopics(data || []));
   }, [filterChapterId]);
 
-  const [totalCount, setTotalCount] = useState(0);
-  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({ mcq: 0, short: 0, cq: 0, descriptive: 0 });
-  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  // Server-side filtered + paginated; `items` already represents the current page
+
+
+
+  // Reset page & selection when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, pageSize]);
+
+  // ---- React Query: paginated items with server-side filtering + caching ----
+  const listQueryKey = [
+    "admin-questions",
+    { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, currentPage, pageSize, hasFullAccess },
+  ] as const;
+
+  const listQuery = useQuery({
+    queryKey: listQueryKey,
+    enabled: !permLoading,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      let query = supabase.from("questions")
+        .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: "exact" })
+        .order("created_at", { ascending: false });
+      if (filterClassId) query = query.eq("class_id", Number(filterClassId));
+      if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
+      if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
+      if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
+      if (filterType) query = query.eq("type", filterType);
+      if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+      const { data, count, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      const visible = hasFullAccess ? rows : rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
+      return { rows: visible, total: count || 0 };
+    },
+  });
+
+  const items = listQuery.data?.rows ?? [];
+  const totalCount = listQuery.data?.total ?? 0;
   const paginatedItems = items;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
 
-  // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
+  const typeCountsQuery = useQuery({
+    queryKey: ["admin-questions-type-counts", { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId }],
+    enabled: !permLoading,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      const types = ["mcq", "short", "cq", "descriptive"];
+      const results = await Promise.all(types.map(async (t) => {
+        let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
+        if (filterClassId) q = q.eq("class_id", Number(filterClassId));
+        if (filterSubjectId) q = q.eq("subject_id", Number(filterSubjectId));
+        if (filterChapterId) q = q.eq("chapter_id", Number(filterChapterId));
+        if (filterTopicId) q = q.eq("topic_id", Number(filterTopicId));
+        if (searchTerm.trim()) q = q.ilike("question", `%${searchTerm.trim()}%`);
+        const { count } = await q;
+        return [t, count || 0] as const;
+      }));
+      return Object.fromEntries(results) as Record<string, number>;
+    },
+  });
+  const typeCounts = typeCountsQuery.data ?? { mcq: 0, short: 0, cq: 0, descriptive: 0 };
 
-  const fetchItems = async () => {
-    // Build server-side filtered query with count + range pagination to avoid the 1000-row default limit
-    let query = supabase.from("questions")
-      .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: "exact" })
-      .order("created_at", { ascending: false });
-
-    if (filterClassId) query = query.eq("class_id", Number(filterClassId));
-    if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
-    if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
-    if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
-    if (filterType) query = query.eq("type", filterType);
-    if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
-
-    const from = (currentPage - 1) * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
-    query = query.range(from, to);
-
-    const { data, count } = await query;
-    const rows = data || [];
-    if (hasFullAccess) {
-      setItems(rows);
-      setTotalCount(count || 0);
-    } else {
-      // Fallback: when limited admin permissions are in play, restrict in-page rows.
-      const filtered = rows.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
-      setItems(filtered);
-      setTotalCount(count || 0);
-    }
+  const invalidateQuestions = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-questions-type-counts"] });
   };
-
-  // Type-wise breakdown — respects all filters EXCEPT filterType itself, so the badges always show full distribution
-  const fetchTypeCounts = async () => {
-    const types = ["mcq", "short", "cq", "descriptive"];
-    const results = await Promise.all(types.map(async (t) => {
-      let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
-      if (filterClassId) q = q.eq("class_id", Number(filterClassId));
-      if (filterSubjectId) q = q.eq("subject_id", Number(filterSubjectId));
-      if (filterChapterId) q = q.eq("chapter_id", Number(filterChapterId));
-      if (filterTopicId) q = q.eq("topic_id", Number(filterTopicId));
-      if (searchTerm.trim()) q = q.ilike("question", `%${searchTerm.trim()}%`);
-      const { count } = await q;
-      return [t, count || 0] as const;
-    }));
-    setTypeCounts(Object.fromEntries(results));
-  };
+  const fetchItems = () => invalidateQuestions();
 
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(data || []));
     supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
     supabase.from("question_categories").select("id, name").order("name").then(({ data }) => setCategories(data || []));
   }, []);
-
-  useEffect(() => {
-    if (!permLoading) fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permLoading, currentPage, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
-
-  useEffect(() => {
-    if (!permLoading) fetchTypeCounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permLoading, searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId]);
 
   useEffect(() => {
     if (!form.class_id) return;
@@ -355,13 +381,52 @@ export default function AdminQuestions() {
     fetchItems();
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("মুছে ফেলতে চান?")) return;
-    const { error } = await supabase.from("questions").delete().eq("id", id);
+  const handleDelete = (id: number) => setSingleDeleteId(id);
+
+  const confirmSingleDelete = async () => {
+    if (singleDeleteId == null) return;
+    setIsDeleting(true);
+    const { error } = await supabase.from("questions").delete().eq("id", singleDeleteId);
+    setIsDeleting(false);
     if (error) { toast.error("ডিলিট ব্যর্থ"); return; }
     toast.success("মুছে ফেলা হয়েছে");
-    fetchItems();
+    setSingleDeleteId(null);
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(singleDeleteId); return n; });
+    invalidateQuestions();
   };
+
+  const confirmBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setIsDeleting(true);
+    const { error } = await supabase.from("questions").delete().in("id", ids);
+    setIsDeleting(false);
+    if (error) { toast.error("বাল্ক ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`${ids.length.toLocaleString("bn-BD")}টি প্রশ্ন মুছে ফেলা হয়েছে`);
+    setSelectedIds(new Set());
+    setBulkDeleteOpen(false);
+    invalidateQuestions();
+  };
+
+  const pageIds = paginatedItems.map((i: any) => i.id as number);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id));
+  const someOnPageSelected = pageIds.some(id => selectedIds.has(id));
+  const toggleSelectAllOnPage = (checked: boolean) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (checked) pageIds.forEach(id => n.add(id));
+      else pageIds.forEach(id => n.delete(id));
+      return n;
+    });
+  };
+  const toggleRow = (id: number, checked: boolean) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (checked) n.add(id); else n.delete(id);
+      return n;
+    });
+  };
+
 
   // === Full Page Create View ===
   if (fullPageCreate) {
@@ -619,11 +684,44 @@ export default function AdminQuestions() {
         })}
       </div>
 
+      {/* Bulk actions + page size */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <>
+              <span className="text-sm text-muted-foreground">
+                <span className="font-bold text-foreground">{selectedIds.size.toLocaleString("bn-BD")}</span>টি নির্বাচিত
+              </span>
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>নির্বাচন সরান</Button>
+              <Button variant="destructive" size="sm" className="gap-2" onClick={() => setBulkDeleteOpen(true)}>
+                <Trash2 className="w-4 h-4" /> নির্বাচিত ডিলিট
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">প্রতি পেজে:</span>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="w-[110px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map(n => <SelectItem key={n} value={String(n)}>{n.toLocaleString("bn-BD")}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[42px]">
+                  <Checkbox
+                    checked={allOnPageSelected ? true : (someOnPageSelected ? "indeterminate" : false)}
+                    onCheckedChange={(c) => toggleSelectAllOnPage(!!c)}
+                    aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
+                  />
+                </TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>প্রশ্ন</TableHead>
                 <TableHead>টাইপ</TableHead>
@@ -635,7 +733,14 @@ export default function AdminQuestions() {
             </TableHeader>
             <TableBody>
               {paginatedItems.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} data-state={selectedIds.has(item.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={(c) => toggleRow(item.id, !!c)}
+                      aria-label={`প্রশ্ন ${item.id} নির্বাচন`}
+                    />
+                  </TableCell>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     <LatexRenderer text={item.question} />
@@ -651,7 +756,9 @@ export default function AdminQuestions() {
                 </TableRow>
               ))}
               {paginatedItems.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">কোনো প্রশ্ন নেই</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  {listQuery.isFetching ? "লোড হচ্ছে..." : "কোনো প্রশ্ন নেই"}
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -662,7 +769,7 @@ export default function AdminQuestions() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
-            মোট {totalCount}টি প্রশ্নের মধ্যে {(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeCurrentPage * ITEMS_PER_PAGE, totalCount)} দেখানো হচ্ছে
+            মোট {totalCount}টি প্রশ্নের মধ্যে {(safeCurrentPage - 1) * pageSize + 1}–{Math.min(safeCurrentPage * pageSize, totalCount)} দেখানো হচ্ছে
           </p>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
@@ -690,6 +797,48 @@ export default function AdminQuestions() {
           </div>
         </div>
       )}
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>নির্বাচিত প্রশ্নসমূহ ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              আপনি <span className="font-bold text-foreground">{selectedIds.size.toLocaleString("bn-BD")}</span>টি প্রশ্ন চিরতরে মুছে ফেলতে চলেছেন। এই কাজটি ফেরানো যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmBulkDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "ডিলিট হচ্ছে..." : `হ্যাঁ, ${selectedIds.size.toLocaleString("bn-BD")}টি ডিলিট করুন`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single delete confirmation */}
+      <AlertDialog open={singleDeleteId != null} onOpenChange={(o) => !o && setSingleDeleteId(null)}>
+        <AlertDialogContent style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>প্রশ্নটি ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই কাজটি ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmSingleDelete(); }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "ডিলিট হচ্ছে..." : "হ্যাঁ, ডিলিট করুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
