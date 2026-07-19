@@ -44,6 +44,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [allowedPages, setAllowedPages] = useState<string[] | null>(null);
   const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("admin_sidebar_collapsed") === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem("admin_sidebar_collapsed", desktopCollapsed ? "1" : "0");
+  }, [desktopCollapsed]);
   const location = useLocation();
 
   useEffect(() => {
@@ -114,8 +121,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {sidebarOpen && <div className="fixed inset-0 bg-foreground/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[240px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0 lg:sticky lg:z-auto",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed top-0 left-0 z-50 h-screen w-[240px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:sticky lg:z-auto",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        desktopCollapsed ? "lg:hidden" : "lg:translate-x-0 lg:flex"
       )}>
         <Link to="/admin" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
@@ -151,7 +159,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <Button variant="ghost" size="icon" onClick={() => {
+            if (window.innerWidth >= 1024) setDesktopCollapsed(v => !v);
+            else setSidebarOpen(true);
+          }} title="সাইডবার">
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex-1" />
