@@ -27,7 +27,7 @@ const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size";
 
 export default function AdminQuestions() {
-  const [items, setItems] = useState<any[]>([]);
+  const queryClient = useQueryClient();
   const [allClasses, setAllClasses] = useState<any[]>([]);
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -47,7 +47,18 @@ export default function AdminQuestions() {
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
   const [filterTopics, setFilterTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return 100;
+    const stored = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : 100;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize)); } catch {}
+  }, [pageSize]);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { filterClasses, filterSubjects, hasFullAccess, isSubjectAllowed, loading: permLoading } = useAdminPermissions();
   const [isGroupedMcq, setIsGroupedMcq] = useState(false);
   const [groupedQuestions, setGroupedQuestions] = useState<Array<{
