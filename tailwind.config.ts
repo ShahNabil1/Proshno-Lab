@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Montserrat', 'SolaimanLipi', 'Arial', 'sans-serif'],
-        body: ['SolaimanLipi', 'Arial', 'sans-serif'],
-        paper: ['SolaimanLipi', 'Arial', 'sans-serif'],
+        heading: ['Times New Roman', 'SolaimanLipi', 'Times', 'serif'],
+        body: ['SolaimanLipi', 'Times New Roman', 'serif'],
+        paper: ['SolaimanLipi', 'Times New Roman', 'serif'],
+        en: ['Times New Roman', 'Times', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -55,14 +56,25 @@ export default {
         navy: {
           DEFAULT: "hsl(var(--navy))",
           deep: "hsl(var(--navy-deep))",
-          light: "hsl(var(--navy-light))",
+          light: "hsl(var(--navy-mid))",
+          mid: "hsl(var(--navy-mid))",
+          soft: "hsl(var(--navy-soft))",
         },
+        indigo: {
+          DEFAULT: "hsl(var(--indigo))",
+        },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          deep: "hsl(var(--gold-deep))",
+        },
+        /* Legacy alias — map old `green.*` classes to new indigo/gold palette
+           so existing dashboards/admin utilities keep rendering. */
         green: {
-          DEFAULT: "hsl(var(--green))",
-          deep: "hsl(var(--green-deep))",
-          light: "hsl(var(--green-light))",
+          DEFAULT: "hsl(var(--indigo))",
+          deep: "hsl(var(--navy))",
+          light: "hsl(224 40% 96%)",
         },
-        "yellow-badge": "hsl(var(--yellow-badge))",
+        "yellow-badge": "hsl(var(--gold))",
         "slate-bg": "hsl(var(--slate-bg))",
         "slate-alt": "hsl(var(--slate-alt))",
         sidebar: {
