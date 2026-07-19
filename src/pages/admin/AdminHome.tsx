@@ -38,7 +38,7 @@ export default function AdminHome() {
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
       supabase.from("questions").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
-      supabase.from("purchase_requests").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
+      supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").gte("created_at", monthStart),
     ]).then(([t, q, c, s, as, tq, tt, mq, mt, mp]) => {
       setStats({
         teachers: t.count || 0, questions: q.count || 0, classes: c.count || 0, subjects: s.count || 0,
