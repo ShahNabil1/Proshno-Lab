@@ -97,15 +97,8 @@ export default function AdminQuestions() {
       .then(({ data }) => setFilterTopics(data || []));
   }, [filterChapterId]);
 
-  const [totalCount, setTotalCount] = useState(0);
-  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({ mcq: 0, short: 0, cq: 0, descriptive: 0 });
-  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  // Server-side filtered + paginated; `items` already represents the current page
-  const paginatedItems = items;
 
-  // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType]);
+
 
   // Reset page & selection when filters change
   useEffect(() => {
