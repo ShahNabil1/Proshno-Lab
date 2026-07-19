@@ -515,12 +515,30 @@ export default function QuestionPaperView() {
     return maxLen > maxThreshold || totalLen > totalThreshold || longCount >= 2;
   };
 
-  const getOptionLabel = (label: string) => {
+  const getOptionLabel = (label: string): React.ReactNode => {
     switch (settings.optionStyle) {
       case "bracket": return `(${label})`;
       case "paren": return `${label})`;
       case "dot": return `${label}.`;
-      case "none": return "";
+      case "none": return (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "1.35em",
+            height: "1.35em",
+            borderRadius: "9999px",
+            border: "1.2px solid #000",
+            fontSize: "0.85em",
+            lineHeight: 1,
+            fontWeight: 600,
+            verticalAlign: "middle",
+          }}
+        >
+          {label}
+        </span>
+      );
       default: return label;
     }
   };
