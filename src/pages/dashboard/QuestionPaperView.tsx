@@ -520,6 +520,7 @@ export default function QuestionPaperView() {
       case "bracket": return `(${label})`;
       case "paren": return `${label})`;
       case "dot": return `${label}.`;
+      case "none": return "";
       default: return label;
     }
   };
