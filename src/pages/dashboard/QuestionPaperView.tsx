@@ -1869,8 +1869,9 @@ export default function QuestionPaperView() {
                 {shortQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
+                  const isDuplicate = duplicateIds.has(q.id);
                   return (
-                    <div key={q.id} className={editableClass} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                    <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}>
                         <span>
                           <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
