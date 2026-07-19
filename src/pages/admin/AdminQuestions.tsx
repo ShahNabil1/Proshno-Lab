@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search, X, ArrowLeft } from "lucide-react";
@@ -20,6 +23,8 @@ import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
+const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
+const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size";
 
 export default function AdminQuestions() {
   const [items, setItems] = useState<any[]>([]);
