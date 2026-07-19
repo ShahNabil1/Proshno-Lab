@@ -132,11 +132,14 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
           </div>
 
           <div>
-            <Label>ফোন নম্বর</Label>
+            <Label>ফোন নম্বর *</Label>
             <Input
-              placeholder="ফোন নম্বর"
+              type="tel"
+              inputMode="numeric"
+              placeholder="01XXXXXXXXX"
               value={form.phone}
-              onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              maxLength={11}
             />
           </div>
 
