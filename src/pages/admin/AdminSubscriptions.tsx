@@ -343,10 +343,9 @@ function DetailsModal({ data, packages, onRefresh }: { data: GroupedUser; packag
                     </div>
                   )}
 
-                  <details className="text-[11px]">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">bKash রেসপন্স JSON</summary>
-                    <pre className="mt-1 bg-muted/50 p-2 rounded overflow-x-auto text-[10px]">{JSON.stringify(p.bkash_response, null, 2)}</pre>
-                  </details>
+                  {p.bkash_response && typeof p.bkash_response === "object" && (
+                    <BkashResponseCard data={p.bkash_response as Record<string, any>} />
+                  )}
                 </div>
               );
             })}
