@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, PlusCircle, Package, Phone } from "lucide-react";
+import { FileText, PlusCircle, Package, Phone, Megaphone } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ export default function DashboardHome() {
   const [recentQuestions, setRecentQuestions] = useState<any[]>([]);
   const [institute, setInstitute] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -34,6 +35,12 @@ export default function DashboardHome() {
     // Subscription from Supabase
     supabase.from("subscriptions").select("*").eq("teacher_id", user.id).maybeSingle()
       .then(({ data }) => setSubscription(data));
+
+    // Real announcements from Supabase
+    supabase.from("announcements").select("id, text, priority, created_at")
+      .eq("is_active", true).order("priority", { ascending: false })
+      .order("created_at", { ascending: false }).limit(3)
+      .then(({ data }) => setAnnouncements(data || []));
   }, [user]);
 
   return (
@@ -105,13 +112,20 @@ export default function DashboardHome() {
 
         <Card className="bg-accent/30 border-accent">
           <CardContent className="p-6">
-            <h3 className="font-heading font-bold text-center mb-3">📱 Smart App</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              গুরুত্বপূর্ণ নির্দেশনা সবার আগে পেতে আমাদের মেসেঞ্জার ব্রডকাস্ট চ্যানেলে যুক্ত থাকুন।
-            </p>
-            <Button className="w-full mt-4 gradient-green text-primary-foreground border-0" size="sm">
-              🔔 চ্যানেলে এখনই যুক্ত হোন
-            </Button>
+            <h3 className="font-heading font-bold text-center mb-3 flex items-center justify-center gap-2">
+              <Megaphone className="w-4 h-4" /> ঘোষণা
+            </h3>
+            {announcements.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center">এই মুহূর্তে কোনো নতুন ঘোষণা নেই।</p>
+            ) : (
+              <ul className="space-y-2">
+                {announcements.map((a) => (
+                  <li key={a.id} className="text-sm text-foreground/90 border-l-2 border-primary pl-3 leading-relaxed">
+                    {a.text}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
 
