@@ -412,7 +412,7 @@ export default function Index() {
             </p>
             <div className="flex justify-center">
               <Link to="/register">
-                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold px-10 h-14 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] text-base">
+                <Button size="lg" className="btn-gold border-0 font-heading font-bold px-10 h-14 rounded-xl text-base gap-2">
                   ফ্রি রেজিস্ট্রেশন
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
