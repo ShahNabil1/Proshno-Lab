@@ -14,6 +14,7 @@ import bkashLogo from "@/assets/bkash-logo.webp";
 import nagadLogo from "@/assets/nagad-logo.png";
 import rocketLogo from "@/assets/rocket-logo.png";
 import upayLogo from "@/assets/upay-logo.webp";
+import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
 const BKASH_NUMBER = "01933520904";
 const WHATSAPP_NUMBER = "8801340345787";
@@ -79,6 +80,10 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !phone.trim() || !institute.trim()) {
       toast.error("সকল তথ্য পূরণ করুন");
+      return;
+    }
+    if (!isValidBdPhone(phone)) {
+      toast.error(BD_PHONE_ERROR);
       return;
     }
     if (!paymentMethod) {
@@ -231,7 +236,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
       <div className="bg-card border border-b-0 p-6 space-y-3">
         <Input placeholder="আপনার নাম ....." value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         <div className="grid grid-cols-2 gap-3">
-          <Input placeholder="মোবাইল নাম্বার দিন" value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-muted/30" />
+          <Input placeholder="মোবাইল নাম্বার দিন" type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(normalizeBdPhone(e.target.value))} className="bg-muted/30" />
           <Input placeholder="জিমেইল দিন ..." type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         </div>
         <Input placeholder="প্রতিষ্ঠানের নাম" value={institute} onChange={(e) => setInstitute(e.target.value)} className="bg-muted/30" />

@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getDivisions, getDistricts, getUpazilas } from "@/data/bangladeshGeo";
+import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
 export default function Institute() {
   const { user } = useAuth();
@@ -70,6 +71,7 @@ export default function Institute() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!isValidBdPhone(form.phone)) { toast.error(BD_PHONE_ERROR); return; }
     const updateData = { ...form, last_edited_at: new Date().toISOString() };
     if (institute) {
       const { error } = await supabase.from("institutes").update(updateData).eq("id", institute.id);
@@ -151,7 +153,7 @@ export default function Institute() {
                   <SelectContent>{upazilas.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>ফোন নম্বর</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label>ফোন নম্বর *</Label><Input type="tel" inputMode="numeric" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizeBdPhone(e.target.value) })} /></div>
               <div><Label>নির্দিষ্ট ঠিকানা</Label><Textarea value={form.specific_address} onChange={(e) => setForm({ ...form, specific_address: e.target.value })} rows={2} /></div>
               <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">সংরক্ষণ করুন</Button>
             </div>
