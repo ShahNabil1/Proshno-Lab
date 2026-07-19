@@ -49,7 +49,7 @@ import AdminQuestionsBulk from "./pages/admin/AdminQuestionsBulk";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
-import AdminPurchases from "./pages/admin/AdminPurchases";
+
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminChapters from "./pages/admin/AdminChapters";
 import AdminTopics from "./pages/admin/AdminTopics";
@@ -119,7 +119,7 @@ const App = () => (
             <Route path="/admin/topics" element={<AdminLayout><AdminTopics /></AdminLayout>} />
             <Route path="/admin/topic-questions" element={<AdminLayout><AdminTopicQuestions /></AdminLayout>} />
             <Route path="/admin/feedback" element={<AdminLayout><AdminFeedback /></AdminLayout>} />
-            <Route path="/admin/purchases" element={<AdminLayout><AdminPurchases /></AdminLayout>} />
+            
             <Route path="/admin/coupons" element={<AdminLayout><AdminCoupons /></AdminLayout>} />
             <Route path="/admin/packages" element={<AdminLayout><AdminPackages /></AdminLayout>} />
             <Route path="/admin/question-reports" element={<AdminLayout><AdminQuestionReports /></AdminLayout>} />
