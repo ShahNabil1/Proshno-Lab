@@ -82,6 +82,20 @@ export default function Feedback() {
     if (error) {
       toast.error("সাবমিট ব্যর্থ হয়েছে");
     } else {
+      supabase.functions.invoke("notify-telegram", {
+        body: {
+          event_type: "new_feedback",
+          title: "💬 নতুন Feedback — Proshno Lab",
+          fields: [
+            { label: "👤 Teacher", value: user.email },
+            { label: "📂 Category", value: form.category },
+            { label: "⚡ Priority", value: form.priority },
+            { label: "📝 Subject", value: form.subject },
+            { label: "💭 Details", value: form.details.slice(0, 500) },
+          ],
+          link: { label: "Admin → Feedback", url: "https://proshnolab.com/admin/feedback" },
+        },
+      }).catch(() => {});
       toast.success("মতামত সাবমিট হয়েছে!");
       setForm({ category: "সাধারণ", subject: "", details: "", priority: "low" });
       fetchMyFeedbacks();
