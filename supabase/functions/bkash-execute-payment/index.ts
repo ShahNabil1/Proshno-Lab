@@ -185,6 +185,22 @@ Deno.serve(async (req) => {
       bkash_response: execData,
     }).eq("id", paymentRow.id);
 
+    notifyTelegram({
+      event_type: "payment_success",
+      title: "✅ পেমেন্ট Success — bKash",
+      fields: [
+        { label: "👤 Teacher", value: paymentRow.teacher_name || user.email },
+        { label: "📧 Email", value: user.email },
+        { label: "📱 Phone", value: paymentRow.phone },
+        { label: "🏫 Institute", value: paymentRow.institute_name },
+        { label: "💰 Amount", value: `৳${execData.amount}` },
+        { label: "🧾 TrxID", value: execData.trxID },
+        { label: "🎟️ Coupon", value: paymentRow.coupon_code || "—" },
+        { label: "📦 Packages", value: selectedPkgs.map((p: any) => `${p.class_name} — ${p.subject_name}`).join(" | ") },
+      ],
+      link: { label: "Admin → Subscriptions", url: "https://proshnolab.com/admin/subscriptions" },
+    });
+
     return json({ status: "completed", trxID: execData.trxID, amount: execData.amount });
   } catch (e: any) {
     console.error("bkash-execute-payment error", e);
