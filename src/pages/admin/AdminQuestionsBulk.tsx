@@ -106,9 +106,6 @@ export default function AdminQuestionsBulk() {
   const removeRow = (id: string) => setParsed((p) => p.filter((x) => x.tempId !== id));
   const removeInvalid = () => setParsed((p) => p.filter((x) => x.errors.length === 0));
 
-  const doSave = async () => {
-    const valid = parsed.filter((q) => q.errors.length === 0);
-    if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
   const runInsertChunks = async (chunks: FailedChunk[]) => {
     const nextFailed: FailedChunk[] = [];
     let done = 0;
