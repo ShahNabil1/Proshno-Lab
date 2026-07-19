@@ -14,6 +14,7 @@ import bkashLogo from "@/assets/bkash-logo.webp";
 import nagadLogo from "@/assets/nagad-logo.png";
 import rocketLogo from "@/assets/rocket-logo.png";
 import upayLogo from "@/assets/upay-logo.webp";
+import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
 const BKASH_NUMBER = "01933520904";
 const WHATSAPP_NUMBER = "8801340345787";
