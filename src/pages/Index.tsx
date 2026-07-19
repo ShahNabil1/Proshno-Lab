@@ -1,10 +1,10 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen, PenTool, FileText, AlignLeft, ArrowRight,
+  BookOpen, PenTool, FileText, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap, Clock } from
-"lucide-react";
+  Zap, Shield, BarChart3, GraduationCap, Clock, Play, Sparkles
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
@@ -15,26 +15,22 @@ const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as const }
+    transition: { delay: i * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }
   })
 };
 
 const stats = [
-{ value: "৩০,০০০+", label: "শিক্ষা প্রতিষ্ঠান যুক্ত", icon: Users },
-{ value: "২,২০০+", label: "প্রশ্ন তৈরি হচ্ছে প্রতিদিন", icon: FileCheck },
-{ value: "৫ লক্ষ+", label: "মোট প্রশ্ন তৈরি হয়েছে", icon: BarChart3 }];
-
+  { value: "৩০,০০০+", label: "শিক্ষা প্রতিষ্ঠান যুক্ত", icon: Users },
+  { value: "২,২০০+", label: "প্রশ্ন তৈরি হচ্ছে প্রতিদিন", icon: FileCheck },
+  { value: "৫ লক্ষ+", label: "মোট প্রশ্ন তৈরি হয়েছে", icon: BarChart3 }
+];
 
 const categories = [
-{ icon: BookOpen, label: "বোর্ড প্রশ্ন" },
-{ icon: FileText, label: "নির্বাচনী পরীক্ষার প্রশ্ন" },
-{ icon: GraduationCap, label: "এডমিশন" },
-{ icon: Shield, label: "মেডিকেল" }];
-
-
-
-
-
+  { icon: BookOpen, label: "বোর্ড প্রশ্ন" },
+  { icon: FileText, label: "নির্বাচনী পরীক্ষার প্রশ্ন" },
+  { icon: GraduationCap, label: "এডমিশন" },
+  { icon: Shield, label: "মেডিকেল" }
+];
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -44,22 +40,20 @@ export default function Index() {
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
 
   const fetchReviews = () => {
-    supabase.
-    from("reviews").
-    select("id, name, designation, institution, image_url, rating, text").
-    eq("status", "approved").
-    order("created_at", { ascending: false }).
-    limit(6).
-    then(({ data }) => {if (data) setReviews(data as any);});
+    supabase.from("reviews")
+      .select("id, name, designation, institution, image_url, rating, text")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setReviews(data as any); });
   };
 
   useEffect(() => {
-    supabase.
-    from("faqs").
-    select("id, question, answer").
-    eq("is_active", true).
-    order("sort_order", { ascending: true }).
-    then(({ data }) => {if (data) setFaqs(data as any);});
+    supabase.from("faqs")
+      .select("id, question, answer")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => { if (data) setFaqs(data as any); });
     fetchReviews();
   }, []);
 
@@ -67,46 +61,125 @@ export default function Index() {
 
   return (
     <div className="overflow-hidden">
-      {/* ══════ HERO ══════ */}
-      <section className="gradient-hero relative pt-28 pb-20 md:pt-40 md:pb-32">
-        {/* Abstract BG shapes */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-[15%] w-72 h-72 rounded-full bg-primary/8 blur-[100px] animate-pulse-soft" />
-          <div className="absolute bottom-10 left-[10%] w-96 h-96 rounded-full bg-primary/5 blur-[120px] animate-pulse-soft" style={{ animationDelay: "2s" }} />
-          <svg className="absolute top-32 left-[8%] w-64 h-64 opacity-[0.03]" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" stroke="white" strokeWidth="0.5" fill="none" /><circle cx="100" cy="100" r="60" stroke="white" strokeWidth="0.3" fill="none" /></svg>
-          <svg className="absolute bottom-20 right-[8%] w-48 h-48 opacity-[0.04]" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="8" stroke="white" strokeWidth="0.5" fill="none" transform="rotate(15 50 50)" /></svg>
+      {/* ══════════ HERO ══════════ */}
+      <section className="gradient-hero relative pt-24 pb-16 md:pt-28 md:pb-24 overflow-hidden">
+        {/* Decorative background — grid + soft orbs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage:
+                "linear-gradient(hsl(0 0% 100% / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.4) 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+              maskImage: "radial-gradient(ellipse 70% 60% at 30% 40%, black 40%, transparent 80%)",
+              WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 30% 40%, black 40%, transparent 80%)",
+            }}
+          />
+          <div className="absolute -top-10 right-[-8%] w-[520px] h-[520px] rounded-full bg-gold/10 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[-10%] left-[-6%] w-[420px] h-[420px] rounded-full bg-indigo/20 blur-[130px]" />
         </div>
 
         <div className="container relative z-10">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white/80 text-sm font-medium mb-8 border border-white/10">
-              <Zap className="w-4 h-4 text-primary" />
-              ১ ক্লিকে প্রশ্নপত্র তৈরি করুন
-            </div>
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-10 items-center">
+            {/* Left */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="text-white"
+            >
+              {/* Chip */}
+              <div className="inline-flex items-center gap-2 mb-6">
+                <span className="link-underline-gold font-heading text-[15px] font-semibold text-gold pb-1">
+                  শিক্ষকদের জন্য তৈরি
+                </span>
+              </div>
 
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.15] mb-6">
-              <span className="text-gradient-green">Proshno Lab</span> —
-              <br />
-              পরীক্ষার প্রশ্ন তৈরি এখন
-              <br />
-              <span className="text-white">আরও সহজ, আরও দ্রুত</span>
-            </h1>
+              <h1 className="font-heading font-bold text-white leading-[1.18] text-3xl sm:text-4xl md:text-5xl lg:text-[3.15rem] mb-6">
+                প্রশ্ন তৈরি করতে এখনও হাজার হাজার
+                <br />
+                টাকা ও ঘণ্টার পর ঘণ্টা সময় নষ্ট হচ্ছে?
+              </h1>
 
-            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
-              Proshno Lab একটি স্মার্ট প্রশ্নব্যাংক প্ল্যাটফর্ম। শিক্ষক, শিক্ষার্থী ও প্রতিষ্ঠানের জন্য ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির MCQ, সৃজনশীল, সংক্ষিপ্ত ও ব্যাখ্যামূলক প্রশ্ন মাত্র কয়েক ক্লিকে তৈরি, সংগঠন ও প্রিন্ট করুন।
-            </p>
+              <p className="text-white/85 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
+                <span className="font-heading font-bold text-white">প্রশ্নল্যাব</span>
+                <span className="text-white/70">-এ</span> মাত্র কয়েক ক্লিকেই তৈরি করুন ষষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্নপত্র{" "}
+                <span className="inline-flex items-center align-middle ml-1">
+                  <span className="bg-gold text-navy font-heading font-extrabold text-xs px-2 py-0.5 rounded-md rotate-[-6deg] shadow-sm">
+                    ফ্রী
+                  </span>
+                </span>
+              </p>
 
-            <div className="flex justify-center">
-              <Link to={user ? "/dashboard/create" : "/login"}>
-                <Button size="lg" className="gradient-green text-white border-0 font-heading font-semibold text-lg px-10 h-14 rounded-xl shadow-[0_4px_20px_hsl(155_72%_44%/0.3)] hover:shadow-[0_6px_28px_hsl(155_72%_44%/0.4)] transition-shadow">
-                  প্রশ্ন তৈরি করুন
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+              <div className="flex flex-wrap gap-3">
+                <Link to={user ? "/dashboard/create" : "/login"}>
+                  <Button
+                    size="lg"
+                    className="btn-gold font-heading font-bold text-[15px] h-12 px-6 rounded-lg border-0 gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    সম্পূর্ণ ফ্রিতে শুরু করুন
+                  </Button>
+                </Link>
+                <Link to="/demo">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 px-6 rounded-lg font-heading font-semibold text-[15px] bg-white/5 border-white/25 text-white hover:bg-white hover:text-navy hover:border-white gap-2 transition-all duration-300"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    কীভাবে কাজ করে দেখুন
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right — decorative desk illustration built in SVG */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              className="relative hidden lg:block"
+            >
+              <div className="relative animate-float">
+                <svg viewBox="0 0 420 340" className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+                  {/* desk */}
+                  <rect x="40" y="270" width="340" height="8" rx="3" fill="#f4c053" opacity="0.85" />
+                  <rect x="60" y="278" width="6" height="40" fill="#f4c053" opacity="0.7" />
+                  <rect x="354" y="278" width="6" height="40" fill="#f4c053" opacity="0.7" />
+                  {/* book stack */}
+                  <rect x="70" y="240" width="120" height="14" rx="2" fill="#25397c" />
+                  <rect x="80" y="226" width="105" height="14" rx="2" fill="#f4c053" opacity="0.9" />
+                  <rect x="75" y="212" width="115" height="14" rx="2" fill="#ffffff" opacity="0.85" />
+                  {/* plant pot 1 */}
+                  <path d="M215 270 L225 245 L275 245 L285 270 Z" fill="#f4c053" opacity="0.9" />
+                  <path d="M250 245 C240 210 230 205 235 180 C245 195 258 200 250 245 Z" fill="#ffffff" opacity="0.75" />
+                  <path d="M250 245 C260 215 275 210 275 185 C265 200 258 210 250 245 Z" fill="#ffffff" opacity="0.6" />
+                  {/* plant pot 2 */}
+                  <rect x="300" y="248" width="52" height="22" rx="3" fill="#ffffff" opacity="0.85" />
+                  <path d="M326 248 C316 220 310 205 320 175 C330 195 340 215 326 248 Z" fill="#f4c053" opacity="0.85" />
+                  <path d="M326 248 C336 225 344 215 350 190 C346 210 342 225 326 248 Z" fill="#ffffff" opacity="0.7" />
+                  {/* pencil cup */}
+                  <rect x="120" y="180" width="42" height="32" rx="3" fill="#25397c" />
+                  <rect x="128" y="150" width="4" height="35" fill="#f4c053" />
+                  <rect x="138" y="155" width="4" height="30" fill="#ffffff" opacity="0.8" />
+                  <rect x="148" y="145" width="4" height="40" fill="#f4c053" opacity="0.85" />
+                  {/* floating question mark */}
+                  <circle cx="360" cy="70" r="26" fill="none" stroke="#f4c053" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 4" />
+                  <text x="360" y="80" textAnchor="middle" fontSize="34" fill="#f4c053" fontFamily="Times New Roman" fontWeight="bold">?</text>
+                  {/* floating check */}
+                  <circle cx="60" cy="120" r="22" fill="#f4c053" opacity="0.2" />
+                  <path d="M50 120 L58 128 L72 112" stroke="#f4c053" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </motion.div>
+          </div>
         </div>
+
+        {/* Bottom curve */}
+        <div className="absolute bottom-0 left-0 right-0 h-8 bg-background" style={{ clipPath: "ellipse(80% 100% at 50% 100%)" }} />
       </section>
+
 
       {/* ══════ PRICING CTA ══════ */}
       <section className="py-16 md:py-20 bg-background relative -mt-10 z-10">
