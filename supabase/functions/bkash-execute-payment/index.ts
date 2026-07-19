@@ -16,6 +16,19 @@ const BKASH_APP_SECRET = Deno.env.get("BKASH_APP_SECRET")!;
 const BKASH_USERNAME = Deno.env.get("BKASH_USERNAME")!;
 const BKASH_PASSWORD = Deno.env.get("BKASH_PASSWORD")!;
 
+async function notifyTelegram(payload: Record<string, unknown>) {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-telegram`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) { console.error("notifyTelegram failed", e); }
+}
+
 let cachedToken: { id_token: string; expires_at: number } | null = null;
 
 async function getBkashToken(): Promise<string> {
