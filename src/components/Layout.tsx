@@ -235,31 +235,27 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-white/40 text-sm">© ২০২৬ Proshno Lab — সর্বস্বত্ব সংরক্ষিত</p>
-            <div className="flex items-center gap-4">
-              <img src={bkashLogo} alt="bKash" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
-              <img src={nagadLogo} alt="Nagad" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
-              <img src={rocketLogo} alt="Rocket" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
-              <img src={upayLogo} alt="Upay" className="h-10 w-auto object-contain rounded-md bg-white px-2.5 py-1.5" loading="eager" />
-            </div>
-          </div>
-
           {/* Developer Credit */}
-          <div className="mt-6 pt-5 border-t border-white/10 text-center">
-            <p className="text-white/50 text-sm group inline-flex items-center gap-2 transition-all duration-500 hover:text-white/80">
-              <span className="text-base">⚡</span>
-              Developed by{" "}
-              <a
-                href="https://www.shahnabil.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative font-bold text-white/70 text-base underline underline-offset-4 decoration-white/20 transition-all duration-500 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#f9ce34] group-hover:via-[#ee2a7b] group-hover:to-[#6228d7] group-hover:decoration-[#ee2a7b] italic"
-                style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
-              >
-                Shahriar Nabil
-              </a>
-            </p>
+          <div className="mt-6 pt-5 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <img src={bkashLogo} alt="bKash" className="h-7 w-auto object-contain rounded bg-white px-2 py-1" loading="eager" />
+                <img src={nagadLogo} alt="Nagad" className="h-7 w-auto object-contain rounded bg-white px-2 py-1" loading="eager" />
+                <img src={rocketLogo} alt="Rocket" className="h-7 w-auto object-contain rounded bg-white px-2 py-1" loading="eager" />
+                <img src={upayLogo} alt="Upay" className="h-7 w-auto object-contain rounded bg-white px-2 py-1" loading="eager" />
+              </div>
+              <p className="text-white/40 text-xs inline-flex items-center gap-1.5 transition-colors hover:text-white/70">
+                Developed by
+                <a
+                  href="https://www.shahnabil.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-white/60 hover:text-white transition-colors"
+                >
+                  Shahriar Nabil
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </footer>
