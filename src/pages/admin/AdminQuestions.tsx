@@ -381,13 +381,52 @@ export default function AdminQuestions() {
     fetchItems();
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("মুছে ফেলতে চান?")) return;
-    const { error } = await supabase.from("questions").delete().eq("id", id);
+  const handleDelete = (id: number) => setSingleDeleteId(id);
+
+  const confirmSingleDelete = async () => {
+    if (singleDeleteId == null) return;
+    setIsDeleting(true);
+    const { error } = await supabase.from("questions").delete().eq("id", singleDeleteId);
+    setIsDeleting(false);
     if (error) { toast.error("ডিলিট ব্যর্থ"); return; }
     toast.success("মুছে ফেলা হয়েছে");
-    fetchItems();
+    setSingleDeleteId(null);
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(singleDeleteId); return n; });
+    invalidateQuestions();
   };
+
+  const confirmBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setIsDeleting(true);
+    const { error } = await supabase.from("questions").delete().in("id", ids);
+    setIsDeleting(false);
+    if (error) { toast.error("বাল্ক ডিলিট ব্যর্থ: " + error.message); return; }
+    toast.success(`${ids.length.toLocaleString("bn-BD")}টি প্রশ্ন মুছে ফেলা হয়েছে`);
+    setSelectedIds(new Set());
+    setBulkDeleteOpen(false);
+    invalidateQuestions();
+  };
+
+  const pageIds = paginatedItems.map((i: any) => i.id as number);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id));
+  const someOnPageSelected = pageIds.some(id => selectedIds.has(id));
+  const toggleSelectAllOnPage = (checked: boolean) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (checked) pageIds.forEach(id => n.add(id));
+      else pageIds.forEach(id => n.delete(id));
+      return n;
+    });
+  };
+  const toggleRow = (id: number, checked: boolean) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (checked) n.add(id); else n.delete(id);
+      return n;
+    });
+  };
+
 
   // === Full Page Create View ===
   if (fullPageCreate) {
