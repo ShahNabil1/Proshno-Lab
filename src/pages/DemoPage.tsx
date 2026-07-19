@@ -157,9 +157,31 @@ export default function DemoPage() {
     });
   };
 
-  // Sort: MCQ → Short → CQ → Descriptive
+  // Sort: MCQ → Short → CQ → Descriptive, with optional shuffle within each type
   const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
-  const sortedQuestions = [...questions].sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
+  const sortedQuestions = useMemo(() => {
+    const base = [...questions];
+    if (shuffleSeed > 0) {
+      // deterministic-ish shuffle per seed
+      base.sort(() => Math.random() - 0.5);
+    }
+    return base.sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
+  }, [questions, shuffleSeed]);
+
+  const handlePrint = () => {
+    if (selectedIds.size === 0) {
+      toast.error("প্রিন্ট করার আগে অন্তত একটি প্রশ্ন সিলেক্ট করুন");
+      return;
+    }
+    window.print();
+  };
+
+  const handleShuffle = () => {
+    if (questions.length === 0) return;
+    setShuffleSeed(s => s + 1);
+    toast.success("নতুন ক্রমে সাজানো হয়েছে");
+  };
+
 
   const selectedQuestions = sortedQuestions.filter(q => selectedIds.has(q.id));
   const mcqQuestions = selectedQuestions.filter(q => q.type === "mcq");
