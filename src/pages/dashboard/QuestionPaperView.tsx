@@ -2051,10 +2051,12 @@ export default function QuestionPaperView() {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
                   const dData = q.creative_data;
+                  const isDuplicate = duplicateIds.has(q.id);
                   return (
                     <div
                       key={q.id}
                       className={editableClass}
+                      style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }}
                       data-editable={`desc-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
