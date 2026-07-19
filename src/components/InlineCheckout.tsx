@@ -11,7 +11,7 @@ import logoImg from "@/assets/logo.png";
 import bkashLogo from "@/assets/bkash-logo.webp";
 import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
-const WHATSAPP_NUMBER = "8801340345787";
+const WHATSAPP_NUMBER = "8801758018668";
 
 export interface SelectedPackageItem {
   id: number;
@@ -228,7 +228,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
             (আমি প্যাকেজের বিস্তারিত পড়েছি এবং{" "}
             <Link to="/terms" className="text-primary hover:underline">শর্তাবলীতে</Link> সম্মত হয়েছি)
           </p>
-          <Button className="gradient-green text-white border-0 font-heading rounded-xl h-11 px-8" asChild>
+          <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white border-0 font-heading rounded-xl h-11 px-8" asChild>
             <a
               href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`আমি ${selectedPackages.map(p => `${p.class_name} - ${p.subject_name}`).join(", ")} প্যাকেজ কিনতে চাই।`)}`}
               target="_blank"

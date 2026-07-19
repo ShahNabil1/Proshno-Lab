@@ -161,12 +161,12 @@ export default function DashboardHome() {
             </p>
             <div className="space-y-2">
               <Button variant="outline" className="w-full gap-2" size="sm" asChild>
-                <a href="tel:+8801340345787">
-                  <Phone className="w-4 h-4" /> +880 1340-345787
+                <a href="tel:+8801758018668">
+                  <Phone className="w-4 h-4" /> +880 1758-018668
                 </a>
               </Button>
-              <Button className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white border-0" size="sm" asChild>
-                <a href="https://wa.me/8801340345787" target="_blank" rel="noopener noreferrer">
+              <Button className="w-full gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white border-0" size="sm" asChild>
+                <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer">
                   <WhatsAppIcon className="w-4 h-4" /> Open WhatsApp
                 </a>
               </Button>

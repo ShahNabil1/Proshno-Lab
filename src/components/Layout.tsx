@@ -45,7 +45,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
     { to: user ? "/dashboard" : "/login", label: "ড্যাশবোর্ড" },
     { to: "/pricing", label: "প্যাকেজ" },
     { to: "/demo", label: "টিউটোরিয়াল" },
-    { to: "/dashboard/contact", label: "হেল্পলাইন" },
+    { to: "/helpline", label: "হেল্পলাইন" },
   ];
 
   return (
@@ -186,7 +186,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#FF0000]/10 transition-colors hover:scale-110">
                   <FaYoutube className="w-[18px] h-[18px] text-[#FF0000]" />
                 </a>
-                <a href="https://wa.me/8801340345787" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#25D366]/10 transition-colors hover:scale-110">
+                <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#25D366]/10 transition-colors hover:scale-110">
                   <FaWhatsapp className="w-[18px] h-[18px] text-[#25D366]" />
                 </a>
                 <a href="https://tiktok.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-black/5 transition-colors hover:scale-110">
@@ -203,7 +203,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <li><Link to="/dashboard/create?mode=auto" className="text-slate-500 hover:text-navy transition-colors">অটো প্রশ্ন তৈরি</Link></li>
                 <li><Link to="/pricing" className="text-slate-500 hover:text-navy transition-colors">প্যাকেজ ও মূল্য</Link></li>
                 <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">টিউটোরিয়াল</Link></li>
-                <li><Link to="/dashboard/contact" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
+                <li><Link to="/helpline" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
               </ul>
             </div>
 
