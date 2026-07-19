@@ -109,31 +109,87 @@ export default function AdminQuestionsBulk() {
   const doSave = async () => {
     const valid = parsed.filter((q) => q.errors.length === 0);
     if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
+  const runInsertChunks = async (chunks: FailedChunk[]) => {
+    const nextFailed: FailedChunk[] = [];
+    let done = 0;
+    let ok = 0;
+    const total = chunks.reduce((s, c) => s + c.payloads.length, 0);
+    for (const ch of chunks) {
+      const { error } = await supabase.from("questions").insert(ch.payloads as any);
+      if (error) {
+        console.error("Chunk failed", ch.rows, error);
+        nextFailed.push({ ...ch, error: error.message });
+      } else {
+        ok += ch.payloads.length;
+      }
+      done += ch.payloads.length;
+      setProgress(Math.round((done / total) * 100));
+    }
+    return { ok, nextFailed };
+  };
+
+  const doSave = async () => {
+    const valid = parsed.filter((q) => q.errors.length === 0);
+    if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
 
-    setSaving(true); setProgress(0);
+    setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
     const stimulusGroup = type === "mcq" && valid.some((q) => q.stimulus) ? null : null;
-    let inserted = 0, failed = 0;
+
+    const chunks: FailedChunk[] = [];
     for (let i = 0; i < valid.length; i += CHUNK) {
-      const batch = valid.slice(i, i + CHUNK).map((q) => toDbPayload(q, {
-        class_id: Number(classId),
-        subject_id: Number(subjectId),
-        chapter_id: Number(chapterId),
-        topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
-        teacher_id: user.id,
-        stimulus_group_id: stimulusGroup,
-      }));
-      const { error } = await supabase.from("questions").insert(batch as any);
-      if (error) { failed += batch.length; console.error(error); }
-      else inserted += batch.length;
-      setProgress(Math.round(((i + batch.length) / valid.length) * 100));
+      const slice = valid.slice(i, i + CHUNK);
+      chunks.push({
+        id: `c-${i}`,
+        rows: slice.map((_, k) => i + k + 1),
+        error: "",
+        payloads: slice.map((q) => toDbPayload(q, {
+          class_id: Number(classId),
+          subject_id: Number(subjectId),
+          chapter_id: Number(chapterId),
+          topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
+          teacher_id: user.id,
+          stimulus_group_id: stimulusGroup,
+        })),
+      });
     }
+
+    const { ok, nextFailed } = await runInsertChunks(chunks);
     setSaving(false);
+    setInsertedCount(ok);
+    setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
-    if (failed > 0) toast.error(`${inserted} সফল, ${failed} ব্যর্থ`);
-    else toast.success(`${inserted} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
-    setParsed([]); setPasteText(""); setConfirmOpen(false);
+    setConfirmOpen(false);
+
+    if (nextFailed.length === 0) {
+      toast.success(`${ok} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
+      setParsed([]); setPasteText("");
+    } else {
+      const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.error(`${ok} সফল, ${failedCount} ব্যর্থ — নিচে "Retry" বাটন দিয়ে আবার চেষ্টা করুন`);
+    }
+  };
+
+  const retryFailed = async () => {
+    if (failedChunks.length === 0) return;
+    setSaving(true); setProgress(0);
+    const { ok, nextFailed } = await runInsertChunks(failedChunks);
+    setSaving(false);
+    setInsertedCount((n) => n + ok);
+    setFailedChunks(nextFailed);
+    qc.invalidateQueries({ queryKey: ["admin-questions"] });
+    if (nextFailed.length === 0) {
+      toast.success(`বাকি ${ok} টি প্রশ্নও সফলভাবে যোগ হয়েছে!`);
+      setParsed([]); setPasteText("");
+    } else {
+      const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.error(`আবারো ${failedCount} ব্যর্থ — ${ok} সফল`);
+    }
+  };
+
+  const skipFailedChunk = (id: string) => {
+    setFailedChunks((prev) => prev.filter((c) => c.id !== id));
   };
 
   return (
