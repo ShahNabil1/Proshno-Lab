@@ -190,7 +190,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <Button variant="ghost" size="icon" onClick={() => {
+            if (window.innerWidth >= 1024) setDesktopCollapsed(v => !v);
+            else setSidebarOpen(true);
+          }} title="সাইডবার">
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex-1" />
