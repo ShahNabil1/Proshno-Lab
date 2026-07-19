@@ -67,10 +67,24 @@ Deno.serve(async (req) => {
     });
     const data = await res.json();
 
-    // Persist snapshot on the row
-    await admin.from("bkash_payments").update({ bkash_response: data }).eq("payment_id", paymentID);
+    // Persist snapshot + reconcile status on the row
+    const txStatus = String(data?.transactionStatus || data?.statusMessage || "").toLowerCase();
+    const patch: Record<string, any> = { bkash_response: data };
+    if (data?.statusCode === "0000" && txStatus.includes("complet")) {
+      patch.status = "completed";
+      if (data.trxID) patch.trx_id = data.trxID;
+    } else if (txStatus.includes("cancel")) {
+      patch.status = "cancelled";
+    } else if (
+      (data?.statusCode && data.statusCode !== "0000" && !txStatus.includes("initiat")) ||
+      txStatus.includes("fail") || txStatus.includes("expire")
+    ) {
+      patch.status = "failed";
+      patch.error_message = data?.statusMessage || data?.errorMessage || "bKash reported failure";
+    }
+    await admin.from("bkash_payments").update(patch).eq("payment_id", paymentID);
 
-    return json({ ok: res.ok, data }, res.ok ? 200 : 502);
+    return json({ ok: res.ok, data, newStatus: patch.status || "initiated" }, res.ok ? 200 : 502);
   } catch (e: any) {
     console.error("bkash-query-payment error", e);
     return json({ error: e.message ?? "Unknown error" }, 500);
