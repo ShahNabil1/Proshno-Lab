@@ -47,6 +47,10 @@ export default function AdminQuestionsBulk() {
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Retry state: failed chunks kept with their payloads + source row numbers + last error
+  type FailedChunk = { id: string; payloads: any[]; rows: number[]; error: string };
+  const [failedChunks, setFailedChunks] = useState<FailedChunk[]>([]);
+  const [insertedCount, setInsertedCount] = useState(0);
 
   // Persist context
   useEffect(() => {
