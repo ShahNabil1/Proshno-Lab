@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail, Sparkles } from "lucide-react";
+import { Menu, X, LogOut, User, MapPin, Phone, Mail, Sparkles } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -203,8 +203,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <li><Link to="/pricing" className="text-slate-500 hover:text-navy transition-colors">প্যাকেজ ও মূল্য</Link></li>
                 <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">টিউটোরিয়াল</Link></li>
                 <li><Link to="/dashboard/contact" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
-                <li><Link to="/terms" className="text-slate-500 hover:text-navy transition-colors">Terms & Conditions</Link></li>
-                <li><Link to="/privacy" className="text-slate-500 hover:text-navy transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
 
@@ -227,22 +225,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               </ul>
             </div>
 
-            {/* Developer credit */}
-            <div className="flex items-end justify-end">
-              <p className="text-xs text-slate-400 inline-flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-                Designed & Developed with{" "}
-                <Heart className="w-3 h-3 text-rose-400 fill-rose-400 inline-block" />{" "}
-                by{" "}
-                <a
-                  href="https://www.shahnabil.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-slate-600 hover:text-navy transition-colors"
-                >
-                  Shahriar Nabil
-                </a>
-              </p>
-            </div>
           </div>
 
           {/* Bottom bar */}
