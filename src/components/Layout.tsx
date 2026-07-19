@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, Heart } from "lucide-react";
+import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Youtube, Twitter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -157,29 +157,99 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 text-slate-500">
-        <div className="container py-5">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
-            <p className="text-slate-500">© 2026 Proshno Lab. All rights reserved.</p>
-
-            <p className="inline-flex items-center gap-1.5 text-slate-500">
-              Designed & Developed by
-              <a
-                href="https://www.shahnabil.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-slate-700 hover:text-navy transition-colors"
-              >
-                Shahriar Nabil
-              </a>
-              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
-            </p>
-
-            <div className="flex items-center gap-4">
-              <Link to="/terms" className="text-slate-500 hover:text-navy transition-colors">Terms & Conditions</Link>
-              <span className="text-slate-300">•</span>
-              <Link to="/privacy" className="text-slate-500 hover:text-navy transition-colors">Privacy Policy</Link>
+      <footer className="bg-white border-t border-slate-200 text-slate-600">
+        <div className="container py-10 lg:py-14">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <Link to="/" className="inline-block">
+                <div
+                  className="font-bold text-[28px] lg:text-[32px] text-navy tracking-tight"
+                  style={{ fontFamily: "'Hind Siliguri', 'SolaimanLipi', serif", letterSpacing: "-0.5px" }}
+                >
+                  প্রশ্ন<span className="bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent italic">ল্যাব</span>
+                </div>
+              </Link>
+              <p className="text-sm leading-relaxed text-slate-500">
+                শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
+              </p>
+              {/* Social */}
+              <div className="flex items-center gap-3 pt-1">
+                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
+                  <Facebook className="w-[18px] h-[18px]" />
+                </a>
+                <a href="https://instagram.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
+                  <Instagram className="w-[18px] h-[18px]" />
+                </a>
+                <a href="https://linkedin.com/company/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
+                  <Linkedin className="w-[18px] h-[18px]" />
+                </a>
+                <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
+                  <Youtube className="w-[18px] h-[18px]" />
+                </a>
+                <a href="https://twitter.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-navy hover:text-white transition-colors">
+                  <Twitter className="w-[18px] h-[18px]" />
+                </a>
+              </div>
             </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-heading font-bold text-navy text-base mb-4">কুইক লিংকস</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link to="/" className="text-slate-500 hover:text-navy transition-colors">হোম</Link></li>
+                <li><Link to="/dashboard/create?mode=auto" className="text-slate-500 hover:text-navy transition-colors">অটো প্রশ্ন তৈরি</Link></li>
+                <li><Link to="/pricing" className="text-slate-500 hover:text-navy transition-colors">প্যাকেজ ও মূল্য</Link></li>
+                <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">টিউটোরিয়াল</Link></li>
+                <li><Link to="/dashboard/contact" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
+                <li><Link to="/terms" className="text-slate-500 hover:text-navy transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/privacy" className="text-slate-500 hover:text-navy transition-colors">Privacy Policy</Link></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="font-heading font-bold text-navy text-base mb-4">যোগাযোগ</h4>
+              <ul className="space-y-3.5 text-sm">
+                <li className="flex items-start gap-3">
+                  <MapPin className="w-[18px] h-[18px] text-gold mt-0.5 shrink-0" />
+                  <span className="text-slate-500">ময়মনসিংহ, বাংলাদেশ</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Phone className="w-[18px] h-[18px] text-gold shrink-0" />
+                  <a href="tel:+8809696638867" className="text-slate-500 hover:text-navy transition-colors">+880 9696-638867</a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail className="w-[18px] h-[18px] text-gold shrink-0" />
+                  <a href="mailto:proshnolab@gmail.com" className="text-slate-500 hover:text-navy transition-colors">proshnolab@gmail.com</a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Developer credit / mini */}
+            <div className="flex flex-col justify-between">
+              <div>
+                <h4 className="font-heading font-bold text-navy text-base mb-4">ডেভেলপার ক্রেডিট</h4>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Designed & Developed with{" "}
+                  <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400 inline-block align-text-bottom" />{" "}
+                  by{" "}
+                  <a
+                    href="https://www.shahnabil.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-slate-700 hover:text-navy transition-colors"
+                  >
+                    Shahriar Nabil
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="mt-10 pt-6 border-t border-slate-100 text-center text-sm text-slate-400">
+            © 2026 Proshno Lab. All rights reserved.
           </div>
         </div>
       </footer>
