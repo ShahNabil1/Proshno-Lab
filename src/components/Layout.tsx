@@ -231,7 +231,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <div>© 2026 Proshno Lab. All rights reserved.</div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500">
-              <span>Designed & Developed by</span>
+              <span>Developed by</span>
               <a
                 href="https://www.shahnabil.com/"
                 target="_blank"
