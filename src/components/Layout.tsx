@@ -17,19 +17,13 @@ import { analytics } from "@/lib/analytics";
 
 export default function Layout({ children }: {children: React.ReactNode;}) {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const isHeroPage = location.pathname === "/";
+  const navigate = useNavigate();
+  void navigate;
 
-  const handleCreateQuestion = () => {
-    if (user) {
-      navigate("/dashboard/create");
-    } else {
-      navigate("/login");
-    }
-  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
