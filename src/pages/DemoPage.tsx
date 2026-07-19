@@ -374,17 +374,17 @@ export default function DemoPage() {
 
                     {/* Paper header */}
                     <div className="text-center mb-3">
-                      <p className="font-bold text-base" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>{institution || "আপনার প্রতিষ্ঠানের নাম"}</p>
+                      <p className="font-bold text-base demo-paper-title" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>{institution || "আপনার প্রতিষ্ঠানের নাম"}</p>
                       {selectedChapter && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground demo-paper-sub">
                           {selectedChapter.class_name} — {selectedChapter.subject_name}
                         </p>
                       )}
                       {selectedChapter && (
-                        <p className="text-[10px] text-muted-foreground">({selectedChapter.name})</p>
+                        <p className="text-[10px] text-muted-foreground demo-paper-sub">({selectedChapter.name})</p>
                       )}
                       {selectedIds.size > 0 && (
-                        <div className="flex justify-between text-[10px] text-muted-foreground mt-2 border-t border-b border-black/20 py-1 font-semibold">
+                        <div className="flex justify-between text-[10px] text-muted-foreground mt-2 border-t border-b border-black/40 py-1 font-semibold demo-paper-meta">
                           <span>সময়— {examTime || "৫৫"} মিনিট</span>
                           <span>পূর্ণমান— {toBanglaNum(totalMarks)}</span>
                         </div>
@@ -396,21 +396,22 @@ export default function DemoPage() {
                     {selectedIds.size === 0 ? (
                       <p className="text-center text-muted-foreground text-sm py-8">প্রশ্ন সিলেক্ট করুন</p>
                     ) : (
-                      <div className="space-y-2 text-xs" style={{ lineHeight: 1.4 }}>
+                      <div className="space-y-2 text-xs demo-q-body" style={{ lineHeight: 1.4 }}>
                         {/* MCQ Section */}
                         {mcqQuestions.length > 0 && (
                           <div>
-                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/30 pb-1 mb-1.5">
+                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/40 pb-1 mb-1.5 demo-section-head">
                               <span>বহুনির্বাচনি অংশ:</span>
                               <span>{toBanglaNum(mcqQuestions.length)} x {toBanglaNum(1)} = {toBanglaNum(mcqQuestions.length)}</span>
                             </div>
+                            <div className="demo-mcq-list">
                             {mcqQuestions.map((q, idx) => (
-                              <div key={q.id} className="mb-1.5">
+                              <div key={q.id} className="mb-1.5 demo-mcq-item">
                                 <div style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
-                                  <span style={{ width: "1.6rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx + 1)}।</span>
+                                  <span className="demo-q-num" style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx + 1)}।</span>
                                   <div style={{ flex: 1 }}>
                                     <LatexRenderer text={q.question} className="text-[11px]" />
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px", fontSize: "10px", lineHeight: 1.3 }}>
+                                    <div className="demo-mcq-options" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px", fontSize: "10px", lineHeight: 1.3 }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const letter = ["ক", "খ", "গ", "ঘ"][oi];
@@ -427,6 +428,7 @@ export default function DemoPage() {
                                 </div>
                               </div>
                             ))}
+                            </div>
                           </div>
                         )}
 
@@ -434,13 +436,13 @@ export default function DemoPage() {
                         {shortQuestions.length > 0 && (
                           <div>
                             {mcqQuestions.length > 0 && <div className="border-t border-black/20 my-2" />}
-                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/30 pb-1 mb-1.5">
+                            <div className="flex justify-between items-center font-bold text-[11px] border-b border-black/40 pb-1 mb-1.5 demo-section-head">
                               <span>সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)</span>
                               <span>{toBanglaNum(shortQuestions.length)} x {toBanglaNum(2)} = {toBanglaNum(shortQuestions.length * 2)}</span>
                             </div>
                             {shortQuestions.map((q, idx) => (
-                              <div key={q.id} className="mb-1">
-                                <span className="font-semibold">{padBangla(idx + 1)}।</span>{" "}
+                              <div key={q.id} className="mb-1 demo-short-item">
+                                <span className="font-semibold demo-q-num">{padBangla(idx + 1)}।</span>{" "}
                                 <LatexRenderer text={q.question} className="text-[11px]" />
                               </div>
                             ))}
