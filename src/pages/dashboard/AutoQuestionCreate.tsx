@@ -185,7 +185,7 @@ export default function AutoQuestionCreate() {
         subjectName,
         subjectCode,
         chapterNames: selectedChapterNames,
-        programName: "অটো জেনারেটেড প্রশ্নপত্র",
+        programName: "",
         teacherName: user?.user_metadata?.full_name || user?.email || "",
         topicNames: [],
       }));
