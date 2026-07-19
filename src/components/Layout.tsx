@@ -52,14 +52,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
         <div className="container flex items-center justify-between h-16 lg:h-[76px]">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-gold/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <img
-                src={logoImg}
-                alt="Proshno Lab"
-                className="relative w-11 h-11 rounded-full object-contain ring-2 ring-navy/10 group-hover:ring-gold/50 transition-all duration-500"
-              />
-            </div>
             <div className="leading-none">
               <div
                 className="font-bold text-[30px] lg:text-[34px] text-navy tracking-tight"
