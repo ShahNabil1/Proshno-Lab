@@ -194,12 +194,7 @@ Deno.serve(async (req) => {
       console.error("bkash-create-payment error", e);
       return json({ error: e.message ?? "Unknown error" }, 500);
     }
-  });
-}
-
-function serve(handler: (req: Request) => Promise<Response>) {
-  Deno.serve(handler);
-}
+});
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
