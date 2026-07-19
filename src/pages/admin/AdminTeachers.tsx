@@ -49,8 +49,7 @@ const ADMIN_PAGE_GROUPS = [
     pages: [
       { value: "/admin/teachers", label: "শিক্ষক" },
       { value: "/admin/institutes", label: "প্রতিষ্ঠান" },
-      { value: "/admin/subscriptions", label: "সাবস্ক্রিপশন" },
-      { value: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট" },
+      { value: "/admin/subscriptions", label: "সাবস্ক্রিপশন ও পেমেন্ট" },
     ],
   },
 ];

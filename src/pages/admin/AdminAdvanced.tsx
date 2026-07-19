@@ -37,8 +37,7 @@ const adminPages = [
   { path: "/admin/feedback", label: "মতামত", icon: MessageSquare },
   { path: "/admin/teachers", label: "শিক্ষক", icon: Users },
   { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2 },
-  { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন", icon: CreditCard },
-  { path: "/admin/purchases", label: "পারচেজ রিকুয়েস্ট", icon: CreditCard },
+  { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন ও পেমেন্ট", icon: CreditCard },
 ];
 
 type ToggleSectionProps = {
