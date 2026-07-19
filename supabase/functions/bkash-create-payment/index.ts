@@ -43,11 +43,8 @@ async function getBkashToken(): Promise<string> {
   return cachedToken.id_token;
 }
 
-serve_handler();
-
-function serve_handler() {
-  Deno.serve(async (req) => {
-    if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
     try {
       const authHeader = req.headers.get("Authorization");
