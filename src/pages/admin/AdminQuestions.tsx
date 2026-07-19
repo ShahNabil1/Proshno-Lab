@@ -602,7 +602,12 @@ export default function AdminQuestions() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading text-2xl font-bold">প্রশ্ন ম্যানেজমেন্ট</h1>
-        <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন প্রশ্ন</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => window.location.assign("/admin/questions/bulk")} className="gap-2">
+            <Plus className="w-4 h-4" /> বাল্ক আপলোড
+          </Button>
+          <Button onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" /> নতুন প্রশ্ন</Button>
+        </div>
       </div>
 
       {/* Search & Filters */}
