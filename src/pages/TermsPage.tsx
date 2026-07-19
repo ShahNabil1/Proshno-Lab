@@ -66,7 +66,7 @@ export default function TermsPage() {
               <p>
                 এই শর্তাবলী সম্পর্কে কোনো প্রশ্ন থাকলে আমাদের সাথে যোগাযোগ করুন:
               </p>
-              <p className="mt-2">ইমেইল: hello@proshnolab.com</p>
+              <p className="mt-2">ইমেইল: support@proshnolab.com</p>
             </section>
           </div>
         </motion.div>

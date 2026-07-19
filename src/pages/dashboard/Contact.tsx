@@ -28,8 +28,8 @@ export default function Contact() {
           </Button>
           <div className="text-center text-sm text-muted-foreground pt-2">
             <p>OR</p>
-            <a href="mailto:hello@proshnolab.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
-              <Mail className="w-4 h-4" /> hello@proshnolab.com
+            <a href="mailto:support@proshnolab.com" className="flex items-center justify-center gap-2 mt-2 text-primary">
+              <Mail className="w-4 h-4" /> support@proshnolab.com
             </a>
           </div>
         </CardContent>

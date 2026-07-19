@@ -28,7 +28,7 @@ export default function RefundPage() {
               <p>
                 ৩. যোগাযোগ
               </p>
-              <p className="mt-2">ইমেইল: hello@proshnolab.com</p>
+              <p className="mt-2">ইমেইল: support@proshnolab.com</p>
               <p>মোবাইল: ০১৭১১-০০০০০০</p>
             </section>
           </div>
