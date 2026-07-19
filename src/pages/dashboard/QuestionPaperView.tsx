@@ -110,7 +110,7 @@ export default function QuestionPaperView() {
     showSubjectCode: false,
     showClassName: true,
     showSubjectName: true,
-    showChapterName: true,
+    showChapterName: false,
     showSetCode: false,
     showProgramName: true,
     showInstruction: true,
