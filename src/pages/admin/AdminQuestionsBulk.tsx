@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
