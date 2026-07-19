@@ -85,14 +85,15 @@ export default function Index() {
             </div>
 
             <h1 className="font-heading text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.15] mb-6">
+              <span className="text-gradient-green">Proshno Lab</span> —
+              <br />
               পরীক্ষার প্রশ্ন তৈরি এখন
               <br />
-              <span className="text-gradient-green">আরও সহজ, আরও দ্রুত</span>
+              <span className="text-white">আরও সহজ, আরও দ্রুত</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
-               ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্ন তৈরি করুন মাত্র ১ ক্লিকে। শিক্ষক ও শিক্ষার্থীদের জন্য সম্পূর্ণ স্মার্ট সমাধান।
-            
+            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
+              Proshno Lab একটি স্মার্ট প্রশ্নব্যাংক প্ল্যাটফর্ম। শিক্ষক, শিক্ষার্থী ও প্রতিষ্ঠানের জন্য ৬ষ্ঠ থেকে দ্বাদশ শ্রেণির MCQ, সৃজনশীল, সংক্ষিপ্ত ও ব্যাখ্যামূলক প্রশ্ন মাত্র কয়েক ক্লিকে তৈরি, সংগঠন ও প্রিন্ট করুন।
             </p>
 
             <div className="flex justify-center">
