@@ -1,1 +1,7 @@
 project_id = "biekabnpseyardqgutbp"
+
+[functions.notify-telegram]
+verify_jwt = false
+
+[functions.daily-summary]
+verify_jwt = false
