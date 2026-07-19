@@ -47,6 +47,10 @@ export default function AdminQuestionsBulk() {
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Retry state: failed chunks kept with their payloads + source row numbers + last error
+  type FailedChunk = { id: string; payloads: any[]; rows: number[]; error: string };
+  const [failedChunks, setFailedChunks] = useState<FailedChunk[]>([]);
+  const [insertedCount, setInsertedCount] = useState(0);
 
   // Persist context
   useEffect(() => {
@@ -102,34 +106,87 @@ export default function AdminQuestionsBulk() {
   const removeRow = (id: string) => setParsed((p) => p.filter((x) => x.tempId !== id));
   const removeInvalid = () => setParsed((p) => p.filter((x) => x.errors.length === 0));
 
+  const runInsertChunks = async (chunks: FailedChunk[]) => {
+    const nextFailed: FailedChunk[] = [];
+    let done = 0;
+    let ok = 0;
+    const total = chunks.reduce((s, c) => s + c.payloads.length, 0);
+    for (const ch of chunks) {
+      const { error } = await supabase.from("questions").insert(ch.payloads as any);
+      if (error) {
+        console.error("Chunk failed", ch.rows, error);
+        nextFailed.push({ ...ch, error: error.message });
+      } else {
+        ok += ch.payloads.length;
+      }
+      done += ch.payloads.length;
+      setProgress(Math.round((done / total) * 100));
+    }
+    return { ok, nextFailed };
+  };
+
   const doSave = async () => {
     const valid = parsed.filter((q) => q.errors.length === 0);
     if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
 
-    setSaving(true); setProgress(0);
+    setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
     const stimulusGroup = type === "mcq" && valid.some((q) => q.stimulus) ? null : null;
-    let inserted = 0, failed = 0;
+
+    const chunks: FailedChunk[] = [];
     for (let i = 0; i < valid.length; i += CHUNK) {
-      const batch = valid.slice(i, i + CHUNK).map((q) => toDbPayload(q, {
-        class_id: Number(classId),
-        subject_id: Number(subjectId),
-        chapter_id: Number(chapterId),
-        topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
-        teacher_id: user.id,
-        stimulus_group_id: stimulusGroup,
-      }));
-      const { error } = await supabase.from("questions").insert(batch as any);
-      if (error) { failed += batch.length; console.error(error); }
-      else inserted += batch.length;
-      setProgress(Math.round(((i + batch.length) / valid.length) * 100));
+      const slice = valid.slice(i, i + CHUNK);
+      chunks.push({
+        id: `c-${i}`,
+        rows: slice.map((_, k) => i + k + 1),
+        error: "",
+        payloads: slice.map((q) => toDbPayload(q, {
+          class_id: Number(classId),
+          subject_id: Number(subjectId),
+          chapter_id: Number(chapterId),
+          topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
+          teacher_id: user.id,
+          stimulus_group_id: stimulusGroup,
+        })),
+      });
     }
+
+    const { ok, nextFailed } = await runInsertChunks(chunks);
     setSaving(false);
+    setInsertedCount(ok);
+    setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
-    if (failed > 0) toast.error(`${inserted} সফল, ${failed} ব্যর্থ`);
-    else toast.success(`${inserted} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
-    setParsed([]); setPasteText(""); setConfirmOpen(false);
+    setConfirmOpen(false);
+
+    if (nextFailed.length === 0) {
+      toast.success(`${ok} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
+      setParsed([]); setPasteText("");
+    } else {
+      const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.error(`${ok} সফল, ${failedCount} ব্যর্থ — নিচে "Retry" বাটন দিয়ে আবার চেষ্টা করুন`);
+    }
+  };
+
+  const retryFailed = async () => {
+    if (failedChunks.length === 0) return;
+    setSaving(true); setProgress(0);
+    const { ok, nextFailed } = await runInsertChunks(failedChunks);
+    setSaving(false);
+    setInsertedCount((n) => n + ok);
+    setFailedChunks(nextFailed);
+    qc.invalidateQueries({ queryKey: ["admin-questions"] });
+    if (nextFailed.length === 0) {
+      toast.success(`বাকি ${ok} টি প্রশ্নও সফলভাবে যোগ হয়েছে!`);
+      setParsed([]); setPasteText("");
+    } else {
+      const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.error(`আবারো ${failedCount} ব্যর্থ — ${ok} সফল`);
+    }
+  };
+
+  const skipFailedChunk = (id: string) => {
+    setFailedChunks((prev) => prev.filter((c) => c.id !== id));
   };
 
   return (
@@ -309,6 +366,45 @@ export default function AdminQuestionsBulk() {
             </div>
 
             {saving && <Progress value={progress} className="h-2" />}
+
+            {failedChunks.length > 0 && (
+              <div className="border border-red-300 bg-red-50/60 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="font-semibold">
+                      {failedChunks.reduce((s, c) => s + c.payloads.length, 0)} টি প্রশ্ন সেভ হয়নি ({failedChunks.length} chunk)
+                    </span>
+                    {insertedCount > 0 && (
+                      <span className="text-xs text-emerald-700">• {insertedCount} সফল</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setFailedChunks([])} disabled={saving}>
+                      বাদ দিন
+                    </Button>
+                    <Button size="sm" onClick={retryFailed} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                      {saving ? `Retrying... ${progress}%` : "ব্যর্থগুলো Retry করুন"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {failedChunks.map((c) => (
+                    <div key={c.id} className="flex items-start justify-between gap-3 bg-white border border-red-200 rounded p-2 text-xs">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-red-700">
+                          Rows #{c.rows[0]}–#{c.rows[c.rows.length - 1]} ({c.payloads.length} টি)
+                        </div>
+                        <div className="text-muted-foreground break-words line-clamp-2">{c.error}</div>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => skipFailedChunk(c.id)} disabled={saving}>
+                        Skip
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button
