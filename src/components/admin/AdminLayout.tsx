@@ -121,9 +121,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {sidebarOpen && <div className="fixed inset-0 bg-foreground/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[240px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:sticky lg:z-auto",
+        "fixed top-0 left-0 z-50 h-screen w-[240px] bg-card border-r border-border flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        desktopCollapsed ? "lg:hidden" : "lg:translate-x-0 lg:flex"
+        desktopCollapsed
+          ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
+          : "lg:w-[240px] lg:translate-x-0 lg:opacity-100"
       )}>
         <Link to="/admin" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
