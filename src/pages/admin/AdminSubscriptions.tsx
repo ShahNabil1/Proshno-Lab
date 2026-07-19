@@ -92,7 +92,7 @@ function BkashResponseCard({ data }: { data: Record<string, any> }) {
           )}
         </div>
         <button onClick={() => setShowRaw(v => !v)} className="text-[10px] text-muted-foreground hover:text-foreground underline">
-          {showRaw ? "সহজ ভিউ" : "কাঁচা JSON"}
+          {showRaw ? "সহজ ভিউ" : "Raw JSON"}
         </button>
       </div>
       {showRaw ? (
