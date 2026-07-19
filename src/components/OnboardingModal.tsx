@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getDivisions, getDistricts, getUpazilas } from "@/data/bangladeshGeo";
+import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
 interface OnboardingModalProps {
   open: boolean;
