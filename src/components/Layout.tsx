@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail } from "lucide-react";
+import { Menu, X, LogOut, User, Heart, MapPin, Phone, Mail, Sparkles } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -246,8 +246,25 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-10 pt-6 border-t border-slate-100 text-center text-sm text-slate-400">
-            © 2026 Proshno Lab. All rights reserved.
+          <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+            <div>© 2026 Proshno Lab. All rights reserved.</div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500">
+              <span>Designed & Developed by</span>
+              <a
+                href="https://www.shahnabil.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-slate-700 hover:text-navy transition-colors"
+              >
+                Shahriar Nabil
+              </a>
+              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Link to="/terms" className="hover:text-navy transition-colors">Terms & Conditions</Link>
+              <span className="text-slate-400">•</span>
+              <Link to="/privacy" className="hover:text-navy transition-colors">Privacy Policy</Link>
+            </div>
           </div>
         </div>
       </footer>
