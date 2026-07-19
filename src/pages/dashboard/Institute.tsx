@@ -153,7 +153,7 @@ export default function Institute() {
                   <SelectContent>{upazilas.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>ফোন নম্বর</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label>ফোন নম্বর *</Label><Input type="tel" inputMode="numeric" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizeBdPhone(e.target.value) })} /></div>
               <div><Label>নির্দিষ্ট ঠিকানা</Label><Textarea value={form.specific_address} onChange={(e) => setForm({ ...form, specific_address: e.target.value })} rows={2} /></div>
               <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">সংরক্ষণ করুন</Button>
             </div>
