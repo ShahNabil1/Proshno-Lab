@@ -60,6 +60,12 @@ export default function DemoPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const [institution, setInstitution] = useState<string>("আপনার প্রতিষ্ঠানের নাম");
+  const [examTime, setExamTime] = useState<string>("৫৫");
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+
+
 
   // Fetch free chapters with class/subject info
   useEffect(() => {
