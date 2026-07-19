@@ -249,13 +249,6 @@ export default function AdminQuestionsBulk() {
               )}
             </TabsContent>
 
-            <TabsContent value="manual" className="pt-4">
-              {contextValid ? (
-                <ManualMultiAdd type={type} onAdd={(q) => setParsed((p) => [...p, q])} />
-              ) : (
-                <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
-              )}
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
