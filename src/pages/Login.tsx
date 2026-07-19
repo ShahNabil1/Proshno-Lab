@@ -14,9 +14,12 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-card p-10 text-center">
           <img src={logoImg} alt="Proshno Lab" className="w-16 h-16 rounded-xl mx-auto mb-5 object-contain" />
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Proshno Lab-এ স্বাগতম</h1>
-          <p className="text-muted-foreground text-sm mb-8">
-            আপনার গুগল অ্যাকাউন্ট দিয়ে লগইন করুন
+          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">
+            প্রশ্ন তৈরি করতে ফ্রি অ্যাকাউন্টে লগইন করুন
+          </h1>
+          <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
+            প্রশ্নল্যাবে সব সুবিধা ব্যবহার করতে ফ্রি রেজিস্ট্রেশন করুন।
+            ইতিমধ্যে অ্যাকাউন্ট থাকলে Google দিয়ে লগইন করুন।
           </p>
 
           <Button
