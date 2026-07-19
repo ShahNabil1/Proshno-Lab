@@ -71,6 +71,7 @@ export default function Institute() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!isValidBdPhone(form.phone)) { toast.error(BD_PHONE_ERROR); return; }
     const updateData = { ...form, last_edited_at: new Date().toISOString() };
     if (institute) {
       const { error } = await supabase.from("institutes").update(updateData).eq("id", institute.id);
