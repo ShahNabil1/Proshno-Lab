@@ -213,7 +213,7 @@ export default function Index() {
                     </span>
                   </div>
                   <Link to="/pricing">
-                    <Button className="w-full rounded-xl font-heading font-semibold gradient-green text-white border-0 gap-2 h-11 shadow-[0_4px_16px_hsl(155_72%_44%/0.25)]">
+                    <Button className="w-full rounded-xl font-heading font-bold btn-gold border-0 gap-2 h-11">
                       Buy Now <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
