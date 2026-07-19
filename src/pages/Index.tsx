@@ -262,7 +262,7 @@ export default function Index() {
           {/* সম্পূর্ণ মূল্য তালিকা বাটন */}
           <motion.div custom={3} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mt-8">
             <Link to="/pricing">
-              <Button variant="outline" size="lg" className="rounded-xl font-heading font-semibold border-primary/30 text-primary hover:bg-primary/5 gap-2 px-8 h-12">
+              <Button variant="outline" size="lg" className="rounded-xl font-heading font-semibold btn-outline-navy gap-2 px-8 h-12">
                 সম্পূর্ণ মূল্য তালিকা <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
