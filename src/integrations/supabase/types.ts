@@ -98,6 +98,78 @@ export type Database = {
         }
         Relationships: []
       }
+      bkash_payments: {
+        Row: {
+          amount: number
+          bkash_response: Json | null
+          coupon_code: string | null
+          created_at: string
+          customer_msisdn: string | null
+          discount: number
+          environment: string
+          error_message: string | null
+          id: number
+          institute_name: string | null
+          merchant_invoice_number: string
+          payer_account: string | null
+          payer_reference: string | null
+          payment_id: string | null
+          selected_packages: Json
+          status: string
+          teacher_email: string | null
+          teacher_name: string | null
+          trx_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bkash_response?: Json | null
+          coupon_code?: string | null
+          created_at?: string
+          customer_msisdn?: string | null
+          discount?: number
+          environment?: string
+          error_message?: string | null
+          id?: number
+          institute_name?: string | null
+          merchant_invoice_number: string
+          payer_account?: string | null
+          payer_reference?: string | null
+          payment_id?: string | null
+          selected_packages?: Json
+          status?: string
+          teacher_email?: string | null
+          teacher_name?: string | null
+          trx_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bkash_response?: Json | null
+          coupon_code?: string | null
+          created_at?: string
+          customer_msisdn?: string | null
+          discount?: number
+          environment?: string
+          error_message?: string | null
+          id?: number
+          institute_name?: string | null
+          merchant_invoice_number?: string
+          payer_account?: string | null
+          payer_reference?: string | null
+          payment_id?: string | null
+          selected_packages?: Json
+          status?: string
+          teacher_email?: string | null
+          teacher_name?: string | null
+          trx_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           created_at: string
@@ -731,6 +803,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          bkash_payment_id: number | null
           created_at: string
           ends_at: string | null
           id: number
@@ -740,6 +813,7 @@ export type Database = {
           teacher_id: string
         }
         Insert: {
+          bkash_payment_id?: number | null
           created_at?: string
           ends_at?: string | null
           id?: number
@@ -749,6 +823,7 @@ export type Database = {
           teacher_id: string
         }
         Update: {
+          bkash_payment_id?: number | null
           created_at?: string
           ends_at?: string | null
           id?: number
@@ -758,6 +833,13 @@ export type Database = {
           teacher_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_bkash_payment_id_fkey"
+            columns: ["bkash_payment_id"]
+            isOneToOne: false
+            referencedRelation: "bkash_payments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_teacher_id_fkey"
             columns: ["teacher_id"]
