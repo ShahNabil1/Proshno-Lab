@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, FileText, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Printer, Shuffle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
 
 const fadeUp = {
