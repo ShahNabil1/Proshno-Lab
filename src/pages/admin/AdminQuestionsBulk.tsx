@@ -109,7 +109,7 @@ export default function AdminQuestionsBulk() {
         class_id: Number(classId),
         subject_id: Number(subjectId),
         chapter_id: Number(chapterId),
-        topic_id: topicId ? Number(topicId) : null,
+        topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
         teacher_id: user.id,
         stimulus_group_id: stimulusGroup,
       }));
