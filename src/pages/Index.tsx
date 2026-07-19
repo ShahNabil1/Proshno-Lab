@@ -182,7 +182,7 @@ export default function Index() {
 
 
       {/* ══════ WIZARD PREVIEW (3-step demo, matches /dashboard/create) ══════ */}
-      <section className="py-16 md:py-24 bg-background relative -mt-10 z-10">
+      <section className="py-12 md:py-16 bg-background relative -mt-6 z-10">
         <div className="container max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
