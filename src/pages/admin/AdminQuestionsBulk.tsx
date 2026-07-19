@@ -57,22 +57,19 @@ export default function AdminQuestionsBulk() {
     supabase.from("classes").select("id, name").order("id").then(({ data }) => setClasses(data || []));
   }, []);
   useEffect(() => {
-    if (!classId) { setSubjects([]); setSubjectId(""); return; }
+    if (!classId) { setSubjects([]); return; }
     supabase.from("subjects").select("id, name").eq("class_id", Number(classId)).order("name")
       .then(({ data }) => setSubjects(data || []));
-    setSubjectId(""); setChapterId(""); setTopicId("");
   }, [classId]);
   useEffect(() => {
-    if (!subjectId) { setChapters([]); setChapterId(""); return; }
+    if (!subjectId) { setChapters([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
       .then(({ data }) => setChapters(data || []));
-    setChapterId(""); setTopicId("");
   }, [subjectId]);
   useEffect(() => {
-    if (!chapterId) { setTopics([]); setTopicId(""); return; }
+    if (!chapterId) { setTopics([]); return; }
     supabase.from("topics").select("id, name").eq("chapter_id", Number(chapterId)).order("name")
       .then(({ data }) => setTopics(data || []));
-    setTopicId("");
   }, [chapterId]);
 
   const contextValid = classId && subjectId && chapterId;
