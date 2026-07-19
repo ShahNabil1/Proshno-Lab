@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         "fixed top-0 left-0 z-50 h-screen w-[240px] bg-card border-r border-border flex flex-col transition-transform duration-200 lg:translate-x-0 lg:sticky lg:z-auto",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <Link to="/" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
+        <Link to="/admin" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
           <span className="font-heading font-bold text-lg text-foreground">Admin Panel</span>
         </Link>
