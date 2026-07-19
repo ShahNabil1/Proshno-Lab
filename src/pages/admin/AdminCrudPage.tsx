@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -66,29 +68,40 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, permLoading]);
 
-  const openCreate = () => { setEditItem(null); setFormName(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
+  const [bulkNames, setBulkNames] = useState("");
+  const openCreate = () => { setEditItem(null); setFormName(""); setBulkNames(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditItem(item);
     setFormName(item.name);
+    setBulkNames("");
     setFormParentId(parentKey ? String(item[parentKey]) : "");
     setFormSubjectCode(item.subject_code || "");
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
-    const payload: any = { name: formName.trim() };
-    if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
-    if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
-
     if (editItem) {
+      if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+      const payload: any = { name: formName.trim() };
+      if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
+      if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
       const { error } = await (supabase.from(table) as any).update(payload).eq("id", editItem.id);
       if (error) { toast.error("আপডেট ব্যর্থ"); return; }
       toast.success("আপডেট হয়েছে");
     } else {
-      const { error } = await (supabase.from(table) as any).insert(payload);
+      // Bulk create: one name per line
+      const names = bulkNames.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (names.length === 0) { toast.error("অন্তত একটি নাম লিখুন"); return; }
+      if (parentKey && !formParentId) { toast.error(`${parentLabel} নির্বাচন করুন`); return; }
+      const rows = names.map((name) => {
+        const p: any = { name };
+        if (parentKey && formParentId) p[parentKey] = Number(formParentId);
+        if (table === "subjects") p.subject_code = formSubjectCode.trim() || null;
+        return p;
+      });
+      const { error } = await (supabase.from(table) as any).insert(rows);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
+      toast.success(`${names.length} টি সফলভাবে যোগ হয়েছে`);
     }
     setDialogOpen(false);
     fetchItems();
@@ -198,23 +211,49 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন যোগ করুন"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
-            {table === "subjects" && (
-              <Input placeholder="বিষয় কোড (যেমন: ১৭৮)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
-            )}
             {parentKey && parents.length > 0 && (
-              <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
-                value={formParentId} onChange={(e) => setFormParentId(e.target.value)}>
-                <option value="">{parentLabel} নির্বাচন করুন</option>
-                {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+              <div>
+                <Label className="text-xs">{parentLabel} *</Label>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
+                  value={formParentId} onChange={(e) => setFormParentId(e.target.value)}>
+                  <option value="">{parentLabel} নির্বাচন করুন</option>
+                  {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            )}
+            {editItem ? (
+              <>
+                <Input placeholder="নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+                {table === "subjects" && (
+                  <Input placeholder="বিষয় কোড (যেমন: ১৭৮)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs">নাম (প্রতি লাইনে একটি)</Label>
+                  <Textarea
+                    placeholder={"অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"}
+                    value={bulkNames}
+                    onChange={(e) => setBulkNames(e.target.value)}
+                    rows={8}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bulkNames.split("\n").map((s) => s.trim()).filter(Boolean).length} টি এন্ট্রি
+                  </p>
+                </div>
+                {table === "subjects" && (
+                  <Input placeholder="বিষয় কোড (সবার জন্য একই, ঐচ্ছিক)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
+                )}
+              </>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button onClick={handleSave}>{editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

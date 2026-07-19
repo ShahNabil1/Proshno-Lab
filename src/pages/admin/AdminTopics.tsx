@@ -39,6 +39,7 @@ export default function AdminTopics() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [formName, setFormName] = useState("");
+  const [bulkNames, setBulkNames] = useState("");
   // Modal hierarchy
   const [modalClassId, setModalClassId] = useState("");
   const [modalSubjectId, setModalSubjectId] = useState("");
@@ -120,11 +121,10 @@ export default function AdminTopics() {
   const openCreate = () => {
     setEditItem(null);
     setFormName("");
-    // Pre-fill modal with current filter selections
+    setBulkNames("");
     setModalClassId(filterClassId);
     setModalSubjectId(filterSubjectId);
     setModalChapterId(filterChapterId);
-    // Pre-fill modal dropdowns data
     if (filterClassId) setModalSubjects(subjects);
     if (filterSubjectId) setModalChapters(chapters);
     setDialogOpen(true);
@@ -133,7 +133,7 @@ export default function AdminTopics() {
   const openEdit = (item: any) => {
     setEditItem(item);
     setFormName(item.name);
-    // For edit, pre-fill with current filter context
+    setBulkNames("");
     setModalClassId(filterClassId);
     setModalSubjectId(filterSubjectId);
     setModalChapterId(filterChapterId);
@@ -143,25 +143,34 @@ export default function AdminTopics() {
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
-    const chapterId = editItem ? Number(filterChapterId) : Number(modalChapterId);
-    if (!chapterId) { toast.error("অধ্যায় নির্বাচন করুন"); return; }
-
     if (editItem) {
+      if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+      const chapterId = Number(filterChapterId);
+      if (!chapterId) { toast.error("অধ্যায় নির্বাচন করুন"); return; }
       const { error } = await supabase.from("topics").update({ name: formName.trim() }).eq("id", editItem.id);
       if (error) { toast.error("আপডেট ব্যর্থ"); return; }
       toast.success("আপডেট হয়েছে");
+      setDialogOpen(false);
+      if (filterChapterId && Number(filterChapterId) === chapterId) {
+        setLoadingTopics(true);
+        supabase.from("topics").select("*").eq("chapter_id", chapterId).order("created_at", { ascending: false })
+          .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+      }
     } else {
-      const { error } = await supabase.from("topics").insert({ name: formName.trim(), chapter_id: chapterId });
+      const chapterId = Number(modalChapterId);
+      if (!chapterId) { toast.error("অধ্যায় নির্বাচন করুন"); return; }
+      const names = bulkNames.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (names.length === 0) { toast.error("অন্তত একটি টপিকের নাম লিখুন"); return; }
+      const rows = names.map((name) => ({ name, chapter_id: chapterId }));
+      const { error } = await supabase.from("topics").insert(rows);
       if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
-    }
-    setDialogOpen(false);
-    // Refresh topics if the chapter matches
-    if (filterChapterId && Number(filterChapterId) === chapterId) {
-      setLoadingTopics(true);
-      supabase.from("topics").select("*").eq("chapter_id", chapterId).order("created_at", { ascending: false })
-        .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+      toast.success(`${names.length} টি টপিক যোগ হয়েছে`);
+      setDialogOpen(false);
+      if (filterChapterId && Number(filterChapterId) === chapterId) {
+        setLoadingTopics(true);
+        supabase.from("topics").select("*").eq("chapter_id", chapterId).order("created_at", { ascending: false })
+          .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
+      }
     }
   };
 
@@ -300,7 +309,7 @@ export default function AdminTopics() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন"}</DialogTitle>
+            <DialogTitle>{editItem ? "সম্পাদনা" : "নতুন টপিক যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             {!editItem && (
@@ -338,15 +347,30 @@ export default function AdminTopics() {
                 </div>
               </>
             )}
-            <div>
-              <Label className="text-xs">টপিকের নাম *</Label>
-              <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
-            </div>
+            {editItem ? (
+              <div>
+                <Label className="text-xs">টপিকের নাম *</Label>
+                <Input placeholder="টপিকের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+              </div>
+            ) : (
+              <div>
+                <Label className="text-xs">টপিকের নাম (প্রতি লাইনে একটি)</Label>
+                <textarea
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background font-mono min-h-[180px]"
+                  placeholder={"টপিক ১\nটপিক ২\nটপিক ৩"}
+                  value={bulkNames}
+                  onChange={(e) => setBulkNames(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {bulkNames.split("\n").map((s) => s.trim()).filter(Boolean).length} টি এন্ট্রি
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
             <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">
-              {editItem ? "আপডেট" : "তৈরি করুন"}
+              {editItem ? "আপডেট" : "সব যোগ করুন"}
             </Button>
           </DialogFooter>
         </DialogContent>

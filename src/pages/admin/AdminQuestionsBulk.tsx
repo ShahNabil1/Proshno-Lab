@@ -11,14 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload,
 } from "@/lib/bulkQuestions";
-import ManualMultiAdd from "@/components/admin/bulk/ManualMultiAdd";
 import AIExtract from "@/components/admin/bulk/AIExtract";
+
+const CTX_KEY = "adminBulkContext.v1";
+const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
 
 const CHUNK = 50;
 
@@ -31,11 +33,12 @@ export default function AdminQuestionsBulk() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
-  const [classId, setClassId] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-  const [chapterId, setChapterId] = useState("");
-  const [topicId, setTopicId] = useState("");
-  const [type, setType] = useState<QType>("mcq");
+  const _init = readCtx();
+  const [classId, setClassId] = useState<string>(_init.classId || "");
+  const [subjectId, setSubjectId] = useState<string>(_init.subjectId || "");
+  const [chapterId, setChapterId] = useState<string>(_init.chapterId || "");
+  const [topicId, setTopicId] = useState<string>(_init.topicId || "");
+  const [type, setType] = useState<QType>((_init.type as QType) || "mcq");
 
   // Data
   const [parsed, setParsed] = useState<ParsedQuestion[]>([]);
@@ -45,26 +48,28 @@ export default function AdminQuestionsBulk() {
   const [progress, setProgress] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // Persist context
+  useEffect(() => {
+    localStorage.setItem(CTX_KEY, JSON.stringify({ classId, subjectId, chapterId, topicId, type }));
+  }, [classId, subjectId, chapterId, topicId, type]);
+
   useEffect(() => {
     supabase.from("classes").select("id, name").order("id").then(({ data }) => setClasses(data || []));
   }, []);
   useEffect(() => {
-    if (!classId) { setSubjects([]); setSubjectId(""); return; }
+    if (!classId) { setSubjects([]); return; }
     supabase.from("subjects").select("id, name").eq("class_id", Number(classId)).order("name")
       .then(({ data }) => setSubjects(data || []));
-    setSubjectId(""); setChapterId(""); setTopicId("");
   }, [classId]);
   useEffect(() => {
-    if (!subjectId) { setChapters([]); setChapterId(""); return; }
+    if (!subjectId) { setChapters([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
       .then(({ data }) => setChapters(data || []));
-    setChapterId(""); setTopicId("");
   }, [subjectId]);
   useEffect(() => {
-    if (!chapterId) { setTopics([]); setTopicId(""); return; }
+    if (!chapterId) { setTopics([]); return; }
     supabase.from("topics").select("id, name").eq("chapter_id", Number(chapterId)).order("name")
       .then(({ data }) => setTopics(data || []));
-    setTopicId("");
   }, [chapterId]);
 
   const contextValid = classId && subjectId && chapterId;
@@ -149,21 +154,21 @@ export default function AdminQuestionsBulk() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div>
               <Label>শ্রেণী *</Label>
-              <Select value={classId} onValueChange={setClassId}>
+              <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterId(""); setTopicId(""); }}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>বিষয় *</Label>
-              <Select value={subjectId} onValueChange={setSubjectId} disabled={!classId}>
+              <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterId(""); setTopicId(""); }} disabled={!classId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{subjects.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>অধ্যায় *</Label>
-              <Select value={chapterId} onValueChange={setChapterId} disabled={!subjectId}>
+              <Select value={chapterId} onValueChange={(v) => { setChapterId(v); setTopicId(""); }} disabled={!subjectId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
@@ -199,11 +204,10 @@ export default function AdminQuestionsBulk() {
             Input পদ্ধতি বাছাই করুন
           </h2>
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+            <TabsList className="grid grid-cols-3 w-full max-w-xl">
               <TabsTrigger value="excel" className="gap-2"><FileSpreadsheet className="w-4 h-4" /> Excel</TabsTrigger>
               <TabsTrigger value="paste" className="gap-2"><ClipboardPaste className="w-4 h-4" /> Paste</TabsTrigger>
               <TabsTrigger value="ai" className="gap-2"><Sparkles className="w-4 h-4" /> AI</TabsTrigger>
-              <TabsTrigger value="manual" className="gap-2"><Plus className="w-4 h-4" /> Manual</TabsTrigger>
             </TabsList>
 
             <TabsContent value="excel" className="pt-4 space-y-3">
@@ -245,13 +249,6 @@ export default function AdminQuestionsBulk() {
               )}
             </TabsContent>
 
-            <TabsContent value="manual" className="pt-4">
-              {contextValid ? (
-                <ManualMultiAdd type={type} onAdd={(q) => setParsed((p) => [...p, q])} />
-              ) : (
-                <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
-              )}
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
