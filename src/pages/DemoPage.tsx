@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, FileText, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Printer, Shuffle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
 
 const fadeUp = {
@@ -58,6 +60,12 @@ export default function DemoPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const [institution, setInstitution] = useState<string>("আপনার প্রতিষ্ঠানের নাম");
+  const [examTime, setExamTime] = useState<string>("৫৫");
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+
+
 
   // Fetch free chapters with class/subject info
   useEffect(() => {
@@ -149,9 +157,31 @@ export default function DemoPage() {
     });
   };
 
-  // Sort: MCQ → Short → CQ → Descriptive
+  // Sort: MCQ → Short → CQ → Descriptive, with optional shuffle within each type
   const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
-  const sortedQuestions = [...questions].sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
+  const sortedQuestions = useMemo(() => {
+    const base = [...questions];
+    if (shuffleSeed > 0) {
+      // deterministic-ish shuffle per seed
+      base.sort(() => Math.random() - 0.5);
+    }
+    return base.sort((a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5));
+  }, [questions, shuffleSeed]);
+
+  const handlePrint = () => {
+    if (selectedIds.size === 0) {
+      toast.error("প্রিন্ট করার আগে অন্তত একটি প্রশ্ন সিলেক্ট করুন");
+      return;
+    }
+    window.print();
+  };
+
+  const handleShuffle = () => {
+    if (questions.length === 0) return;
+    setShuffleSeed(s => s + 1);
+    toast.success("নতুন ক্রমে সাজানো হয়েছে");
+  };
+
 
   const selectedQuestions = sortedQuestions.filter(q => selectedIds.has(q.id));
   const mcqQuestions = selectedQuestions.filter(q => q.type === "mcq");
@@ -302,16 +332,49 @@ export default function DemoPage() {
             {/* PDF Preview */}
             <div className="lg:col-span-2">
               <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
-                <div className="bg-card rounded-2xl shadow-elevated p-1 border border-border sticky top-24">
-                  <div className="rounded-xl bg-white p-5" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+                <div className="bg-card rounded-2xl shadow-elevated p-1 border border-border sticky top-24 demo-preview-card">
+
+                  {/* Customization controls (hidden in print) */}
+                  <div className="no-print p-3 border-b border-border space-y-2">
+                    <Input
+                      value={institution}
+                      onChange={(e) => setInstitution(e.target.value)}
+                      placeholder="প্রতিষ্ঠানের নাম"
+                      className="h-9 text-sm"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={examTime}
+                        onChange={(e) => setExamTime(e.target.value)}
+                        placeholder="সময় (মিনিট)"
+                        className="h-9 text-sm flex-1"
+                      />
+                      <Button size="sm" variant="outline" className="h-9" onClick={handleShuffle} disabled={questions.length === 0} title="নতুন ক্রম">
+                        <Shuffle className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-9" onClick={() => setShowAnswers(v => !v)} disabled={questions.length === 0} title={showAnswers ? "উত্তর লুকান" : "উত্তর দেখুন"}>
+                        {showAnswers ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    <Button
+                      className="w-full gradient-green text-white border-0 rounded-lg font-heading font-semibold h-9"
+                      onClick={handlePrint}
+                      disabled={selectedIds.size === 0}
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      প্রিন্ট / PDF ডাউনলোড
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl bg-white p-5 demo-print-area" style={{ fontFamily: "'SolaimanLipi', sans-serif", color: "#000" }}>
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border no-print">
                       <FileText className="w-5 h-5 text-primary" />
                       <span className="font-heading font-semibold text-sm text-foreground">প্রশ্নপত্র প্রিভিউ</span>
                     </div>
 
                     {/* Paper header */}
                     <div className="text-center mb-3">
-                      <p className="font-bold text-sm" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>আপনার প্রতিষ্ঠানের নাম</p>
+                      <p className="font-bold text-base" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>{institution || "আপনার প্রতিষ্ঠানের নাম"}</p>
                       {selectedChapter && (
                         <p className="text-xs text-muted-foreground">
                           {selectedChapter.class_name} — {selectedChapter.subject_name}
@@ -322,11 +385,13 @@ export default function DemoPage() {
                       )}
                       {selectedIds.size > 0 && (
                         <div className="flex justify-between text-[10px] text-muted-foreground mt-2 border-t border-b border-black/20 py-1 font-semibold">
-                          <span>সময়— ৫৫ মিনিট</span>
+                          <span>সময়— {examTime || "৫৫"} মিনিট</span>
                           <span>পূর্ণমান— {toBanglaNum(totalMarks)}</span>
                         </div>
                       )}
                     </div>
+
+
 
                     {selectedIds.size === 0 ? (
                       <p className="text-center text-muted-foreground text-sm py-8">প্রশ্ন সিলেক্ট করুন</p>
@@ -348,13 +413,16 @@ export default function DemoPage() {
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 8px", fontSize: "10px", lineHeight: 1.3 }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
+                                        const letter = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const isCorrect = showAnswers && q.correct_answer && q.correct_answer.trim().toLowerCase() === ["a","b","c","d"][oi];
                                         return (
-                                          <span key={key}>
-                                            ({["ক", "খ", "গ", "ঘ"][oi]}) <LatexRenderer text={val} />
+                                          <span key={key} style={isCorrect ? { color: "#047857", fontWeight: 700 } : undefined}>
+                                            ({letter}) <LatexRenderer text={val} />{isCorrect ? " ✓" : ""}
                                           </span>
                                         );
                                       })}
                                     </div>
+
                                   </div>
                                 </div>
                               </div>
