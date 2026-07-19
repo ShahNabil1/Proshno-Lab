@@ -97,6 +97,10 @@ export default function CheckoutPage() {
       toast.error("সকল তথ্য পূরণ করুন");
       return;
     }
+    if (!isValidBdPhone(phone)) {
+      toast.error(BD_PHONE_ERROR);
+      return;
+    }
     if (!paymentMethod) {
       toast.error("পেমেন্ট মেথড সিলেক্ট করুন");
       return;
