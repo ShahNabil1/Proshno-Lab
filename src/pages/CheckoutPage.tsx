@@ -252,8 +252,10 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-2 gap-3">
             <Input
               placeholder="মোবাইল নাম্বার দিন"
+              type="tel"
+              inputMode="numeric"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(normalizeBdPhone(e.target.value))}
               className="bg-muted/30" />
 
             <Input
