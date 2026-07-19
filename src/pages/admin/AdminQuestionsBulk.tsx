@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
@@ -51,6 +51,10 @@ export default function AdminQuestionsBulk() {
   type FailedChunk = { id: string; payloads: any[]; rows: number[]; error: string };
   const [failedChunks, setFailedChunks] = useState<FailedChunk[]>([]);
   const [insertedCount, setInsertedCount] = useState(0);
+  // Progress detail + cancellation
+  const [chunkProg, setChunkProg] = useState({ done: 0, total: 0, rowsDone: 0, rowsTotal: 0 });
+  const cancelRef = useRef(false);
+  const [cancelled, setCancelled] = useState(false);
 
   // Persist context
   useEffect(() => {
@@ -110,8 +114,17 @@ export default function AdminQuestionsBulk() {
     const nextFailed: FailedChunk[] = [];
     let done = 0;
     let ok = 0;
+    let rowsDone = 0;
     const total = chunks.reduce((s, c) => s + c.payloads.length, 0);
-    for (const ch of chunks) {
+    setChunkProg({ done: 0, total: chunks.length, rowsDone: 0, rowsTotal: total });
+    const remaining: FailedChunk[] = [];
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const ch = chunks[idx];
+      if (cancelRef.current) {
+        // Preserve untried chunks so user can resume via retry
+        remaining.push(...chunks.slice(idx));
+        break;
+      }
       const { error } = await supabase.from("questions").insert(ch.payloads as any);
       if (error) {
         console.error("Chunk failed", ch.rows, error);
@@ -119,10 +132,12 @@ export default function AdminQuestionsBulk() {
       } else {
         ok += ch.payloads.length;
       }
-      done += ch.payloads.length;
-      setProgress(Math.round((done / total) * 100));
+      done += 1;
+      rowsDone += ch.payloads.length;
+      setProgress(Math.round((rowsDone / total) * 100));
+      setChunkProg({ done, total: chunks.length, rowsDone, rowsTotal: total });
     }
-    return { ok, nextFailed };
+    return { ok, nextFailed: [...nextFailed, ...remaining], cancelled: cancelRef.current };
   };
 
   const doSave = async () => {
@@ -131,6 +146,8 @@ export default function AdminQuestionsBulk() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
 
+    cancelRef.current = false;
+    setCancelled(false);
     setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
     const stimulusGroup = type === "mcq" && valid.some((q) => q.stimulus) ? null : null;
 
@@ -152,14 +169,17 @@ export default function AdminQuestionsBulk() {
       });
     }
 
-    const { ok, nextFailed } = await runInsertChunks(chunks);
+    const { ok, nextFailed, cancelled: wasCancelled } = await runInsertChunks(chunks);
     setSaving(false);
     setInsertedCount(ok);
     setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
     setConfirmOpen(false);
 
-    if (nextFailed.length === 0) {
+    if (wasCancelled) {
+      const pending = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
+      toast.warning(`বাতিল করা হয়েছে — ${ok} সফল, ${pending} বাকি (Retry দিয়ে আবার শুরু করুন)`);
+    } else if (nextFailed.length === 0) {
       toast.success(`${ok} টি প্রশ্ন সফলভাবে যোগ হয়েছে!`);
       setParsed([]); setPasteText("");
     } else {
@@ -170,19 +190,30 @@ export default function AdminQuestionsBulk() {
 
   const retryFailed = async () => {
     if (failedChunks.length === 0) return;
+    cancelRef.current = false;
+    setCancelled(false);
     setSaving(true); setProgress(0);
-    const { ok, nextFailed } = await runInsertChunks(failedChunks);
+    const { ok, nextFailed, cancelled: wasCancelled } = await runInsertChunks(failedChunks);
     setSaving(false);
     setInsertedCount((n) => n + ok);
     setFailedChunks(nextFailed);
     qc.invalidateQueries({ queryKey: ["admin-questions"] });
-    if (nextFailed.length === 0) {
+    if (wasCancelled) {
+      toast.warning(`Retry বাতিল — ${ok} সফল`);
+    } else if (nextFailed.length === 0) {
       toast.success(`বাকি ${ok} টি প্রশ্নও সফলভাবে যোগ হয়েছে!`);
       setParsed([]); setPasteText("");
     } else {
       const failedCount = nextFailed.reduce((s, c) => s + c.payloads.length, 0);
       toast.error(`আবারো ${failedCount} ব্যর্থ — ${ok} সফল`);
     }
+  };
+
+  const cancelSave = () => {
+    if (!saving) return;
+    cancelRef.current = true;
+    setCancelled(true);
+    toast.info("বর্তমান chunk শেষে থামবে...");
   };
 
   const skipFailedChunk = (id: string) => {
@@ -365,7 +396,34 @@ export default function AdminQuestionsBulk() {
               ))}
             </div>
 
-            {saving && <Progress value={progress} className="h-2" />}
+            {saving && (
+              <div className="rounded-lg border bg-emerald-50/60 border-emerald-200 p-4 space-y-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-sm">
+                    <span className="font-semibold text-emerald-800">
+                      {cancelled ? "বাতিল হচ্ছে..." : "সেভ চলছে..."}
+                    </span>
+                    <span className="ml-2 text-muted-foreground">
+                      Chunk {chunkProg.done}/{chunkProg.total} • প্রশ্ন {chunkProg.rowsDone}/{chunkProg.rowsTotal}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-emerald-800 tabular-nums">{progress}%</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelSave}
+                      disabled={cancelled}
+                      className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 gap-1"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      {cancelled ? "থামছে..." : "বাতিল"}
+                    </Button>
+                  </div>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
 
             {failedChunks.length > 0 && (
               <div className="border border-red-300 bg-red-50/60 rounded-lg p-4 space-y-3">
