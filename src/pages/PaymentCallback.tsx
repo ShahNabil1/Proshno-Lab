@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Check, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import logoImg from "@/assets/logo.png";
 
 type Phase = "verifying" | "success" | "failed" | "cancelled";
@@ -13,6 +14,7 @@ export default function PaymentCallback() {
   const [phase, setPhase] = useState<Phase>("verifying");
   const [message, setMessage] = useState<string>("");
   const [trxId, setTrxId] = useState<string>("");
+  const [retrying, setRetrying] = useState(false);
 
   const paymentID = params.get("paymentID") || params.get("paymentId") || "";
   const status = (params.get("status") || "").toLowerCase();
@@ -27,11 +29,19 @@ export default function PaymentCallback() {
       if (status === "cancel" || status === "cancelled") {
         setPhase("cancelled");
         setMessage("আপনি পেমেন্ট বাতিল করেছেন");
+        await supabase.from("bkash_payments")
+          .update({ status: "cancelled" })
+          .eq("payment_id", paymentID)
+          .eq("status", "initiated");
         return;
       }
       if (status === "failure" || status === "failed") {
         setPhase("failed");
         setMessage("বিকাশ থেকে পেমেন্ট ব্যর্থ হয়েছে");
+        await supabase.from("bkash_payments")
+          .update({ status: "failed", error_message: "bKash returned failure" })
+          .eq("payment_id", paymentID)
+          .eq("status", "initiated");
         return;
       }
 
@@ -55,6 +65,45 @@ export default function PaymentCallback() {
       }
     })();
   }, [paymentID, status, navigate]);
+
+  const handleRetry = async () => {
+    if (!paymentID) {
+      navigate("/pricing");
+      return;
+    }
+    setRetrying(true);
+    try {
+      // Fetch original payment context
+      const { data: row, error: rowErr } = await supabase
+        .from("bkash_payments")
+        .select("selected_packages, coupon_code, payer_reference, institute_name, teacher_name")
+        .eq("payment_id", paymentID)
+        .maybeSingle();
+
+      if (rowErr || !row || !Array.isArray(row.selected_packages) || row.selected_packages.length === 0) {
+        toast.error("পূর্বের অর্ডার পাওয়া যায়নি — প্যাকেজ পেইজ থেকে আবার শুরু করুন");
+        navigate("/pricing");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
+        body: {
+          selected_packages: row.selected_packages,
+          coupon_code: row.coupon_code || undefined,
+          phone: row.payer_reference,
+          institute_name: row.institute_name || undefined,
+          teacher_name: row.teacher_name || undefined,
+          callback_origin: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      if (!data?.bkashURL) throw new Error(data?.error || "bKash URL পাওয়া যায়নি");
+      window.location.href = data.bkashURL;
+    } catch (e: any) {
+      toast.error(e?.message || "পুনরায় চেষ্টা ব্যর্থ");
+      setRetrying(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -94,7 +143,9 @@ export default function PaymentCallback() {
             </h2>
             <p className="text-sm text-muted-foreground mb-6">{message}</p>
             <div className="flex gap-2 justify-center">
-              <Link to="/pricing"><Button variant="outline">আবার চেষ্টা করুন</Button></Link>
+              <Button variant="outline" onClick={handleRetry} disabled={retrying}>
+                {retrying ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> শুরু হচ্ছে…</> : "আবার চেষ্টা করুন"}
+              </Button>
               <Link to="/dashboard"><Button className="gradient-green text-white border-0">ড্যাশবোর্ড</Button></Link>
             </div>
           </>
