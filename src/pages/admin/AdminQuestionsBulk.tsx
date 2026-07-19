@@ -367,6 +367,45 @@ export default function AdminQuestionsBulk() {
 
             {saving && <Progress value={progress} className="h-2" />}
 
+            {failedChunks.length > 0 && (
+              <div className="border border-red-300 bg-red-50/60 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="font-semibold">
+                      {failedChunks.reduce((s, c) => s + c.payloads.length, 0)} টি প্রশ্ন সেভ হয়নি ({failedChunks.length} chunk)
+                    </span>
+                    {insertedCount > 0 && (
+                      <span className="text-xs text-emerald-700">• {insertedCount} সফল</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setFailedChunks([])} disabled={saving}>
+                      বাদ দিন
+                    </Button>
+                    <Button size="sm" onClick={retryFailed} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                      {saving ? `Retrying... ${progress}%` : "ব্যর্থগুলো Retry করুন"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {failedChunks.map((c) => (
+                    <div key={c.id} className="flex items-start justify-between gap-3 bg-white border border-red-200 rounded p-2 text-xs">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-red-700">
+                          Rows #{c.rows[0]}–#{c.rows[c.rows.length - 1]} ({c.payloads.length} টি)
+                        </div>
+                        <div className="text-muted-foreground break-words line-clamp-2">{c.error}</div>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => skipFailedChunk(c.id)} disabled={saving}>
+                        Skip
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button
                 onClick={() => setConfirmOpen(true)}
