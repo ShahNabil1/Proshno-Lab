@@ -182,7 +182,7 @@ export default function Index() {
 
 
       {/* ══════ WIZARD PREVIEW (3-step demo, matches /dashboard/create) ══════ */}
-      <section className="py-16 md:py-24 bg-background relative -mt-10 z-10">
+      <section className="py-12 md:py-16 bg-background relative -mt-6 z-10">
         <div className="container max-w-5xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
@@ -398,23 +398,28 @@ export default function Index() {
         </div>
       </section>
 
-       <section className="py-16 md:py-24 bg-background">
+      {/* ══════ REVIEWS ══════ */}
+      <section className="py-10 md:py-14 bg-background border-t border-border/50">
         <div className="container">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 whitespace-nowrap">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
-            <p className="text-muted-foreground text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
+              <Users className="w-3.5 h-3.5" />
+              ব্যবহারকারীদের মতামত
+            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
+            <p className="text-muted-foreground text-base md:text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
             {reviews.map((t, i) =>
             <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="bg-card rounded-2xl p-7 shadow-premium hover-lift h-full flex flex-col">
-                  <div className="flex items-center gap-0.5 mb-4">
+                <div className="bg-card rounded-2xl p-6 shadow-premium hover-lift h-full flex flex-col border border-border/60">
+                  <div className="flex items-center gap-0.5 mb-3">
                     {Array.from({ length: 5 }).map((_, j) =>
                   <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
                   )}
                   </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">"{t.text}"</p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-border">
+                  <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">"{t.text}"</p>
+                  <div className="flex items-center gap-3 pt-3 border-t border-border">
                     {t.image_url ?
                   <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" /> :
 
@@ -431,24 +436,28 @@ export default function Index() {
               </motion.div>
             )}
           </div>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-10">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-8">
             <ReviewModal onSuccess={fetchReviews} />
           </motion.div>
         </div>
       </section>
 
       {/* ══════ FAQ ══════ */}
-      <section className="py-16 md:py-24 bg-slate-alt">
+      <section className="py-10 md:py-14 bg-slate-alt">
         <div className="container max-w-3xl">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-14">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy/10 text-navy text-xs font-semibold mb-4">
+              <ChevronDown className="w-3.5 h-3.5" />
+              সাধারণ জিজ্ঞাসা
+            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
           </motion.div>
-          <div className="space-y-0">
+          <div className="bg-card rounded-2xl border border-border/60 shadow-premium overflow-hidden">
             {faqs.map((faq, i) =>
-            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className={i !== faqs.length - 1 ? "border-b border-border" : ""}>
                 <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full text-left py-5 border-b border-border flex items-center justify-between gap-4 group">
+                className="w-full text-left py-4 px-5 flex items-center justify-between gap-4 group hover:bg-muted/30 transition-colors">
 
                   <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
                   <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
@@ -463,7 +472,7 @@ export default function Index() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden">
 
-                      <p className="text-muted-foreground text-sm pb-5 leading-relaxed">{faq.answer}</p>
+                      <p className="text-muted-foreground text-sm pb-4 px-5 leading-relaxed">{faq.answer}</p>
                     </motion.div>
                 }
                 </AnimatePresence>
