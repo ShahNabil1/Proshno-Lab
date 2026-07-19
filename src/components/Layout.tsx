@@ -170,7 +170,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
         </AnimatePresence>
       </header>
 
-      <main className="flex-1 pt-16 lg:pt-[76px]">{children}</main>
+      <main className="flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="gradient-hero text-white">
