@@ -211,23 +211,49 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন যোগ করুন"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editItem ? "সম্পাদনা" : "নতুন যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
-            {table === "subjects" && (
-              <Input placeholder="বিষয় কোড (যেমন: ১৭৮)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
-            )}
             {parentKey && parents.length > 0 && (
-              <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
-                value={formParentId} onChange={(e) => setFormParentId(e.target.value)}>
-                <option value="">{parentLabel} নির্বাচন করুন</option>
-                {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+              <div>
+                <Label className="text-xs">{parentLabel} *</Label>
+                <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background"
+                  value={formParentId} onChange={(e) => setFormParentId(e.target.value)}>
+                  <option value="">{parentLabel} নির্বাচন করুন</option>
+                  {parents.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            )}
+            {editItem ? (
+              <>
+                <Input placeholder="নাম" value={formName} onChange={(e) => setFormName(e.target.value)} />
+                {table === "subjects" && (
+                  <Input placeholder="বিষয় কোড (যেমন: ১৭৮)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs">নাম (প্রতি লাইনে একটি)</Label>
+                  <Textarea
+                    placeholder={"অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"}
+                    value={bulkNames}
+                    onChange={(e) => setBulkNames(e.target.value)}
+                    rows={8}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bulkNames.split("\n").map((s) => s.trim()).filter(Boolean).length} টি এন্ট্রি
+                  </p>
+                </div>
+                {table === "subjects" && (
+                  <Input placeholder="বিষয় কোড (সবার জন্য একই, ঐচ্ছিক)" value={formSubjectCode} onChange={(e) => setFormSubjectCode(e.target.value)} />
+                )}
+              </>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button onClick={handleSave}>{editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
