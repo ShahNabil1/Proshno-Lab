@@ -163,9 +163,12 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
           <Input
             placeholder="কুপন কোড (যদি থাকে)"
             value={coupon}
-            onChange={(e) => { setCoupon(e.target.value); setCouponApplied(false); setDiscount(0); }}
-            className="flex-1 bg-muted/30"
+            onChange={(e) => { setCoupon(sanitizeCoupon(e.target.value)); setCouponApplied(false); setDiscount(0); }}
+            className="flex-1 bg-muted/30 uppercase tracking-wider"
             disabled={couponApplied}
+            maxLength={32}
+            autoComplete="off"
+            spellCheck={false}
           />
           {couponApplied ? (
             <Button variant="outline" className="font-heading text-destructive" onClick={() => { setCoupon(""); setCouponApplied(false); setDiscount(0); }}>সরান</Button>
