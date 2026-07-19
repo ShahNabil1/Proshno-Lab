@@ -1,115 +1,157 @@
-## লক্ষ্য
+# Telegram Bot ইন্টিগ্রেশন প্ল্যান (Proshno Lab)
 
-`purchase_requests` + admin approval + manual "Send Money → trxID" ফ্লো সম্পূর্ণ বাদ। বদলে **bKash Tokenized Checkout (PGW)** — user "এখনই কিনুন" চাপলে bKash-এর hosted page-এ গিয়ে PIN দিয়ে পেমেন্ট করবে, callback URL-এ ফিরে এলে আমাদের edge function **Execute Payment** কল করে bKash-এর sync response দেখে সঙ্গে সঙ্গে subscription + permissions activate করবে। কোনো webhook লাগবে না — Execute Payment-এর response-ই final confirmation।
+> এইটা শুধু গাইড ও প্ল্যান — কোনো কোড এখনই লেখা হবে না। আপনি "বিল্ড করো" বললে তখন কানেক্টর enable + সব কোড বসানো হবে।
 
 ---
 
-## bKash Tokenized Checkout ফ্লো (ডকুমেন্টেশন অনুযায়ী)
+## ১. Vite + Supabase-এ কোন অ্যাপ্রোচ সঠিক?
 
-```text
-Client                        Our Edge Fn                       bKash Sandbox
-  │  "এখনই কিনুন" ক্লিক  →      │
-  │                              │  POST /token/grant  →           │  id_token (3600s)
-  │                              │  POST /tokenized/checkout/create│  paymentID + bkashURL
-  │  ← paymentID + bkashURL     │                                  │
-  │──── redirect → bkashURL ───────────────────────────────────────►│
-  │                              │        (user PIN → OTP)          │
-  │◄──── redirect back: /payment/callback?paymentID=…&status=success│
-  │  → POST /bkash-execute {paymentID}                              │
-  │                              │  POST /tokenized/checkout/execute│  trxID + transactionStatus=Completed
-  │                              │  ✔ create subscriptions/perms   │
-  │  ← success                  │                                  │
+আপনার প্রজেক্ট Vite (client-side React) — এখানে সরাসরি ব্রাউজার থেকে Telegram API কল করা **যাবে না**, কারণ:
+
+- Bot token/connector key ব্রাউজারে expose করা মানে যেকেউ chat_id বদলে spam পাঠাবে।
+- CORS + rate-limit issue।
+
+**সঠিক অ্যাপ্রোচ (recommended):**
+
+
+| Layer                      | কাজ                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| Vite frontend              | শুধু form submit → `supabase.functions.invoke("notify-telegram", { body })`         |
+| Supabase Edge Function     | Server-side এ Lovable Telegram **Connector Gateway**-এ call করে notification পাঠায় |
+| Lovable Telegram Connector | Bot token/auth automatic manage করে, token কখনো code-এ আসে না                       |
+
+
+**অর্থাৎ — Lovable Telegram Connector + Supabase Edge Function দুইটাই লাগবে**, একটার বদলে আরেকটা না। Connector = auth layer, Edge function = আপনার business logic + trigger point। Vite নিজে থেকে connector কল করতে পারে না।
+
+---
+
+## ২. Feature Scope — এখন কী বানাবো
+
+### (ক) Onboarding নোটিফিকেশন
+
+`OnboardingModal` সফলভাবে institute insert করার পর edge function কল হবে। Admin এর Telegram-এ একটা formatted message যাবে:
+
+```
+🎉 নতুন রেজিস্ট্রেশন — Proshno Lab
+
+👤 শিক্ষক: {name}
+📧 ইমেইল: {email}
+📱 ফোন: {phone}
+🏫 প্রতিষ্ঠান: {institute_name}
+📍 ঠিকানা: {division} > {district} > {upazila}
+🏠 নির্দিষ্ট: {specific_address}
+🕐 সময়: {timestamp — Asia/Dhaka locale, বাংলা}
+🔗 Admin panel: proshnolab.com/admin/teachers
 ```
 
-সব credential (`BKASH_APP_KEY`, `BKASH_APP_SECRET`, `BKASH_USERNAME`, `BKASH_PASSWORD`, `BKASH_BASE_URL`) Supabase secret-এ থাকবে। এখন sandbox value (`https://tokenized.sandbox.bka.sh/v1.2.0-beta`) দিয়ে টেস্ট, পরে শুধু secret আপডেট করলেই live হবে।
+### (খ) আরও যেসব জায়গায় Telegram Bot ব্যবহার করা যায় (সুপারিশ)
+
+
+| #   | ইভেন্ট                                | Trigger                                | কেন গুরুত্বপূর্ণ                                                   |
+| --- | ------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| 1   | নতুন bKash পেমেন্ট সফল                | `bkash-execute-payment` success branch | রেভিনিউ রিয়েল-টাইম alert                                          |
+| 2   | পেমেন্ট failed/cancelled              | payment reconcile                      | কোন ইউজার আটকে আছে তা জানা                                         |
+| 3   | Coupon apply                          | checkout success                       | কোন coupon কতবার হিট হচ্ছে                                         |
+| 4   | নতুন Feedback/Contact/Question Report | insert trigger                         | সাপোর্ট দ্রুত response                                             |
+| 5   | নতুন Review submit                    | admin approve pending                  | moderate করতে                                                      |
+| 6   | Bulk question upload finished         | AdminQuestionsBulk শেষে                | কতটা success/failed                                                |
+| 7   | Subscription expire হচ্ছে ৩ দিনে      | scheduled cron edge function           | renewal reminder                                                   |
+| 8   | Daily summary (রাত ১১টা)              | pg_cron → edge function                | আজকের registration/revenue/questions count                         |
+| 9   | System error alert                    | edge function catch block              | production issue immediately জানা                                  |
+| 10  | ২-way Bot commands (advanced)         | Telegram webhook → edge function       | `/stats`, `/pending`, `/user <email>` — Telegram থেকেই admin query |
+
+
+প্রথমে (ক) + (খ)-এর 1, 2, 4, 8 বানানো ideal — বাকিগুলো পরে যোগ করা যাবে।
 
 ---
 
-## Database changes (single migration)
+## ৩. Setup Sequence — যখন "বিল্ড করো" বলবেন
 
-1. নতুন টেবিল `public.bkash_payments`:
-  - `id bigserial pk`, `user_id uuid`, `payment_id text unique` (bKash-এর paymentID), `merchant_invoice_number text unique`, `trx_id text`, `amount numeric`, `discount numeric`, `coupon_code text`, `selected_packages jsonb`, `payer_reference text`, `status text` (`initiated|completed|failed|cancelled`), `bkash_response jsonb`, `created_at`, `updated_at`
-  - GRANTS: `authenticated` SELECT own, `service_role` ALL
-  - RLS: user নিজের row দেখতে পাবে; insert/update শুধু edge function (service role)
-2. `subscriptions`-এ optional `bkash_payment_id bigint` FK যোগ (audit trail-এর জন্য)।
-3. `purchase_requests` টেবিল **রাখা হবে read-only archive হিসেবে** (পুরনো ডাটা যাতে অ্যাডমিন দেখতে পারে); নতুন কোনো row আর যাবে না। Admin sidebar থেকে "Purchase Requests" মেনু সরিয়ে "Payment History" (নতুন `bkash_payments` view) দেয়া হবে।
+**Step 1 — BotFather-এ Bot বানানো (আপনি করবেন):**
 
----
+1. Telegram-এ `@BotFather` খুলুন → `/newbot`
+2. নাম দিন: `Proshno Lab Notifier` (বা যা পছন্দ)
+3. Username দিন: `proshnolab_bot` (available হতে হবে, `_bot` দিয়ে শেষ)
+4. Bot token পাবেন (এটা copy করে রাখবেন কিন্তু কোথাও paste করতে হবে না — Lovable connector নিজে চাইবে)
 
-## Edge Functions (নতুন)
+**Step 2 — Admin/Group chat_id বের করা:**
 
-সব ফাংশন `verify_jwt=false`, ভেতরে auth check + Zod validation + CORS।
+- Personal notification হলে: `@userinfobot` কে message পাঠালে আপনার `chat_id` দিবে
+- Group notification হলে: bot-কে group-এ add করুন → group-এ যেকোনো message পাঠান → `@RawDataBot` দিয়ে group chat_id বের করুন (negative number, যেমন `-1001234567890`)
+- এই chat_id গুলো Supabase secret-এ রাখব: `TELEGRAM_ADMIN_CHAT_ID` (comma-separated multi-recipient support)
 
-### 1. `bkash-create-payment`
+**Step 3 — Lovable Telegram Connector enable (আমি করব):**
 
-- Input: `{ selected_packages, coupon_code?, phone, institute_name }`
-- Validate user session (`getUser(jwt)`), coupon, packages → compute `amount`।
-- Grant/refresh cached bKash token (in-memory + `app_settings` fallback with 55-min expiry)।
-- Generate unique `merchantInvoiceNumber` (e.g. `PL-<userId8>-<timestamp>`)।
-- `POST /tokenized/checkout/create` with `mode:"0011"`, `payerReference:phone`, `callbackURL: https://<app>/payment/callback`, `amount`, `currency:"BDT"`, `intent:"sale"`।
-- Insert `bkash_payments` row `status='initiated'` + full request context।
-- Return `{ paymentID, bkashURL }` — frontend `window.location.href = bkashURL` করবে।
+- `standard_connectors--connect` দিয়ে `telegram` connector link — আপনাকে UI popup-এ bot token paste করতে হবে একবার
+- Enable-এর পর `TELEGRAM_API_KEY` + `LOVABLE_API_KEY` automatic edge function-এ available হবে
 
-### 2. `bkash-execute-payment`
+**Step 4 — Edge Function `notify-telegram` বানানো:**
 
-- Input: `{ paymentID }`
-- Look up `bkash_payments` row (must belong to caller)।
-- `POST /tokenized/checkout/execute`।
-- If `transactionStatus === "Completed"` এবং amount match:
-  - Row update: `status='completed'`, `trx_id`, `bkash_response`
-  - Loop over `selected_packages`: insert `subscriptions` (1 year) + `user_permissions` (সকল বিষয় হলে সব subject expand) — বর্তমান `AdminPurchases.handleAction` logic-টাই reuse করা হবে (helper-এ বের করে)।
-  - Increment coupon usage।
-- Else: row `status='failed'`, return error।
-- Idempotent — একই paymentID আবার এলে subscription duplicate হবে না।
+- Reusable function যেটা `{ event_type, title, fields[], link? }` accept করে
+- Lovable gateway (`https://connector-gateway.lovable.dev/telegram/sendMessage`) কল করে HTML formatted message পাঠায়
+- Error surfacing (provider error → JSON return, silent fail না)
+- CORS + Zod validation
 
-### 3. `bkash-query-payment` (safety net)
+**Step 5 — Trigger points integrate:**
 
-- Callback query-string যদি অপ্রত্যাশিতভাবে হারিয়ে যায় বা user browser বন্ধ করে দেয়, admin/user later "যাচাই করুন" চাপলে `POST /tokenized/checkout/payment/status` দিয়ে reconcile করবে।
+- `OnboardingModal.tsx` — insert success এর পর invoke
+- `bkash-execute-payment/index.ts` — success/fail branch-এ invoke
+- (optional এই phase-এ) feedback/report insert-এর জায়গায়
+- Silent-fail: Telegram fail করলেও user experience break হবে না
 
-পুরনো `submit-purchase` edge function delete করা হবে।
+**Step 6 — Daily summary (optional, later):**
 
----
+- `pg_cron` extension enable
+- `daily-summary` edge function schedule (রাত ১১টা Asia/Dhaka)
+- আজকের count query করে Telegram-এ পাঠায়
 
-## Frontend changes
+**Step 7 — 2-way commands (optional, much later):**
 
-### `InlineCheckout.tsx` + `CheckoutPage.tsx`
-
-- "সেন্ড মানি নাম্বার", "কোনটাতে সেন্ড করেছেন?", "যে নাম্বার থেকে টাকা পাঠিয়েছেন" — সব সরানো।
-- Payment section replaced with single **"বিকাশে পেমেন্ট করুন"** বাটন (bKash logo + branded pink)।
-- Click → `supabase.functions.invoke('bkash-create-payment', { body })` → পেলে `window.location.href = bkashURL`।
-- WhatsApp fallback UI থাকবে।
-
-### নতুন page: `src/pages/PaymentCallback.tsx` (route `/payment/callback`)
-
-- Query params পড়ে (`paymentID`, `status`)।
-- `status !== 'success'` হলে failure UI ("বাতিল/ব্যর্থ") + retry link।
-- Success হলে loading spinner সহ `bkash-execute-payment` কল → success হলে `/dashboard/subscription`-এ redirect + toast; fail হলে error UI + support contact।
-
-### `AdminPurchases.tsx` → `AdminPayments.tsx`
-
-- `bkash_payments` টেবিল read-only list (status badge, trxID, invoice, packages, amount, timestamp)।
-- Approve/Reject বাটন নেই — শুধু "যাচাই করুন" (calls `bkash-query-payment`) stuck initiated row-এর জন্য।
-- Route: `/admin/payments` (পুরনো `/admin/purchases` এখানে redirect)।
+- `telegram-webhook` edge function (verify_jwt=false, secret_token validation সহ Skill doc pattern অনুযায়ী)
+- `setWebhook` register
+- `/stats`, `/pending_payments`, `/find_user` etc. commands handle
 
 ---
 
-## Secrets to add (build phase)
+## ৪. Security & Reliability
 
-`BKASH_BASE_URL`, `BKASH_APP_KEY`, `BKASH_APP_SECRET`, `BKASH_USERNAME`, `BKASH_PASSWORD` — user-কে `add_secret` দিয়ে চাইবো, sandbox value বসাতে বলবো। পরে user নিজেই dashboard থেকে live value দিয়ে আপডেট করবে।
+- Bot token কখনো frontend/git-এ যাবে না — শুধু Lovable connector-এ থাকবে
+- Admin `chat_id` secret হিসেবে store (leak হলেও damage কম, তবু hardcode না)
+- Edge function-এ Zod validation — malicious payload block
+- Notification failure ≠ user action failure — try/catch দিয়ে silent log
+- Rate consideration: Telegram bot limit ~30 msg/sec — আমাদের scale-এ issue না
+- Webhook (Phase 2) হলে `X-Telegram-Bot-Api-Secret-Token` verify করা হবে (SHA-256 derived, Skill pattern অনুযায়ী)
 
 ---
 
-## Rollout order
+## ৫. Cost & Dependency
 
-1. Migration (bkash_payments + subs FK + grants/RLS)
-2. Secrets add (sandbox creds)
-3. Three edge functions (create/execute/query) + shared subscription-provisioning helper
-4. PaymentCallback page + route
-5. InlineCheckout/CheckoutPage refactor
-6. AdminPayments rewrite + sidebar/route update
-7. Delete `submit-purchase` function
-8. Sandbox end-to-end test (test wallet `01770618575` / OTP `123456` / PIN `12121`)
+- Telegram Bot API: **সম্পূর্ণ ফ্রি**, unlimited
+- Lovable Connector Gateway: ফ্রি (আপনার existing plan-এ included)
+- Supabase Edge Function invocations: বর্তমান quota-এর মধ্যে (নোটিফিকেশন = খুব হালকা load)
+- নতুন কোনো paid dependency নেই
 
-Live-এ যেতে হলে শুধু ৫টা secret আপডেট + `BKASH_BASE_URL` পরিবর্তন — কোড টাচ করা লাগবে না।  
-  
-callbackurl কী কোড/ফাংশনের ভিতরেই সেট হবে? যেহেতু আমাদের কাছে অফিসিয়াল বিকাশ এর কোনো ড্যাশবোরড নাই এইটা সেটাপ এর জন্য এইজন্য বললাম আর এ্যাডমিন প্যানেলে সাবস্ক্রিপশন পেইজ আপগ্রেড করো এই হিসেবে আর বিকাশের কোনটার কত পেমেন্ট ঢুকলো বিকাশ যেরকম সব ডিটেইলস দিবে সেই ডিটেইলস সহ এখন সাবস্ক্রিপশন পেইজে দেখাবে এ্যাডমিন প্যানেলে
+---
+
+## ৬. Deliverables Checklist (build phase)
+
+- Lovable Telegram Connector linked
+- Secrets: `TELEGRAM_ADMIN_CHAT_ID` set
+- Edge function: `supabase/functions/notify-telegram/index.ts`
+- `config.toml`-এ function entry
+- Deploy edge function
+- `OnboardingModal.tsx` — invoke after successful insert
+- `bkash-execute-payment` — invoke on success + fail
+- Test: dummy registration → real message আসে কিনা verify
+- Error scenario test: chat_id ভুল দিলে user flow break হয় না verify
+
+---
+
+## ৭. আপনার সিদ্ধান্ত দরকার (build শুরুর আগে)
+
+1. **Recipient:** personal chat নাকি group? (group হলে পরে multiple admin add করা সহজ) personal chat
+2. **Phase 1 scope:** শুধু onboarding? নাকি onboarding + payment success/fail একসাথে? প্রথমে (ক) + (খ)-এর 1, 2, 4, 8 বানানো 
+3. **Language:** message সব বাংলায় নাকি English mixed? বাংলা + ইংলিশ মিক্সড 
+4. **Daily summary** এখনই লাগবে নাকি পরে? এখনই দাও 
+
+এই ৪টার উত্তর দিয়ে "বিল্ড করো" বললে আমি step 3 থেকে শুরু করব।
