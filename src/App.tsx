@@ -29,7 +29,7 @@ import RefundPage from "./pages/RefundPage";
 // Dashboard
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardHome from "./pages/dashboard/DashboardHome";
-import QuestionCreate from "./pages/dashboard/QuestionCreate";
+import QuestionCreateHub from "./pages/dashboard/QuestionCreateHub";
 
 import MyQuestions from "./pages/dashboard/MyQuestions";
 import Packages from "./pages/dashboard/Packages";
@@ -95,7 +95,7 @@ const App = () => (
 
             {/* Dashboard */}
             <Route path="/dashboard" element={<DashboardLayout><DashboardHome /></DashboardLayout>} />
-            <Route path="/dashboard/create" element={<DashboardLayout><QuestionCreate /></DashboardLayout>} />
+            <Route path="/dashboard/create" element={<DashboardLayout><QuestionCreateHub /></DashboardLayout>} />
             
             <Route path="/dashboard/my-questions" element={<DashboardLayout><MyQuestions /></DashboardLayout>} />
             <Route path="/dashboard/packages" element={<DashboardLayout><Packages /></DashboardLayout>} />
