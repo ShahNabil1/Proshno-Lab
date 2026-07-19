@@ -19,6 +19,7 @@ import ShortPage from "./pages/ShortPage";
 
 import PricingPage from "./pages/PricingPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import PaymentCallback from "./pages/PaymentCallback";
 import DemoPage from "./pages/DemoPage";
 import NotFound from "./pages/NotFound";
 import TermsPage from "./pages/TermsPage";

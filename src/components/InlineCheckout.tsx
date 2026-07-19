@@ -4,19 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Check, ShoppingCart, X, Trash2 } from "lucide-react";
+import { Check, ShoppingCart, X, Trash2, Loader2 } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import logoImg from "@/assets/logo.png";
 import bkashLogo from "@/assets/bkash-logo.webp";
-import nagadLogo from "@/assets/nagad-logo.png";
-import rocketLogo from "@/assets/rocket-logo.png";
-import upayLogo from "@/assets/upay-logo.webp";
 import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
-const BKASH_NUMBER = "01933520904";
 const WHATSAPP_NUMBER = "8801340345787";
 
 export interface SelectedPackageItem {
@@ -38,7 +32,7 @@ function toBengaliDigits(n: number): string {
   return n.toLocaleString("en-IN").replace(/\d/g, (d) => bengaliDigits[parseInt(d)]);
 }
 
-export default function InlineCheckout({ selectedPackages, onRemove, onClearAll, onSuccess }: InlineCheckoutProps) {
+export default function InlineCheckout({ selectedPackages, onRemove, onClearAll }: InlineCheckoutProps) {
   const { user } = useAuth();
 
   const [name, setName] = useState("");
@@ -49,11 +43,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
   const [discount, setDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [transactionId, setTransactionId] = useState("");
-  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const totalPackagePrice = selectedPackages.reduce((sum, p) => sum + p.price, 0);
   const totalPrice = Math.max(0, totalPackagePrice - discount);
@@ -71,98 +61,39 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
     });
   }, [user]);
 
-  const copyNumber = () => {
-    navigator.clipboard.writeText(BKASH_NUMBER);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSubmit = async () => {
+  const handlePay = async () => {
+    if (!user) { toast.error("প্রথমে লগইন করুন"); return; }
     if (!name.trim() || !email.trim() || !phone.trim() || !institute.trim()) {
-      toast.error("সকল তথ্য পূরণ করুন");
-      return;
+      toast.error("সকল তথ্য পূরণ করুন"); return;
     }
-    if (!isValidBdPhone(phone)) {
-      toast.error(BD_PHONE_ERROR);
-      return;
-    }
-    if (!paymentMethod) {
-      toast.error("পেমেন্ট মেথড সিলেক্ট করুন");
-      return;
-    }
-    if (!transactionId.trim()) {
-      toast.error("যে নাম্বার থেকে টাকা পাঠিয়েছেন সেটি লিখুন");
-      return;
-    }
+    if (!isValidBdPhone(phone)) { toast.error(BD_PHONE_ERROR); return; }
 
     setSubmitting(true);
     try {
-      // Build summary strings
-      const classNames = [...new Set(selectedPackages.map(p => p.class_name))].join(", ");
-      const subjectNames = selectedPackages.map(p => `${p.class_name} - ${p.subject_name}`).join(", ");
-
-      const { data, error } = await supabase.functions.invoke("submit-purchase", {
+      const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
         body: {
-          logged_in_user_id: user?.id || null,
-          teacher_name: name.trim(),
-          teacher_email: email.trim(),
-          teacher_phone: phone.trim(),
+          selected_packages: selectedPackages.map(p => ({ id: p.id, class_name: p.class_name, subject_name: p.subject_name, price: p.price })),
+          coupon_code: couponApplied ? coupon.trim().toUpperCase() : undefined,
+          phone: phone.trim(),
           institute_name: institute.trim(),
-          package_name: subjectNames,
-          package_classes: classNames,
-          package_price: totalPackagePrice,
-          coupon_code: couponApplied ? coupon.trim().toUpperCase() : "",
-          discount,
-          total_price: totalPrice,
-          payment_method: paymentMethod,
-          transaction_id: transactionId.trim(),
-          selected_packages: selectedPackages.map(p => ({
-            id: p.id,
-            class_name: p.class_name,
-            subject_name: p.subject_name,
-            price: p.price,
-          })),
+          teacher_name: name.trim(),
+          callback_origin: window.location.origin,
         },
       });
-
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
-      setSubmitted(true);
-      toast.success("আপনার রিকুয়েস্ট সফলভাবে জমা হয়েছে!");
-      onSuccess?.();
+      if (!data?.bkashURL) throw new Error("bKash URL পাওয়া যায়নি");
+      window.location.href = data.bkashURL;
     } catch (err: any) {
       toast.error("সমস্যা হয়েছে: " + (err.message || "আবার চেষ্টা করুন"));
-    } finally {
       setSubmitting(false);
     }
   };
-
-  if (submitted) {
-    return (
-      <div className="bg-card rounded-2xl shadow-card p-10 text-center">
-        <Check className="w-16 h-16 text-primary mx-auto mb-4" />
-        <h2 className="font-heading text-2xl font-bold text-foreground mb-2">রিকুয়েস্ট জমা হয়েছে!</h2>
-        <p className="text-muted-foreground text-sm mb-6">
-          আপনার পেমেন্ট যাচাই করার পর প্যাকেজ সক্রিয় করা হবে। সাধারণত ১-২ ঘণ্টার মধ্যে প্রক্রিয়া সম্পন্ন হয়।
-        </p>
-        <div className="flex gap-3 justify-center">
-          <Link to="/pricing">
-            <Button variant="outline">মূল্য তালিকায় ফিরুন</Button>
-          </Link>
-          <Link to="/dashboard">
-            <Button className="gradient-green text-white border-0">ড্যাশবোর্ড</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   if (selectedPackages.length === 0) return null;
 
   return (
     <div className="space-y-0">
-      {/* Header */}
       <div className="bg-card rounded-t-2xl border border-b-0 p-6 text-center">
         <img src={logoImg} alt="Proshno Lab" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
         <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">
@@ -174,7 +105,6 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
         </div>
       </div>
 
-      {/* Selected packages list */}
       <div className="bg-card border border-b-0 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-heading text-lg font-bold">নির্বাচিত প্যাকেজসমূহ</h3>
@@ -201,38 +131,18 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
         </div>
       </div>
 
-      {/* Checkout Info */}
       <div className="bg-card border border-b-0 p-6">
         <h3 className="font-heading text-lg font-bold text-center mb-4">চেক আউট তথ্য</h3>
         <div className="border rounded-lg overflow-hidden text-sm">
-          <div className="flex justify-between px-4 py-2 border-b">
-            <span className="text-muted-foreground">সেবার ধরণ -</span>
-            <span>প্রশ্ন তৈরীর সফটওয়্যার</span>
-          </div>
-          <div className="flex justify-between px-4 py-2 border-b">
-            <span className="text-muted-foreground">প্যাকেজ সংখ্যা -</span>
-            <span>{toBengaliDigits(selectedPackages.length)} টি</span>
-          </div>
-          <div className="flex justify-between px-4 py-2 border-b">
-            <span className="text-muted-foreground">মেয়াদ -</span>
-            <span>১ বছর</span>
-          </div>
-          <div className="flex justify-between px-4 py-2 border-b">
-            <span className="text-muted-foreground">মূল্য -</span>
-            <span>{toBengaliDigits(totalPackagePrice)} টাকা</span>
-          </div>
-          <div className="flex justify-between px-4 py-2 border-b">
-            <span className="text-muted-foreground">ডিসকাউন্ট -</span>
-            <span>{toBengaliDigits(discount)} টাকা</span>
-          </div>
-          <div className="flex justify-between px-4 py-2 font-bold text-primary">
-            <span>সর্বমোট মূল্য -</span>
-            <span>{toBengaliDigits(totalPrice)} টাকা</span>
-          </div>
+          <div className="flex justify-between px-4 py-2 border-b"><span className="text-muted-foreground">সেবার ধরণ -</span><span>প্রশ্ন তৈরীর সফটওয়্যার</span></div>
+          <div className="flex justify-between px-4 py-2 border-b"><span className="text-muted-foreground">প্যাকেজ সংখ্যা -</span><span>{toBengaliDigits(selectedPackages.length)} টি</span></div>
+          <div className="flex justify-between px-4 py-2 border-b"><span className="text-muted-foreground">মেয়াদ -</span><span>১ বছর</span></div>
+          <div className="flex justify-between px-4 py-2 border-b"><span className="text-muted-foreground">মূল্য -</span><span>{toBengaliDigits(totalPackagePrice)} টাকা</span></div>
+          <div className="flex justify-between px-4 py-2 border-b"><span className="text-muted-foreground">ডিসকাউন্ট -</span><span>{toBengaliDigits(discount)} টাকা</span></div>
+          <div className="flex justify-between px-4 py-2 font-bold text-primary"><span>সর্বমোট মূল্য -</span><span>{toBengaliDigits(totalPrice)} টাকা</span></div>
         </div>
       </div>
 
-      {/* User Info Form */}
       <div className="bg-card border border-b-0 p-6 space-y-3">
         <Input placeholder="আপনার নাম ....." value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         <div className="grid grid-cols-2 gap-3">
@@ -240,32 +150,6 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
           <Input placeholder="জিমেইল দিন ..." type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-muted/30" readOnly={!!user} />
         </div>
         <Input placeholder="প্রতিষ্ঠানের নাম" value={institute} onChange={(e) => setInstitute(e.target.value)} className="bg-muted/30" />
-
-        {/* Send Money */}
-        <p className="text-sm text-muted-foreground pt-2">সেন্ড মানি করুন ...... বিকাশ/নগদ/রকেট/উপায়</p>
-        <div className="flex items-center rounded-lg overflow-hidden border border-primary/30 bg-primary/10">
-          <span className="flex-1 px-4 py-3 font-mono text-lg font-bold text-foreground select-all">{BKASH_NUMBER}</span>
-          <Button variant="ghost" className="h-full px-4 rounded-none bg-primary/20 hover:bg-primary/30 text-primary font-bold" onClick={copyNumber}>
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? "কপি হয়েছে" : "COPY"}
-          </Button>
-        </div>
-
-        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-          <SelectTrigger className="bg-muted/30">
-            <SelectValue placeholder="কোনটাতে সেন্ড করেছেন?" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="bkash"><span className="flex items-center gap-2"><img src={bkashLogo} alt="bKash" className="h-4 object-contain" /> বিকাশ</span></SelectItem>
-            <SelectItem value="nagad"><span className="flex items-center gap-2"><img src={nagadLogo} alt="Nagad" className="h-4 object-contain" /> নগদ</span></SelectItem>
-            <SelectItem value="rocket"><span className="flex items-center gap-2"><img src={rocketLogo} alt="Rocket" className="h-4 object-contain" /> রকেট</span></SelectItem>
-            <SelectItem value="upay"><span className="flex items-center gap-2"><img src={upayLogo} alt="Upay" className="h-4 object-contain" /> উপায়</span></SelectItem>
-          </SelectContent>
-        </Select>
-
-        {paymentMethod && (
-          <Input placeholder="যে নাম্বার থেকে টাকা পাঠিয়েছেন সেটি লিখুন" value={transactionId} onChange={(e) => setTransactionId(e.target.value)} className="bg-muted/30" />
-        )}
 
         {/* Coupon */}
         <div className="flex gap-2">
@@ -292,9 +176,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
                 if (c.discount_type === "percentage") {
                   disc = Math.round(totalPackagePrice * c.discount_value / 100);
                   if (c.max_discount && disc > c.max_discount) disc = c.max_discount;
-                } else {
-                  disc = c.discount_value;
-                }
+                } else { disc = c.discount_value; }
                 disc = Math.min(disc, totalPackagePrice);
                 setDiscount(disc);
                 setCouponApplied(true);
@@ -314,10 +196,23 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll,
           <Link to="/refund" className="text-primary hover:underline">Refund Policy</Link>.
         </p>
 
-        <Button className="w-full gradient-green text-white border-0 font-heading text-lg h-12 rounded-xl" onClick={handleSubmit} disabled={submitting}>
-          <ShoppingCart className="w-5 h-5 mr-2" />
-          {submitting ? "জমা হচ্ছে..." : `৳${toBengaliDigits(totalPrice)} — এখনই কিনুন`}
+        <Button
+          className="w-full bg-[#e2136e] hover:bg-[#c1105e] text-white border-0 font-heading text-lg h-14 rounded-xl"
+          onClick={handlePay}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> রিডাইরেক্ট হচ্ছে…</>
+          ) : (
+            <>
+              <img src={bkashLogo} alt="bKash" className="h-6 mr-2 bg-white rounded px-1" />
+              বিকাশে ৳{toBengaliDigits(totalPrice)} পরিশোধ করুন
+            </>
+          )}
         </Button>
+        <p className="text-[11px] text-center text-muted-foreground">
+          সিকিউর বিকাশ চেকআউট — PIN ও OTP দিয়ে পেমেন্ট সম্পন্ন হবে, সাথে সাথে সাবস্ক্রিপশন সক্রিয় হবে।
+        </p>
 
         <div className="flex items-center gap-3 my-4">
           <div className="flex-1 h-px bg-border" />
