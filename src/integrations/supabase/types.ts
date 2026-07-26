@@ -268,33 +268,6 @@ export type Database = {
         }
         Relationships: []
       }
-      faqs: {
-        Row: {
-          answer: string
-          created_at: string
-          id: number
-          is_active: boolean
-          question: string
-          sort_order: number
-        }
-        Insert: {
-          answer: string
-          created_at?: string
-          id?: never
-          is_active?: boolean
-          question: string
-          sort_order?: number
-        }
-        Update: {
-          answer?: string
-          created_at?: string
-          id?: never
-          is_active?: boolean
-          question?: string
-          sort_order?: number
-        }
-        Relationships: []
-      }
       feedback: {
         Row: {
           admin_reply: string | null
