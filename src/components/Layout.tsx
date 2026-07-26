@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, MapPin, Phone, Mail, Sparkles, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogOut, User, MapPin, Phone, Mail, LayoutDashboard } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -239,7 +239,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               >
                 Shahriar Nabil
               </a>
-              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
             </div>
             <div className="flex items-center gap-2">
               <Link to="/terms" className="hover:text-navy transition-colors">Terms & Conditions</Link>
