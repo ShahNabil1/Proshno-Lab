@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { User, Pencil, Lock, AlertTriangle } from "lucide-react";
+import { User, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,27 +17,10 @@ export default function Institute() {
   const [institute, setInstitute] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
   const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "", phone: "", specific_address: "" });
 
-  const isEditLocked = (): { locked: boolean; daysLeft: number } => {
-    if (!institute?.last_edited_at) return { locked: false, daysLeft: 0 };
-    const lastEdit = new Date(institute.last_edited_at);
-    const now = new Date();
-    const diffMs = now.getTime() - lastEdit.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const daysLeft = 30 - diffDays;
-    return { locked: daysLeft > 0, daysLeft: Math.max(0, daysLeft) };
-  };
-
-  const handleEditClick = () => {
-    const { locked, daysLeft } = isEditLocked();
-    if (locked) {
-      toast.error(`আপনি আরও ${daysLeft} দিন পর তথ্য পরিবর্তন করতে পারবেন।`);
-      return;
-    }
-    setShowWarning(true);
-  };
+  // ৩০ দিনের এডিট লক বন্ধ — ইউজার যখন খুশি তথ্য পরিবর্তন করতে পারবে
+  const handleEditClick = () => setEditing(true);
 
   useEffect(() => {
     if (!user) return;
@@ -159,16 +141,12 @@ export default function Institute() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-bold text-center flex-1">ঠিকানা</h3>
             {!editing && (
-              <Button variant="ghost" size="icon" onClick={handleEditClick} title={isEditLocked().locked ? `আরও ${isEditLocked().daysLeft} দিন পর এডিট করতে পারবেন` : "এডিট করুন"}>
-                {isEditLocked().locked ? <Lock className="w-4 h-4 text-muted-foreground" /> : <Pencil className="w-4 h-4" />}
+              <Button variant="ghost" size="icon" onClick={handleEditClick} title="এডিট করুন">
+                <Pencil className="w-4 h-4" />
               </Button>
             )}
           </div>
-          {isEditLocked().locked && !editing && (
-            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
-              <Lock className="w-3 h-3" /> আরও {isEditLocked().daysLeft} দিন পর তথ্য পরিবর্তন করতে পারবেন
-            </p>
-          )}
+
           {editing ? (
             <div className="space-y-3">
               <div><Label>প্রতিষ্ঠানের নাম</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
@@ -211,25 +189,7 @@ export default function Institute() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              সতর্কতা
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              আপনি যদি এখন প্রতিষ্ঠানের তথ্য পরিবর্তন করেন, তাহলে আগামী <strong>৩০ দিন</strong> আর কোনো পরিবর্তন করতে পারবেন না। আপনি কি নিশ্চিত?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setEditing(true)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              হ্যাঁ, এডিট করতে চাই
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 }
