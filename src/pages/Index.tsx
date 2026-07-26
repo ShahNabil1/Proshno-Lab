@@ -96,13 +96,10 @@ export default function Index() {
               </h1>
 
               <p className="font-heading text-white/85 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
-                <BrandLogo size={20} plate={false} className="align-middle text-white [&_.text-brand-navy]:text-white" />
+                <BrandLogo size={30} plate={false} className="align-middle text-white [&_.text-brand-navy]:text-white" />
                 <span className="text-white/70">-এ</span> মাত্র কয়েক ক্লিকেই তৈরি করুন ষষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্নপত্র{" "}
-                <span className="inline-flex items-center align-middle ml-1">
-                  <span className="bg-gold text-navy font-heading font-extrabold text-xs px-2 py-0.5 rounded-md rotate-[-6deg] shadow-sm">
-                    ফ্রী
-                  </span>
-                </span>
+                <span className="brand-free">ফ্রী</span>
+
               </p>
 
               <div className="flex flex-wrap gap-3">
