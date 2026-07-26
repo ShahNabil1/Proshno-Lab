@@ -1,4 +1,4 @@
-import { Sparkles, FileEdit, PackageCheck } from "lucide-react";
+import { Zap, FileEdit, PackageCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CreateMode = "auto" | "manual" | "ready";
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const items: { id: CreateMode; label: string; icon: React.ElementType }[] = [
-  { id: "auto", label: "অটো প্রশ্ন তৈরী", icon: Sparkles },
+  { id: "auto", label: "অটো প্রশ্ন তৈরী", icon: Zap },
   { id: "manual", label: "প্রশ্ন তৈরি", icon: FileEdit },
   { id: "ready", label: "রেডি প্রশ্ন", icon: PackageCheck },
 ];

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Package, GraduationCap, Loader2, ChevronRight, ShoppingCart, Clock } from "lucide-react";
+import { CheckCircle2, Package, GraduationCap, Loader2, ChevronRight, ShoppingCart, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -151,7 +151,7 @@ export default function PricingPage() {
                             <div className="space-y-1.5 mb-5">
                               {bundleFeatures.map((f, fi) => (
                                 <div key={fi} className="flex items-center gap-1.5 text-xs">
-                                  <Sparkles className="w-3 h-3 text-primary shrink-0" /><span>{f}</span>
+                                  <CheckCircle2 className="w-3 h-3 text-primary shrink-0" /><span>{f}</span>
                                 </div>
                               ))}
                             </div>
@@ -192,7 +192,7 @@ export default function PricingPage() {
                         <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
                           <div className="bg-muted/50 px-4 py-3 border-b">
                             <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-primary" />
+                              <Package className="w-4 h-4 text-primary" />
                               {cls.className}
                             </h3>
                           </div>

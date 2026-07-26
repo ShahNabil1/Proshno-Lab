@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap, Clock, Play, Sparkles
+  Zap, Shield, BarChart3, GraduationCap, Clock, Play, FilePlus2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -380,7 +380,7 @@ export default function Index() {
                   >
                     {step.cta ? (
                       <>
-                        <Sparkles className="w-4 h-4" />
+                        <FilePlus2 className="w-4 h-4" />
                         প্রশ্ন তৈরি করুন
                       </>
                     ) : (
