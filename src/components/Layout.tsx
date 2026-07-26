@@ -56,7 +56,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="leading-none">
-              <BrandLogo size={30} className="lg:text-[34px]" />
+              <BrandLogo size={38} className="lg:text-[44px]" />
               <div className="text-[11px] lg:text-[12px] text-navy/70 mt-1.5 font-medium">
                 শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম...
               </div>
@@ -168,7 +168,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="inline-block">
-                <BrandLogo size={28} className="lg:text-[32px]" />
+                <BrandLogo size={36} className="lg:text-[42px]" />
               </Link>
               <p className="text-sm leading-relaxed text-slate-500">
                 শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
