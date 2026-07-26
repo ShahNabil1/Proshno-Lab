@@ -109,7 +109,7 @@ export default function Institute() {
       } else {
         const { data, error } = await supabase
           .from("institutes")
-          .upsert({ ...payload, owner_id: user.id }, { onConflict: "owner_id" })
+          .insert({ ...payload, owner_id: user.id })
           .select()
           .maybeSingle();
 
@@ -195,7 +195,7 @@ export default function Institute() {
               </div>
               <div><Label>ফোন নম্বর *</Label><Input type="tel" inputMode="numeric" placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizeBdPhone(e.target.value) })} /></div>
               <div><Label>নির্দিষ্ট ঠিকানা</Label><Textarea value={form.specific_address} onChange={(e) => setForm({ ...form, specific_address: e.target.value })} rows={2} /></div>
-              <Button onClick={handleSave} className="gradient-green text-primary-foreground border-0">সংরক্ষণ করুন</Button>
+              <Button onClick={handleSave} disabled={saving} className="gradient-green text-primary-foreground border-0">{saving ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ করুন"}</Button>
             </div>
           ) : (
             <table className="w-full text-sm">
