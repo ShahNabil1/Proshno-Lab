@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Times New Roman', 'SolaimanLipi', 'Times', 'serif'],
+        heading: ['NotoSerifBengali', 'SolaimanLipi', 'serif'],
         body: ['SolaimanLipi', 'Times New Roman', 'serif'],
         paper: ['SolaimanLipi', 'Times New Roman', 'serif'],
         en: ['Times New Roman', 'Times', 'serif'],

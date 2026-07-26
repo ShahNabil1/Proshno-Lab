@@ -656,6 +656,15 @@
 }
 
 
+/* ── Primary Bangla UI font: Noto Serif Bengali Bold ────────────────────── */
+@font-face {
+  font-family: 'NotoSerifBengali';
+  src: url('/__l5e/assets-v1/3caf7eec-6d77-462b-b607-75554e14c021/NotoSerifBengali-Bold.ttf') format('truetype');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ── Official brand wordmark font: HasanHera (lipighor.com) ─────────────── */
 @font-face {
   font-family: 'HasanHera';
