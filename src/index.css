@@ -128,12 +128,9 @@
   .font-body { font-family: var(--font-body); }
   .font-heading { font-family: var(--font-heading); }
 
-  /* Deep navy hero background with a soft warm light bleed from the right */
+  /* Canva-matched hero: deep blue on the left fading to pure white on the right */
   .gradient-hero {
-    background:
-      radial-gradient(ellipse 60% 80% at 92% 40%, hsl(224 45% 55% / 0.35) 0%, transparent 55%),
-      radial-gradient(ellipse 40% 60% at 100% 100%, hsl(42 88% 64% / 0.10) 0%, transparent 60%),
-      linear-gradient(120deg, hsl(var(--navy-deep)) 0%, hsl(var(--navy)) 45%, hsl(var(--navy-mid)) 100%);
+    background: linear-gradient(90deg, #161f9a 0%, #161f9a 22%, #3a45b5 42%, #9aa1d6 62%, #e8eaf4 80%, #ffffff 100%);
   }
   .gradient-navy {
     background: linear-gradient(135deg, hsl(var(--navy)) 0%, hsl(var(--indigo)) 100%);
