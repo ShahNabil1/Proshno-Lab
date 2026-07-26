@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
 import BrandLogo from "@/components/BrandLogo";
-import brandMark from "@/assets/proshnolab-mark.png.asset.json";
+import { brandMarkUrl } from "@/lib/brandAssets";
 
 
 
@@ -55,7 +55,9 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2 lg:gap-3 group">
             <img
-              src={brandMark.url}
+              src={brandMarkUrl}
+              loading="eager"
+              decoding="async"
               alt="প্রশ্নল্যাব লোগো"
               className="h-11 w-11 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
             />
@@ -176,7 +178,9 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             <div className="space-y-4">
               <Link to="/" className="inline-flex items-center gap-2 lg:gap-3">
                 <img
-                  src={brandMark.url}
+                  src={brandMarkUrl}
+              loading="eager"
+              decoding="async"
                   alt="প্রশ্নল্যাব লোগো"
                   className="h-11 w-11 lg:h-12 lg:w-12 rounded-full object-cover shrink-0"
                 />
