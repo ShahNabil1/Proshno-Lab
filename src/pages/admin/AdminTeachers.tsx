@@ -31,7 +31,6 @@ const ADMIN_PAGE_GROUPS = [
     label: "কন্টেন্ট ম্যানেজমেন্ট",
     pages: [
       { value: "/admin/announcements", label: "অ্যানাউন্সমেন্ট" },
-      { value: "/admin/faqs", label: "FAQ" },
       { value: "/admin/reviews", label: "রিভিউ" },
       { value: "/admin/coupons", label: "কুপন" },
       { value: "/admin/packages", label: "প্যাকেজ" },

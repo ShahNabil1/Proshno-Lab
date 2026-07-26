@@ -1,6 +1,6 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
@@ -36,8 +36,6 @@ const categories = [
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [faqs, setFaqs] = useState<{id: number;question: string;answer: string;}[]>([]);
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
 
   const fetchReviews = () => {
@@ -50,11 +48,6 @@ export default function Index() {
   };
 
   useEffect(() => {
-    supabase.from("faqs")
-      .select("id, question, answer")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => { if (data) setFaqs(data as any); });
     fetchReviews();
   }, []);
 
@@ -443,67 +436,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ══════ FAQ ══════ */}
-      <section className="py-10 md:py-14 bg-slate-alt">
-        <div className="container max-w-3xl">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-navy/10 text-navy text-xs font-semibold mb-4">
-              <ChevronDown className="w-3.5 h-3.5" />
-              সাধারণ জিজ্ঞাসা
-            </div>
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">আপনার সব প্রশ্নের উত্তর এখানে !</h2>
-          </motion.div>
-          <div className="bg-card rounded-2xl border border-border/60 shadow-premium overflow-hidden">
-            {faqs.map((faq, i) =>
-            <motion.div key={i} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className={i !== faqs.length - 1 ? "border-b border-border" : ""}>
-                <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full text-left py-4 px-5 flex items-center justify-between gap-4 group hover:bg-muted/30 transition-colors">
-
-                  <span className="text-foreground font-medium text-sm md:text-base group-hover:text-primary transition-colors">{faq.question}</span>
-                  <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                <AnimatePresence initial={false} mode="wait">
-                  {openFaq === i && (
-                    <motion.div
-                      key={`faq-content-${faq.id}`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <p className="text-muted-foreground text-sm pb-4 px-5 leading-relaxed">{faq.answer}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════ CTA ══════ */}
-      <section className="gradient-hero py-20 md:py-28">
-        <div className="container text-center">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
-              আজই শুরু করুন !
-            </h2>
-            <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">
-              বাংলাদেশের সবচেয়ে বড় ডিজিটাল Proshno Lab প্ল্যাটফর্মে যোগ দিন
-            </p>
-            <div className="flex justify-center">
-              <Link to="/register">
-                <Button size="lg" className="btn-gold border-0 font-heading font-bold px-10 h-14 rounded-xl text-base gap-2">
-                  ফ্রি রেজিস্ট্রেশন
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
     </div>);
 
 }
