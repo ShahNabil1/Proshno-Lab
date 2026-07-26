@@ -1,6 +1,6 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
