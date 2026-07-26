@@ -273,16 +273,16 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
             ) : (
               <>
                 <div>
-                  <Label className="text-xs">নাম (প্রতি লাইনে একটি)</Label>
+                  <Label className="text-xs">{entityLabel}র নাম (প্রতি লাইনে একটি)</Label>
                   <Textarea
-                    placeholder={"অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"}
+                    placeholder={placeholderText}
                     value={bulkNames}
                     onChange={(e) => setBulkNames(e.target.value)}
                     rows={8}
-                    className="font-mono text-sm"
+                    className="text-sm"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {bulkNames.split("\n").map((s) => s.trim()).filter(Boolean).length} টি এন্ট্রি
+                    {parseNames(bulkNames).length} টি এন্ট্রি যোগ হবে
                   </p>
                 </div>
                 {table === "subjects" && (
@@ -292,8 +292,9 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>বাতিল</Button>
-            <Button onClick={handleSave}>{editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>বাতিল</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? "সংরক্ষণ হচ্ছে..." : editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
