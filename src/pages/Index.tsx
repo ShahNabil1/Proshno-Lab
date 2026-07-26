@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
 import { motion } from "framer-motion";
 import {
