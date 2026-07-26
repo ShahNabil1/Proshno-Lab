@@ -128,6 +128,36 @@ export default function AutoQuestionCreate() {
     })();
   }, [chapterIds]);
 
+  // Fisher-Yates shuffle (unbiased)
+  const shuffle = <T,>(arr: T[]): T[] => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  // Fetch all question ids for a type across selected chapters (paginated, no 1000-row cap)
+  const fetchAllIds = async (ids: number[], type: QType) => {
+    const all: number[] = [];
+    const PAGE = 1000;
+    for (let from = 0; from < 50000; from += PAGE) {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("id")
+        .in("chapter_id", ids)
+        .eq("type", type)
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = (data || []) as { id: number }[];
+      all.push(...rows.map(r => r.id));
+      if (rows.length < PAGE) break;
+    }
+    return all;
+  };
+
+
   const className = classes.find(c => String(c.id) === classId)?.name || "";
   const subjectName = subjects.find(s => String(s.id) === subjectId)?.name || "";
   const subjectCode = subjects.find(s => String(s.id) === subjectId)?.subject_code || "";
@@ -152,20 +182,39 @@ export default function AutoQuestionCreate() {
   const generate = async () => {
     setGenerating(true);
     try {
-      const ids = chapterIds.map(Number);
+      // Re-verify chapters are still active at generation time (admin may have disabled one)
+      const { data: liveChapters } = await supabase
+        .from("chapters")
+        .select("id")
+        .eq("subject_id", Number(subjectId))
+        .eq("is_active", true)
+        .in("id", chapterIds.map(Number));
+      const ids = ((liveChapters as any[]) || []).map(c => Number(c.id));
+      if (ids.length === 0) {
+        toast.error("নির্বাচিত অধ্যায়গুলো আর সক্রিয় নেই");
+        setGenerating(false);
+        return;
+      }
+      if (ids.length < chapterIds.length) {
+        setChapterIds(ids.map(String));
+        toast.warning("কিছু অধ্যায় নিষ্ক্রিয় করা হয়েছে, সেগুলো বাদ দেওয়া হলো");
+      }
+
       const picked: any[] = [];
       for (const t of activeTypes) {
-        // Pull all IDs, shuffle, pick N
+        const allIds = await fetchAllIds(ids, t);
+        const pickIds = shuffle(allIds).slice(0, counts[t]);
+        if (pickIds.length === 0) continue;
         const { data } = await supabase
           .from("questions")
           .select("id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
-          .in("chapter_id", ids)
-          .eq("type", t)
-          .limit(2000);
-        const pool = (data || []) as any[];
-        const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, counts[t]);
-        picked.push(...shuffled);
+          .in("id", pickIds);
+        const rows = (data || []) as any[];
+        const order = new Map(pickIds.map((id, i) => [id, i]));
+        rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+        picked.push(...rows);
       }
+
       if (picked.length === 0) {
         toast.error("কোনো প্রশ্ন পাওয়া যায়নি");
         setGenerating(false);
