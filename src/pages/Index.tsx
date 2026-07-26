@@ -109,7 +109,11 @@ export default function Index() {
                     size="lg"
                     className="btn-gold font-heading font-bold text-[15px] h-12 px-6 rounded-lg border-0 gap-2"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <img
+                      src={questionPaperIcon.url}
+                      alt="প্রশ্নপত্র আইকন"
+                      className="w-5 h-5 object-contain"
+                    />
                     সম্পূর্ণ ফ্রিতে শুরু করুন
                   </Button>
                 </Link>
