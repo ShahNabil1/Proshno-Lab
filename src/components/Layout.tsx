@@ -35,10 +35,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   }, [location.pathname]);
 
   const headerBg = scrolled
-    ? "bg-white/95 backdrop-blur-xl shadow-[0_1px_0_hsl(224_25%_90%)]"
-    : isHeroPage
-    ? "bg-white/90 backdrop-blur-sm border-b border-white/40"
-    : "bg-white border-b border-border";
+    ? "bg-[#1E3577]/95 backdrop-blur-xl shadow-lg"
+    : "bg-[#1E3577] border-b border-white/10";
 
   const navLinks = [
     { to: "/", label: "হোম" },
