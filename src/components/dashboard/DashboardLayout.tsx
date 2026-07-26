@@ -95,6 +95,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigate = useNavigate();
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
+  const goHome = () => {
+    if (needsLeaveConfirm) setConfirmLeave(true);
+    else navigate("/");
+  };
 
   // Filter sidebar based on cloud backup setting AND hidden pages
   const sidebarGroups = baseSidebarGroups
