@@ -230,7 +230,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/70">
+          <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-white/70">
             <div>© 2026 Proshno Lab. All rights reserved.</div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/80">
               <span>Developed by</span>
