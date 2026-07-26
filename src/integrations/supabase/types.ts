@@ -324,6 +324,7 @@ export type Database = {
           phone: string | null
           specific_address: string | null
           upazila: string | null
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -336,6 +337,7 @@ export type Database = {
           phone?: string | null
           specific_address?: string | null
           upazila?: string | null
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -348,6 +350,7 @@ export type Database = {
           phone?: string | null
           specific_address?: string | null
           upazila?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
