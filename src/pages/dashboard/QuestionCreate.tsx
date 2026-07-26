@@ -1328,7 +1328,7 @@ export default function QuestionCreate() {
         </div>
       ) : (
         <div className="gradient-hero rounded-2xl p-8 text-center text-white mb-6">
-          <h1 className="font-heading text-2xl font-bold">✨ প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
+          <h1 className="font-heading text-2xl font-bold">&nbsp;প্রশ্ন তৈরি করতে প্রথমে স্মার্ট ফর্ম পূরণ করুন।</h1>
         </div>
       )}
 
