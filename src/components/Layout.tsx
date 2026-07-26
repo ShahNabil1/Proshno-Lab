@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, MapPin, Phone, Mail, Sparkles } from "lucide-react";
+import { Menu, X, LogOut, User, MapPin, Phone, Mail, Sparkles, LayoutDashboard } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,12 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           <div className="flex items-center gap-2">
             {user ? (
               <>
+                <Link to="/dashboard">
+                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-4 h-10 rounded-lg gap-2 shadow-sm">
+                    <LayoutDashboard className="w-4 h-4" />
+                    ড্যাশবোর্ড
+                  </Button>
+                </Link>
                 <Link to="/profile" className="hidden md:inline-flex">
                   <Button variant="ghost" size="sm" className="gap-2 text-navy/80 hover:text-navy hover:bg-navy/5">
                     <User className="w-4 h-4" />
