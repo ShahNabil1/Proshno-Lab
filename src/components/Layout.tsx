@@ -162,9 +162,9 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <main className="flex-1">{children}</main>
 
       {/* Footer — hidden on demo page */}
-      {!isDemoPage && <footer className="bg-[#1E3577] text-white/90">
-        <div className="container py-10 lg:py-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 items-start">
+      {!isDemoPage && <footer className="bg-[#022548] text-white/90">
+        <div className="container py-6 lg:py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6 items-start">
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="inline-block">
