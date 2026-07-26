@@ -231,8 +231,8 @@ export default function AutoQuestionCreate() {
               <h2 className="font-heading text-xl font-bold mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
               <p className="text-sm text-muted-foreground mb-6">প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="border rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+                <div className="border rounded-lg p-4 flex flex-col min-h-[240px]">
                   <Label className="mb-2 block font-semibold">শ্রেণি</Label>
                   <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterIds([]); }}>
                     <SelectTrigger><SelectValue placeholder="-- শ্রেণি সিলেক্ট --" /></SelectTrigger>
@@ -242,7 +242,7 @@ export default function AutoQuestionCreate() {
                   </Select>
                 </div>
 
-                <div className="border rounded-lg p-4">
+                <div className="border rounded-lg p-4 flex flex-col min-h-[240px]">
                   <Label className="mb-2 block font-semibold">বিষয়</Label>
                   <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterIds([]); }} disabled={!classId}>
                     <SelectTrigger><SelectValue placeholder="-- বিষয় সিলেক্ট --" /></SelectTrigger>
@@ -252,8 +252,8 @@ export default function AutoQuestionCreate() {
                   </Select>
                 </div>
 
-                <div className="border rounded-lg p-4 md:row-span-2">
-                  <Label className="mb-2 flex items-center justify-between font-semibold">
+                <div className="border rounded-lg p-4 flex flex-col min-h-[240px]">
+                  <Label className="mb-2 flex items-center justify-between font-semibold min-h-[24px]">
                     <span>অধ্যায় (একাধিক)</span>
                     {chapters.length > 0 && (
                       <button className="text-xs text-primary hover:underline"
@@ -264,7 +264,8 @@ export default function AutoQuestionCreate() {
                   </Label>
                   {!subjectId && <p className="text-xs text-muted-foreground">আগে বিষয় সিলেক্ট করুন</p>}
                   {subjectId && chapters.length === 0 && <p className="text-xs text-muted-foreground">কোনো সক্রিয় অধ্যায় নেই</p>}
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 flex-1 max-h-64 overflow-y-auto">
+
                     {chapters.map(c => (
                       <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 p-1.5 rounded">
                         <Checkbox
