@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ReviewModal from "@/components/ReviewModal";
+import questionPaperIcon from "@/assets/question-paper-icon.png.asset.json";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -108,7 +109,11 @@ export default function Index() {
                     size="lg"
                     className="btn-gold font-heading font-bold text-[15px] h-12 px-6 rounded-lg border-0 gap-2"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <img
+                      src={questionPaperIcon.url}
+                      alt="প্রশ্নপত্র আইকন"
+                      className="w-5 h-5 object-contain"
+                    />
                     সম্পূর্ণ ফ্রিতে শুরু করুন
                   </Button>
                 </Link>
