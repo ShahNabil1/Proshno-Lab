@@ -143,16 +143,12 @@ export default function Institute() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-bold text-center flex-1">ঠিকানা</h3>
             {!editing && (
-              <Button variant="ghost" size="icon" onClick={handleEditClick} title={isEditLocked().locked ? `আরও ${isEditLocked().daysLeft} দিন পর এডিট করতে পারবেন` : "এডিট করুন"}>
-                {isEditLocked().locked ? <Lock className="w-4 h-4 text-muted-foreground" /> : <Pencil className="w-4 h-4" />}
+              <Button variant="ghost" size="icon" onClick={handleEditClick} title="এডিট করুন">
+                <Pencil className="w-4 h-4" />
               </Button>
             )}
           </div>
-          {isEditLocked().locked && !editing && (
-            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
-              <Lock className="w-3 h-3" /> আরও {isEditLocked().daysLeft} দিন পর তথ্য পরিবর্তন করতে পারবেন
-            </p>
-          )}
+
           {editing ? (
             <div className="space-y-3">
               <div><Label>প্রতিষ্ঠানের নাম</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
