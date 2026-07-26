@@ -54,9 +54,11 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="leading-none">
-              <BrandLogo size={38} className="lg:text-[44px]" />
-              <div className="text-[11px] lg:text-[12px] text-navy/70 mt-1.5 font-medium">
-                শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম...
+              <BrandLogo size={38} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
+              <div className="flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white/75 mt-1 font-medium">
+                <span>শিক্ষকদের জন্য</span>
+                <span className="brand-free">ফ্রী</span>
+                <span>প্রশ্ন তৈরির প্ল্যাটফর্ম...</span>
               </div>
             </div>
           </Link>
