@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { User, Pencil, Lock, AlertTriangle } from "lucide-react";
+import { User, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,7 +17,6 @@ export default function Institute() {
   const [institute, setInstitute] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
   const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "", phone: "", specific_address: "" });
 
   // ৩০ দিনের এডিট লক বন্ধ — ইউজার যখন খুশি তথ্য পরিবর্তন করতে পারবে
