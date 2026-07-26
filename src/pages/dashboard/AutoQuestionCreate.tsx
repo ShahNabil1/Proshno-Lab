@@ -368,18 +368,52 @@ export default function AutoQuestionCreate() {
                         </Badge>
                       </div>
                       {on && max > 0 && (
-                        <div className="flex items-center gap-4 pl-6">
-                          <Slider
-                            value={[Math.min(counts[t], max)]}
-                            min={1}
-                            max={max}
-                            step={1}
-                            onValueChange={([v]) => setCounts(p => ({ ...p, [t]: v }))}
-                            className="flex-1"
-                          />
-                          <span className="font-bold text-primary text-lg w-12 text-right">{toBanglaNum(counts[t])}</span>
+                        <div className="pl-6 pt-1">
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 rounded-full"
+                              onClick={() => setCounts(p => ({ ...p, [t]: Math.max(1, Math.min(p[t], max) - 1) }))}
+                              disabled={Math.min(counts[t], max) <= 1}
+                              aria-label="কমান"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+
+                            <Slider
+                              value={[Math.min(counts[t], max)]}
+                              min={1}
+                              max={max}
+                              step={1}
+                              onValueChange={([v]) => setCounts(p => ({ ...p, [t]: v }))}
+                              className="flex-1"
+                            />
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 rounded-full"
+                              onClick={() => setCounts(p => ({ ...p, [t]: Math.min(max, Math.min(p[t], max) + 1) }))}
+                              disabled={Math.min(counts[t], max) >= max}
+                              aria-label="বাড়ান"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+
+                            <span className="min-w-[3.25rem] rounded-full bg-primary px-3 py-1 text-center text-base font-bold text-primary-foreground shadow-sm transition-all">
+                              {toBanglaNum(Math.min(counts[t], max))}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex justify-between pr-[4.5rem] text-[11px] text-muted-foreground">
+                            <span>{toBanglaNum(1)}</span>
+                            <span>{toBanglaNum(max)}</span>
+                          </div>
                         </div>
                       )}
+
                       {on && max === 0 && <p className="text-xs text-muted-foreground pl-6">এই ধরনের কোনো প্রশ্ন নেই</p>}
                     </div>
                   );
