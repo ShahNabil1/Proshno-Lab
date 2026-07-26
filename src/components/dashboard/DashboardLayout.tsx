@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
 import { useCloudBackup } from "@/hooks/useCloudBackup";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const CONFIRM_LEAVE_PATHS = ["/dashboard/view-paper", "/dashboard/create", "/dashboard/auto-create"];
 
 const baseSidebarGroups = [
   {
@@ -89,6 +95,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigate = useNavigate();
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
+  const goHome = () => {
+    if (needsLeaveConfirm) setConfirmLeave(true);
+    else navigate("/");
+  };
 
   // Filter sidebar based on cloud backup setting AND hidden pages
   const sidebarGroups = baseSidebarGroups
@@ -202,7 +214,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             variant="outline"
             size="sm"
             className="gap-2 h-9 ml-1"
-            onClick={() => navigate("/")}
+            onClick={goHome}
           >
             <Home className="w-4 h-4" />
             <span className="hidden sm:inline">হোম পেইজে যান</span>
@@ -228,6 +240,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:overflow-visible">{children}</main>
       </div>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>হোম পেইজে যেতে চান?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই পেইজ থেকে বের হলে বর্তমান কাজ/নির্বাচন হারিয়ে যেতে পারে। আপনি কি নিশ্চিতভাবে হোম পেইজে যেতে চান?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>না, এখানেই থাকি</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/")}>হ্যাঁ, যান</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Onboarding modal - blocks dashboard until institute is registered */}
       <OnboardingModal
