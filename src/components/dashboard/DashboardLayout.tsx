@@ -214,7 +214,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             variant="outline"
             size="sm"
             className="gap-2 h-9 ml-1"
-            onClick={() => navigate("/")}
+            onClick={goHome}
           >
             <Home className="w-4 h-4" />
             <span className="hidden sm:inline">হোম পেইজে যান</span>
