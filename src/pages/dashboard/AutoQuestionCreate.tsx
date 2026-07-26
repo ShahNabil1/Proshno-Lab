@@ -128,6 +128,36 @@ export default function AutoQuestionCreate() {
     })();
   }, [chapterIds]);
 
+  // Fisher-Yates shuffle (unbiased)
+  const shuffle = <T,>(arr: T[]): T[] => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  // Fetch all question ids for a type across selected chapters (paginated, no 1000-row cap)
+  const fetchAllIds = async (ids: number[], type: QType) => {
+    const all: number[] = [];
+    const PAGE = 1000;
+    for (let from = 0; from < 50000; from += PAGE) {
+      const { data, error } = await supabase
+        .from("questions")
+        .select("id")
+        .in("chapter_id", ids)
+        .eq("type", type)
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = (data || []) as { id: number }[];
+      all.push(...rows.map(r => r.id));
+      if (rows.length < PAGE) break;
+    }
+    return all;
+  };
+
+
   const className = classes.find(c => String(c.id) === classId)?.name || "";
   const subjectName = subjects.find(s => String(s.id) === subjectId)?.name || "";
   const subjectCode = subjects.find(s => String(s.id) === subjectId)?.subject_code || "";
