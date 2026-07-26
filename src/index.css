@@ -681,3 +681,24 @@
 .text-brand-navy { color: #1E3577; }
 .text-brand-gold { color: #F4C053; }
 .text-brand-onplate { color: #FFFFFF; }
+
+/* Sparkling gold "ফ্রী" badge — matches official brand artwork */
+.brand-free {
+  font-family: 'HasanHera', 'SolaimanLipi', serif !important;
+  font-size: 1.9em;
+  line-height: 0.9;
+  display: inline-block;
+  vertical-align: -0.18em;
+  padding: 0 0.06em;
+  background: linear-gradient(100deg, #F4C053 0%, #FFF0B8 38%, #F4C053 58%, #E0A02A 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+  animation: brand-free-shine 3.2s ease-in-out infinite;
+}
+@keyframes brand-free-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
