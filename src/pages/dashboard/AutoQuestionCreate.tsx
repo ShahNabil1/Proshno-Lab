@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 
