@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, User, MapPin, Phone, Mail, Sparkles, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogOut, User, MapPin, Phone, Mail, LayoutDashboard } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaTiktok } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
