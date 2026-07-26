@@ -13,7 +13,7 @@ type Props = {
  * Font: HasanHera (lipighor.com) — loaded via @font-face in index.css.
  * Colours are locked to the brand logo: navy #1E3577 plate, white "প্রশ্ন", gold #F4C053 "ল্যাব".
  */
-export default function BrandLogo({ size = 30, plate = true, className }: Props) {
+export default function BrandLogo({ size = 34, plate = false, className }: Props) {
   return (
     <span
       className={cn(

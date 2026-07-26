@@ -13,7 +13,7 @@ export default function Login() {
     <div className="min-h-[calc(100vh-10rem)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl shadow-card p-10 text-center">
-          <div className="mb-6"><BrandLogo size={44} /></div>
+          <div className="mb-6"><BrandLogo size={54} /></div>
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-2 whitespace-nowrap">
             প্রশ্ন তৈরি করতে ফ্রি অ্যাকাউন্টে লগইন করুন
           </h1>
