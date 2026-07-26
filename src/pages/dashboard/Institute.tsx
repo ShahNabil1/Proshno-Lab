@@ -17,6 +17,7 @@ export default function Institute() {
   const { user } = useAuth();
   const [institute, setInstitute] = useState<any>(null);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "", phone: "", specific_address: "" });
 
