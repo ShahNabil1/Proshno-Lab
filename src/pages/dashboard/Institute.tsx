@@ -178,6 +178,7 @@ export default function Institute() {
           ) : (
             <table className="w-full text-sm">
               <tbody>
+                <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground w-28">প্রতিষ্ঠানের নাম</td><td className="py-2.5 font-medium">{institute?.name || "—"}</td></tr>
                 <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground w-28">উপজেলা</td><td className="py-2.5 font-medium">{institute?.upazila || "—"}</td></tr>
                 <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">জেলা</td><td className="py-2.5 font-medium">{institute?.district || "—"}</td></tr>
                 <tr className="border-b border-border"><td className="py-2.5 text-muted-foreground">বিভাগ</td><td className="py-2.5 font-medium">{institute?.division || "—"}</td></tr>
