@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   Crown, ShieldCheck, Clock, Zap, BookOpen, CheckCircle2,
-  ChevronRight, AlertCircle, Package, CheckCircle2, ShoppingCart,
+  ChevronRight, AlertCircle, Package, ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
