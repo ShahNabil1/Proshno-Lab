@@ -15,10 +15,13 @@ interface LatexRendererProps {
 export default function LatexRenderer({ text, className = "", inline = false }: LatexRendererProps) {
   const html = useMemo(() => {
     if (!text) return "";
-    // Match $$...$$ (display) and $...$ (inline)
-    return text.replace(/\$\$([\s\S]*?)\$\$|\$([\s\S]*?)\$/g, (match, display, inlineExpr) => {
-      const expr = display ?? inlineExpr;
+    // Match $$...$$, \[...\] (display) and $...$, \(...\) (inline)
+    const pattern = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\$([\s\S]*?)\$|\\\(([\s\S]*?)\\\)/g;
+    return text.replace(pattern, (match, dd, db, si, sp) => {
+      const display = dd ?? db;
+      const expr = display ?? si ?? sp;
       const isDisplay = display !== undefined;
+      if (expr === undefined) return match;
       try {
         return katex.renderToString(expr, {
           displayMode: isDisplay,
@@ -30,6 +33,7 @@ export default function LatexRenderer({ text, className = "", inline = false }: 
       }
     });
   }, [text]);
+
 
   const Tag = inline ? "span" : "div";
 
