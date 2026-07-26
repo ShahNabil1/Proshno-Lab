@@ -15,21 +15,29 @@ export interface AdminPermission {
 export function useAdminPermissions() {
   const { user } = useAuth();
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    supabase
-      .from("user_permissions")
-      .select("class_id, subject_id")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        setPermissions(data || []);
-        setLoading(false);
-      });
+    let cancelled = false;
+    (async () => {
+      const [{ data: perms }, { data: roles }] = await Promise.all([
+        supabase.from("user_permissions").select("class_id, subject_id").eq("user_id", user.id),
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+      ]);
+      if (cancelled) return;
+      setPermissions(perms || []);
+      setIsSuperAdmin((roles || []).some((r: any) => r.role === "admin" || r.role === "developer"));
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
-  const hasFullAccess = permissions.length === 0;
+  // `user_permissions` is a content-access table (also used for teacher question access),
+  // so it must never restrict admin/developer accounts.
+  const hasFullAccess = isSuperAdmin || permissions.length === 0;
+
 
   /** Check if a specific class_id is permitted */
   const isClassAllowed = (classId: number) =>
