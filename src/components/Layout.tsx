@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
 import BrandLogo from "@/components/BrandLogo";
-import brandMark from "@/assets/proshnolab-mark.webp.asset.json";
+import brandMark from "@/assets/proshnolab-mark.png.asset.json";
 
 
 
