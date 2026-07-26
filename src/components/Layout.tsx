@@ -171,7 +171,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <BrandLogo size={36} className="lg:text-[42px] [&_.text-brand-navy]:text-white" />
               </Link>
               <p className="text-sm leading-relaxed text-white/80">
-                শিক্ষকদের জন্য <span className="text-[#F4C053] font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
+                শিক্ষকদের জন্য <span className="text-[#F4C053] font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান!
               </p>
             </div>
 
