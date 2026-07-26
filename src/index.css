@@ -66,8 +66,10 @@
     --slate-bg: 224 40% 97%;
     --slate-alt: 0 0% 100%;
 
+    /* Marketing/hero display font only (opt-in via .font-heading) */
     --font-heading: 'NotoSerifBengali', 'SolaimanLipi', 'Kalpurush', serif;
-    --font-body: 'NotoSerifBengali', 'SolaimanLipi', 'Kalpurush', serif;
+    /* Global UI font: SolaimanLipi for Bangla, Times New Roman for English */
+    --font-body: 'SolaimanLipi', 'Times New Roman', 'Kalpurush', Times, serif;
 
     --shadow-sm: 0 1px 3px 0 hsl(210 94% 14% / 0.06), 0 1px 2px -1px hsl(210 94% 14% / 0.04);
     --shadow-md: 0 6px 20px -4px hsl(210 94% 14% / 0.10), 0 2px 6px -2px hsl(210 94% 14% / 0.05);
