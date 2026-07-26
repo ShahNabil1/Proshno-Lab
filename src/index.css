@@ -655,3 +655,29 @@
   display: none;
 }
 
+
+/* ── Official brand wordmark font: HasanHera (lipighor.com) ─────────────── */
+@font-face {
+  font-family: 'HasanHera';
+  src: url('/fonts/Hera.woff2') format('woff2'),
+       url('/fonts/Hera.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Brand logo lockup — colours locked to the official logo artwork */
+.brand-logo {
+  font-family: 'HasanHera', 'SolaimanLipi', serif !important;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.brand-logo-plate {
+  background-color: #1E3577;
+  border-radius: 0.375em;
+  padding: 0.16em 0.34em 0.24em;
+}
+.text-brand-navy { color: #1E3577; }
+.text-brand-gold { color: #F4C053; }
+.text-brand-onplate { color: #FFFFFF; }
