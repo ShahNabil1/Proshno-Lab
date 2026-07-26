@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.png";
+import BrandLogo from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 
 const allSidebarItems = [
@@ -129,7 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}>
         <Link to="/admin" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
-          <span className="font-heading font-bold text-lg text-foreground">Admin Panel</span>
+          <BrandLogo size={20} plate={false} /><span className="font-heading font-bold text-sm text-muted-foreground">Admin</span>
         </Link>
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           {Object.entries(groups).map(([groupLabel, items]) => (
