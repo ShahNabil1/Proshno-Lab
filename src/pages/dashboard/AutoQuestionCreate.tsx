@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronLeft, ChevronRight, Sparkles, BookOpen, ListChecks, Wand2, Lock } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 
@@ -368,7 +368,7 @@ export default function AutoQuestionCreate() {
               <div className="flex justify-center gap-3 mt-6">
                 <Button variant="outline" onClick={() => setStep(2)} className="gap-2"><ChevronLeft className="w-4 h-4" /> আগের ধাপে যান</Button>
                 <Button onClick={generate} disabled={generating} className="gap-2">
-                  <Sparkles className="w-4 h-4" /> {generating ? "জেনারেট হচ্ছে..." : "প্রশ্ন তৈরি করুন"}
+                  <FilePlus2 className="w-4 h-4" /> {generating ? "জেনারেট হচ্ছে..." : "প্রশ্ন তৈরি করুন"}
                 </Button>
               </div>
             </div>

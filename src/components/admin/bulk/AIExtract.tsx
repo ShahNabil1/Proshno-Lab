@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles, Upload } from "lucide-react";
+import { Loader2, Bot, Upload } from "lucide-react";
 import { QType, ParsedQuestion } from "@/lib/bulkQuestions";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -63,7 +63,7 @@ export default function AIExtract({ type, onExtracted }: { type: QType; onExtrac
         </label>
       </div>
       <Button onClick={submit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
         {loading ? "Extract হচ্ছে..." : "AI দিয়ে Extract"}
       </Button>
       <p className="text-xs text-muted-foreground">Powered by Gemini — বড় ইনপুটে ৩০-৬০ সেকেন্ড লাগতে পারে</p>

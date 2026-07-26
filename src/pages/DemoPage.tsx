@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, FileText, Loader2, Sparkles, Shuffle, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileText, Loader2, FilePlus2, Shuffle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -251,7 +251,7 @@ export default function DemoPage() {
         <div className="container text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white/80 text-sm font-medium mb-6 border border-white/10">
-              <Sparkles className="w-4 h-4 text-primary" />
+              <FileText className="w-4 h-4 text-primary" />
               ফ্রি ডেমো — লগইন ছাড়াই ব্যবহার করুন
             </div>
             <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-white mb-4">
@@ -312,7 +312,7 @@ export default function DemoPage() {
                     disabled={!selectedChapterId || loading}
                     onClick={handleFetchQuestions}
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FilePlus2 className="w-4 h-4 mr-2" />}
                     প্রশ্ন তৈরি করুন
                   </Button>
 

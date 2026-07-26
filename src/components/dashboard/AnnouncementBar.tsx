@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Megaphone, X, Sparkles } from "lucide-react";
+import { Megaphone, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AnnouncementBar() {
@@ -44,7 +44,6 @@ export default function AnnouncementBar() {
         </div>
 
         {/* Sparkle separator */}
-        <Sparkles className="w-3 h-3 text-emerald-200/70 shrink-0 mr-2 animate-pulse" />
 
         {/* Infinite marquee */}
         <div className="flex-1 overflow-hidden relative mask-marquee">
@@ -59,7 +58,6 @@ export default function AnnouncementBar() {
         </div>
 
         {/* Sparkle separator */}
-        <Sparkles className="w-3 h-3 text-emerald-200/70 shrink-0 ml-2 animate-pulse [animation-delay:1s]" />
 
         {/* Close button */}
         <button

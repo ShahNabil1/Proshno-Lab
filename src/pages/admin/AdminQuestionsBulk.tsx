@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Sparkles, Trash2, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Bot, Trash2, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
@@ -295,7 +295,7 @@ export default function AdminQuestionsBulk() {
             <TabsList className="grid grid-cols-3 w-full max-w-xl">
               <TabsTrigger value="excel" className="gap-2"><FileSpreadsheet className="w-4 h-4" /> Excel</TabsTrigger>
               <TabsTrigger value="paste" className="gap-2"><ClipboardPaste className="w-4 h-4" /> Paste</TabsTrigger>
-              <TabsTrigger value="ai" className="gap-2"><Sparkles className="w-4 h-4" /> AI</TabsTrigger>
+              <TabsTrigger value="ai" className="gap-2"><Bot className="w-4 h-4" /> AI</TabsTrigger>
             </TabsList>
 
             <TabsContent value="excel" className="pt-4 space-y-3">
