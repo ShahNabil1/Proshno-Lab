@@ -52,8 +52,14 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
         <div className="container flex items-center justify-between h-16 lg:h-[76px]">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-2 lg:gap-3 group">
+            <img
+              src={brandMark.url}
+              alt="প্রশ্নল্যাব লোগো"
+              className="h-11 w-11 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
+            />
             <div className="leading-none">
+
               <BrandLogo size={38} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
               <div className="flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide">
                 <span>শিক্ষকদের জন্য</span>
