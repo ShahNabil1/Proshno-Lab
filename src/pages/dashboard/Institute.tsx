@@ -71,19 +71,58 @@ export default function Institute() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!form.name.trim()) { toast.error("প্রতিষ্ঠানের নাম দিন"); return; }
     if (!isValidBdPhone(form.phone)) { toast.error(BD_PHONE_ERROR); return; }
-    const updateData = { ...form, last_edited_at: new Date().toISOString() };
-    if (institute) {
-      const { error } = await supabase.from("institutes").update(updateData).eq("id", institute.id);
-      if (error) { toast.error("আপডেট ব্যর্থ"); return; }
-      setInstitute({ ...institute, ...updateData });
-    } else {
-      const { data, error } = await supabase.from("institutes").insert({ ...updateData, owner_id: user.id }).select().single();
-      if (error) { toast.error("সংরক্ষণ ব্যর্থ"); return; }
-      setInstitute(data);
+
+    setSaving(true);
+    try {
+      // Ensure the access token is fresh — an expired JWT is a common cause of failed updates
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast.error("সেশন শেষ হয়েছে, আবার লগইন করুন");
+        return;
+      }
+
+      const payload = {
+        name: form.name.trim(),
+        division: form.division || null,
+        district: form.district || null,
+        upazila: form.upazila || null,
+        phone: form.phone.trim(),
+        specific_address: form.specific_address.trim() || null,
+        last_edited_at: new Date().toISOString(),
+      };
+
+      if (institute?.id) {
+        const { data, error } = await supabase
+          .from("institutes")
+          .update(payload)
+          .eq("id", institute.id)
+          .eq("owner_id", user.id)
+          .select()
+          .maybeSingle();
+
+        if (error) { toast.error(`আপডেট ব্যর্থ: ${error.message}`); return; }
+        if (!data) { toast.error("আপডেট ব্যর্থ: এই প্রতিষ্ঠানে আপনার অনুমতি নেই"); return; }
+        setInstitute(data);
+      } else {
+        const { data, error } = await supabase
+          .from("institutes")
+          .upsert({ ...payload, owner_id: user.id }, { onConflict: "owner_id" })
+          .select()
+          .maybeSingle();
+
+        if (error) { toast.error(`সংরক্ষণ ব্যর্থ: ${error.message}`); return; }
+        setInstitute(data);
+      }
+
+      setEditing(false);
+      toast.success("সংরক্ষিত হয়েছে!");
+    } catch (e: any) {
+      toast.error(`আপডেট ব্যর্থ: ${e?.message || "অজানা ত্রুটি"}`);
+    } finally {
+      setSaving(false);
     }
-    setEditing(false);
-    toast.success("সংরক্ষিত হয়েছে!");
   };
 
   const avatarUrl = user?.user_metadata?.avatar_url;
