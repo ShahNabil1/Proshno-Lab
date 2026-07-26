@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.png";
+import BrandLogo from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
@@ -151,9 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}>
         <Link to="/dashboard" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
           <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
-          <span className="font-heading font-bold text-lg text-foreground">
-            Proshno<span className="text-gradient-green"> Lab</span>
-          </span>
+          <BrandLogo size={22} plate={false} />
         </Link>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">

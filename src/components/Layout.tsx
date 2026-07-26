@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
+import BrandLogo from "@/components/BrandLogo";
 
 
 
@@ -167,12 +168,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="inline-block">
-                <div
-                  className="font-bold text-[28px] lg:text-[32px] text-navy tracking-tight"
-                  style={{ fontFamily: "'Hind Siliguri', 'SolaimanLipi', serif", letterSpacing: "-0.5px" }}
-                >
-                  প্রশ্ন<span className="bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent italic">ল্যাব</span>
-                </div>
+                <BrandLogo size={28} className="lg:text-[32px]" />
               </Link>
               <p className="text-sm leading-relaxed text-slate-500">
                 শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
