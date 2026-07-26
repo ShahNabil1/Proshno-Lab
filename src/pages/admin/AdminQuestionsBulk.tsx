@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Download, Upload, FileSpreadsheet, ClipboardPaste, Bot, Trash2, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import LatexRenderer from "@/components/LatexRenderer";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload,
