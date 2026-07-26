@@ -241,6 +241,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:overflow-visible">{children}</main>
       </div>
 
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>হোম পেইজে যেতে চান?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই পেইজ থেকে বের হলে বর্তমান কাজ/নির্বাচন হারিয়ে যেতে পারে। আপনি কি নিশ্চিতভাবে হোম পেইজে যেতে চান?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>না, এখানেই থাকি</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/")}>হ্যাঁ, যান</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Onboarding modal - blocks dashboard until institute is registered */}
       <OnboardingModal
         open={hasInstitute === false}
