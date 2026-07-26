@@ -73,8 +73,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                   key={l.label}
                   to={l.to}
                   className={cn(
-                    "relative px-3.5 py-2 text-[15px] font-medium text-navy/80 hover:text-navy transition-colors",
-                    active && "text-navy"
+                    "relative px-3.5 py-2 text-[15px] font-medium text-white/80 hover:text-white transition-colors",
+                    active && "text-white"
                   )}
                 >
                   <span className={cn("relative", active && "link-underline-gold pb-1")}>
@@ -96,7 +96,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                   </Button>
                 </Link>
                 <Link to="/profile" className="hidden md:inline-flex">
-                  <Button variant="ghost" size="sm" className="gap-2 text-navy/80 hover:text-navy hover:bg-navy/5">
+                  <Button variant="ghost" size="sm" className="gap-2 text-white/80 hover:text-white hover:bg-white/10">
                     <User className="w-4 h-4" />
                     {user.user_metadata?.full_name?.split(" ")[0] || "প্রোফাইল"}
                   </Button>
@@ -104,7 +104,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-navy/70 hover:text-navy hover:bg-navy/5"
+                  className="text-white/70 hover:text-white hover:bg-white/10"
                   onClick={signOut}
                   aria-label="Logout"
                 >
@@ -124,7 +124,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             )}
             {/* Mobile menu */}
             <button
-              className="lg:hidden p-2 rounded-lg text-navy hover:bg-navy/5"
+              className="lg:hidden p-2 rounded-lg text-white hover:bg-white/10"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >
@@ -141,14 +141,14 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="lg:hidden overflow-hidden bg-white border-t border-border"
+              className="lg:hidden overflow-hidden bg-[#1E3577] border-t border-white/10"
             >
               <div className="container py-3 flex flex-col">
                 {navLinks.map((l) => (
                   <Link
                     key={l.label}
                     to={l.to}
-                    className="px-2 py-2.5 text-[15px] font-medium text-navy/80 hover:text-navy hover:bg-navy/5 rounded-lg"
+                    className="px-2 py-2.5 text-[15px] font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
                   >
                     {l.label}
                   </Link>
