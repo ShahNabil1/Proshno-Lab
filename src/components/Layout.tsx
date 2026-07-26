@@ -35,8 +35,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   }, [location.pathname]);
 
   const headerBg = scrolled
-    ? "bg-[#1E3577]/95 backdrop-blur-xl shadow-lg"
-    : "bg-[#1E3577] border-b border-white/10";
+    ? "bg-[#21368a]/95 backdrop-blur-xl shadow-lg"
+    : "bg-[#21368a] border-b border-white/10";
 
   const navLinks = [
     { to: "/", label: "হোম" },
