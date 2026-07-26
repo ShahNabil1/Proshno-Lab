@@ -69,6 +69,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
   }, [table, permLoading]);
 
   const [bulkNames, setBulkNames] = useState("");
+  const [saving, setSaving] = useState(false);
   const openCreate = () => { setEditItem(null); setFormName(""); setBulkNames(""); setFormParentId(""); setFormSubjectCode(""); setDialogOpen(true); };
   const openEdit = (item: any) => {
     setEditItem(item);
@@ -79,33 +80,72 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
     setDialogOpen(true);
   };
 
-  const handleSave = async () => {
-    if (editItem) {
-      if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
-      const payload: any = { name: formName.trim() };
-      if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
-      if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
-      const { error } = await (supabase.from(table) as any).update(payload).eq("id", editItem.id);
-      if (error) { toast.error("আপডেট ব্যর্থ"); return; }
-      toast.success("আপডেট হয়েছে");
-    } else {
-      // Bulk create: one name per line
-      const names = bulkNames.split("\n").map((s) => s.trim()).filter(Boolean);
-      if (names.length === 0) { toast.error("অন্তত একটি নাম লিখুন"); return; }
-      if (parentKey && !formParentId) { toast.error(`${parentLabel} নির্বাচন করুন`); return; }
-      const rows = names.map((name) => {
-        const p: any = { name };
-        if (parentKey && formParentId) p[parentKey] = Number(formParentId);
-        if (table === "subjects") p.subject_code = formSubjectCode.trim() || null;
-        return p;
-      });
-      const { error } = await (supabase.from(table) as any).insert(rows);
-      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success(`${names.length} টি সফলভাবে যোগ হয়েছে`);
-    }
-    setDialogOpen(false);
-    fetchItems();
+  const entityLabel = table === "classes" ? "শ্রেণি" : table === "subjects" ? "বিষয়" : table === "chapters" ? "অধ্যায়" : "ক্যাটাগরি";
+  const placeholderText =
+    table === "classes" ? "ষষ্ঠ শ্রেণি\nসপ্তম শ্রেণি\nঅষ্টম শ্রেণি"
+    : table === "subjects" ? "বাংলা ১ম পত্র\nইংরেজি ১ম পত্র\nগণিত"
+    : table === "chapters" ? "অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"
+    : "সৃজনশীল\nবহুনির্বাচনি\nসংক্ষিপ্ত";
+
+  const parseNames = (raw: string) => {
+    const list = raw
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    // de-duplicate (case/space insensitive) while preserving order
+    const seen = new Set<string>();
+    return list.filter((n) => {
+      const k = n.replace(/\s+/g, " ").toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
   };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (editItem) {
+        if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+        const payload: any = { name: formName.trim() };
+        if (parentKey && formParentId) payload[parentKey] = Number(formParentId);
+        if (table === "subjects") payload.subject_code = formSubjectCode.trim() || null;
+        const { error } = await (supabase.from(table) as any).update(payload).eq("id", editItem.id);
+        if (error) { toast.error("আপডেট ব্যর্থ: " + error.message); return; }
+        toast.success("আপডেট হয়েছে");
+      } else {
+        const names = parseNames(bulkNames);
+        if (names.length === 0) { toast.error("অন্তত একটি নাম লিখুন"); return; }
+        if (parentKey && !formParentId) { toast.error(`${parentLabel} নির্বাচন করুন`); return; }
+        const rows = names.map((name) => {
+          const p: any = { name };
+          if (parentKey && formParentId) p[parentKey] = Number(formParentId);
+          if (table === "subjects") p.subject_code = formSubjectCode.trim() || null;
+          return p;
+        });
+        const { data, error } = await (supabase.from(table) as any).insert(rows).select("id");
+        if (error) {
+          // fallback: insert one by one so a single bad row doesn't block everything
+          let ok = 0;
+          let lastError = error.message;
+          for (const row of rows) {
+            const { error: e } = await (supabase.from(table) as any).insert(row);
+            if (e) lastError = e.message; else ok++;
+          }
+          if (ok === 0) { toast.error("তৈরি ব্যর্থ: " + lastError); return; }
+          toast.success(`${ok} টি ${entityLabel} যোগ হয়েছে`);
+        } else {
+          toast.success(`${data?.length ?? names.length} টি ${entityLabel} সফলভাবে যোগ হয়েছে`);
+        }
+      }
+      setDialogOpen(false);
+      await fetchItems();
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const confirmDelete = (id: number, name: string) => {
     setDeleteConfirm({ open: true, id, name });
