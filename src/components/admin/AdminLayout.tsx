@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import logoImg from "@/assets/logo.png";
+
 import BrandLogo from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 
