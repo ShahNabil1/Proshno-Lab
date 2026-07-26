@@ -283,7 +283,7 @@ export default function AdminQuestionReports() {
             {q.stimulus_text && (
               <div>
                 <Label className="text-xs text-muted-foreground">উদ্দীপক</Label>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1" dangerouslySetInnerHTML={{ __html: q.stimulus_text }} />
+                <div className="bg-muted/50 rounded-lg p-3 mt-1"><LatexRenderer text={q.stimulus_text} /></div>
               </div>
             )}
             <div>
@@ -334,13 +334,13 @@ export default function AdminQuestionReports() {
             {cd.stem && (
               <div>
                 <Label className="text-xs text-muted-foreground">উদ্দীপক</Label>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1" dangerouslySetInnerHTML={{ __html: cd.stem }} />
+                <div className="bg-muted/50 rounded-lg p-3 mt-1"><LatexRenderer text={cd.stem} /></div>
               </div>
             )}
             {["q_ka", "q_kha", "q_ga", "q_gha"].map((key, i) => cd[key] && (
               <div key={key}>
                 <Label className="text-xs text-muted-foreground">{["ক", "খ", "গ", "ঘ"][i]})</Label>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1" dangerouslySetInnerHTML={{ __html: cd[key] }} />
+                <div className="bg-muted/50 rounded-lg p-3 mt-1"><LatexRenderer text={cd[key]} /></div>
               </div>
             ))}
           </>
@@ -352,13 +352,13 @@ export default function AdminQuestionReports() {
             {cd.desc_q_ka && (
               <div>
                 <Label className="text-xs text-muted-foreground">ক) প্রশ্ন</Label>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1" dangerouslySetInnerHTML={{ __html: cd.desc_q_ka }} />
+                <div className="bg-muted/50 rounded-lg p-3 mt-1"><LatexRenderer text={cd.desc_q_ka} /></div>
               </div>
             )}
             {cd.desc_q_kha && (
               <div>
                 <Label className="text-xs text-muted-foreground">খ) প্রশ্ন</Label>
-                <div className="bg-muted/50 rounded-lg p-3 mt-1" dangerouslySetInnerHTML={{ __html: cd.desc_q_kha }} />
+                <div className="bg-muted/50 rounded-lg p-3 mt-1"><LatexRenderer text={cd.desc_q_kha} /></div>
               </div>
             )}
           </>
