@@ -417,8 +417,11 @@ export default function AdminQuestionReports() {
                     <div className="text-xs text-muted-foreground">{r.teacherData?.email || ""}</div>
                   </TableCell>
                   <TableCell className="max-w-[200px]">
-                    <p className="text-sm truncate">{r.questionData?.question || "—"}</p>
+                    {r.questionData?.question
+                      ? <LatexRenderer text={r.questionData.question} className="text-sm truncate" />
+                      : <p className="text-sm truncate">—</p>}
                   </TableCell>
+
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">{r.error_type}</Badge>
                     {r.comment && <p className="text-xs text-muted-foreground mt-1 truncate max-w-[150px]">{r.comment}</p>}
