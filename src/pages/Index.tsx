@@ -52,7 +52,7 @@ export default function Index() {
     fetchReviews();
   }, []);
 
-  if (!loading && user) return <Navigate to="/dashboard" replace />;
+  // লগডইন থাকলেও ইউজার হোম পেইজ দেখতে পারবে (হেডারে ড্যাশবোর্ড বাটন থাকে)
 
   return (
     <div className="overflow-hidden">

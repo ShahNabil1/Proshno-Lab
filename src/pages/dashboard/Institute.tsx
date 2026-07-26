@@ -21,24 +21,8 @@ export default function Institute() {
   const [showWarning, setShowWarning] = useState(false);
   const [form, setForm] = useState({ name: "", upazila: "", district: "", division: "", phone: "", specific_address: "" });
 
-  const isEditLocked = (): { locked: boolean; daysLeft: number } => {
-    if (!institute?.last_edited_at) return { locked: false, daysLeft: 0 };
-    const lastEdit = new Date(institute.last_edited_at);
-    const now = new Date();
-    const diffMs = now.getTime() - lastEdit.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const daysLeft = 30 - diffDays;
-    return { locked: daysLeft > 0, daysLeft: Math.max(0, daysLeft) };
-  };
-
-  const handleEditClick = () => {
-    const { locked, daysLeft } = isEditLocked();
-    if (locked) {
-      toast.error(`আপনি আরও ${daysLeft} দিন পর তথ্য পরিবর্তন করতে পারবেন।`);
-      return;
-    }
-    setShowWarning(true);
-  };
+  // ৩০ দিনের এডিট লক বন্ধ — ইউজার যখন খুশি তথ্য পরিবর্তন করতে পারবে
+  const handleEditClick = () => setEditing(true);
 
   useEffect(() => {
     if (!user) return;
