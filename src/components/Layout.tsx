@@ -219,7 +219,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="w-[18px] h-[18px] text-gold shrink-0" />
-                  <a href="mailto:proshnolab@gmail.com" className="text-slate-500 hover:text-navy transition-colors">proshnolab@gmail.com</a>
+                  <a href="mailto:hi@proshnolab.com" className="text-slate-500 hover:text-navy transition-colors">hi@proshnolab.com</a>
                 </li>
               </ul>
             </div>
