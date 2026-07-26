@@ -23,7 +23,6 @@ const allSidebarItems = [
   
 
   { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "কন্টেন্ট ম্যানেজমেন্ট" },
-  { path: "/admin/faqs", label: "FAQ", icon: HelpCircle, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/reviews", label: "রিভিউ", icon: Star, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/coupons", label: "কুপন", icon: Tag, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/packages", label: "প্যাকেজ", icon: Package, group: "কন্টেন্ট ম্যানেজমেন্ট" },

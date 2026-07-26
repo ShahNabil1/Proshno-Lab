@@ -29,7 +29,6 @@ const adminPages = [
   { path: "/admin/questions", label: "প্রশ্ন", icon: FileText },
   { path: "/admin/topics", label: "টপিক", icon: Layers },
   { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare },
-  { path: "/admin/faqs", label: "FAQ", icon: HelpCircle },
   { path: "/admin/reviews", label: "রিভিউ", icon: Star },
   { path: "/admin/coupons", label: "কুপন", icon: Tag },
   { path: "/admin/packages", label: "প্যাকেজ", icon: Package },

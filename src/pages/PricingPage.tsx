@@ -19,13 +19,6 @@ const fadeUp = {
   }),
 };
 
-const faqs = [
-  { q: "১ ক্লিকে প্রশ্ন তৈরীতে কি কি কাস্টমাইজ করা যাবে?", a: "প্রশ্নের ধরন (MCQ, সংক্ষিপ্ত, সৃজনশীল), মান বিভাজন, সময়, প্রতিষ্ঠানের নাম ও লোগো সহ সম্পূর্ণ কাস্টমাইজ করা যাবে।" },
-  { q: "কি কি উপায়ে প্রশ্ন বাছাই করা যাবে?", a: "অধ্যায়, টপিক, বোর্ড রেফারেন্স, বিশ্ববিদ্যালয় রেফারেন্স এবং প্রশ্নের ধরন অনুযায়ী বাছাই করা যাবে।" },
-  { q: "প্যাকেজের মেয়াদ কত দিন?", a: "সকল প্যাকেজের মেয়াদ ক্রয়ের তারিখ থেকে ৩৬৫ দিন (১ বছর)।" },
-  { q: "প্যাকেজ কেনার পর কি আপগ্রেড করা যায়?", a: "হ্যাঁ, যেকোনো সময় বড় প্যাকেজে আপগ্রেড করতে পারবেন। পার্থক্য মূল্য পরিশোধ করলেই হবে।" },
-];
-
 const bundleFeatures = [
   "সকল বিষয়ের প্রশ্ন ব্যাংক",
   "১-ক্লিকে প্রশ্নপত্র তৈরি",
@@ -286,22 +279,6 @@ export default function PricingPage() {
           </>
         )}
 
-        {/* FAQ */}
-        <section className="container max-w-3xl">
-          <motion.div custom={8} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <h2 className="font-heading text-xl md:text-2xl font-bold text-foreground text-center mb-8">
-              আপনার সব প্রশ্নের উত্তর এখানে !
-            </h2>
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="border rounded-xl px-4 bg-card">
-                  <AccordionTrigger className="font-heading font-medium text-sm md:text-base hover:no-underline">{faq.q}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground text-sm">{faq.a}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </motion.div>
-        </section>
       </div>
 
       {/* Sticky bottom bar */}

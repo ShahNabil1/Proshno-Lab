@@ -57,7 +57,6 @@ import AdminTopicQuestions from "./pages/admin/AdminTopicQuestions";
 import AdminPackages from "./pages/admin/AdminPackages";
 import AdminQuestionReports from "./pages/admin/AdminQuestionReports";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
-import AdminFaqs from "./pages/admin/AdminFaqs";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminSuggestions from "./pages/admin/AdminSuggestions";
 import AdminAdvanced from "./pages/admin/AdminAdvanced";
@@ -125,7 +124,6 @@ const App = () => (
             <Route path="/admin/packages" element={<AdminLayout><AdminPackages /></AdminLayout>} />
             <Route path="/admin/question-reports" element={<AdminLayout><AdminQuestionReports /></AdminLayout>} />
             <Route path="/admin/announcements" element={<AdminLayout><AdminAnnouncements /></AdminLayout>} />
-            <Route path="/admin/faqs" element={<AdminLayout><AdminFaqs /></AdminLayout>} />
             <Route path="/admin/reviews" element={<AdminLayout><AdminReviews /></AdminLayout>} />
             <Route path="/admin/analytics" element={<AdminLayout><AdminAnalytics /></AdminLayout>} />
             <Route path="/admin/advanced" element={<AdminLayout><AdminAdvanced /></AdminLayout>} />
