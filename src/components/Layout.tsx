@@ -162,88 +162,91 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <main className="flex-1">{children}</main>
 
       {/* Footer — hidden on demo page */}
-      {!isDemoPage && <footer className="bg-white border-t border-slate-200 text-slate-600">
+      {!isDemoPage && <footer className="bg-[#1E3577] text-white/90">
         <div className="container py-10 lg:py-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 items-start">
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="inline-block">
-                <BrandLogo size={36} className="lg:text-[42px]" />
+                <BrandLogo size={36} className="lg:text-[42px] [&_.text-brand-navy]:text-white" />
               </Link>
-              <p className="text-sm leading-relaxed text-slate-500">
-                শিক্ষকদের জন্য <span className="text-gold font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
+              <p className="text-sm leading-relaxed text-white/80">
+                শিক্ষকদের জন্য <span className="text-[#F4C053] font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম। স্মার্ট শিক্ষকদের জন্য স্মার্ট সমাধান ✨
               </p>
-              {/* Social */}
-              <div className="flex items-center gap-3 pt-1">
-                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#1877F2]/10 transition-colors hover:scale-110">
-                  <FaFacebook className="w-[18px] h-[18px] text-[#1877F2]" />
-                </a>
-                <a href="https://instagram.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#E4405F]/10 transition-colors hover:scale-110">
-                  <FaInstagram className="w-[18px] h-[18px] text-[#E4405F]" />
-                </a>
-                <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#FF0000]/10 transition-colors hover:scale-110">
-                  <FaYoutube className="w-[18px] h-[18px] text-[#FF0000]" />
-                </a>
-                <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-[#25D366]/10 transition-colors hover:scale-110">
-                  <FaWhatsapp className="w-[18px] h-[18px] text-[#25D366]" />
-                </a>
-                <a href="https://tiktok.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-black/5 transition-colors hover:scale-110">
-                  <FaTiktok className="w-[18px] h-[18px] text-black" />
-                </a>
-              </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-heading font-bold text-navy text-base mb-4">কুইক লিংকস</h4>
+              <h4 className="font-heading font-bold text-white text-base mb-4">কুইক লিংক</h4>
               <ul className="space-y-2.5 text-sm">
-                <li><Link to="/" className="text-slate-500 hover:text-navy transition-colors">হোম</Link></li>
-                <li><Link to="/dashboard/create?mode=auto" className="text-slate-500 hover:text-navy transition-colors">অটো প্রশ্ন তৈরি</Link></li>
-                <li><Link to="/pricing" className="text-slate-500 hover:text-navy transition-colors">প্যাকেজ ও মূল্য</Link></li>
-                <li><Link to="/demo" className="text-slate-500 hover:text-navy transition-colors">টিউটোরিয়াল</Link></li>
-                <li><Link to="/helpline" className="text-slate-500 hover:text-navy transition-colors">হেল্পলাইন</Link></li>
+                <li><Link to="/" className="text-white/80 hover:text-white transition-colors">হোম</Link></li>
+                <li><Link to="/dashboard/create?mode=auto" className="text-white/80 hover:text-white transition-colors">অটো প্রশ্ন তৈরি</Link></li>
+                <li><Link to="/pricing" className="text-white/80 hover:text-white transition-colors">প্যাকেজ ও মূল্য</Link></li>
+                <li><Link to="/demo" className="text-white/80 hover:text-white transition-colors">টিউটোরিয়াল</Link></li>
+                <li><Link to="/helpline" className="text-white/80 hover:text-white transition-colors">হেল্পলাইন</Link></li>
               </ul>
             </div>
 
             {/* Contact */}
             <div>
-              <h4 className="font-heading font-bold text-navy text-base mb-4">যোগাযোগ</h4>
+              <h4 className="font-heading font-bold text-white text-base mb-4">যোগাযোগ</h4>
               <ul className="space-y-3.5 text-sm">
                 <li className="flex items-start gap-3">
-                  <MapPin className="w-[18px] h-[18px] text-gold mt-0.5 shrink-0" />
-                  <span className="text-slate-500">ময়মনসিংহ, বাংলাদেশ</span>
+                  <MapPin className="w-[18px] h-[18px] text-[#F4C053] mt-0.5 shrink-0" />
+                  <span className="text-white/80">ময়মনসিংহ, বাংলাদেশ</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone className="w-[18px] h-[18px] text-gold shrink-0" />
-                  <a href="tel:+8809696638867" className="text-slate-500 hover:text-navy transition-colors">+880 9696-638867</a>
+                  <Phone className="w-[18px] h-[18px] text-[#F4C053] shrink-0" />
+                  <a href="tel:+8809696638867" className="text-white/80 hover:text-white transition-colors">+880 9696-638867</a>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail className="w-[18px] h-[18px] text-gold shrink-0" />
-                  <a href="mailto:hi@proshnolab.com" className="text-slate-500 hover:text-navy transition-colors">hi@proshnolab.com</a>
+                  <Mail className="w-[18px] h-[18px] text-[#F4C053] shrink-0" />
+                  <a href="mailto:hi@proshnolab.com" className="text-white/80 hover:text-white transition-colors">hi@proshnolab.com</a>
                 </li>
               </ul>
             </div>
 
+            {/* Social */}
+            <div>
+              <h4 className="font-heading font-bold text-white text-base mb-4">আমাদের সাথে যুক্ত থাকুন:</h4>
+              <div className="flex flex-wrap items-center gap-4">
+                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:scale-110 transition-transform">
+                  <FaFacebook className="w-7 h-7 text-[#1877F2]" />
+                </a>
+                <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="hover:scale-110 transition-transform">
+                  <FaYoutube className="w-7 h-7 text-[#FF0000]" />
+                </a>
+                <a href="https://tiktok.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="hover:scale-110 transition-transform">
+                  <FaTiktok className="w-7 h-7 text-white" />
+                </a>
+                <a href="https://instagram.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:scale-110 transition-transform">
+                  <FaInstagram className="w-7 h-7 text-[#E4405F]" />
+                </a>
+                <a href="https://wa.me/8801758018668" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="hover:scale-110 transition-transform">
+                  <FaWhatsapp className="w-7 h-7 text-[#25D366]" />
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Bottom bar */}
-          <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+          <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/70">
             <div>© 2026 Proshno Lab. All rights reserved.</div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-500">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/80">
               <span>Developed by</span>
               <a
                 href="https://www.shahnabil.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-slate-700 hover:text-navy transition-colors"
+                className="font-semibold text-white hover:text-[#F4C053] transition-colors"
               >
                 Shahriar Nabil
               </a>
             </div>
             <div className="flex items-center gap-2">
-              <Link to="/terms" className="hover:text-navy transition-colors">Terms & Conditions</Link>
-              <span className="text-slate-400">•</span>
-              <Link to="/privacy" className="hover:text-navy transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+              <span className="text-white/40">•</span>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             </div>
           </div>
         </div>
