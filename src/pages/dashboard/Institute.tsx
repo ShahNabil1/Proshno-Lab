@@ -191,25 +191,7 @@ export default function Institute() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              সতর্কতা
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              আপনি যদি এখন প্রতিষ্ঠানের তথ্য পরিবর্তন করেন, তাহলে আগামী <strong>৩০ দিন</strong> আর কোনো পরিবর্তন করতে পারবেন না। আপনি কি নিশ্চিত?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setEditing(true)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              হ্যাঁ, এডিট করতে চাই
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 }
