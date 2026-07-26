@@ -128,8 +128,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           : "lg:w-[240px] lg:translate-x-0 lg:opacity-100"
       )}>
         <Link to="/admin" className="h-16 flex items-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
-          <img src={logoImg} alt="Proshno Lab" className="w-8 h-8 rounded-lg object-contain" />
-          <BrandLogo size={20} plate={false} /><span className="font-heading font-bold text-sm text-muted-foreground">Admin</span>
+          <BrandLogo size={20} plate={false} />
         </Link>
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           {Object.entries(groups).map(([groupLabel, items]) => (
