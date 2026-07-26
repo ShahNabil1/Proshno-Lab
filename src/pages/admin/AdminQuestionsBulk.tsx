@@ -364,19 +364,19 @@ export default function AdminQuestionsBulk() {
                 <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : ""}`}>
                   <div className="text-xs text-muted-foreground w-8">#{i + 1}</div>
                   <div className="flex-1 min-w-0">
-                    {q.stimulus && <div className="text-xs text-muted-foreground line-clamp-2 mb-1"><span className="font-semibold">উদ্দীপক:</span> {q.stimulus.replace(/<[^>]+>/g, "")}</div>}
-                    <div className="font-medium text-sm line-clamp-2">{q.question || q.creative_data?.stem?.slice(0, 100) || "(no question)"}</div>
+                    {q.stimulus && <div className="text-xs text-muted-foreground line-clamp-2 mb-1"><span className="font-semibold">উদ্দীপক:</span> <LatexRenderer inline text={q.stimulus.replace(/<[^>]+>/g, "")} /></div>}
+                    <div className="font-medium text-sm line-clamp-2"><LatexRenderer inline text={q.question || q.creative_data?.stem?.slice(0, 100) || "(no question)"} /></div>
                     {q.type === "mcq" && (
                       <div className="text-xs text-muted-foreground mt-1 grid grid-cols-2 gap-x-4">
-                        <span>ক) {q.option_a}</span><span>খ) {q.option_b}</span>
-                        <span>গ) {q.option_c}</span><span>ঘ) {q.option_d}</span>
+                        <span>ক) <LatexRenderer inline text={q.option_a || ""} /></span><span>খ) <LatexRenderer inline text={q.option_b || ""} /></span>
+                        <span>গ) <LatexRenderer inline text={q.option_c || ""} /></span><span>ঘ) <LatexRenderer inline text={q.option_d || ""} /></span>
                         <span className="col-span-2 text-emerald-700">সঠিক: {q.correct_answer}</span>
                       </div>
                     )}
                     {q.type === "cq" && q.creative_data && (
                       <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                        <div>ক) {q.creative_data.q_ka}</div><div>খ) {q.creative_data.q_kha}</div>
-                        <div>গ) {q.creative_data.q_ga}</div>{q.creative_data.q_gha && <div>ঘ) {q.creative_data.q_gha}</div>}
+                        <div>ক) <LatexRenderer inline text={q.creative_data.q_ka || ""} /></div><div>খ) <LatexRenderer inline text={q.creative_data.q_kha || ""} /></div>
+                        <div>গ) <LatexRenderer inline text={q.creative_data.q_ga || ""} /></div>{q.creative_data.q_gha && <div>ঘ) <LatexRenderer inline text={q.creative_data.q_gha} /></div>}
                       </div>
                     )}
                     {q.errors.length > 0 && (
