@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
 import { useCloudBackup } from "@/hooks/useCloudBackup";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const CONFIRM_LEAVE_PATHS = ["/dashboard/view-paper", "/dashboard/create", "/dashboard/auto-create"];
 
 const baseSidebarGroups = [
   {
