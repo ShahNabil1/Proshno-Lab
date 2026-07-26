@@ -86,6 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
   const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
 
