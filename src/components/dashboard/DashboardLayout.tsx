@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, Navigate } from "react-router-dom";
+import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, PlusCircle, BookOpen, Package, FileText,
   Building2, CreditCard, MessageSquare, Phone, Menu, LogOut, User, Shield, Home
@@ -197,12 +197,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }} title="সাইডবার">
             <Menu className="w-5 h-5" />
           </Button>
-          <Link to="/" className="ml-1">
-            <Button variant="outline" size="sm" className="gap-2 h-9">
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">হোম পেইজে যান</span>
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 h-9 ml-1"
+            onClick={() => navigate("/")}
+          >
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline">হোম পেইজে যান</span>
+          </Button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
             <Link to="/dashboard/institute" className="flex items-center gap-2">
