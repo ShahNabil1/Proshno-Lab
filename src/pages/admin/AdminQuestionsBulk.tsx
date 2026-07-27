@@ -179,7 +179,7 @@ export default function AdminQuestionsBulk() {
   };
 
   const doSave = async () => {
-    const valid = parsed.filter((q) => q.errors.length === 0);
+    const valid = parsed.filter((q) => q.errors.length === 0 && !q.duplicate);
     if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
