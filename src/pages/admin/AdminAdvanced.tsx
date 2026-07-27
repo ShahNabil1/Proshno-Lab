@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import YouTubePlayer, { extractYouTubeId } from "@/components/YouTubePlayer";
 import {
   CloudUpload, Settings, LayoutDashboard, PlusCircle, Package, FileText,
   Building2, CreditCard, Phone, MessageSquare, GraduationCap, BookOpen,
-  Layers, Users, Tag, HelpCircle, Star, Flag, ShieldCheck
+  Layers, Users, Tag, HelpCircle, Star, Flag, ShieldCheck, Youtube
 } from "lucide-react";
+
 
 const dashboardPages = [
   { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
