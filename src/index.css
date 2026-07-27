@@ -577,14 +577,18 @@
   margin: 4px 0;
 }
 
-/* mc-block-question: ensure block rendering for images/tables in question lists */
+/* mc-block-question: block rendering for images/tables, but keep wrapper inline
+   so the question-info badge can follow the last line of text. */
 .mc-block-question .latex-renderer {
-  display: block;
+  display: inline;
 }
 .mc-block-question .latex-renderer p {
   display: block;
   margin: 0;
   padding: 0;
+}
+.mc-block-question .latex-renderer p:last-child {
+  display: inline;
 }
 
 /* LatexRenderer: inline mode */
