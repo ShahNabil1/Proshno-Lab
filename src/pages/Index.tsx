@@ -177,220 +177,28 @@ export default function Index() {
       </section>
 
 
-      {/* ══════ WIZARD PREVIEW (3-step demo, matches /dashboard/create) ══════ */}
+      {/* ══════ VIDEO SHOWCASE ══════ */}
       <section className="py-12 md:py-16 bg-background relative -mt-6 z-10">
-        <div className="container max-w-5xl">
+        <div className="container max-w-4xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
-            variants={fadeUp} custom={0} className="text-center mb-10"
+            variants={fadeUp} custom={0} className="text-center mb-8"
           >
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
-              মাত্র ৩ ধাপে প্রশ্নপত্র তৈরি
+              কীভাবে কাজ করে দেখে নিন
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              শ্রেণি, বিষয় ও অধ্যায় বেছে নিন — প্রশ্নের ধরন ও সংখ্যা ঠিক করুন — এক ক্লিকে প্রিন্ট-প্রস্তুত প্রশ্নপত্র।
+              মাত্র কয়েক ধাপে প্রিন্ট-প্রস্তুত প্রশ্নপত্র — সম্পূর্ণ প্রক্রিয়াটি ভিডিওতে দেখুন।
             </p>
           </motion.div>
 
-          {/* Mode toggle pills (mirrors CreateModeToggle) */}
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={{ once: true }}
-            variants={fadeUp} custom={1}
-            className="flex flex-wrap justify-center gap-3 mb-6"
-          >
-            {[
-              { label: "অটো প্রশ্ন তৈরি", active: true },
-              { label: "প্রশ্ন তৈরি", active: false },
-              { label: "রেডি প্রশ্ন", active: false },
-            ].map((m) => (
-              <div
-                key={m.label}
-                className={`px-6 py-2 rounded-lg border font-heading text-sm ${
-                  m.active
-                    ? "bg-navy text-white border-navy shadow-md"
-                    : "bg-card text-foreground border-border"
-                }`}
-              >
-                {m.label}
-              </div>
-            ))}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
+            {videoId ? (
+              <YouTubePlayer videoId={videoId} title="প্রশ্নল্যাব টিউটোরিয়াল" />
+            ) : (
+              <div className="aspect-video w-full rounded-2xl border border-border bg-muted animate-pulse" />
+            )}
           </motion.div>
-
-          {/* Wizard steps */}
-          {[
-            {
-              tabIndex: 0,
-              title: "ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন",
-              desc: "প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।",
-              body: (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { label: "শ্রেণি", value: "ষষ্ঠ শ্রেণি", select: true },
-                    { label: "বিষয়", value: "-- বিষয় নির্বাচন করুন --", select: true },
-                    {
-                      label: "অধ্যায় (একাধিক)",
-                      list: [
-                        { text: "অধ্যায় ১: প্রাণীজগতের শ্রেণিবিন্যাস", checked: true },
-                        { text: "অধ্যায় ২: কোষ বিভাজন", checked: false },
-                        { text: "অধ্যায় ৩: উদ্ভিদের গঠন", checked: false },
-                      ],
-                    },
-                  ].map((col: any, i) => (
-                    <div key={i} className="rounded-xl border border-border bg-card p-4">
-                      <div className="text-xs font-semibold text-muted-foreground mb-2">{col.label}</div>
-                      {col.select && (
-                        <div className="h-10 rounded-md border border-border bg-background flex items-center justify-between px-3 text-sm text-foreground">
-                          <span>{col.value}</span>
-                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                      {col.list && (
-                        <div className="space-y-2">
-                          {col.list.map((it: any, j: number) => (
-                            <label key={j} className="flex items-center gap-2 text-sm text-foreground">
-                              <span
-                                className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                  it.checked ? "bg-primary border-primary" : "bg-background border-border"
-                                }`}
-                              >
-                                {it.checked && <CheckCircle2 className="w-3 h-3 text-white" />}
-                              </span>
-                              {it.text}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ),
-              back: false,
-            },
-            {
-              tabIndex: 1,
-              title: "ধাপ ২: প্রশ্নের ধরন ও সংখ্যা নির্বাচন করুন",
-              desc: "সিস্টেম স্বয়ংক্রিয়ভাবে প্রশ্ন জেনারেট করার জন্য প্রতিটি ধরন থেকে কতটি প্রশ্ন চান তা নির্দিষ্ট করুন।",
-              body: (
-                <div className="space-y-4">
-                  {[
-                    { label: "MCQ প্রশ্নের সংখ্যা", value: 10, pct: 20 },
-                    { label: "সৃজনশীল (CQ) প্রশ্নের সংখ্যা", value: 2, pct: 10 },
-                  ].map((s, i) => (
-                    <div key={i} className="rounded-xl border border-border bg-card p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-foreground">{s.label}</span>
-                        <span className="font-heading font-bold text-navy">{s.value}</span>
-                      </div>
-                      <div className="relative h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="absolute inset-y-0 left-0 bg-navy rounded-full"
-                          style={{ width: `${s.pct}%` }}
-                        />
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-navy shadow"
-                          style={{ left: `calc(${s.pct}% - 8px)` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ),
-              back: true,
-            },
-            {
-              tabIndex: 2,
-              title: "",
-              desc: "",
-              body: (
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full border-2 border-primary flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="font-heading font-bold text-2xl text-foreground mb-6">
-                    আপনার প্রশ্নপত্র প্রস্তুত!
-                  </h3>
-                  <div className="max-w-md mx-auto rounded-xl border border-border bg-card p-5 text-left">
-                    <div className="text-sm font-semibold text-navy border-b border-border pb-2 mb-3">
-                      সারাংশ:
-                    </div>
-                    <ul className="text-sm text-foreground space-y-1.5">
-                      <li>শ্রেণি: ষষ্ঠ শ্রেণি</li>
-                      <li>বিষয়: বিজ্ঞান</li>
-                      <li>অধ্যায়: অধ্যায় ১: প্রাণীজগতের শ্রেণিবিন্যাস</li>
-                      <li>MCQ: ১০ টি</li>
-                      <li>CQ: ২ টি</li>
-                      <li>মোট মূল্য: ৳০</li>
-                    </ul>
-                  </div>
-                </div>
-              ),
-              back: true,
-              cta: true,
-            },
-          ].map((step, sIdx) => (
-            <motion.div
-              key={sIdx}
-              initial="hidden" whileInView="visible" viewport={{ once: true }}
-              variants={fadeUp} custom={sIdx + 2}
-              className="mb-8 rounded-2xl border border-border bg-card shadow-premium overflow-hidden"
-            >
-              {/* Tab strip */}
-              <div className="grid grid-cols-3 border-b border-border">
-                {["১. বিষয়", "২. কনফিগ", "৩. জেনারেট"].map((t, ti) => (
-                  <div
-                    key={ti}
-                    className={`text-center py-3 font-heading font-semibold text-sm md:text-base ${
-                      ti === step.tabIndex
-                        ? "bg-navy text-white"
-                        : "text-muted-foreground bg-background"
-                    }`}
-                  >
-                    {t}
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-6 md:p-8">
-                {step.title && (
-                  <h3 className="font-heading font-bold text-lg md:text-xl text-foreground mb-2">
-                    {step.title}
-                  </h3>
-                )}
-                {step.desc && (
-                  <p className="text-sm text-muted-foreground mb-6">{step.desc}</p>
-                )}
-
-                {step.body}
-
-                {/* Footer buttons */}
-                <div className="flex items-center justify-between mt-6">
-                  {step.back ? (
-                    <button className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-foreground bg-background inline-flex items-center gap-2">
-                      ← আগের ধাপে যান
-                    </button>
-                  ) : (
-                    <span />
-                  )}
-                  <button
-                    className={`h-10 px-5 rounded-lg font-heading font-semibold text-sm inline-flex items-center gap-2 ${
-                      step.cta
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-navy text-white"
-                    }`}
-                  >
-                    {step.cta ? (
-                      <>
-                        <FilePlus2 className="w-4 h-4" />
-                        প্রশ্ন তৈরি করুন
-                      </>
-                    ) : (
-                      <>পরবর্তী ধাপ →</>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
