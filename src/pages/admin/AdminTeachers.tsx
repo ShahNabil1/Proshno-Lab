@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Shield, ShieldOff, Settings, Ban, Trash2, UserCheck, Search, X, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sortClasses } from "@/lib/classOrder";
 
 const ADMIN_PAGE_GROUPS = [
   {
@@ -81,7 +82,7 @@ export default function AdminTeachers() {
     ]);
     setTeachers(t || []);
     setRoles(r || []);
-    setClasses(c || []);
+    setClasses(sortClasses(c || []));
     setSubjects(s || []);
   };
 

@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, ArrowUp, ArrowDown, Edit, Eye, FileText, Search } from "lucide-react";
 import LatexRenderer from "@/components/LatexRenderer";
+import { sortClasses } from "@/lib/classOrder";
 
 const toBanglaNum = (n: number) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 
@@ -76,7 +77,7 @@ export default function AdminSuggestions() {
       supabase.from("pricing_packages").select("id, class_name, subject_name, type").eq("is_active", true).order("sort_order"),
       supabase.from("suggestion_assignments").select("suggestion_id, package_id"),
     ]);
-    setClasses(cRes.data || []);
+    setClasses(sortClasses(cRes.data || []));
     setSubjects(sRes.data || []);
     setSuggestions((sugRes.data as any[]) || []);
     setPackages(pkgRes.data || []);
