@@ -198,12 +198,18 @@ const RULES = [
   "একই প্রশ্ন আগে থেকেই থাকলে বা লিস্টে দুইবার থাকলে সেটি ডুপ্লিকেট হিসেবে মার্ক হয়ে স্কিপ হবে।",
 ];
 
-export default function PasteGuide({ type, onInsert }: { type: QType; onInsert?: (sample: string) => void }) {
-  const variants = PASTE_VARIANTS[type];
+export default function PasteGuide({ type, isMath = false, onInsert }: { type: QType; isMath?: boolean; onInsert?: (sample: string) => void }) {
+  const variants = useMemo(() => {
+    const list = PASTE_VARIANTS[type];
+    if (type !== "cq") return list;
+    // গণিত/উচ্চতর গণিতে শুধু ৩ প্রশ্নের (ক/খ/গ) ভ্যারিয়েন্টগুলোই দেখানো হয়
+    return isMath ? list.filter((v) => v.id.startsWith("math")) : list.filter((v) => !v.id.startsWith("math"));
+  }, [type, isMath]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(variants[0].id);
   const current = useMemo(() => variants.find((v) => v.id === active) || variants[0], [variants, active]);
   const [copied, setCopied] = useState(false);
+
 
   const copy = async () => {
     await navigator.clipboard.writeText(current.sample);
