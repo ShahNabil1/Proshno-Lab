@@ -88,32 +88,65 @@ export default function AdminQuestionsBulk() {
   const isMathSubject = isMathSubjectName(subjects.find((s) => String(s.id) === subjectId)?.name);
 
   const stats = useMemo(() => {
-    const valid = parsed.filter((q) => q.errors.length === 0).length;
-    return { total: parsed.length, valid, invalid: parsed.length - valid };
+    const invalid = parsed.filter((q) => q.errors.length > 0).length;
+    const dup = parsed.filter((q) => q.errors.length === 0 && q.duplicate).length;
+    const valid = parsed.filter((q) => q.errors.length === 0 && !q.duplicate).length;
+    return { total: parsed.length, valid, invalid, dup };
   }, [parsed]);
+
+  /** Marks in-batch duplicates + duplicates already saved in this chapter (chunked DB read). */
+  const applyDedupe = async (items: ParsedQuestion[]) => {
+    const marked = markBatchDuplicates(items);
+    try {
+      const sigs = new Set<string>();
+      const PAGE = 1000;
+      for (let from = 0; from < 20000; from += PAGE) {
+        const { data, error } = await supabase
+          .from("questions")
+          .select("id, type, question, option_a, option_b, option_c, option_d, creative_data")
+          .eq("chapter_id", Number(chapterId))
+          .eq("type", type)
+          .order("id")
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        data.forEach((r: any) => sigs.add(questionSignature(r)));
+        if (data.length < PAGE) break;
+      }
+      return markDbDuplicates(marked, sigs);
+    } catch {
+      return marked;
+    }
+  };
+
+  const loadItems = async (items: ParsedQuestion[], label: string) => {
+    const deduped = await applyDedupe(items);
+    setParsed(deduped);
+    const dups = deduped.filter((q) => q.duplicate).length;
+    toast.success(`${items.length} টি প্রশ্ন ${label}${dups ? ` • ${dups} টি ডুপ্লিকেট (স্কিপ হবে)` : ""}`);
+  };
 
   const handleExcel = async (file: File) => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
     try {
       const items = await parseExcelFile(file, type, isMathSubject);
       if (items.length === 0) { toast.error("ফাইলে কোনো row পাওয়া যায়নি"); return; }
-      setParsed(items);
-      toast.success(`${items.length} টি প্রশ্ন লোড হয়েছে`);
+      await loadItems(items, "লোড হয়েছে");
     } catch (e: any) {
       toast.error("Parse error: " + e.message);
     }
   };
 
-  const handlePaste = () => {
+  const handlePaste = async () => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
-    const items = parsePastedText(pasteText, type);
-    if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি"); return; }
-    setParsed(items);
-    toast.success(`${items.length} টি প্রশ্ন detect হয়েছে`);
+    const items = parsePastedText(pasteText, type, isMathSubject);
+    if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি — i আইকনে ফরম্যাট দেখুন"); return; }
+    await loadItems(items, "detect হয়েছে");
   };
 
   const removeRow = (id: string) => setParsed((p) => p.filter((x) => x.tempId !== id));
   const removeInvalid = () => setParsed((p) => p.filter((x) => x.errors.length === 0));
+  const removeDuplicates = () => setParsed((p) => p.filter((x) => !x.duplicate));
+
 
   const runInsertChunks = async (chunks: FailedChunk[]) => {
     const nextFailed: FailedChunk[] = [];
