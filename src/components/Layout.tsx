@@ -95,13 +95,13 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {user ? (
               <>
                 <Link to="/dashboard">
-                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-4 h-10 rounded-lg gap-2 shadow-sm">
-                    <LayoutDashboard className="w-4 h-4" />
-                    ড্যাশবোর্ড
+                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-2.5 sm:px-4 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm">
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">ড্যাশবোর্ড</span>
                   </Button>
                 </Link>
                 <Link to="/profile" className="hidden md:inline-flex">
@@ -113,7 +113,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
                   onClick={signOut}
                   aria-label="Logout"
                 >
@@ -124,13 +124,14 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <Link to="/login">
                 <Button
                   size="sm"
-                  className="btn-gold border-0 font-heading font-bold px-5 h-10 rounded-lg gap-2 shadow-sm"
+                  className="btn-gold border-0 font-heading font-bold px-3 sm:px-5 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-4 h-4 shrink-0" />
                   লগইন
                 </Button>
               </Link>
             )}
+
             {/* Mobile menu */}
             <button
               className="lg:hidden p-2 rounded-lg text-white hover:bg-white/10"
