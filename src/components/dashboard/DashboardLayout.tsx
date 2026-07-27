@@ -172,9 +172,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           : "lg:w-[220px] lg:translate-x-0 lg:opacity-100"
       )}>
         <Link to="/dashboard" className="h-16 flex items-center justify-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
-          <img src={logoImg} alt="Proshno Lab" className="w-10 h-10 rounded-lg object-contain" />
-          <BrandLogo size={30} plate={false} />
+          <BrandLogo size={32} plate={false} />
         </Link>
+
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           {sidebarGroups.map((group) => (
