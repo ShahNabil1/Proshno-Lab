@@ -51,26 +51,26 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
-        <div className="container flex items-center justify-between h-16 lg:h-[76px]">
+        <div className="container flex items-center justify-between gap-2 h-16 lg:h-[76px]">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2 lg:gap-3 group">
+          <Link to="/" className="flex items-center gap-2 lg:gap-3 group min-w-0 flex-1">
             <img
               src={brandMarkUrl}
               loading="eager"
               decoding="async"
               alt="প্রশ্নল্যাব লোগো"
-              className="h-11 w-11 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
+              className="h-9 w-9 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
             />
-            <div className="leading-none">
-
-              <BrandLogo size={38} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
-              <div className="flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide">
+            <div className="leading-none min-w-0">
+              <BrandLogo size={30} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
+              <div className="hidden sm:flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide whitespace-nowrap">
                 <span>শিক্ষকদের জন্য</span>
                 <span className="brand-free">ফ্রী</span>
                 <span>প্রশ্ন তৈরির প্ল্যাটফর্ম...</span>
               </div>
             </div>
           </Link>
+
 
 
           {/* Desktop nav */}
