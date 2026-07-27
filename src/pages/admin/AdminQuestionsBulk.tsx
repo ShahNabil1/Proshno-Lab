@@ -17,8 +17,10 @@ import LatexRenderer from "@/components/LatexRenderer";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload, isMathSubjectName,
+  markBatchDuplicates, markDbDuplicates, questionSignature,
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
+import PasteGuide from "@/components/admin/bulk/PasteGuide";
 import { sortClasses } from "@/lib/classOrder";
 
 const CTX_KEY = "adminBulkContext.v1";
