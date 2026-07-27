@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ReviewModal from "@/components/ReviewModal";
 import { questionPaperIconUrl } from "@/lib/brandAssets";
+import YouTubePlayer, { extractYouTubeId } from "@/components/YouTubePlayer";
+
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
