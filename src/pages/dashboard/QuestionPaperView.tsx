@@ -488,11 +488,27 @@ export default function QuestionPaperView() {
         .replace(/&nbsp;/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-      // Inline LaTeX bonus
-      const latexMatches: string[] = text.match(/\$[^$]+\$|\\\([^)]+\\\)/g) || [];
-      const latexBonus = latexMatches.reduce<number>((sum, m) => sum + Math.max(0, m.length * 0.3), 0);
-      return text.length + latexBonus;
+      // Estimate the RENDERED width of inline LaTeX instead of its source length:
+      // `$0.\overset{.}{6}$` is only ~4 chars wide once KaTeX renders it.
+      const renderedLatexLen = (src: string): number => {
+        const body = src
+          .replace(/^\$|\$$/g, "")
+          .replace(/^\\\(|\\\)$/g, "")
+          .replace(/\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, (_m, a, b) => (a.length > b.length ? a : b))
+          .replace(/\\(sqrt|overline|overset|underset|dot|ddot|hat|bar|vec|text|mathrm|left|right|,|;|!|quad|qquad)\b/g, "")
+          .replace(/[{}^_$\\]/g, "")
+          .replace(/\s+/g, "");
+        return body.length * 1.15;
+      };
+      let plain = text;
+      let latexLen = 0;
+      plain = plain.replace(/\$[^$]+\$|\\\([\s\S]*?\\\)/g, (m) => {
+        latexLen += renderedLatexLen(m);
+        return "";
+      });
+      return plain.length + latexLen;
     };
+
 
     const lengths = rawOpts.map(visualLen);
     const maxLen = Math.max(...lengths);
@@ -1614,10 +1630,11 @@ export default function QuestionPaperView() {
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                             <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                                <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                              <div className="mc-block-question" style={{ display: "block" }}>
+                                <LatexRenderer inline text={q.question} />
+                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
                               </div>
+
                               <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
@@ -1644,10 +1661,11 @@ export default function QuestionPaperView() {
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                             <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                                <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                              <div className="mc-block-question" style={{ display: "block" }}>
+                                <LatexRenderer inline text={q.question} />
+                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
                               </div>
+
                               <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
@@ -1884,12 +1902,11 @@ export default function QuestionPaperView() {
                   const isDuplicate = duplicateIds.has(q.id);
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}>
-                        <span>
-                          <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
-                        </span>
-                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                      <div style={{ display: "block" }}>
+                        <LatexRenderer inline text={`${padBangla(num)}। ${q.question}`} />
+                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
                       </div>
+
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
                           <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
