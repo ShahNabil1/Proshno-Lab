@@ -1,3 +1,4 @@
+import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ export default function ManualMultiAdd({ type, onAdd }: { type: QType; onAdd: (q
     const q: ParsedQuestion = { tempId: uid(), type, question: "", errors, stimulus: stim || undefined };
     if (type === "mcq") {
       q.question = question; q.option_a = a; q.option_b = b; q.option_c = c; q.option_d = d;
-      q.correct_answer = correct; q.explanation = expl || undefined;
+      q.correct_answer = normalizeAnswerKey(correct, [q.option_a, q.option_b, q.option_c, q.option_d]) || ""; q.explanation = expl || undefined;
       if (!question) errors.push("প্রশ্ন খালি");
       if (!a || !b || !c || !d) errors.push("সব অপশন আবশ্যক");
     } else if (type === "cq") {

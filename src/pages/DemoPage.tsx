@@ -1,3 +1,4 @@
+import { isCorrectOption } from "@/lib/answerKey";
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, FileText, Loader2, FilePlus2, Shuffle, Eye, EyeOff } from "lucide-react";
@@ -464,7 +465,7 @@ export default function DemoPage() {
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const letter = ["ক", "খ", "গ", "ঘ"][oi];
-                                        const isCorrect = showAnswers && q.correct_answer && q.correct_answer.trim().toLowerCase() === ["a","b","c","d"][oi];
+                                        const isCorrect = showAnswers && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                         return (
                                           <span key={key} style={isCorrect ? { color: "#047857", fontWeight: 700 } : undefined}>
                                             ({letter}) <LatexRenderer text={val} />{isCorrect ? " ✓" : ""}

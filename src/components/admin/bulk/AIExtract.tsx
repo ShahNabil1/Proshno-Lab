@@ -1,3 +1,4 @@
+import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -78,7 +79,7 @@ function aiToParsed(it: any, type: QType): ParsedQuestion {
     q.stimulus = it.stimulus || undefined;
     q.question = it.question || "";
     q.option_a = it.option_a; q.option_b = it.option_b; q.option_c = it.option_c; q.option_d = it.option_d;
-    q.correct_answer = (it.correct_answer || "").toLowerCase();
+    q.correct_answer = normalizeAnswerKey(it.correct_answer, [q.option_a, q.option_b, q.option_c, q.option_d]) || "";
     q.explanation = it.explanation;
     if (!q.question) errors.push("প্রশ্ন খালি");
     if (!q.option_a || !q.option_b || !q.option_c || !q.option_d) errors.push("অপশন missing");

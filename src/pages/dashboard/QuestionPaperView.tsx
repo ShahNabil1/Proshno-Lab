@@ -1,3 +1,4 @@
+import { isCorrectOption } from "@/lib/answerKey";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1659,7 +1660,7 @@ export default function QuestionPaperView() {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                  const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                  const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
@@ -1690,7 +1691,7 @@ export default function QuestionPaperView() {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                  const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                  const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
@@ -1736,7 +1737,7 @@ export default function QuestionPaperView() {
                                     const val = q[key]; if (!val) return null;
                                     const cleaned = stripPTags(val);
                                     const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                    const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                    const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                     return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
@@ -1818,7 +1819,7 @@ export default function QuestionPaperView() {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                        const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                        const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
@@ -1864,7 +1865,7 @@ export default function QuestionPaperView() {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                        const isCorrect = settings.showAnswerSheet && q.correct_answer?.trim() === label;
+                                        const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
