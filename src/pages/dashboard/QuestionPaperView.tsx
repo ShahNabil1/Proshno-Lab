@@ -115,7 +115,7 @@ export default function QuestionPaperView() {
     showProgramName: true,
     showInstruction: true,
     paperSize: "A4" as PaperSize,
-    optionStyle: "bracket" as OptionStyle,
+    optionStyle: "none" as OptionStyle,
     fontLang: "bangla",
     fontSize: 14,
     columns: 2 as ColumnCount,
@@ -526,11 +526,11 @@ export default function QuestionPaperView() {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "1.35em",
-            height: "1.35em",
+            width: "1.55em",
+            height: "1.55em",
             borderRadius: "9999px",
             border: "1.2px solid #000",
-            fontSize: "0.85em",
+            fontSize: "0.78em",
             lineHeight: 1,
             fontWeight: 600,
             verticalAlign: "middle",
@@ -1606,7 +1606,7 @@ export default function QuestionPaperView() {
                                 <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
                                 {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                               </div>
-                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
@@ -1636,7 +1636,7 @@ export default function QuestionPaperView() {
                                 <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
                                 {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
                               </div>
-                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
@@ -1682,7 +1682,7 @@ export default function QuestionPaperView() {
                               <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                               <div style={{ flex: 1 }}>
                                 <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                   {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                     const val = q[key]; if (!val) return null;
                                     const cleaned = stripPTags(val);
@@ -1764,7 +1764,7 @@ export default function QuestionPaperView() {
                                   <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
@@ -1810,7 +1810,7 @@ export default function QuestionPaperView() {
                                   <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
