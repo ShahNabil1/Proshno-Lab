@@ -195,7 +195,7 @@ export default function YouTubePlayer({ videoId, title = "ভিডিও", auto
         {/* Scale the iframe up so YouTube's own chrome (logo, title, share,
             watch-later, "More videos" strip) falls outside the visible frame */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[124%] w-[124%] -translate-x-1/2 -translate-y-1/2"
         >
           <div ref={hostRef} className="absolute inset-0 h-full w-full [&>iframe]:h-full [&>iframe]:w-full" />
         </div>
