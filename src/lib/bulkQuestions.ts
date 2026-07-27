@@ -119,8 +119,11 @@ export async function parseExcelFile(file: File, type: QType, isMath = false): P
   const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   if (rows.length < 2) return [];
   const header = (rows[0] || []).map(s);
-  // Auto-detect math CQ sheet (no "ঘ" column) so old/new templates both work
-  const mathSheet = type === "cq" ? (isMath ? !/ঘ/.test(header.join("|")) || true : /প্রশ্ন ক \(জ্ঞান, ২\)/.test(header.join("|"))) : false;
+  const headerText = header.join("|");
+  // Header wins when recognizable (old/new templates both work), else fall back to subject
+  const mathSheet = type === "cq"
+    ? (/প্রশ্ন ঘ/.test(headerText) ? false : /জ্ঞান, ২|প্রশ্ন গ/.test(headerText) ? true : isMath)
+    : false;
   const body = rows.slice(1).filter((r) => r.some((c) => s(c)));
   return body.map((r) => rowToQuestion(r, type, mathSheet));
 }
