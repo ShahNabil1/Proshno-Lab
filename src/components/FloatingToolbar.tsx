@@ -47,10 +47,35 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
 
     setPos({ top, left });
 
-    // Read current font size
+    // Read current font size + colour
     const computed = window.getComputedStyle(targetEl);
     setFontSize(Math.round(parseFloat(computed.fontSize)));
+    const rgb = computed.color.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+      setCurrentColor(
+        "#" + rgb.slice(0, 3).map(n => Number(n).toString(16).padStart(2, "0")).join("")
+      );
+    }
   }, [targetEl]);
+
+  // Keep track of the last selection made inside the editable element,
+  // so opening the colour popover (which steals focus) doesn't lose it.
+  useEffect(() => {
+    if (!targetEl) return;
+    const handler = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (targetEl.contains(range.commonAncestorContainer)) {
+        savedRange.current = range.cloneRange();
+      }
+    };
+    document.addEventListener("selectionchange", handler);
+    handler();
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [targetEl]);
+
+
 
   // Close on outside click
   useEffect(() => {
