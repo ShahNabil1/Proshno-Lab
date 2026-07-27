@@ -27,8 +27,11 @@ const COLORS = [
 
 export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClose }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const savedRange = useRef<Range | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [fontSize, setFontSize] = useState(14);
+  const [currentColor, setCurrentColor] = useState("#000000");
+
 
   // Position toolbar above the target element
   useEffect(() => {
