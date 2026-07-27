@@ -80,6 +80,9 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      const node = e.target as HTMLElement | null;
+      // Ignore clicks inside portalled popovers (colour picker) — they belong to the toolbar
+      if (node?.closest?.("[data-radix-popper-content-wrapper]")) return;
       if (
         toolbarRef.current && !toolbarRef.current.contains(e.target as Node) &&
         targetEl && !targetEl.contains(e.target as Node)
@@ -87,6 +90,7 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
         onClose();
       }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [targetEl, onClose]);
