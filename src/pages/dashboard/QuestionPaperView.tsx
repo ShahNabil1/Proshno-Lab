@@ -469,9 +469,20 @@ export default function QuestionPaperView() {
     return `সময়— ${toBanglaNum(hours)} ঘন্টা ${toBanglaNum(rem)} মিনিট`;
   };
 
+  const stackCacheRef = useRef(new Map<string, boolean>());
   const shouldStackOptions = (q: QuestionRow) => {
+    const cacheKey = `${q.id}|${settings.columns || 1}`;
+    const cached = stackCacheRef.current.get(cacheKey);
+    if (cached !== undefined) return cached;
+    const result = computeStackOptions(q);
+    stackCacheRef.current.set(cacheKey, result);
+    return result;
+  };
+
+  const computeStackOptions = (q: QuestionRow) => {
     const rawOpts = [q.option_a, q.option_b, q.option_c, q.option_d].filter(Boolean) as string[];
     if (rawOpts.length === 0) return false;
+
 
     // 1) Block-level / rich content: any option containing img / table / block-math / svg / figure / pre / hr
     //    => always stack (these never fit nicely side-by-side)
