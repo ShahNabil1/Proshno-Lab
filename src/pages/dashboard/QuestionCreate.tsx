@@ -1184,7 +1184,14 @@ export default function QuestionCreate() {
                         const isAnswer = q.correct_answer === val || q.correct_answer === label;
                         return (
                           <div key={key} className={`flex items-center gap-2 p-2 rounded text-sm ${isAnswer ? "bg-green-100 text-green-800 font-semibold dark:bg-green-900 dark:text-green-200" : "bg-muted/50"}`}>
-                            <span className="font-medium">{label})</span> <LatexRenderer text={val} inline />
+                            <span
+                              className="shrink-0 inline-flex items-center justify-center rounded-full border border-current font-medium leading-none"
+                              style={{ width: "1.55em", height: "1.55em" }}
+                            >
+                              {label}
+                            </span>
+                            <LatexRenderer text={val} inline />
+
                           </div>
                         );
                       })}
