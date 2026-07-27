@@ -14,11 +14,16 @@ interface FloatingToolbarProps {
 }
 
 const COLORS = [
-  "#000000", "#333333", "#666666",
-  "#10b981", "#059669", "#047857",
-  "#ef4444", "#3b82f6", "#8b5cf6",
-  "#f59e0b", "#ec4899", "#14b8a6",
+  "#000000", "#1f2937", "#4b5563", "#9ca3af",
+  "#ffffff", "#fef08a", "#fdba74", "#f9a8d4",
+  "#ef4444", "#dc2626", "#b91c1c", "#7f1d1d",
+  "#f59e0b", "#eab308", "#84cc16", "#22c55e",
+  "#10b981", "#059669", "#047857", "#14b8a6",
+  "#06b6d4", "#0ea5e9", "#3b82f6", "#2563eb",
+  "#1e3a8a", "#6366f1", "#8b5cf6", "#a855f7",
+  "#d946ef", "#ec4899", "#f43f5e", "#78350f",
 ];
+
 
 export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClose }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
