@@ -1267,40 +1267,45 @@ export default function QuestionPaperView() {
 
           {/* ===== HEADER with optional Marks Box ===== */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            {/* Marks Box - simple label + box, top left */}
-            {settings.showMarksBox && (
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0",
-                fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
-                fontSize: "0.85em",
-                fontWeight: 700,
-                marginBottom: "6px",
-              }}>
-                <span className={editableClass} style={{
-                  border: "1.5px solid #000",
-                  padding: "2px 8px",
-                  lineHeight: 1.4,
-                }} onClick={handleEditableClick} suppressContentEditableWarning>প্রাপ্ত নম্বর</span>
-                <span style={{
-                  border: "1.5px solid #000",
-                  borderLeft: "none",
-                  padding: "2px 18px",
-                  minWidth: "50px",
-                  lineHeight: 1.4,
-                }}>&nbsp;</span>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+              {/* Left: Marks Box */}
+              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+                {settings.showMarksBox && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0",
+                    fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
+                    fontSize: "0.85em",
+                    fontWeight: 700,
+                  }}>
+                    <span className={editableClass} style={{
+                      border: "1.5px solid #000",
+                      padding: "2px 8px",
+                      lineHeight: 1.4,
+                      whiteSpace: "nowrap",
+                    }} onClick={handleEditableClick} suppressContentEditableWarning>প্রাপ্ত নম্বর</span>
+                    <span style={{
+                      border: "1.5px solid #000",
+                      borderLeft: "none",
+                      padding: "2px 18px",
+                      minWidth: "50px",
+                      lineHeight: 1.4,
+                    }}>&nbsp;</span>
+                  </div>
+                )}
               </div>
-            )}
 
-            <div style={{
+              {/* Center: Institute / class / subject */}
+              <div style={{
+              flex: "1 1 auto",
+              minWidth: 0,
               textAlign: "center",
               marginBottom: "0",
               ...(settings.showSheet && settings.sheetColoredBg ? {
                 backgroundColor: settings.sheetBgColor,
                 color: settings.sheetTextColor,
                 padding: "8px 12px",
-                margin: "0 -44px",
               } : {}),
             }}>
             <h1
@@ -1356,27 +1361,6 @@ export default function QuestionPaperView() {
                 {settings.showSubjectName && `${meta.subjectName} ১ম পত্র`}
               </p>
             )}
-            {settings.showSubjectCode && (
-              <div className={editableClass} style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "8px", fontSize: "0.95em", margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
-                  বিষয় কোড :
-                  <span style={{ display: "inline-flex", gap: "0" }}>
-                    {(meta.subjectCode || "১৭৮").split("").map((digit, i) => (
-                      <span key={i} style={{
-                        border: "1.5px solid #000",
-                        borderLeft: i === 0 ? "1.5px solid #000" : "none",
-                        padding: "1px 6px",
-                        fontWeight: 700,
-                        fontSize: "1em",
-                        lineHeight: 1.3,
-                        minWidth: "22px",
-                        textAlign: "center" as const,
-                      }}>{digit}</span>
-                    ))}
-                  </span>
-                </span>
-              </div>
-            )}
             {settings.showChapterName && meta.chapterNames.length > 0 && (
               <p
                 className={editableClass}
@@ -1410,8 +1394,35 @@ export default function QuestionPaperView() {
                 লেকচার টপিক: {meta.topicNames.join(", ")}
               </p>
             )}
+              </div>
+
+              {/* Right: Subject Code */}
+              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+                {settings.showSubjectCode && (
+                  <div className={editableClass} style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", fontSize: "0.95em", whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                      বিষয় কোড :
+                      <span style={{ display: "inline-flex", gap: "0" }}>
+                        {(meta.subjectCode || "১৭৮").split("").map((digit, i) => (
+                          <span key={i} style={{
+                            border: "1.5px solid #000",
+                            borderLeft: i === 0 ? "1.5px solid #000" : "none",
+                            padding: "1px 6px",
+                            fontWeight: 700,
+                            fontSize: "1em",
+                            lineHeight: 1.3,
+                            minWidth: "22px",
+                            textAlign: "center" as const,
+                          }}>{digit}</span>
+                        ))}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          </div>
+
           {/* Lecture number & date row outside colored bg */}
           {settings.showSheet && (settings.sheetLectureNumber || settings.sheetDate) && (
             <div style={{
