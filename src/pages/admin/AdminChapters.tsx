@@ -828,9 +828,8 @@ export default function AdminChapters() {
       {/* Chapter Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle style={{ fontFamily: FONT }}>{editItem ? "সম্পাদনা" : "নতুন অধ্যায় যোগ করুন"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle style={{ fontFamily: FONT }}>{editItem ? "সম্পাদনা" : "নতুন অধ্যায় যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="অধ্যায়ের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} style={{ fontFamily: FONT }} />
             <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" style={{ fontFamily: FONT }} value={formClassId} onChange={(e) => { setFormClassId(e.target.value); setFormSubjectId(""); }}>
               <option value="">শ্রেণী নির্বাচন করুন</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -839,13 +838,31 @@ export default function AdminChapters() {
               <option value="">{formClassId ? "বিষয় নির্বাচন করুন" : "আগে শ্রেণী নির্বাচন করুন"}</option>
               {filteredSubjectsForForm.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+            {editItem ? (
+              <Input placeholder="অধ্যায়ের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} style={{ fontFamily: FONT }} />
+            ) : (
+              <div>
+                <Label className="text-xs" style={{ fontFamily: FONT }}>অধ্যায়ের নাম (প্রতি লাইনে একটি)</Label>
+                <textarea
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background min-h-[180px]"
+                  style={{ fontFamily: FONT }}
+                  placeholder={"অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"}
+                  value={bulkNames}
+                  onChange={(e) => setBulkNames(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: FONT }}>
+                  {parseBulkNames(bulkNames).length} টি এন্ট্রি
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-            <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700" style={{ fontFamily: FONT }}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} style={{ fontFamily: FONT }} disabled={saving}>বাতিল</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700" style={{ fontFamily: FONT }}>{editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {/* Delete AlertDialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
