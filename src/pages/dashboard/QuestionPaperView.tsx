@@ -1556,7 +1556,7 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
+              <div data-section-header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontWeight: 700, fontSize: "0.95em", marginBottom: "4px" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
@@ -1565,11 +1565,9 @@ export default function QuestionPaperView() {
                 >
                   বহুনির্বাচনি অংশ (প্রতিটি প্রশ্নের মান ১)
                 </span>
+                <span className={editableClass} style={{ fontWeight: 700, whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "4px" }}>
-                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>&nbsp;</span>
-                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
-              </div>
+
 
               {/* Regular standalone MCQs */}
               {standalone.length > 0 && (() => {
