@@ -1267,9 +1267,10 @@ export default function QuestionPaperView() {
 
           {/* ===== HEADER with optional Marks Box ===== */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "flex-start", gap: "10px" }}>
               {/* Left: Marks Box */}
-              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+              <div style={{ justifySelf: "start", minWidth: 0, paddingTop: "16px" }}>
+
                 {settings.showMarksBox && (
                   <div style={{
                     display: "flex",
