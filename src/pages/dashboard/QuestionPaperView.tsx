@@ -1399,7 +1399,7 @@ export default function QuestionPaperView() {
               </div>
 
               {/* Right: Subject Code */}
-              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+              <div style={{ justifySelf: "end", minWidth: 0, paddingTop: "16px" }}>
                 {settings.showSubjectCode && (
                   <div className={editableClass} style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", fontSize: "0.95em", whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
