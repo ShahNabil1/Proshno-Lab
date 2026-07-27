@@ -162,12 +162,13 @@ export default function AdminChapters() {
     : [];
 
   const openCreate = () => {
-    setEditItem(null); setFormName(""); setFormClassId(""); setFormSubjectId("");
+    setEditItem(null); setFormName(""); setBulkNames("");
+    setFormClassId(filterClassId || ""); setFormSubjectId(filterSubjectId || "");
     setDialogOpen(true);
   };
 
   const openEdit = (item: ChapterItem) => {
-    setEditItem(item); setFormName(item.name);
+    setEditItem(item); setFormName(item.name); setBulkNames("");
     const classId = (item as any).subjects?.class_id;
     setFormClassId(classId ? String(classId) : "");
     setFormSubjectId(String(item.subject_id));
@@ -175,26 +176,38 @@ export default function AdminChapters() {
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
     if (!formSubjectId) { toast.error("বিষয় নির্বাচন করুন"); return; }
-    const { data: existing } = await supabase.from("chapters").select("id").eq("name", formName.trim()).eq("subject_id", Number(formSubjectId));
-    if (existing && existing.length > 0) {
-      if (!editItem || existing.some((e) => e.id !== editItem.id)) {
-        toast.error("এই বিষয়ে একই নামের অধ্যায় আগে থেকে আছে!"); return;
+    const subjectId = Number(formSubjectId);
+    setSaving(true);
+    try {
+      if (editItem) {
+        if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+        const { data: existing } = await supabase.from("chapters").select("id").eq("name", formName.trim()).eq("subject_id", subjectId);
+        if ((existing || []).some((e) => e.id !== editItem.id)) {
+          toast.error("এই বিষয়ে একই নামের অধ্যায় আগে থেকে আছে!"); return;
+        }
+        const { error } = await supabase.from("chapters").update({ name: formName.trim(), subject_id: subjectId }).eq("id", editItem.id);
+        if (error) { toast.error("আপডেট ব্যর্থ"); return; }
+        toast.success("আপডেট হয়েছে");
+      } else {
+        const names = parseBulkNames(bulkNames);
+        if (names.length === 0) { toast.error("অন্তত একটি অধ্যায়ের নাম লিখুন"); return; }
+        const { data: existing } = await supabase.from("chapters").select("name").eq("subject_id", subjectId);
+        const existingSet = new Set((existing || []).map((e: any) => String(e.name).trim()));
+        const fresh = names.filter((n) => !existingSet.has(n));
+        const skipped = names.length - fresh.length;
+        if (fresh.length === 0) { toast.error("সব অধ্যায় আগে থেকেই আছে"); return; }
+        const { error } = await supabase.from("chapters").insert(fresh.map((name) => ({ name, subject_id: subjectId })));
+        if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
+        toast.success(`${fresh.length} টি অধ্যায় যোগ হয়েছে${skipped > 0 ? ` (${skipped} টি ডুপ্লিকেট বাদ)` : ""}`);
       }
+      setDialogOpen(false);
+      fetchChapters();
+    } finally {
+      setSaving(false);
     }
-    const payload = { name: formName.trim(), subject_id: Number(formSubjectId) };
-    if (editItem) {
-      const { error } = await supabase.from("chapters").update(payload).eq("id", editItem.id);
-      if (error) { toast.error("আপডেট ব্যর্থ"); return; }
-      toast.success("আপডেট হয়েছে");
-    } else {
-      const { error } = await supabase.from("chapters").insert(payload);
-      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
-    }
-    setDialogOpen(false); fetchChapters();
   };
+
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
