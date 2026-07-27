@@ -505,8 +505,16 @@ export default function QuestionPaperView() {
         const body = src
           .replace(/^\$|\$$/g, "")
           .replace(/^\\\(|\\\)$/g, "")
+          // fraction renders as the wider of numerator/denominator
           .replace(/\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, (_m, a, b) => (a.length > b.length ? a : b))
-          .replace(/\\(sqrt|overline|overset|underset|dot|ddot|hat|bar|vec|text|mathrm|left|right|,|;|!|quad|qquad)\b/g, "")
+          // \text{...} / \mathrm{...} etc. render as their inner text
+          .replace(/\\(text|textrm|mathrm|mathbf|mathit|operatorname)\s*\{([^{}]*)\}/g, (_m, _c, inner) => inner)
+          // blackboard/caligraphic letters render as a single glyph
+          .replace(/\\(mathbb|mathcal|mathfrak)\s*\{[^{}]*\}/g, "N")
+          // sizing / spacing commands render as nothing
+          .replace(/\\(left|right|,|;|!|:|quad|qquad|displaystyle|limits)\b/g, "")
+          // any remaining command (\in, \le, \subset, \alpha, \sqrt, \overset ...) is one glyph
+          .replace(/\\[a-zA-Z]+/g, "x")
           .replace(/[{}^_$\\]/g, "")
           .replace(/\s+/g, "");
         return body.length * 1.15;
