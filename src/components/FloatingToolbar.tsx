@@ -14,16 +14,24 @@ interface FloatingToolbarProps {
 }
 
 const COLORS = [
-  "#000000", "#333333", "#666666",
-  "#10b981", "#059669", "#047857",
-  "#ef4444", "#3b82f6", "#8b5cf6",
-  "#f59e0b", "#ec4899", "#14b8a6",
+  "#000000", "#1f2937", "#4b5563", "#9ca3af",
+  "#ffffff", "#fef08a", "#fdba74", "#f9a8d4",
+  "#ef4444", "#dc2626", "#b91c1c", "#7f1d1d",
+  "#f59e0b", "#eab308", "#84cc16", "#22c55e",
+  "#10b981", "#059669", "#047857", "#14b8a6",
+  "#06b6d4", "#0ea5e9", "#3b82f6", "#2563eb",
+  "#1e3a8a", "#6366f1", "#8b5cf6", "#a855f7",
+  "#d946ef", "#ec4899", "#f43f5e", "#78350f",
 ];
+
 
 export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClose }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const savedRange = useRef<Range | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [fontSize, setFontSize] = useState(14);
+  const [currentColor, setCurrentColor] = useState("#000000");
+
 
   // Position toolbar above the target element
   useEffect(() => {
@@ -39,14 +47,42 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
 
     setPos({ top, left });
 
-    // Read current font size
+    // Read current font size + colour
     const computed = window.getComputedStyle(targetEl);
     setFontSize(Math.round(parseFloat(computed.fontSize)));
+    const rgb = computed.color.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+      setCurrentColor(
+        "#" + rgb.slice(0, 3).map(n => Number(n).toString(16).padStart(2, "0")).join("")
+      );
+    }
   }, [targetEl]);
+
+  // Keep track of the last selection made inside the editable element,
+  // so opening the colour popover (which steals focus) doesn't lose it.
+  useEffect(() => {
+    if (!targetEl) return;
+    const handler = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (targetEl.contains(range.commonAncestorContainer)) {
+        savedRange.current = range.cloneRange();
+      }
+    };
+    document.addEventListener("selectionchange", handler);
+    handler();
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [targetEl]);
+
+
 
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      const node = e.target as HTMLElement | null;
+      // Ignore clicks inside portalled popovers (colour picker) — they belong to the toolbar
+      if (node?.closest?.("[data-radix-popper-content-wrapper]")) return;
       if (
         toolbarRef.current && !toolbarRef.current.contains(e.target as Node) &&
         targetEl && !targetEl.contains(e.target as Node)
@@ -54,6 +90,7 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
         onClose();
       }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [targetEl, onClose]);
@@ -76,8 +113,33 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
   };
 
   const setColor = (color: string) => {
-    exec("foreColor", color);
+    if (!targetEl) return;
+    setCurrentColor(color);
+    const sel = window.getSelection();
+    const range = savedRange.current;
+    const hasTextSelection =
+      range && !range.collapsed && targetEl.contains(range.commonAncestorContainer);
+
+    if (hasTextSelection && sel) {
+      // Restore the selection that was lost when the popover opened
+      targetEl.focus();
+      sel.removeAllRanges();
+      sel.addRange(range!);
+      try { document.execCommand("styleWithCSS", false, "true"); } catch { /* noop */ }
+      document.execCommand("foreColor", false, color);
+    } else {
+      // No selection -> colour the whole editable element
+      targetEl.style.color = color;
+      targetEl.querySelectorAll<HTMLElement>("[style*='color']").forEach(el => {
+        el.style.color = color;
+      });
+      targetEl.querySelectorAll<HTMLFontElement>("font[color]").forEach(el => {
+        el.removeAttribute("color");
+        el.style.color = color;
+      });
+    }
   };
+
 
   if (!targetEl) return null;
 
@@ -127,23 +189,64 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
       {/* Color */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600">
-            <Palette className="h-3.5 w-3.5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 relative"
+            onMouseDown={e => e.preventDefault()}
+            title="লেখার রং"
+          >
+            <Palette className="h-3.5 w-3.5" style={{ color: currentColor }} />
+            <span
+              className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-4 rounded-sm border border-border"
+              style={{ backgroundColor: currentColor }}
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" side="bottom" align="center">
-          <div className="grid grid-cols-4 gap-1.5">
+        <PopoverContent
+          className="w-56 p-2.5 space-y-2"
+          side="bottom"
+          align="center"
+          onOpenAutoFocus={e => e.preventDefault()}
+        >
+          <div className="grid grid-cols-8 gap-1">
             {COLORS.map(c => (
               <button
                 key={c}
-                className="h-6 w-6 rounded-full border border-border hover:scale-110 transition-transform"
+                type="button"
+                className="h-5 w-5 rounded-full border border-border hover:scale-125 transition-transform"
                 style={{ backgroundColor: c }}
+                title={c}
+                onMouseDown={e => e.preventDefault()}
                 onClick={() => setColor(c)}
               />
             ))}
           </div>
+
+          <div className="flex items-center gap-2 pt-1 border-t border-border">
+            <input
+              type="color"
+              value={/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : "#000000"}
+              onChange={e => setColor(e.target.value)}
+              className="h-7 w-9 p-0 rounded border border-border bg-transparent cursor-pointer"
+              title="কাস্টম রং"
+            />
+            <input
+              type="text"
+              value={currentColor}
+              placeholder="#10b981"
+              onMouseDown={e => e.stopPropagation()}
+              onChange={e => {
+                const v = e.target.value.trim();
+                setCurrentColor(v);
+                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) setColor(v);
+              }}
+              className="flex-1 h-7 px-2 text-xs rounded border border-border bg-background font-mono"
+            />
+          </div>
         </PopoverContent>
       </Popover>
+
 
       <div className="w-px h-5 bg-emerald-200 mx-0.5" />
 
