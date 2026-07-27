@@ -112,14 +112,17 @@ export function downloadTemplate(type: QType, isMath = false) {
 
 
 // ============ Excel parsing ============
-export async function parseExcelFile(file: File, type: QType): Promise<ParsedQuestion[]> {
+export async function parseExcelFile(file: File, type: QType, isMath = false): Promise<ParsedQuestion[]> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   if (rows.length < 2) return [];
+  const header = (rows[0] || []).map(s);
+  // Auto-detect math CQ sheet (no "ঘ" column) so old/new templates both work
+  const mathSheet = type === "cq" ? (isMath ? !/ঘ/.test(header.join("|")) || true : /প্রশ্ন ক \(জ্ঞান, ২\)/.test(header.join("|"))) : false;
   const body = rows.slice(1).filter((r) => r.some((c) => s(c)));
-  return body.map((r) => rowToQuestion(r, type));
+  return body.map((r) => rowToQuestion(r, type, mathSheet));
 }
 
 function wrapImg(url: string) {
@@ -128,12 +131,19 @@ function wrapImg(url: string) {
   return `<img src="${u}" alt="" style="max-width:100%;height:auto" />`;
 }
 
-function rowToQuestion(r: any[], type: QType): ParsedQuestion {
+function applyRefs(q: ParsedQuestion, boardCell: string, uniCell: string) {
+  const boards = parseRefCell(boardCell).map((r) => ({ board: r.name, year: r.year }));
+  const unis = parseRefCell(uniCell).map((r) => ({ name: r.name, year: r.year }));
+  if (boards.length) q.boardRefs = boards;
+  if (unis.length) q.uniRefs = unis;
+}
+
+function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
   const errors: string[] = [];
   const q: ParsedQuestion = { tempId: uid(), type, question: "", errors };
 
   if (type === "mcq") {
-    const [stim, question, a, b, c, d, correct, expl, img, board, year] = r.map(s);
+    const [stim, question, a, b, c, d, correct, expl, img, board, year, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
     q.question = question;
@@ -141,41 +151,55 @@ function rowToQuestion(r: any[], type: QType): ParsedQuestion {
     q.correct_answer = correct.toLowerCase();
     q.explanation = expl || undefined;
     q.board = board || undefined; q.year = year || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!question) errors.push("প্রশ্ন খালি");
     if (!a || !b || !c || !d) errors.push("সব অপশন (ক/খ/গ/ঘ) আবশ্যক");
     if (!["a", "b", "c", "d"].includes(q.correct_answer!)) errors.push("সঠিক উত্তর a/b/c/d হতে হবে");
   } else if (type === "cq") {
-    const [stem, qk, ak, qkh, akh, qg, ag, qgh, agh, img] = r.map(s);
+    const cells = r.map(s);
+    const [stem, qk, ak, qkh, akh, qg, ag] = cells;
+    const rest = isMath ? cells.slice(7) : cells.slice(9);
+    const qgh = isMath ? "" : cells[7];
+    const agh = isMath ? "" : cells[8];
+    const [img, expl, boardRefs, uniRefs] = [rest[0] || "", rest[1] || "", rest[2] || "", rest[3] || ""];
     const imgTag = wrapImg(img);
     const finalStem = [stem, imgTag].filter(Boolean).join("\n");
     q.stimulus = finalStem || undefined;
     q.question = (stem || qk).slice(0, 100);
-    q.creative_data = {
-      is_math: false,
-      stem: finalStem,
-      q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined,
-      ans_ka: ak, ans_kha: akh, ans_ga: ag, ans_gha: agh || undefined,
-    };
+    q.creative_data = isMath
+      ? { is_math: true, stem: finalStem, q_ka: qk, q_kha: qkh, q_ga: qg, ans_ka: ak, ans_kha: akh, ans_ga: ag }
+      : {
+          is_math: false,
+          stem: finalStem,
+          q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined,
+          ans_ka: ak, ans_kha: akh, ans_ga: ag, ans_gha: agh || undefined,
+        };
+    q.explanation = expl || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!finalStem) errors.push("উদ্দীপক আবশ্যক");
     if (!qk || !qkh || !qg) errors.push("ক/খ/গ প্রশ্ন আবশ্যক");
   } else if (type === "short") {
-    const [stim, question, ans, img] = r.map(s);
+    const [stim, question, ans, img, expl, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
     q.question = question;
-    q.explanation = ans || undefined;
+    q.explanation = [ans, expl].filter(Boolean).join("\n") || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!question) errors.push("প্রশ্ন খালি");
   } else if (type === "descriptive") {
-    const [qk, ak, qkh, akh, img] = r.map(s);
+    const [qk, ak, qkh, akh, img, expl, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = imgTag || undefined;
     q.question = qk.slice(0, 100);
     q.creative_data = { desc_q_ka: qk, desc_q_kha: qkh, desc_ans_ka: ak, desc_ans_kha: akh };
+    q.explanation = expl || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!qk && !qkh) errors.push("অন্তত একটি প্রশ্ন আবশ্যক");
   }
 
   return q;
 }
+
 
 // ============ Structured paste parsing ============
 const banglaDigits: Record<string, string> = { "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4", "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9" };
