@@ -1508,7 +1508,7 @@ export default function QuestionPaperView() {
               fontSize: "0.95em",
               padding: "0 0 2px",
               margin: "4px 0 2px",
-              borderBottom: "1px solid #000",
+              borderBottom: "1px solid rgba(0,0,0,0.2)",
             }}
           >
             <span
