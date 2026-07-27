@@ -545,7 +545,8 @@ export default function AdminQuestionsBulk() {
           <AlertDialogHeader>
             <AlertDialogTitle>নিশ্চিত করুন</AlertDialogTitle>
             <AlertDialogDescription>
-              {stats.valid} টি প্রশ্ন ডাটাবেসে যোগ হবে। এটি undo করা যাবে না।
+              {stats.valid} টি প্রশ্ন ডাটাবেসে যোগ হবে (প্রতি ব্যাচে ৫০টি করে, queue আকারে)।
+              {stats.dup > 0 ? ` ${stats.dup} টি ডুপ্লিকেট স্কিপ হবে।` : ""} এটি undo করা যাবে না।
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
