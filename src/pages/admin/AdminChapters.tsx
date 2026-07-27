@@ -24,6 +24,17 @@ const typeOptions = ["mcq", "short", "cq", "descriptive"];
 const typeLabelsMap: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
 const ITEMS_PER_PAGE = 20;
 
+/** Splits bulk textarea input into trimmed, de-duplicated chapter names (strips leading bullets/numbers). */
+function parseBulkNames(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  raw.split("\n").forEach((line) => {
+    const name = line.replace(/^\s*(?:[-*•]|\d+[.)]|[০-৯]+[.)])\s*/, "").trim();
+    if (name && !seen.has(name)) { seen.add(name); out.push(name); }
+  });
+  return out;
+}
+
 interface ClassItem { id: number; name: string; }
 interface SubjectItem { id: number; name: string; class_id: number; }
 interface ChapterItem {
@@ -48,6 +59,8 @@ export default function AdminChapters() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<ChapterItem | null>(null);
   const [formName, setFormName] = useState("");
+  const [bulkNames, setBulkNames] = useState("");
+  const [saving, setSaving] = useState(false);
   const [formClassId, setFormClassId] = useState("");
   const [formSubjectId, setFormSubjectId] = useState("");
 
@@ -160,12 +173,13 @@ export default function AdminChapters() {
     : [];
 
   const openCreate = () => {
-    setEditItem(null); setFormName(""); setFormClassId(""); setFormSubjectId("");
+    setEditItem(null); setFormName(""); setBulkNames("");
+    setFormClassId(filterClassId || ""); setFormSubjectId(filterSubjectId || "");
     setDialogOpen(true);
   };
 
   const openEdit = (item: ChapterItem) => {
-    setEditItem(item); setFormName(item.name);
+    setEditItem(item); setFormName(item.name); setBulkNames("");
     const classId = (item as any).subjects?.class_id;
     setFormClassId(classId ? String(classId) : "");
     setFormSubjectId(String(item.subject_id));
@@ -173,26 +187,38 @@ export default function AdminChapters() {
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
     if (!formSubjectId) { toast.error("বিষয় নির্বাচন করুন"); return; }
-    const { data: existing } = await supabase.from("chapters").select("id").eq("name", formName.trim()).eq("subject_id", Number(formSubjectId));
-    if (existing && existing.length > 0) {
-      if (!editItem || existing.some((e) => e.id !== editItem.id)) {
-        toast.error("এই বিষয়ে একই নামের অধ্যায় আগে থেকে আছে!"); return;
+    const subjectId = Number(formSubjectId);
+    setSaving(true);
+    try {
+      if (editItem) {
+        if (!formName.trim()) { toast.error("নাম লিখুন"); return; }
+        const { data: existing } = await supabase.from("chapters").select("id").eq("name", formName.trim()).eq("subject_id", subjectId);
+        if ((existing || []).some((e) => e.id !== editItem.id)) {
+          toast.error("এই বিষয়ে একই নামের অধ্যায় আগে থেকে আছে!"); return;
+        }
+        const { error } = await supabase.from("chapters").update({ name: formName.trim(), subject_id: subjectId }).eq("id", editItem.id);
+        if (error) { toast.error("আপডেট ব্যর্থ"); return; }
+        toast.success("আপডেট হয়েছে");
+      } else {
+        const names = parseBulkNames(bulkNames);
+        if (names.length === 0) { toast.error("অন্তত একটি অধ্যায়ের নাম লিখুন"); return; }
+        const { data: existing } = await supabase.from("chapters").select("name").eq("subject_id", subjectId);
+        const existingSet = new Set((existing || []).map((e: any) => String(e.name).trim()));
+        const fresh = names.filter((n) => !existingSet.has(n));
+        const skipped = names.length - fresh.length;
+        if (fresh.length === 0) { toast.error("সব অধ্যায় আগে থেকেই আছে"); return; }
+        const { error } = await supabase.from("chapters").insert(fresh.map((name) => ({ name, subject_id: subjectId })));
+        if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
+        toast.success(`${fresh.length} টি অধ্যায় যোগ হয়েছে${skipped > 0 ? ` (${skipped} টি ডুপ্লিকেট বাদ)` : ""}`);
       }
+      setDialogOpen(false);
+      fetchChapters();
+    } finally {
+      setSaving(false);
     }
-    const payload = { name: formName.trim(), subject_id: Number(formSubjectId) };
-    if (editItem) {
-      const { error } = await supabase.from("chapters").update(payload).eq("id", editItem.id);
-      if (error) { toast.error("আপডেট ব্যর্থ"); return; }
-      toast.success("আপডেট হয়েছে");
-    } else {
-      const { error } = await supabase.from("chapters").insert(payload);
-      if (error) { toast.error("তৈরি ব্যর্থ: " + error.message); return; }
-      toast.success("তৈরি হয়েছে");
-    }
-    setDialogOpen(false); fetchChapters();
   };
+
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -828,9 +854,8 @@ export default function AdminChapters() {
       {/* Chapter Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle style={{ fontFamily: FONT }}>{editItem ? "সম্পাদনা" : "নতুন অধ্যায় যোগ করুন"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle style={{ fontFamily: FONT }}>{editItem ? "সম্পাদনা" : "নতুন অধ্যায় যোগ করুন (একসাথে অনেকগুলো)"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <Input placeholder="অধ্যায়ের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} style={{ fontFamily: FONT }} />
             <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" style={{ fontFamily: FONT }} value={formClassId} onChange={(e) => { setFormClassId(e.target.value); setFormSubjectId(""); }}>
               <option value="">শ্রেণী নির্বাচন করুন</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -839,13 +864,31 @@ export default function AdminChapters() {
               <option value="">{formClassId ? "বিষয় নির্বাচন করুন" : "আগে শ্রেণী নির্বাচন করুন"}</option>
               {filteredSubjectsForForm.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+            {editItem ? (
+              <Input placeholder="অধ্যায়ের নাম" value={formName} onChange={(e) => setFormName(e.target.value)} style={{ fontFamily: FONT }} />
+            ) : (
+              <div>
+                <Label className="text-xs" style={{ fontFamily: FONT }}>অধ্যায়ের নাম (প্রতি লাইনে একটি)</Label>
+                <textarea
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background min-h-[180px]"
+                  style={{ fontFamily: FONT }}
+                  placeholder={"অধ্যায় ১\nঅধ্যায় ২\nঅধ্যায় ৩"}
+                  value={bulkNames}
+                  onChange={(e) => setBulkNames(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: FONT }}>
+                  {parseBulkNames(bulkNames).length} টি এন্ট্রি
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} style={{ fontFamily: FONT }}>বাতিল</Button>
-            <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700" style={{ fontFamily: FONT }}>{editItem ? "আপডেট" : "তৈরি করুন"}</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} style={{ fontFamily: FONT }} disabled={saving}>বাতিল</Button>
+            <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700" style={{ fontFamily: FONT }}>{editItem ? "আপডেট" : "সব যোগ করুন"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {/* Delete AlertDialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
