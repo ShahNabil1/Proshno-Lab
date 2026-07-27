@@ -191,8 +191,14 @@ export default function YouTubePlayer({ videoId, title = "ভিডিও", auto
       onMouseLeave={() => playing && setShowControls(false)}
       className="group relative w-full overflow-hidden rounded-2xl border border-border bg-navy shadow-premium"
     >
-      <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-        <div ref={hostRef} className="absolute inset-0 h-full w-full [&>iframe]:h-full [&>iframe]:w-full" />
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
+        {/* Scale the iframe up so YouTube's own chrome (logo, title, share,
+            watch-later, "More videos" strip) falls outside the visible frame */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2"
+        >
+          <div ref={hostRef} className="absolute inset-0 h-full w-full [&>iframe]:h-full [&>iframe]:w-full" />
+        </div>
 
         {/* click-catcher so native YouTube UI never takes over */}
         <button
@@ -201,6 +207,7 @@ export default function YouTubePlayer({ videoId, title = "ভিডিও", auto
           onClick={togglePlay}
           className="absolute inset-0 h-full w-full cursor-pointer bg-transparent"
         />
+
 
         {/* Big center play / replay */}
         {(!playing || ended) && (
