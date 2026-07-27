@@ -354,8 +354,11 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     question: q.question || (q.creative_data?.stem?.slice(0, 100)) || "প্রশ্ন",
     stimulus_text: q.stimulus || null,
     stimulus_group_id: ctx.stimulus_group_id || null,
-    board_references: q.board ? [{ board: q.board, year: q.year || "" }] : [],
-    university_references: [],
+    board_references: [
+      ...(q.board ? [{ board: q.board, year: q.year || "" }] : []),
+      ...(q.boardRefs || []),
+    ],
+    university_references: q.uniRefs || [],
   };
   if (q.type === "mcq") {
     p.option_a = q.option_a || null;
@@ -366,6 +369,7 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     p.explanation = q.explanation || null;
   } else if (q.type === "cq" || q.type === "descriptive") {
     p.creative_data = q.creative_data || {};
+    p.explanation = q.explanation || null;
   } else if (q.type === "short") {
     p.explanation = q.explanation || null;
   }
