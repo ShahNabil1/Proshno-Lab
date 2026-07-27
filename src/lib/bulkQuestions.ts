@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { normalizeAnswerKey } from "@/lib/answerKey";
 
 export type QType = "mcq" | "cq" | "short" | "descriptive";
 
@@ -152,7 +153,7 @@ function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
     q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
     q.question = question;
     q.option_a = a; q.option_b = b; q.option_c = c; q.option_d = d;
-    q.correct_answer = correct.toLowerCase();
+    q.correct_answer = normalizeAnswerKey(correct, [a, b, c, d]) || "";
     q.explanation = expl || undefined;
     q.board = board || undefined; q.year = year || undefined;
     applyRefs(q, boardRefs, uniRefs);
@@ -347,8 +348,7 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
     q.option_c = multiline(opts.c || "") || undefined;
     q.option_d = multiline(opts.d || "") || undefined;
     const ansRaw = (f.answer || "").trim();
-    const first = ansRaw.replace(/^[(\s]+/, "").slice(0, 1);
-    q.correct_answer = (OPT_KEY[first] || first.toLowerCase() || "").slice(0, 1);
+    q.correct_answer = normalizeAnswerKey(ansRaw, [q.option_a, q.option_b, q.option_c, q.option_d]) || "";
     q.explanation = multiline(f.explanation || "") || undefined;
     attachCommon(q, f);
     if (!q.question) errors.push("প্রশ্ন detect করা যায়নি");
@@ -486,7 +486,7 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     p.option_b = q.option_b || null;
     p.option_c = q.option_c || null;
     p.option_d = q.option_d || null;
-    p.correct_answer = q.correct_answer || null;
+    p.correct_answer = normalizeAnswerKey(q.correct_answer, [q.option_a, q.option_b, q.option_c, q.option_d]);
     p.explanation = q.explanation || null;
   } else if (q.type === "cq" || q.type === "descriptive") {
     p.creative_data = q.creative_data || {};

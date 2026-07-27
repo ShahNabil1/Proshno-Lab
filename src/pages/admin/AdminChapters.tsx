@@ -1,3 +1,4 @@
+import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -292,7 +293,7 @@ export default function AdminChapters() {
       category_id: item.category_id ? String(item.category_id) : "",
       type: item.type,
       question: item.question || "", option_a: item.option_a || "", option_b: item.option_b || "",
-      option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: item.correct_answer || "",
+      option_c: item.option_c || "", option_d: item.option_d || "", correct_answer: (item.type === "mcq" ? normalizeAnswerKey(item.correct_answer) : item.correct_answer) || "",
       explanation: item.explanation || "",
       cq_stem: cd.stem || "", cq_q_ka: cd.q_ka || "", cq_q_kha: cd.q_kha || "", cq_q_ga: cd.q_ga || "", cq_q_gha: cd.q_gha || "",
       cq_ans_ka: cd.ans_ka || "", cq_ans_kha: cd.ans_kha || "", cq_ans_ga: cd.ans_ga || "", cq_ans_gha: cd.ans_gha || "",
@@ -330,7 +331,7 @@ export default function AdminChapters() {
         type: "mcq", question: gq.question,
         option_a: gq.option_a || null, option_b: gq.option_b || null,
         option_c: gq.option_c || null, option_d: gq.option_d || null,
-        correct_answer: gq.correct_answer || null, explanation: qForm.explanation || null,
+        correct_answer: normalizeAnswerKey(gq.correct_answer), explanation: qForm.explanation || null,
         stimulus_group_id: groupId, stimulus_text: stimulusText,
         board_references: qForm.board_references.length > 0 ? qForm.board_references : [],
         university_references: qForm.university_references.length > 0 ? qForm.university_references : [],
@@ -367,7 +368,7 @@ export default function AdminChapters() {
       type: qForm.type, question: questionText,
       option_a: qForm.option_a || null, option_b: qForm.option_b || null,
       option_c: qForm.option_c || null, option_d: qForm.option_d || null,
-      correct_answer: qForm.correct_answer || null, explanation: qForm.explanation || null,
+      correct_answer: qForm.type === "mcq" ? normalizeAnswerKey(qForm.correct_answer) : qForm.correct_answer || null, explanation: qForm.explanation || null,
       board_references: qForm.board_references.length > 0 ? qForm.board_references : [],
       university_references: qForm.university_references.length > 0 ? qForm.university_references : [],
       stimulus_text: qForm.type === "mcq" && stimulusText ? stimulusText : null,
@@ -464,7 +465,7 @@ export default function AdminChapters() {
                 <Label style={{ fontFamily: FONT }}>সঠিক উত্তর</Label>
                 <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={qForm.correct_answer} onChange={(e) => setQForm({ ...qForm, correct_answer: e.target.value })}>
                   <option value="">নির্বাচন করুন</option>
-                  <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                  <option value="a">ক</option><option value="b">খ</option><option value="c">গ</option><option value="d">ঘ</option>
                 </select>
               </div>
             </>
@@ -492,7 +493,7 @@ export default function AdminChapters() {
                     <Label className="text-xs">সঠিক উত্তর</Label>
                     <select className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background" value={gq.correct_answer} onChange={(e) => setGroupedQuestions(prev => prev.map((q, i) => i === gi ? { ...q, correct_answer: e.target.value } : q))}>
                       <option value="">নির্বাচন করুন</option>
-                      <option value="ক">ক</option><option value="খ">খ</option><option value="গ">গ</option><option value="ঘ">ঘ</option>
+                      <option value="a">ক</option><option value="b">খ</option><option value="c">গ</option><option value="d">ঘ</option>
                     </select>
                   </div>
                 </div>

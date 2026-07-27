@@ -1,3 +1,4 @@
+import { isCorrectOption } from "@/lib/answerKey";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1182,7 +1183,7 @@ export default function QuestionCreate() {
                         const val = (q as any)[key];
                         if (!val) return null;
                         const label = ["ক", "খ", "গ", "ঘ"][oi];
-                        const isAnswer = q.correct_answer === val || q.correct_answer === label;
+                        const isAnswer = isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                         return (
                           <div key={key} className={`flex items-center gap-2 p-2 rounded text-sm ${isAnswer ? "bg-green-100 text-green-800 font-semibold dark:bg-green-900 dark:text-green-200" : "bg-muted/50"}`}>
                             <span
