@@ -97,6 +97,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const hiddenPages = useDashboardHiddenPages();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
+
+  // Auto-collapse sidebar on view-paper page for maximum workspace
+  useEffect(() => {
+    if (location.pathname.startsWith("/dashboard/view-paper")) {
+      setDesktopCollapsed(true);
+    }
+  }, [location.pathname]);
+
   const goHome = () => {
     if (needsLeaveConfirm) setConfirmLeave(true);
     else navigate("/");
