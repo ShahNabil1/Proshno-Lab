@@ -360,10 +360,12 @@ export default function AdminQuestionsBulk() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label className="flex items-center gap-1">
                   {TYPE_LABELS[type]} পেস্ট করুন
-                  <PasteGuide type={type} onInsert={(s) => setPasteText(s)} />
+                  <PasteGuide type={type} isMath={isMathSubject} onInsert={(s) => setPasteText(s)} />
                 </Label>
                 <span className="text-xs text-muted-foreground">
-                  উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড
+                  {type === "cq" && isMathSubject
+                    ? "গণিত/উচ্চতর গণিত: ৩টি প্রশ্ন — ক (২), খ (৪), গ (৪)। ঘ) লাগবে না।"
+                    : "উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড"}
                 </span>
               </div>
               <Textarea
@@ -371,7 +373,10 @@ export default function AdminQuestionsBulk() {
                 placeholder={type === "mcq"
                   ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩\nবিশ্ববিদ্যালয়: ঢাবি-২০২১\nছবি: https://..."
                   : type === "cq"
-                  ? "উদ্দীপক: ...\nছবি: https://...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর ক: ...\nবোর্ড: ঢাকা-২০২৩"
+                  ? (isMathSubject
+                      ? "উদ্দীপক: ...\nছবি: https://...\nক) ... (২)\nখ) ... (৪)\nগ) ... (৪)\nউত্তর খ: $...$\nবোর্ড: যশোর-২০২২"
+                      : "উদ্দীপক: ...\nছবি: https://...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর ক: ...\nবোর্ড: ঢাকা-২০২৩")
+
                   : type === "descriptive"
                   ? "১. ক) প্রশ্ন...\nখ) প্রশ্ন...\nউত্তর ক: ...\nউত্তর খ: ...\nবোর্ড: ঢাকা-২০২৩"
                   : "১. প্রশ্ন?\nউত্তর: ...\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩"}

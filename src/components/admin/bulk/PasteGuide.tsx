@@ -98,14 +98,29 @@ const CQ: Variant[] = [
 ঘ) ...`,
   },
   {
-    id: "math", label: "গাণিতিক CQ (ক/খ/গ)", desc: "গণিত/উচ্চতর গণিত বিষয় সিলেক্ট থাকলে ৩ প্রশ্ন (২/৪/৪)",
+    id: "math", label: "গাণিতিক CQ (ক/খ/গ)", desc: "গণিত/উচ্চতর গণিত সিলেক্ট থাকলে ৩টি প্রশ্ন — ক (২), খ (৪), গ (৪)। ঘ) লাগবে না।",
     sample: `উদ্দীপক: একটি সমকোণী ত্রিভুজের ভূমি $3$ সেমি এবং উচ্চতা $4$ সেমি।
 ক) অতিভুজ কাকে বলে?
 খ) ত্রিভুজটির অতিভুজ নির্ণয় করো।
 গ) ত্রিভুজটির ক্ষেত্রফল ও পরিসীমা নির্ণয় করো।
+উত্তর ক: সমকোণের বিপরীত বাহুকে অতিভুজ বলে।
 উত্তর খ: $\\sqrt{3^2+4^2}=5$ সেমি
 উত্তর গ: ক্ষেত্রফল $=\\frac{1}{2}\\times 3\\times 4=6$ বর্গসেমি
-বোর্ড: যশোর-২০২২`,
+বোর্ড: যশোর-২০২২
+
+উদ্দীপক: $f(x)=x^2-5x+6$
+ক) $f(0)$ এর মান কত?
+খ) $f(x)=0$ সমীকরণের মূল নির্ণয় করো।
+গ) $f(x)$ এর লেখচিত্রের শীর্ষবিন্দু নির্ণয় করো।`,
+  },
+  {
+    id: "math-image", label: "গাণিতিক + চিত্র", desc: "চিত্রসহ গাণিতিক উদ্দীপক (৩ প্রশ্ন)",
+    sample: `উদ্দীপক: চিত্রে একটি বৃত্তের কেন্দ্র $O$ এবং ব্যাসার্ধ $r=7$ সেমি।
+ছবি: https://res.cloudinary.com/demo/image/upload/sample.jpg
+ক) বৃত্তের পরিধির সূত্র লেখো।
+খ) বৃত্তটির পরিধি নির্ণয় করো।
+গ) $$A=\\pi r^2$$ সূত্র ব্যবহার করে ক্ষেত্রফল নির্ণয় করো।
+উত্তর খ: $2\\pi r = 44$ সেমি`,
   },
   {
     id: "image", label: "চিত্রযুক্ত উদ্দীপক", desc: "উদ্দীপকের সাথে ছবি: URL",
@@ -116,6 +131,7 @@ const CQ: Variant[] = [
 গ) চিত্রের আলোকে কোষের গঠন বর্ণনা করো।
 ঘ) "কোষই জীবনের একক"—বিশ্লেষণ করো।`,
   },
+
 ];
 
 const SHORT: Variant[] = [
@@ -182,12 +198,18 @@ const RULES = [
   "একই প্রশ্ন আগে থেকেই থাকলে বা লিস্টে দুইবার থাকলে সেটি ডুপ্লিকেট হিসেবে মার্ক হয়ে স্কিপ হবে।",
 ];
 
-export default function PasteGuide({ type, onInsert }: { type: QType; onInsert?: (sample: string) => void }) {
-  const variants = PASTE_VARIANTS[type];
+export default function PasteGuide({ type, isMath = false, onInsert }: { type: QType; isMath?: boolean; onInsert?: (sample: string) => void }) {
+  const variants = useMemo(() => {
+    const list = PASTE_VARIANTS[type];
+    if (type !== "cq") return list;
+    // গণিত/উচ্চতর গণিতে শুধু ৩ প্রশ্নের (ক/খ/গ) ভ্যারিয়েন্টগুলোই দেখানো হয়
+    return isMath ? list.filter((v) => v.id.startsWith("math")) : list.filter((v) => !v.id.startsWith("math"));
+  }, [type, isMath]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(variants[0].id);
   const current = useMemo(() => variants.find((v) => v.id === active) || variants[0], [variants, active]);
   const [copied, setCopied] = useState(false);
+
 
   const copy = async () => {
     await navigator.clipboard.writeText(current.sample);

@@ -363,7 +363,8 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
     const qk = multiline(opts.a || ""), qkh = multiline(opts.b || ""), qg = multiline(opts.c || ""), qgh = multiline(opts.d || "");
     q.stimulus = stem || undefined;
     q.question = (stripTags(stem) || stripTags(qk)).trim().slice(0, 100);
-    const mathMode = isMath && !qgh;
+    // গণিত/উচ্চতর গণিত: সবসময় ৩ প্রশ্নের (ক/খ/গ) ফরম্যাট — ভুলে ঘ) দেওয়া থাকলে সেটি উপেক্ষা করা হয়
+    const mathMode = isMath;
     q.creative_data = mathMode
       ? {
           is_math: true, stem,
@@ -383,10 +384,12 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
     q.explanation = multiline(f.explanation || "") || undefined;
     attachCommon(q, f);
     if (!stem) errors.push("উদ্দীপক detect হয়নি");
-    if (!qk || !qkh || !qg) errors.push("ক/খ/গ প্রশ্ন detect হয়নি");
+    if (!qk || !qkh || !qg) errors.push(mathMode ? "গণিত CQ-তে ক/খ/গ — ৩টি প্রশ্নই লাগবে" : "ক/খ/গ প্রশ্ন detect হয়নি");
+    
     if (!stem && !qk) return null;
     return q;
   }
+
 
   if (type === "short") {
     q.stimulus = [multiline(f.stimulus || ""), img].filter(Boolean).join("\n") || undefined;
