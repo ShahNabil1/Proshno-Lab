@@ -1645,10 +1645,11 @@ export default function QuestionPaperView() {
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                             <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "3px" }}>
-                                <div style={{ flex: 1 }} className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                              <div className="mc-block-question" style={{ display: "block" }}>
+                                <LatexRenderer inline text={q.question} />
+                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
                               </div>
+
                               <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
