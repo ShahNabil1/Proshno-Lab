@@ -1886,12 +1886,11 @@ export default function QuestionPaperView() {
                   const isDuplicate = duplicateIds.has(q.id);
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" }}>
-                        <span>
-                          <LatexRenderer text={`${padBangla(num)}। ${q.question}`} />
-                        </span>
-                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                      <div style={{ display: "block" }}>
+                        <LatexRenderer inline text={`${padBangla(num)}। ${q.question}`} />
+                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
                       </div>
+
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
                           <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
