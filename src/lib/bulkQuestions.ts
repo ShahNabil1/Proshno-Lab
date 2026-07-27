@@ -385,7 +385,7 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
     attachCommon(q, f);
     if (!stem) errors.push("উদ্দীপক detect হয়নি");
     if (!qk || !qkh || !qg) errors.push(mathMode ? "গণিত CQ-তে ক/খ/গ — ৩টি প্রশ্নই লাগবে" : "ক/খ/গ প্রশ্ন detect হয়নি");
-    if (!mathMode && !qgh) errors.push("ঘ) প্রশ্ন detect হয়নি");
+    
     if (!stem && !qk) return null;
     return q;
   }
