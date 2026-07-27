@@ -9,6 +9,8 @@ export const TYPE_LABELS: Record<QType, string> = {
   descriptive: "রচনামূলক (Descriptive)",
 };
 
+export type RefItem = { board?: string; name?: string; year: string };
+
 export type ParsedQuestion = {
   tempId: string;
   type: QType;
@@ -23,6 +25,8 @@ export type ParsedQuestion = {
   creative_data?: any;
   board?: string;
   year?: string;
+  boardRefs?: Array<{ board: string; year: string }>;
+  uniRefs?: Array<{ name: string; year: string }>;
   image_url?: string;
   errors: string[];
 };
@@ -30,8 +34,34 @@ export type ParsedQuestion = {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const s = (v: any) => (v == null ? "" : String(v).trim());
 
+export const isMathSubjectName = (name?: string | null) =>
+  /^(গণিত|উচ্চতর গণিত|math|higher\s*math)/i.test(String(name || "").trim());
+
+// "ঢাকা-২০২৩, যশোর ২০২২; কুমিল্লা: ২০২১" => [{name:'ঢাকা', year:'২০২৩'}, ...]
+export function parseRefCell(cell: string): Array<{ name: string; year: string }> {
+  const raw = s(cell);
+  if (!raw) return [];
+  return raw
+    .split(/[,;\n|]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const m = p.match(/^(.*?)[\s\-–:：]*([0-9০-৯]{2,4})\s*$/);
+      if (m && m[1].trim()) return { name: m[1].trim().replace(/[\s\-–:：]+$/, ""), year: m[2] };
+      return { name: p, year: "" };
+    })
+    .filter((r) => r.name);
+}
+
+const REF_COLS = ["বোর্ড রেফারেন্স (একাধিক: ঢাকা-২০২৩, যশোর-২০২২)", "বিশ্ববিদ্যালয় রেফারেন্স (একাধিক: ঢাবি-২০২৩, রাবি-২০২২)"];
+const REF_SAMPLE = ["ঢাকা-২০২৩, যশোর-২০২২", "ঢাবি-২০২৩"];
+const REF_NOTES = [
+  "বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স: কমা দিয়ে একাধিক দিন — যেমন: ঢাকা-২০২৩, যশোর-২০২২",
+  "নাম ও সালের মাঝে - অথবা : অথবা স্পেস ব্যবহার করা যাবে",
+];
+
 // ============ Template generation ============
-export function downloadTemplate(type: QType) {
+export function downloadTemplate(type: QType, isMath = false) {
   const wb = XLSX.utils.book_new();
   let rows: any[][] = [];
   let sample: any[] = [];
@@ -39,22 +69,30 @@ export function downloadTemplate(type: QType) {
 
   switch (type) {
     case "mcq":
-      rows = [["উদ্দীপক (HTML, optional)", "প্রশ্ন*", "অপশন ক*", "অপশন খ*", "অপশন গ*", "অপশন ঘ*", "সঠিক উত্তর* (a/b/c/d)", "ব্যাখ্যা", "ছবি URL (Cloudinary)", "বোর্ড", "বছর"]];
-      sample = ["", "বাংলাদেশের রাজধানী কোথায়?", "চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট", "b", "ঢাকা বাংলাদেশের রাজধানী", "", "ঢাকা", "2024"];
-      notes = ["সঠিক উত্তরে শুধু a/b/c/d লিখুন", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", "ছবি: Cloudinary URL দিন — auto <img> ট্যাগ যোগ হবে"];
+      rows = [["উদ্দীপক (HTML, optional)", "প্রশ্ন*", "অপশন ক*", "অপশন খ*", "অপশন গ*", "অপশন ঘ*", "সঠিক উত্তর* (a/b/c/d)", "ব্যাখ্যা", "ছবি URL (Cloudinary)", "বোর্ড", "বছর", ...REF_COLS]];
+      sample = ["", "বাংলাদেশের রাজধানী কোথায়?", "চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট", "b", "ঢাকা বাংলাদেশের রাজধানী", "", "", "", ...REF_SAMPLE];
+      notes = ["সঠিক উত্তরে শুধু a/b/c/d লিখুন", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", "ছবি: Cloudinary URL দিন — auto <img> ট্যাগ যোগ হবে", "পুরোনো 'বোর্ড'/'বছর' কলামও কাজ করবে", ...REF_NOTES];
       break;
     case "cq":
-      rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ)*", "উত্তর গ", "প্রশ্ন ঘ (উচ্চতর)", "উত্তর ঘ", "ছবি URL"]];
-      sample = ["রহিম একজন কৃষক। তিনি জৈব সার ব্যবহার করেন।", "জৈব সার কী?", "জৈব সার হলো...", "জৈব সারের সুবিধা ব্যাখ্যা করো।", "...", "উদ্দীপকের আলোকে রহিমের পদক্ষেপ ব্যাখ্যা করো।", "...", "মূল্যায়ন করো।", "...", ""];
-      notes = ["গণিতের বিষয়ে 'ঘ' খালি রাখতে পারেন", "উদ্দীপকে ছবি: Cloudinary URL দিন"];
+      if (isMath) {
+        rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান, ২)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন, ৪)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ, ৪)*", "উত্তর গ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+        sample = ["একটি সমকোণী ত্রিভুজের ভূমি ৩ সেমি ও উচ্চতা ৪ সেমি।", "অতিভুজ কাকে বলে?", "...", "ত্রিভুজটির অতিভুজ নির্ণয় করো।", "...", "ত্রিভুজটির ক্ষেত্রফল নির্ণয় করো।", "...", "", "", ...REF_SAMPLE];
+        notes = ["গণিত/উচ্চতর গণিতের CQ-তে শুধু ক/খ/গ — নম্বর: ২/৪/৪", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", ...REF_NOTES];
+      } else {
+        rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ)*", "উত্তর গ", "প্রশ্ন ঘ (উচ্চতর)", "উত্তর ঘ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+        sample = ["রহিম একজন কৃষক। তিনি জৈব সার ব্যবহার করেন।", "জৈব সার কী?", "জৈব সার হলো...", "জৈব সারের সুবিধা ব্যাখ্যা করো।", "...", "উদ্দীপকের আলোকে রহিমের পদক্ষেপ ব্যাখ্যা করো।", "...", "মূল্যায়ন করো।", "...", "", "", ...REF_SAMPLE];
+        notes = ["উদ্দীপকে ছবি: Cloudinary URL দিন", ...REF_NOTES];
+      }
       break;
     case "short":
-      rows = [["উদ্দীপক (optional)", "প্রশ্ন*", "উত্তর", "ছবি URL"]];
-      sample = ["", "সালোকসংশ্লেষণ কী?", "সালোকসংশ্লেষণ হলো উদ্ভিদের খাদ্য তৈরির প্রক্রিয়া।", ""];
+      rows = [["উদ্দীপক (optional)", "প্রশ্ন*", "উত্তর", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+      sample = ["", "সালোকসংশ্লেষণ কী?", "সালোকসংশ্লেষণ হলো উদ্ভিদের খাদ্য তৈরির প্রক্রিয়া।", "", "", ...REF_SAMPLE];
+      notes = ["উত্তর ও ব্যাখ্যা দুটোই দিলে একসাথে সংরক্ষিত হবে", ...REF_NOTES];
       break;
     case "descriptive":
-      rows = [["প্রশ্ন ক*", "উত্তর ক", "প্রশ্ন খ", "উত্তর খ", "ছবি URL"]];
-      sample = ["মুক্তিযুদ্ধের কারণ ব্যাখ্যা করো।", "...", "মুক্তিযুদ্ধের ফলাফল আলোচনা করো।", "...", ""];
+      rows = [["প্রশ্ন ক*", "উত্তর ক", "প্রশ্ন খ", "উত্তর খ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+      sample = ["মুক্তিযুদ্ধের কারণ ব্যাখ্যা করো।", "...", "মুক্তিযুদ্ধের ফলাফল আলোচনা করো।", "...", "", "", ...REF_SAMPLE];
+      notes = [...REF_NOTES];
       break;
   }
 
@@ -68,19 +106,26 @@ export function downloadTemplate(type: QType) {
     XLSX.utils.book_append_sheet(wb, nws, "Instructions");
   }
 
-  const filename = `${type}_template.xlsx`;
+  const filename = `${type}${type === "cq" && isMath ? "_math" : ""}_template.xlsx`;
   XLSX.writeFile(wb, filename);
 }
 
+
 // ============ Excel parsing ============
-export async function parseExcelFile(file: File, type: QType): Promise<ParsedQuestion[]> {
+export async function parseExcelFile(file: File, type: QType, isMath = false): Promise<ParsedQuestion[]> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   if (rows.length < 2) return [];
+  const header = (rows[0] || []).map(s);
+  const headerText = header.join("|");
+  // Header wins when recognizable (old/new templates both work), else fall back to subject
+  const mathSheet = type === "cq"
+    ? (/প্রশ্ন ঘ/.test(headerText) ? false : /জ্ঞান, ২|প্রশ্ন গ/.test(headerText) ? true : isMath)
+    : false;
   const body = rows.slice(1).filter((r) => r.some((c) => s(c)));
-  return body.map((r) => rowToQuestion(r, type));
+  return body.map((r) => rowToQuestion(r, type, mathSheet));
 }
 
 function wrapImg(url: string) {
@@ -89,12 +134,19 @@ function wrapImg(url: string) {
   return `<img src="${u}" alt="" style="max-width:100%;height:auto" />`;
 }
 
-function rowToQuestion(r: any[], type: QType): ParsedQuestion {
+function applyRefs(q: ParsedQuestion, boardCell: string, uniCell: string) {
+  const boards = parseRefCell(boardCell).map((r) => ({ board: r.name, year: r.year }));
+  const unis = parseRefCell(uniCell).map((r) => ({ name: r.name, year: r.year }));
+  if (boards.length) q.boardRefs = boards;
+  if (unis.length) q.uniRefs = unis;
+}
+
+function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
   const errors: string[] = [];
   const q: ParsedQuestion = { tempId: uid(), type, question: "", errors };
 
   if (type === "mcq") {
-    const [stim, question, a, b, c, d, correct, expl, img, board, year] = r.map(s);
+    const [stim, question, a, b, c, d, correct, expl, img, board, year, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
     q.question = question;
@@ -102,41 +154,55 @@ function rowToQuestion(r: any[], type: QType): ParsedQuestion {
     q.correct_answer = correct.toLowerCase();
     q.explanation = expl || undefined;
     q.board = board || undefined; q.year = year || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!question) errors.push("প্রশ্ন খালি");
     if (!a || !b || !c || !d) errors.push("সব অপশন (ক/খ/গ/ঘ) আবশ্যক");
     if (!["a", "b", "c", "d"].includes(q.correct_answer!)) errors.push("সঠিক উত্তর a/b/c/d হতে হবে");
   } else if (type === "cq") {
-    const [stem, qk, ak, qkh, akh, qg, ag, qgh, agh, img] = r.map(s);
+    const cells = r.map(s);
+    const [stem, qk, ak, qkh, akh, qg, ag] = cells;
+    const rest = isMath ? cells.slice(7) : cells.slice(9);
+    const qgh = isMath ? "" : cells[7];
+    const agh = isMath ? "" : cells[8];
+    const [img, expl, boardRefs, uniRefs] = [rest[0] || "", rest[1] || "", rest[2] || "", rest[3] || ""];
     const imgTag = wrapImg(img);
     const finalStem = [stem, imgTag].filter(Boolean).join("\n");
     q.stimulus = finalStem || undefined;
     q.question = (stem || qk).slice(0, 100);
-    q.creative_data = {
-      is_math: false,
-      stem: finalStem,
-      q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined,
-      ans_ka: ak, ans_kha: akh, ans_ga: ag, ans_gha: agh || undefined,
-    };
+    q.creative_data = isMath
+      ? { is_math: true, stem: finalStem, q_ka: qk, q_kha: qkh, q_ga: qg, ans_ka: ak, ans_kha: akh, ans_ga: ag }
+      : {
+          is_math: false,
+          stem: finalStem,
+          q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined,
+          ans_ka: ak, ans_kha: akh, ans_ga: ag, ans_gha: agh || undefined,
+        };
+    q.explanation = expl || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!finalStem) errors.push("উদ্দীপক আবশ্যক");
     if (!qk || !qkh || !qg) errors.push("ক/খ/গ প্রশ্ন আবশ্যক");
   } else if (type === "short") {
-    const [stim, question, ans, img] = r.map(s);
+    const [stim, question, ans, img, expl, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
     q.question = question;
-    q.explanation = ans || undefined;
+    q.explanation = [ans, expl].filter(Boolean).join("\n") || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!question) errors.push("প্রশ্ন খালি");
   } else if (type === "descriptive") {
-    const [qk, ak, qkh, akh, img] = r.map(s);
+    const [qk, ak, qkh, akh, img, expl, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
     q.stimulus = imgTag || undefined;
     q.question = qk.slice(0, 100);
     q.creative_data = { desc_q_ka: qk, desc_q_kha: qkh, desc_ans_ka: ak, desc_ans_kha: akh };
+    q.explanation = expl || undefined;
+    applyRefs(q, boardRefs, uniRefs);
     if (!qk && !qkh) errors.push("অন্তত একটি প্রশ্ন আবশ্যক");
   }
 
   return q;
 }
+
 
 // ============ Structured paste parsing ============
 const banglaDigits: Record<string, string> = { "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4", "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9" };
@@ -288,8 +354,11 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     question: q.question || (q.creative_data?.stem?.slice(0, 100)) || "প্রশ্ন",
     stimulus_text: q.stimulus || null,
     stimulus_group_id: ctx.stimulus_group_id || null,
-    board_references: q.board ? [{ board: q.board, year: q.year || "" }] : [],
-    university_references: [],
+    board_references: [
+      ...(q.board ? [{ board: q.board, year: q.year || "" }] : []),
+      ...(q.boardRefs || []),
+    ],
+    university_references: q.uniRefs || [],
   };
   if (q.type === "mcq") {
     p.option_a = q.option_a || null;
@@ -300,6 +369,7 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     p.explanation = q.explanation || null;
   } else if (q.type === "cq" || q.type === "descriptive") {
     p.creative_data = q.creative_data || {};
+    p.explanation = q.explanation || null;
   } else if (q.type === "short") {
     p.explanation = q.explanation || null;
   }

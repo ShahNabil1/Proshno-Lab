@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import LatexRenderer from "@/components/LatexRenderer";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
-  downloadTemplate, parseExcelFile, parsePastedText, toDbPayload,
+  downloadTemplate, parseExcelFile, parsePastedText, toDbPayload, isMathSubjectName,
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
 import { sortClasses } from "@/lib/classOrder";
@@ -83,6 +83,7 @@ export default function AdminQuestionsBulk() {
   }, [chapterId]);
 
   const contextValid = classId && subjectId && chapterId;
+  const isMathSubject = isMathSubjectName(subjects.find((s) => String(s.id) === subjectId)?.name);
 
   const stats = useMemo(() => {
     const valid = parsed.filter((q) => q.errors.length === 0).length;
@@ -92,7 +93,7 @@ export default function AdminQuestionsBulk() {
   const handleExcel = async (file: File) => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
     try {
-      const items = await parseExcelFile(file, type);
+      const items = await parseExcelFile(file, type, isMathSubject);
       if (items.length === 0) { toast.error("ফাইলে কোনো row পাওয়া যায়নি"); return; }
       setParsed(items);
       toast.success(`${items.length} টি প্রশ্ন লোড হয়েছে`);
@@ -302,7 +303,7 @@ export default function AdminQuestionsBulk() {
 
             <TabsContent value="excel" className="pt-4 space-y-3">
               <div className="flex flex-wrap items-center gap-3">
-                <Button variant="outline" onClick={() => downloadTemplate(type)} className="gap-2">
+                <Button variant="outline" onClick={() => downloadTemplate(type, isMathSubject)} className="gap-2">
                   <Download className="w-4 h-4" /> {TYPE_LABELS[type]} টেমপ্লেট ডাউনলোড
                 </Button>
                 <label className="inline-flex">
@@ -315,6 +316,8 @@ export default function AdminQuestionsBulk() {
               </div>
               <p className="text-xs text-muted-foreground">
                 টেমপ্লেট ডাউনলোড করে ভরে আপলোড করুন। HTML/LaTeX/Cloudinary ছবি URL cell-এ ব্যবহার করা যাবে।
+                ব্যাখ্যা, বোর্ড ও বিশ্ববিদ্যালয় রেফারেন্স (একাধিক: <span className="font-mono">ঢাকা-২০২৩, যশোর-২০২২</span>) কলামও আছে।
+                {type === "cq" && isMathSubject ? " গণিত/উচ্চতর গণিতের জন্য ৩ প্রশ্নের (ক/খ/গ) CQ টেমপ্লেট ডাউনলোড হবে।" : ""}
               </p>
             </TabsContent>
 
