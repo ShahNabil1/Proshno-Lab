@@ -123,3 +123,19 @@ ii. ক্লোরোফিল
     expect(withDb[0].duplicate).toBe("db");
   });
 });
+
+describe("math CQ paste", () => {
+  it("forces 3-question format for math subjects even if ঘ) present", () => {
+    const t = `উদ্দীপক: $f(x)=x^2-5x+6$
+ক) $f(0)$ কত?
+খ) মূল নির্ণয় করো।
+গ) শীর্ষবিন্দু নির্ণয় করো।
+ঘ) ভুল করে দেওয়া চতুর্থ প্রশ্ন।
+উত্তর গ: $(2.5,-0.25)$`;
+    const [q] = parsePastedText(t, "cq", true);
+    expect(q.errors).toEqual([]);
+    expect(q.creative_data.is_math).toBe(true);
+    expect(q.creative_data.q_gha).toBeUndefined();
+    expect(q.creative_data.ans_ga).toBe("$(2.5,-0.25)$");
+  });
+});
