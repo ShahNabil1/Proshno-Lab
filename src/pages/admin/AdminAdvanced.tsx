@@ -192,6 +192,44 @@ export default function AdminAdvanced() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Youtube className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <Label className="font-heading font-bold text-base">হোমপেজ ভিডিও</Label>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                হোম পেইজে দেখানো ইউটিউব ভিডিওর লিংক এখানে আপডেট করুন।
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="flex-1"
+            />
+            <Button onClick={saveVideoUrl} disabled={savingVideo}>
+              {savingVideo ? "সেভ হচ্ছে..." : "সেভ করুন"}
+            </Button>
+          </div>
+
+          {extractYouTubeId(videoUrl) ? (
+            <div className="max-w-xl">
+              <YouTubePlayer videoId={extractYouTubeId(videoUrl)!} title="প্রিভিউ" autoPlayOnView={false} />
+            </div>
+          ) : (
+            videoUrl && <p className="text-sm text-destructive">লিংকটি সঠিক ইউটিউব লিংক নয়।</p>
+          )}
+        </CardContent>
+      </Card>
+
+
+
       <ToggleSection
         title="টিচার ড্যাশবোর্ড"
         description="টগল অফ করলে পেইজটি টিচার ড্যাশবোর্ড থেকে হাইড হয়ে যাবে।"
