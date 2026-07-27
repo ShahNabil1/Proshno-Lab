@@ -89,6 +89,8 @@ export default function AdminAdvanced() {
   const [cloudBackup, setCloudBackup] = useState(false);
   const [hiddenPages, setHiddenPages] = useState<string[]>([]);
   const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [savingVideo, setSavingVideo] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,15 +98,37 @@ export default function AdminAdvanced() {
       supabase.from("app_settings").select("value").eq("key", "cloud_backup_enabled").maybeSingle(),
       supabase.from("app_settings").select("value").eq("key", "dashboard_hidden_pages").maybeSingle(),
       supabase.from("app_settings").select("value").eq("key", "admin_hidden_pages").maybeSingle(),
-    ]).then(([backupRes, hiddenRes, adminHiddenRes]) => {
+      supabase.from("app_settings").select("value").eq("key", "homepage_video_url").maybeSingle(),
+    ]).then(([backupRes, hiddenRes, adminHiddenRes, videoRes]) => {
       setCloudBackup(backupRes.data?.value === true);
       const hidden = hiddenRes.data?.value;
       setHiddenPages(Array.isArray(hidden) ? (hidden as string[]) : []);
       const adminHidden = adminHiddenRes.data?.value;
       setAdminHiddenPages(Array.isArray(adminHidden) ? (adminHidden as string[]) : []);
+      setVideoUrl(typeof videoRes.data?.value === "string" ? (videoRes.data.value as string) : "");
       setLoading(false);
     });
   }, []);
+
+  const saveVideoUrl = async () => {
+    const id = extractYouTubeId(videoUrl);
+    if (!id) {
+      toast.error("সঠিক ইউটিউব লিংক দিন");
+      return;
+    }
+    setSavingVideo(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "homepage_video_url", value: videoUrl.trim() as any, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    setSavingVideo(false);
+    if (error) {
+      toast.error("ভিডিও লিংক সেভ করতে সমস্যা হয়েছে");
+      return;
+    }
+    toast.success("হোমপেজের ভিডিও আপডেট হয়েছে");
+  };
+
+
 
   const handleToggle = async (checked: boolean) => {
     setCloudBackup(checked);
