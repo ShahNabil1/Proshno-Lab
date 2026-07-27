@@ -418,11 +418,17 @@ export default function AdminQuestionsBulk() {
 
             <div className="border rounded-lg divide-y max-h-[500px] overflow-y-auto">
               {parsed.map((q, i) => (
-                <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : ""}`}>
+                <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : q.duplicate ? "bg-amber-50/60" : ""}`}>
                   <div className="text-xs text-muted-foreground w-8">#{i + 1}</div>
                   <div className="flex-1 min-w-0">
+                    {q.duplicate && (
+                      <Badge className="mb-1 bg-amber-100 text-amber-900 hover:bg-amber-100 text-[10px]">
+                        ডুপ্লিকেট ({q.duplicate === "db" ? "আগে থেকেই ডাটাবেসে আছে" : "লিস্টে দুইবার"}) — স্কিপ হবে
+                      </Badge>
+                    )}
                     {q.stimulus && <div className="text-xs text-muted-foreground line-clamp-2 mb-1"><span className="font-semibold">উদ্দীপক:</span> <LatexRenderer inline text={q.stimulus.replace(/<[^>]+>/g, "")} /></div>}
                     <div className="font-medium text-sm line-clamp-2"><LatexRenderer inline text={q.question || q.creative_data?.stem?.slice(0, 100) || "(no question)"} /></div>
+
                     {q.type === "mcq" && (
                       <div className="text-xs text-muted-foreground mt-1 grid grid-cols-2 gap-x-4">
                         <span>ক) <LatexRenderer inline text={q.option_a || ""} /></span><span>খ) <LatexRenderer inline text={q.option_b || ""} /></span>
