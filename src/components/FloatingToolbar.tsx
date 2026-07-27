@@ -185,23 +185,64 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
       {/* Color */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600">
-            <Palette className="h-3.5 w-3.5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 relative"
+            onMouseDown={e => e.preventDefault()}
+            title="লেখার রং"
+          >
+            <Palette className="h-3.5 w-3.5" style={{ color: currentColor }} />
+            <span
+              className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-4 rounded-sm border border-border"
+              style={{ backgroundColor: currentColor }}
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" side="bottom" align="center">
-          <div className="grid grid-cols-4 gap-1.5">
+        <PopoverContent
+          className="w-56 p-2.5 space-y-2"
+          side="bottom"
+          align="center"
+          onOpenAutoFocus={e => e.preventDefault()}
+        >
+          <div className="grid grid-cols-8 gap-1">
             {COLORS.map(c => (
               <button
                 key={c}
-                className="h-6 w-6 rounded-full border border-border hover:scale-110 transition-transform"
+                type="button"
+                className="h-5 w-5 rounded-full border border-border hover:scale-125 transition-transform"
                 style={{ backgroundColor: c }}
+                title={c}
+                onMouseDown={e => e.preventDefault()}
                 onClick={() => setColor(c)}
               />
             ))}
           </div>
+
+          <div className="flex items-center gap-2 pt-1 border-t border-border">
+            <input
+              type="color"
+              value={/^#[0-9a-fA-F]{6}$/.test(currentColor) ? currentColor : "#000000"}
+              onChange={e => setColor(e.target.value)}
+              className="h-7 w-9 p-0 rounded border border-border bg-transparent cursor-pointer"
+              title="কাস্টম রং"
+            />
+            <input
+              type="text"
+              value={currentColor}
+              placeholder="#10b981"
+              onMouseDown={e => e.stopPropagation()}
+              onChange={e => {
+                const v = e.target.value.trim();
+                setCurrentColor(v);
+                if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) setColor(v);
+              }}
+              className="flex-1 h-7 px-2 text-xs rounded border border-border bg-background font-mono"
+            />
+          </div>
         </PopoverContent>
       </Popover>
+
 
       <div className="w-px h-5 bg-emerald-200 mx-0.5" />
 
