@@ -357,21 +357,35 @@ export default function AdminQuestionsBulk() {
             </TabsContent>
 
             <TabsContent value="paste" className="pt-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="flex items-center gap-1">
+                  {TYPE_LABELS[type]} পেস্ট করুন
+                  <PasteGuide type={type} onInsert={(s) => setPasteText(s)} />
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড
+                </span>
+              </div>
               <Textarea
                 value={pasteText} onChange={(e) => setPasteText(e.target.value)}
                 placeholder={type === "mcq"
-                  ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ..."
+                  ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩\nবিশ্ববিদ্যালয়: ঢাবি-২০২১\nছবি: https://..."
                   : type === "cq"
-                  ? "উদ্দীপক: ...\nক) ...\nখ) ...\nগ) ...\nঘ) ..."
-                  : "১. প্রশ্ন?\nউত্তর: ..."}
+                  ? "উদ্দীপক: ...\nছবি: https://...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর ক: ...\nবোর্ড: ঢাকা-২০২৩"
+                  : type === "descriptive"
+                  ? "১. ক) প্রশ্ন...\nখ) প্রশ্ন...\nউত্তর ক: ...\nউত্তর খ: ...\nবোর্ড: ঢাকা-২০২৩"
+                  : "১. প্রশ্ন?\nউত্তর: ...\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩"}
                 rows={12} className="font-mono text-sm"
               />
-              <Button onClick={handlePaste} className="bg-emerald-600 hover:bg-emerald-700">Parse করুন</Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={handlePaste} className="bg-emerald-600 hover:bg-emerald-700">Parse করুন</Button>
+                {pasteText && <Button variant="ghost" onClick={() => setPasteText("")}>মুছুন</Button>}
+              </div>
             </TabsContent>
 
             <TabsContent value="ai" className="pt-4">
               {contextValid ? (
-                <AIExtract type={type} onExtracted={(qs) => setParsed((p) => [...p, ...qs])} />
+                <AIExtract type={type} onExtracted={(qs) => loadItems(qs, "detect হয়েছে")} />
               ) : (
                 <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
               )}
@@ -390,14 +404,17 @@ export default function AdminQuestionsBulk() {
                 <span className="bg-emerald-100 text-emerald-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">৩</span>
                 Preview ও যাচাই
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline">মোট: {stats.total}</Badge>
                 <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Valid: {stats.valid}</Badge>
+                {stats.dup > 0 && <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100">ডুপ্লিকেট: {stats.dup}</Badge>}
                 {stats.invalid > 0 && <Badge variant="destructive">Invalid: {stats.invalid}</Badge>}
+                {stats.dup > 0 && <Button variant="outline" size="sm" onClick={removeDuplicates}>ডুপ্লিকেট remove</Button>}
                 {stats.invalid > 0 && <Button variant="outline" size="sm" onClick={removeInvalid}>Invalid remove</Button>}
                 <Button variant="ghost" size="sm" onClick={() => setParsed([])}>Clear</Button>
               </div>
             </div>
+
 
             <div className="border rounded-lg divide-y max-h-[500px] overflow-y-auto">
               {parsed.map((q, i) => (
