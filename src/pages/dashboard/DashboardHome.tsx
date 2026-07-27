@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, PlusCircle, Package, Phone, Megaphone } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
+import LatexRenderer from "@/components/LatexRenderer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,9 @@ export default function DashboardHome() {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border transition-colors">
                     <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{(q.question || "প্রশ্ন").replace(/<[^>]*>/g, '')}</p>
+                      <div className="text-sm font-medium truncate">
+                        <LatexRenderer text={q.question || "প্রশ্ন"} inline />
+                      </div>
                       <p className="text-xs text-muted-foreground">{(q as any).classes?.name} • {(q as any).subjects?.name}</p>
                     </div>
                     <Badge variant="secondary" className="text-[10px] shrink-0 uppercase">{q.type}</Badge>
