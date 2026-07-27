@@ -24,6 +24,17 @@ const typeOptions = ["mcq", "short", "cq", "descriptive"];
 const typeLabelsMap: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
 const ITEMS_PER_PAGE = 20;
 
+/** Splits bulk textarea input into trimmed, de-duplicated chapter names (strips leading bullets/numbers). */
+function parseBulkNames(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  raw.split("\n").forEach((line) => {
+    const name = line.replace(/^\s*(?:[-*•]|\d+[.)]|[০-৯]+[.)])\s*/, "").trim();
+    if (name && !seen.has(name)) { seen.add(name); out.push(name); }
+  });
+  return out;
+}
+
 interface ClassItem { id: number; name: string; }
 interface SubjectItem { id: number; name: string; class_id: number; }
 interface ChapterItem {
