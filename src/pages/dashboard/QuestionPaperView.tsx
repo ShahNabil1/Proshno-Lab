@@ -488,11 +488,27 @@ export default function QuestionPaperView() {
         .replace(/&nbsp;/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-      // Inline LaTeX bonus
-      const latexMatches: string[] = text.match(/\$[^$]+\$|\\\([^)]+\\\)/g) || [];
-      const latexBonus = latexMatches.reduce<number>((sum, m) => sum + Math.max(0, m.length * 0.3), 0);
-      return text.length + latexBonus;
+      // Estimate the RENDERED width of inline LaTeX instead of its source length:
+      // `$0.\overset{.}{6}$` is only ~4 chars wide once KaTeX renders it.
+      const renderedLatexLen = (src: string): number => {
+        const body = src
+          .replace(/^\$|\$$/g, "")
+          .replace(/^\\\(|\\\)$/g, "")
+          .replace(/\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, (_m, a, b) => (a.length > b.length ? a : b))
+          .replace(/\\(sqrt|overline|overset|underset|dot|ddot|hat|bar|vec|text|mathrm|left|right|,|;|!|quad|qquad)\b/g, "")
+          .replace(/[{}^_$\\]/g, "")
+          .replace(/\s+/g, "");
+        return body.length * 1.15;
+      };
+      let plain = text;
+      let latexLen = 0;
+      plain = plain.replace(/\$[^$]+\$|\\\([\s\S]*?\\\)/g, (m) => {
+        latexLen += renderedLatexLen(m);
+        return "";
+      });
+      return plain.length + latexLen;
     };
+
 
     const lengths = rawOpts.map(visualLen);
     const maxLen = Math.max(...lengths);
