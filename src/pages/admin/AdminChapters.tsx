@@ -48,6 +48,8 @@ export default function AdminChapters() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<ChapterItem | null>(null);
   const [formName, setFormName] = useState("");
+  const [bulkNames, setBulkNames] = useState("");
+  const [saving, setSaving] = useState(false);
   const [formClassId, setFormClassId] = useState("");
   const [formSubjectId, setFormSubjectId] = useState("");
 
