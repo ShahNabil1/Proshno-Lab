@@ -1506,9 +1506,9 @@ export default function QuestionPaperView() {
               alignItems: "center",
               fontWeight: 600,
               fontSize: "0.95em",
-              padding: "0",
+              padding: "0 0 2px",
               margin: "4px 0 2px",
-
+              borderBottom: "1px solid #000",
             }}
           >
             <span
