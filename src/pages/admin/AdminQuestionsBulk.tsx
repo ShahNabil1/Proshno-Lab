@@ -17,8 +17,10 @@ import LatexRenderer from "@/components/LatexRenderer";
 import {
   QType, TYPE_LABELS, ParsedQuestion,
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload, isMathSubjectName,
+  markBatchDuplicates, markDbDuplicates, questionSignature,
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
+import PasteGuide from "@/components/admin/bulk/PasteGuide";
 import { sortClasses } from "@/lib/classOrder";
 
 const CTX_KEY = "adminBulkContext.v1";
@@ -86,32 +88,65 @@ export default function AdminQuestionsBulk() {
   const isMathSubject = isMathSubjectName(subjects.find((s) => String(s.id) === subjectId)?.name);
 
   const stats = useMemo(() => {
-    const valid = parsed.filter((q) => q.errors.length === 0).length;
-    return { total: parsed.length, valid, invalid: parsed.length - valid };
+    const invalid = parsed.filter((q) => q.errors.length > 0).length;
+    const dup = parsed.filter((q) => q.errors.length === 0 && q.duplicate).length;
+    const valid = parsed.filter((q) => q.errors.length === 0 && !q.duplicate).length;
+    return { total: parsed.length, valid, invalid, dup };
   }, [parsed]);
+
+  /** Marks in-batch duplicates + duplicates already saved in this chapter (chunked DB read). */
+  const applyDedupe = async (items: ParsedQuestion[]) => {
+    const marked = markBatchDuplicates(items);
+    try {
+      const sigs = new Set<string>();
+      const PAGE = 1000;
+      for (let from = 0; from < 20000; from += PAGE) {
+        const { data, error } = await supabase
+          .from("questions")
+          .select("id, type, question, option_a, option_b, option_c, option_d, creative_data")
+          .eq("chapter_id", Number(chapterId))
+          .eq("type", type)
+          .order("id")
+          .range(from, from + PAGE - 1);
+        if (error || !data || data.length === 0) break;
+        data.forEach((r: any) => sigs.add(questionSignature(r)));
+        if (data.length < PAGE) break;
+      }
+      return markDbDuplicates(marked, sigs);
+    } catch {
+      return marked;
+    }
+  };
+
+  const loadItems = async (items: ParsedQuestion[], label: string) => {
+    const deduped = await applyDedupe(items);
+    setParsed(deduped);
+    const dups = deduped.filter((q) => q.duplicate).length;
+    toast.success(`${items.length} টি প্রশ্ন ${label}${dups ? ` • ${dups} টি ডুপ্লিকেট (স্কিপ হবে)` : ""}`);
+  };
 
   const handleExcel = async (file: File) => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
     try {
       const items = await parseExcelFile(file, type, isMathSubject);
       if (items.length === 0) { toast.error("ফাইলে কোনো row পাওয়া যায়নি"); return; }
-      setParsed(items);
-      toast.success(`${items.length} টি প্রশ্ন লোড হয়েছে`);
+      await loadItems(items, "লোড হয়েছে");
     } catch (e: any) {
       toast.error("Parse error: " + e.message);
     }
   };
 
-  const handlePaste = () => {
+  const handlePaste = async () => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
-    const items = parsePastedText(pasteText, type);
-    if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি"); return; }
-    setParsed(items);
-    toast.success(`${items.length} টি প্রশ্ন detect হয়েছে`);
+    const items = parsePastedText(pasteText, type, isMathSubject);
+    if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি — i আইকনে ফরম্যাট দেখুন"); return; }
+    await loadItems(items, "detect হয়েছে");
   };
 
   const removeRow = (id: string) => setParsed((p) => p.filter((x) => x.tempId !== id));
   const removeInvalid = () => setParsed((p) => p.filter((x) => x.errors.length === 0));
+  const removeDuplicates = () => setParsed((p) => p.filter((x) => !x.duplicate));
+
 
   const runInsertChunks = async (chunks: FailedChunk[]) => {
     const nextFailed: FailedChunk[] = [];
@@ -144,7 +179,7 @@ export default function AdminQuestionsBulk() {
   };
 
   const doSave = async () => {
-    const valid = parsed.filter((q) => q.errors.length === 0);
+    const valid = parsed.filter((q) => q.errors.length === 0 && !q.duplicate);
     if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
@@ -322,21 +357,35 @@ export default function AdminQuestionsBulk() {
             </TabsContent>
 
             <TabsContent value="paste" className="pt-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <Label className="flex items-center gap-1">
+                  {TYPE_LABELS[type]} পেস্ট করুন
+                  <PasteGuide type={type} onInsert={(s) => setPasteText(s)} />
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড
+                </span>
+              </div>
               <Textarea
                 value={pasteText} onChange={(e) => setPasteText(e.target.value)}
                 placeholder={type === "mcq"
-                  ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ..."
+                  ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩\nবিশ্ববিদ্যালয়: ঢাবি-২০২১\nছবি: https://..."
                   : type === "cq"
-                  ? "উদ্দীপক: ...\nক) ...\nখ) ...\nগ) ...\nঘ) ..."
-                  : "১. প্রশ্ন?\nউত্তর: ..."}
+                  ? "উদ্দীপক: ...\nছবি: https://...\nক) ...\nখ) ...\nগ) ...\nঘ) ...\nউত্তর ক: ...\nবোর্ড: ঢাকা-২০২৩"
+                  : type === "descriptive"
+                  ? "১. ক) প্রশ্ন...\nখ) প্রশ্ন...\nউত্তর ক: ...\nউত্তর খ: ...\nবোর্ড: ঢাকা-২০২৩"
+                  : "১. প্রশ্ন?\nউত্তর: ...\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩"}
                 rows={12} className="font-mono text-sm"
               />
-              <Button onClick={handlePaste} className="bg-emerald-600 hover:bg-emerald-700">Parse করুন</Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={handlePaste} className="bg-emerald-600 hover:bg-emerald-700">Parse করুন</Button>
+                {pasteText && <Button variant="ghost" onClick={() => setPasteText("")}>মুছুন</Button>}
+              </div>
             </TabsContent>
 
             <TabsContent value="ai" className="pt-4">
               {contextValid ? (
-                <AIExtract type={type} onExtracted={(qs) => setParsed((p) => [...p, ...qs])} />
+                <AIExtract type={type} onExtracted={(qs) => loadItems(qs, "detect হয়েছে")} />
               ) : (
                 <p className="text-sm text-muted-foreground">প্রথমে উপরের Context সিলেক্ট করুন</p>
               )}
@@ -355,22 +404,31 @@ export default function AdminQuestionsBulk() {
                 <span className="bg-emerald-100 text-emerald-800 rounded-full w-6 h-6 flex items-center justify-center text-xs">৩</span>
                 Preview ও যাচাই
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline">মোট: {stats.total}</Badge>
                 <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Valid: {stats.valid}</Badge>
+                {stats.dup > 0 && <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100">ডুপ্লিকেট: {stats.dup}</Badge>}
                 {stats.invalid > 0 && <Badge variant="destructive">Invalid: {stats.invalid}</Badge>}
+                {stats.dup > 0 && <Button variant="outline" size="sm" onClick={removeDuplicates}>ডুপ্লিকেট remove</Button>}
                 {stats.invalid > 0 && <Button variant="outline" size="sm" onClick={removeInvalid}>Invalid remove</Button>}
                 <Button variant="ghost" size="sm" onClick={() => setParsed([])}>Clear</Button>
               </div>
             </div>
 
+
             <div className="border rounded-lg divide-y max-h-[500px] overflow-y-auto">
               {parsed.map((q, i) => (
-                <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : ""}`}>
+                <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : q.duplicate ? "bg-amber-50/60" : ""}`}>
                   <div className="text-xs text-muted-foreground w-8">#{i + 1}</div>
                   <div className="flex-1 min-w-0">
+                    {q.duplicate && (
+                      <Badge className="mb-1 bg-amber-100 text-amber-900 hover:bg-amber-100 text-[10px]">
+                        ডুপ্লিকেট ({q.duplicate === "db" ? "আগে থেকেই ডাটাবেসে আছে" : "লিস্টে দুইবার"}) — স্কিপ হবে
+                      </Badge>
+                    )}
                     {q.stimulus && <div className="text-xs text-muted-foreground line-clamp-2 mb-1"><span className="font-semibold">উদ্দীপক:</span> <LatexRenderer inline text={q.stimulus.replace(/<[^>]+>/g, "")} /></div>}
                     <div className="font-medium text-sm line-clamp-2"><LatexRenderer inline text={q.question || q.creative_data?.stem?.slice(0, 100) || "(no question)"} /></div>
+
                     {q.type === "mcq" && (
                       <div className="text-xs text-muted-foreground mt-1 grid grid-cols-2 gap-x-4">
                         <span>ক) <LatexRenderer inline text={q.option_a || ""} /></span><span>খ) <LatexRenderer inline text={q.option_b || ""} /></span>
@@ -487,7 +545,8 @@ export default function AdminQuestionsBulk() {
           <AlertDialogHeader>
             <AlertDialogTitle>নিশ্চিত করুন</AlertDialogTitle>
             <AlertDialogDescription>
-              {stats.valid} টি প্রশ্ন ডাটাবেসে যোগ হবে। এটি undo করা যাবে না।
+              {stats.valid} টি প্রশ্ন ডাটাবেসে যোগ হবে (প্রতি ব্যাচে ৫০টি করে, queue আকারে)।
+              {stats.dup > 0 ? ` ${stats.dup} টি ডুপ্লিকেট স্কিপ হবে।` : ""} এটি undo করা যাবে না।
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -28,6 +28,7 @@ export type ParsedQuestion = {
   boardRefs?: Array<{ board: string; year: string }>;
   uniRefs?: Array<{ name: string; year: string }>;
   image_url?: string;
+  duplicate?: "batch" | "db";
   errors: string[];
 };
 
@@ -205,139 +206,256 @@ function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
 
 
 // ============ Structured paste parsing ============
-const banglaDigits: Record<string, string> = { "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4", "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9" };
-const normDigits = (str: string) => str.replace(/[০-৯]/g, (d) => banglaDigits[d] || d);
+const stripTags = (h: string) => String(h || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ");
 
-export function parsePastedText(text: string, type: QType): ParsedQuestion[] {
-  const norm = text.replace(/\r\n/g, "\n").trim();
-  if (!norm) return [];
+const IMG_URL = /^https?:\/\/\S+\.(png|jpe?g|gif|webp|svg)(\?\S*)?$/i;
 
-  if (type === "mcq") return parseMCQBlocks(norm);
-  if (type === "cq") return parseCQBlocks(norm);
-  if (type === "short") return parseShortBlocks(norm);
-  if (type === "descriptive") return parseDescBlocks(norm);
-  return [];
+function mdImages(t: string) {
+  return String(t || "").replace(/!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g, (_m, u) => wrapImg(u));
 }
 
-function splitByNumberedItems(text: string): string[] {
-  // split on lines that start with a number + . or )
+const multiline = (v: string) => mdImages(String(v || "").trim()).replace(/\n/g, "<br/>");
+
+// key patterns — value is ALWAYS the last capture group
+const KEY_PATTERNS: Array<[string, RegExp]> = [
+  ["ans_ka", /^\(?\s*(?:উত্তর|উঃ|ans(?:wer)?)\s*[-–]?\s*(?:ক|a)\s*[).:：]\s*(.*)$/i],
+  ["ans_kha", /^\(?\s*(?:উত্তর|উঃ|ans(?:wer)?)\s*[-–]?\s*(?:খ|b)\s*[).:：]\s*(.*)$/i],
+  ["ans_ga", /^\(?\s*(?:উত্তর|উঃ|ans(?:wer)?)\s*[-–]?\s*(?:গ|c)\s*[).:：]\s*(.*)$/i],
+  ["ans_gha", /^\(?\s*(?:উত্তর|উঃ|ans(?:wer)?)\s*[-–]?\s*(?:ঘ|d)\s*[).:：]\s*(.*)$/i],
+  ["stimulus", /^\(?\s*(?:উদ্দীপক|উদ্দিপক|নিচের\s*উদ্দীপক|stimulus|stem)\s*[).:：]\s*(.*)$/i],
+  ["question", /^\(?\s*(?:প্রশ্ন|question)\s*[).:：]\s*(.*)$/i],
+  ["answer", /^\(?\s*(?:সঠিক\s*উত্তর|উত্তর|উঃ|ans(?:wer)?)\s*[).:：]\s*(.*)$/i],
+  ["explanation", /^\(?\s*(?:ব্যাখ্যা|বর্ণনা|explanation|expl)\s*[).:：]\s*(.*)$/i],
+  ["board", /^\(?\s*(?:বোর্ড(?:\s*রেফারেন্স)?|board(?:\s*ref)?)\s*[).:：]\s*(.*)$/i],
+  ["uni", /^\(?\s*(?:বিশ্ববিদ্যালয়(?:\s*রেফারেন্স)?|ভার্সিটি|university|uni(?:versity)?\s*ref)\s*[).:：]\s*(.*)$/i],
+  ["image", /^\(?\s*(?:ছবি|চিত্র|image|img)\s*(?:url)?\s*[).:：]\s*(.*)$/i],
+];
+
+const OPT_RE = /^\(?\s*([কখগঘঙ]|[a-eA-E])\s*[).।:：]\s*(.+)$/;
+const OPT_KEY: Record<string, string> = { "ক": "a", "খ": "b", "গ": "c", "ঘ": "d", "ঙ": "e" };
+const optKey = (raw: string) => OPT_KEY[raw] || raw.toLowerCase();
+
+function splitBlocks(text: string, type: QType): string[] {
+  const bySep = text.split(/\n\s*(?:-{3,}|={3,}|\*{3,}|#{3,})\s*\n/);
+  if (bySep.length > 1) return bySep.map((t) => t.trim()).filter(Boolean);
+
+  const startRe = type === "cq"
+    ? /^\s*(?:উদ্দীপক|উদ্দিপক|stimulus)\s*[).:：]|^\s*[0-9০-৯]+\s*[.)।]/i
+    : /^\s*[0-9০-৯]+\s*[.)।]/;
+
   const lines = text.split("\n");
-  const blocks: string[][] = [];
+  const groups: string[][] = [];
   let cur: string[] = [];
-  const isNew = (l: string) => /^\s*[0-9০-৯]+\s*[.)।]/.test(l);
   for (const l of lines) {
-    if (isNew(l) && cur.length) { blocks.push(cur); cur = []; }
+    if (startRe.test(l) && cur.some((x) => x.trim())) { groups.push(cur); cur = []; }
     cur.push(l);
   }
-  if (cur.length) blocks.push(cur);
-  return blocks.map((b) => b.join("\n").trim()).filter(Boolean);
+  if (cur.length) groups.push(cur);
+  let out = groups.map((g) => g.join("\n").trim()).filter(Boolean);
+
+  if (out.length <= 1 && type !== "cq") {
+    const byBlank = text.split(/\n\s*\n+/).map((t) => t.trim()).filter(Boolean);
+    if (byBlank.length > out.length) out = byBlank;
+  }
+  return out;
 }
 
-function parseMCQBlocks(text: string): ParsedQuestion[] {
-  const blocks = splitByNumberedItems(text);
-  return blocks.map((block) => {
-    const errors: string[] = [];
-    const q: ParsedQuestion = { tempId: uid(), type: "mcq", question: "", errors };
-    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
-    // remove leading number
-    if (lines[0]) lines[0] = lines[0].replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
+function parseBlockFields(block: string) {
+  const f: Record<string, string> = {};
+  const opts: Record<string, string> = {};
+  const lead: string[] = [];
+  let cur: { t: "lead" | "f" | "o"; k: string } = { t: "lead", k: "" };
 
-    const optRe = /^([কখগঘabcd])[).\s]\s*(.+)$/i;
-    const ansRe = /^(উত্তর|Ans|Answer)\s*[:：]?\s*(.+)$/i;
-    const explRe = /^(ব্যাখ্যা|Explanation)\s*[:：]?\s*(.+)$/i;
-    const questionLines: string[] = [];
-    const opts: Record<string, string> = {};
-    const optOrder = ["ক", "খ", "গ", "ঘ"];
-    let ans = ""; let expl = "";
-    for (const l of lines) {
-      const om = l.match(optRe);
-      const am = l.match(ansRe);
-      const em = l.match(explRe);
-      if (em) { expl = em[2]; continue; }
-      if (am) { ans = am[2].trim(); continue; }
-      if (om) {
-        const key = om[1];
-        const idx = optOrder.indexOf(key) >= 0 ? optOrder.indexOf(key) : "abcd".indexOf(key.toLowerCase());
-        if (idx >= 0) opts[["a", "b", "c", "d"][idx]] = om[2];
-        continue;
+  const append = (v: string) => {
+    if (!v) return;
+    if (cur.t === "lead") lead.push(v);
+    else if (cur.t === "f") f[cur.k] = f[cur.k] ? f[cur.k] + "\n" + v : v;
+    else opts[cur.k] = opts[cur.k] ? opts[cur.k] + "\n" + v : v;
+  };
+
+  const raws = block.split("\n");
+  for (let i = 0; i < raws.length; i++) {
+    let line = raws[i].trim();
+    if (!line) continue;
+    if (i === 0 || lead.length === 0) line = line.replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
+    if (!line) continue;
+
+    if (IMG_URL.test(line)) { f.image = f.image ? f.image + "\n" + line : line; cur = { t: "f", k: "image" }; continue; }
+
+    let hit = false;
+    for (const [key, re] of KEY_PATTERNS) {
+      const m = line.match(re);
+      if (m) {
+        cur = { t: "f", k: key };
+        f[key] = "";
+        const val = (m[m.length - 1] || "").trim();
+        if (val) f[key] = val;
+        hit = true;
+        break;
       }
-      questionLines.push(l);
     }
-    q.question = questionLines.join(" ").trim();
-    q.option_a = opts.a; q.option_b = opts.b; q.option_c = opts.c; q.option_d = opts.d;
-    // normalize answer
-    const a = ans.trim();
-    const map: Record<string, string> = { "ক": "a", "খ": "b", "গ": "c", "ঘ": "d" };
-    q.correct_answer = (map[a] || a.toLowerCase()).slice(0, 1);
-    q.explanation = expl || undefined;
+    if (hit) continue;
 
-    if (!q.question) errors.push("প্রশ্ন detect করা যায়নি");
-    if (!opts.a || !opts.b || !opts.c || !opts.d) errors.push("৪টা অপশন detect হয়নি");
-    if (!["a", "b", "c", "d"].includes(q.correct_answer!)) errors.push("সঠিক উত্তর detect হয়নি");
-    return q;
-  });
+    const om = line.match(OPT_RE);
+    if (om) {
+      const k = optKey(om[1]);
+      cur = { t: "o", k };
+      opts[k] = om[2].trim();
+      continue;
+    }
+    append(line);
+  }
+  return { f, opts, lead };
 }
 
-function parseCQBlocks(text: string): ParsedQuestion[] {
-  // Split by "উদ্দীপক" occurrences or double newlines
-  const chunks = text.split(/\n\s*\n(?=উদ্দীপক|[0-9০-৯]+[.)।])/);
-  return chunks.map((chunk) => {
-    const errors: string[] = [];
-    const q: ParsedQuestion = { tempId: uid(), type: "cq", question: "", errors };
-    // Extract stem
-    const stemMatch = chunk.match(/উদ্দীপক\s*[:：]?\s*([\s\S]*?)(?=\n\s*[কখগঘ][).]|$)/);
-    const stem = stemMatch ? stemMatch[1].trim() : "";
-    const sub = (marker: string) => {
-      const re = new RegExp(`\\n\\s*${marker}[).]\\s*([\\s\\S]*?)(?=\\n\\s*[কখগঘ][).]|$)`);
-      const m = ("\n" + chunk).match(re);
-      return m ? m[1].trim() : "";
-    };
-    const qk = sub("ক"), qkh = sub("খ"), qg = sub("গ"), qgh = sub("ঘ");
+function imagesHtml(v?: string) {
+  return String(v || "")
+    .split(/[\n,;\s]+/)
+    .map((u) => u.trim())
+    .filter(Boolean)
+    .map((u) => (/^https?:\/\//i.test(u) ? wrapImg(u) : ""))
+    .filter(Boolean)
+    .join("\n");
+}
+
+function attachCommon(q: ParsedQuestion, f: Record<string, string>) {
+  if (f.board) q.boardRefs = parseRefCell(f.board).map((r) => ({ board: r.name, year: r.year }));
+  if (f.uni) q.uniRefs = parseRefCell(f.uni).map((r) => ({ name: r.name, year: r.year }));
+}
+
+export function parsePastedText(text: string, type: QType, isMath = false): ParsedQuestion[] {
+  const norm = text.replace(/\r\n/g, "\n").trim();
+  if (!norm) return [];
+  const blocks = splitBlocks(norm, type);
+  const out = blocks.map((b) => blockToQuestion(b, type, isMath)).filter(Boolean) as ParsedQuestion[];
+  return out;
+}
+
+function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQuestion | null {
+  const { f, opts, lead } = parseBlockFields(block);
+  const errors: string[] = [];
+  const q: ParsedQuestion = { tempId: uid(), type, question: "", errors };
+  const img = imagesHtml(f.image);
+  const leadText = multiline(lead.join("\n"));
+
+  if (type === "mcq") {
+    const stim = [multiline(f.stimulus || ""), img].filter(Boolean).join("\n");
+    q.stimulus = stim || undefined;
+    q.question = multiline(f.question || "") || leadText;
+    q.option_a = multiline(opts.a || "") || undefined;
+    q.option_b = multiline(opts.b || "") || undefined;
+    q.option_c = multiline(opts.c || "") || undefined;
+    q.option_d = multiline(opts.d || "") || undefined;
+    const ansRaw = (f.answer || "").trim();
+    const first = ansRaw.replace(/^[(\s]+/, "").slice(0, 1);
+    q.correct_answer = (OPT_KEY[first] || first.toLowerCase() || "").slice(0, 1);
+    q.explanation = multiline(f.explanation || "") || undefined;
+    attachCommon(q, f);
+    if (!q.question) errors.push("প্রশ্ন detect করা যায়নি");
+    if (!q.option_a || !q.option_b || !q.option_c || !q.option_d) errors.push("৪টি অপশন (ক/খ/গ/ঘ) detect হয়নি");
+    if (!["a", "b", "c", "d"].includes(q.correct_answer || "")) errors.push("সঠিক উত্তর detect হয়নি (উত্তর: খ)");
+    if (!q.question && !q.option_a) return null;
+    return q;
+  }
+
+  if (type === "cq") {
+    const stem = [multiline(f.stimulus || "") || leadText, img].filter(Boolean).join("\n");
+    const qk = multiline(opts.a || ""), qkh = multiline(opts.b || ""), qg = multiline(opts.c || ""), qgh = multiline(opts.d || "");
     q.stimulus = stem || undefined;
-    q.question = (stem || qk).slice(0, 100);
-    q.creative_data = { is_math: false, stem, q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined };
+    q.question = (stripTags(stem) || stripTags(qk)).trim().slice(0, 100);
+    const mathMode = isMath && !qgh;
+    q.creative_data = mathMode
+      ? {
+          is_math: true, stem,
+          q_ka: qk, q_kha: qkh, q_ga: qg,
+          ans_ka: multiline(f.ans_ka || "") || undefined,
+          ans_kha: multiline(f.ans_kha || "") || undefined,
+          ans_ga: multiline(f.ans_ga || "") || undefined,
+        }
+      : {
+          is_math: false, stem,
+          q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh || undefined,
+          ans_ka: multiline(f.ans_ka || "") || undefined,
+          ans_kha: multiline(f.ans_kha || "") || undefined,
+          ans_ga: multiline(f.ans_ga || "") || undefined,
+          ans_gha: multiline(f.ans_gha || "") || undefined,
+        };
+    q.explanation = multiline(f.explanation || "") || undefined;
+    attachCommon(q, f);
     if (!stem) errors.push("উদ্দীপক detect হয়নি");
     if (!qk || !qkh || !qg) errors.push("ক/খ/গ প্রশ্ন detect হয়নি");
+    if (!stem && !qk) return null;
     return q;
-  }).filter((q) => q.question || q.creative_data?.stem);
+  }
+
+  if (type === "short") {
+    q.stimulus = [multiline(f.stimulus || ""), img].filter(Boolean).join("\n") || undefined;
+    q.question = multiline(f.question || "") || leadText;
+    q.explanation = [multiline(f.answer || ""), multiline(f.explanation || "")].filter(Boolean).join("<br/>") || undefined;
+    attachCommon(q, f);
+    if (!q.question) { errors.push("প্রশ্ন detect হয়নি"); return null; }
+    return q;
+  }
+
+  // descriptive
+  const dqk = multiline(opts.a || "") || multiline(f.question || "") || leadText;
+  const dqkh = multiline(opts.b || "");
+  q.stimulus = [multiline(f.stimulus || ""), img].filter(Boolean).join("\n") || undefined;
+  q.question = stripTags(dqk).trim().slice(0, 100);
+  q.creative_data = {
+    desc_q_ka: dqk, desc_q_kha: dqkh,
+    desc_ans_ka: multiline(f.ans_ka || f.answer || ""),
+    desc_ans_kha: multiline(f.ans_kha || ""),
+  };
+  q.explanation = multiline(f.explanation || "") || undefined;
+  attachCommon(q, f);
+  if (!dqk) { errors.push("প্রশ্ন detect হয়নি"); return null; }
+  return q;
 }
 
-function parseShortBlocks(text: string): ParsedQuestion[] {
-  const blocks = splitByNumberedItems(text);
-  return blocks.map((block) => {
-    const errors: string[] = [];
-    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines[0]) lines[0] = lines[0].replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
-    const ansIdx = lines.findIndex((l) => /^(উত্তর|Ans)\s*[:：]/i.test(l));
-    const q: ParsedQuestion = { tempId: uid(), type: "short", question: "", errors };
-    if (ansIdx >= 0) {
-      q.question = lines.slice(0, ansIdx).join(" ").trim();
-      q.explanation = lines[ansIdx].replace(/^(উত্তর|Ans)\s*[:：]?\s*/i, "") + " " + lines.slice(ansIdx + 1).join(" ");
-      q.explanation = q.explanation.trim();
-    } else {
-      q.question = lines.join(" ");
-    }
-    if (!q.question) errors.push("প্রশ্ন detect হয়নি");
-    return q;
+// ============ Duplicate detection ============
+const sigNorm = (v?: string) =>
+  stripTags(String(v || ""))
+    .replace(/[\s\u200b-\u200d]+/g, "")
+    .replace(/[।.,;:'"“”‘’()\[\]{}\-–—_*`~!?]/g, "")
+    .toLowerCase();
+
+export function questionSignature(q: {
+  type: string; question?: string; option_a?: string; option_b?: string; option_c?: string; option_d?: string; creative_data?: any;
+}): string {
+  const cd = q.creative_data || {};
+  if (q.type === "mcq") {
+    return ["mcq", sigNorm(q.question), sigNorm(q.option_a), sigNorm(q.option_b), sigNorm(q.option_c), sigNorm(q.option_d)].join("|");
+  }
+  if (q.type === "cq") return ["cq", sigNorm(cd.stem), sigNorm(cd.q_ka), sigNorm(cd.q_kha)].join("|");
+  if (q.type === "descriptive") return ["desc", sigNorm(cd.desc_q_ka), sigNorm(cd.desc_q_kha)].join("|");
+  return ["short", sigNorm(q.question)].join("|");
+}
+
+export function parsedSignature(q: ParsedQuestion) {
+  return questionSignature({
+    type: q.type, question: q.question,
+    option_a: q.option_a, option_b: q.option_b, option_c: q.option_c, option_d: q.option_d,
+    creative_data: q.creative_data,
   });
 }
 
-function parseDescBlocks(text: string): ParsedQuestion[] {
-  const blocks = splitByNumberedItems(text);
-  return blocks.map((block) => {
-    const errors: string[] = [];
-    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines[0]) lines[0] = lines[0].replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
-    const ansIdx = lines.findIndex((l) => /^(উত্তর|Ans)\s*[:：]/i.test(l));
-    const q: ParsedQuestion = { tempId: uid(), type: "descriptive", question: "", errors };
-    const qk = ansIdx >= 0 ? lines.slice(0, ansIdx).join(" ") : lines.join(" ");
-    const ak = ansIdx >= 0 ? lines[ansIdx].replace(/^(উত্তর|Ans)\s*[:：]?\s*/i, "") + " " + lines.slice(ansIdx + 1).join(" ") : "";
-    q.question = qk.slice(0, 100);
-    q.creative_data = { desc_q_ka: qk, desc_q_kha: "", desc_ans_ka: ak.trim(), desc_ans_kha: "" };
-    if (!qk) errors.push("প্রশ্ন detect হয়নি");
-    return q;
+/** Marks duplicates inside the batch itself (keeps the first occurrence). */
+export function markBatchDuplicates(items: ParsedQuestion[]): ParsedQuestion[] {
+  const seen = new Set<string>();
+  return items.map((q) => {
+    const sig = parsedSignature(q);
+    if (seen.has(sig)) return { ...q, duplicate: "batch" as const };
+    seen.add(sig);
+    return { ...q, duplicate: undefined };
   });
 }
+
+/** Marks items already present in the database (signature set). */
+export function markDbDuplicates(items: ParsedQuestion[], dbSignatures: Set<string>): ParsedQuestion[] {
+  return items.map((q) => (q.duplicate ? q : dbSignatures.has(parsedSignature(q)) ? { ...q, duplicate: "db" as const } : q));
+}
+
 
 // ============ Convert to DB payload ============
 export function toDbPayload(q: ParsedQuestion, ctx: {
