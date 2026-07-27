@@ -28,6 +28,7 @@ export type ParsedQuestion = {
   boardRefs?: Array<{ board: string; year: string }>;
   uniRefs?: Array<{ name: string; year: string }>;
   image_url?: string;
+  duplicate?: "batch" | "db";
   errors: string[];
 };
 
