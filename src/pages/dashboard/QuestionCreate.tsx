@@ -17,6 +17,7 @@ import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
+import { sortClasses } from "@/lib/classOrder";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
 const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল", all: "সকল প্রকার" };
@@ -187,7 +188,7 @@ export default function QuestionCreate() {
   // Load classes
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name")
-      .then(({ data }) => setClasses(data || []));
+      .then(({ data }) => setClasses(sortClasses(data || [])));
   }, []);
 
   // Load subjects when class changes

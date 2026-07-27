@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, AlertTriangle, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { sortClasses } from "@/lib/classOrder";
 
 interface AdminCrudPageProps {
   title: string;
@@ -42,6 +43,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
     }
     const { data } = await query;
     let filtered = data || [];
+    if (table === "classes") filtered = sortClasses(filtered);
     if (!hasFullAccess) {
       if (table === "classes") {
         filtered = filtered.filter((item: any) => isClassAllowed(item.id));
@@ -63,7 +65,7 @@ export default function AdminCrudPage({ title, table, parentTable, parentLabel, 
     fetchItems();
     if (parentTable) {
       supabase.from(parentTable).select("id, name").order("name")
-        .then(({ data }: any) => setParents(data || []));
+        .then(({ data }: any) => setParents(parentTable === "classes" ? sortClasses(data || []) : (data || [])));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, permLoading]);

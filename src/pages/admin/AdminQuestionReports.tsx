@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
+import { sortClasses } from "@/lib/classOrder";
 
 const statusMap: Record<string, { label: string; color: string }> = {
   pending: { label: "অপেক্ষমান", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
@@ -61,7 +62,7 @@ export default function AdminQuestionReports() {
 
   // Load classes/subjects on mount
   useEffect(() => {
-    supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(data || []));
+    supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(sortClasses(data || [])));
     supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
   }, []);
 

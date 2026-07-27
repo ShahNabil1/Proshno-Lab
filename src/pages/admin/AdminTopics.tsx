@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { sortClasses } from "@/lib/classOrder";
 
 export default function AdminTopics() {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ export default function AdminTopics() {
   // Load classes & subjects once
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name")
-      .then(({ data }) => setAllClasses(data || []));
+      .then(({ data }) => setAllClasses(sortClasses(data || [])));
     supabase.from("subjects").select("id, name, class_id").order("name")
       .then(({ data }) => setAllSubjects(data || []));
   }, []);
