@@ -1564,7 +1564,7 @@ export default function QuestionPaperView() {
                   data-editable="mcq-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
-                  style={{ border: "1.5px solid #000", padding: "1px 8px", lineHeight: 1.4 }}
+                  style={{ padding: "1px 8px", lineHeight: 1.4 }}
                 >
                   বহুনির্বাচনি অংশ (প্রতিটি প্রশ্নের মান ১)
                 </span>
