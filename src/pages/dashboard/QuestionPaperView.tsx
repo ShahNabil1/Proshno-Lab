@@ -1299,8 +1299,9 @@ export default function QuestionPaperView() {
 
               {/* Center: Institute / class / subject */}
               <div style={{
-              flex: "1 1 auto",
               minWidth: 0,
+              justifySelf: "center",
+
               textAlign: "center",
               marginBottom: "0",
               ...(settings.showSheet && settings.sheetColoredBg ? {
