@@ -9,6 +9,8 @@ export const TYPE_LABELS: Record<QType, string> = {
   descriptive: "রচনামূলক (Descriptive)",
 };
 
+export type RefItem = { board?: string; name?: string; year: string };
+
 export type ParsedQuestion = {
   tempId: string;
   type: QType;
@@ -23,6 +25,8 @@ export type ParsedQuestion = {
   creative_data?: any;
   board?: string;
   year?: string;
+  boardRefs?: Array<{ board: string; year: string }>;
+  uniRefs?: Array<{ name: string; year: string }>;
   image_url?: string;
   errors: string[];
 };
@@ -30,8 +34,34 @@ export type ParsedQuestion = {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const s = (v: any) => (v == null ? "" : String(v).trim());
 
+export const isMathSubjectName = (name?: string | null) =>
+  /^(গণিত|উচ্চতর গণিত|math|higher\s*math)/i.test(String(name || "").trim());
+
+// "ঢাকা-২০২৩, যশোর ২০২২; কুমিল্লা: ২০২১" => [{name:'ঢাকা', year:'২০২৩'}, ...]
+export function parseRefCell(cell: string): Array<{ name: string; year: string }> {
+  const raw = s(cell);
+  if (!raw) return [];
+  return raw
+    .split(/[,;\n|]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const m = p.match(/^(.*?)[\s\-–:：]*([0-9০-৯]{2,4})\s*$/);
+      if (m && m[1].trim()) return { name: m[1].trim().replace(/[\s\-–:：]+$/, ""), year: m[2] };
+      return { name: p, year: "" };
+    })
+    .filter((r) => r.name);
+}
+
+const REF_COLS = ["বোর্ড রেফারেন্স (একাধিক: ঢাকা-২০২৩, যশোর-২০২২)", "বিশ্ববিদ্যালয় রেফারেন্স (একাধিক: ঢাবি-২০২৩, রাবি-২০২২)"];
+const REF_SAMPLE = ["ঢাকা-২০২৩, যশোর-২০২২", "ঢাবি-২০২৩"];
+const REF_NOTES = [
+  "বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স: কমা দিয়ে একাধিক দিন — যেমন: ঢাকা-২০২৩, যশোর-২০২২",
+  "নাম ও সালের মাঝে - অথবা : অথবা স্পেস ব্যবহার করা যাবে",
+];
+
 // ============ Template generation ============
-export function downloadTemplate(type: QType) {
+export function downloadTemplate(type: QType, isMath = false) {
   const wb = XLSX.utils.book_new();
   let rows: any[][] = [];
   let sample: any[] = [];
@@ -39,22 +69,30 @@ export function downloadTemplate(type: QType) {
 
   switch (type) {
     case "mcq":
-      rows = [["উদ্দীপক (HTML, optional)", "প্রশ্ন*", "অপশন ক*", "অপশন খ*", "অপশন গ*", "অপশন ঘ*", "সঠিক উত্তর* (a/b/c/d)", "ব্যাখ্যা", "ছবি URL (Cloudinary)", "বোর্ড", "বছর"]];
-      sample = ["", "বাংলাদেশের রাজধানী কোথায়?", "চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট", "b", "ঢাকা বাংলাদেশের রাজধানী", "", "ঢাকা", "2024"];
-      notes = ["সঠিক উত্তরে শুধু a/b/c/d লিখুন", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", "ছবি: Cloudinary URL দিন — auto <img> ট্যাগ যোগ হবে"];
+      rows = [["উদ্দীপক (HTML, optional)", "প্রশ্ন*", "অপশন ক*", "অপশন খ*", "অপশন গ*", "অপশন ঘ*", "সঠিক উত্তর* (a/b/c/d)", "ব্যাখ্যা", "ছবি URL (Cloudinary)", "বোর্ড", "বছর", ...REF_COLS]];
+      sample = ["", "বাংলাদেশের রাজধানী কোথায়?", "চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট", "b", "ঢাকা বাংলাদেশের রাজধানী", "", "", "", ...REF_SAMPLE];
+      notes = ["সঠিক উত্তরে শুধু a/b/c/d লিখুন", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", "ছবি: Cloudinary URL দিন — auto <img> ট্যাগ যোগ হবে", "পুরোনো 'বোর্ড'/'বছর' কলামও কাজ করবে", ...REF_NOTES];
       break;
     case "cq":
-      rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ)*", "উত্তর গ", "প্রশ্ন ঘ (উচ্চতর)", "উত্তর ঘ", "ছবি URL"]];
-      sample = ["রহিম একজন কৃষক। তিনি জৈব সার ব্যবহার করেন।", "জৈব সার কী?", "জৈব সার হলো...", "জৈব সারের সুবিধা ব্যাখ্যা করো।", "...", "উদ্দীপকের আলোকে রহিমের পদক্ষেপ ব্যাখ্যা করো।", "...", "মূল্যায়ন করো।", "...", ""];
-      notes = ["গণিতের বিষয়ে 'ঘ' খালি রাখতে পারেন", "উদ্দীপকে ছবি: Cloudinary URL দিন"];
+      if (isMath) {
+        rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান, ২)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন, ৪)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ, ৪)*", "উত্তর গ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+        sample = ["একটি সমকোণী ত্রিভুজের ভূমি ৩ সেমি ও উচ্চতা ৪ সেমি।", "অতিভুজ কাকে বলে?", "...", "ত্রিভুজটির অতিভুজ নির্ণয় করো।", "...", "ত্রিভুজটির ক্ষেত্রফল নির্ণয় করো।", "...", "", "", ...REF_SAMPLE];
+        notes = ["গণিত/উচ্চতর গণিতের CQ-তে শুধু ক/খ/গ — নম্বর: ২/৪/৪", "গণিতের জন্য LaTeX ব্যবহার করুন: $x^2 + y^2$", ...REF_NOTES];
+      } else {
+        rows = [["উদ্দীপক*", "প্রশ্ন ক (জ্ঞান)*", "উত্তর ক", "প্রশ্ন খ (অনুধাবন)*", "উত্তর খ", "প্রশ্ন গ (প্রয়োগ)*", "উত্তর গ", "প্রশ্ন ঘ (উচ্চতর)", "উত্তর ঘ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+        sample = ["রহিম একজন কৃষক। তিনি জৈব সার ব্যবহার করেন।", "জৈব সার কী?", "জৈব সার হলো...", "জৈব সারের সুবিধা ব্যাখ্যা করো।", "...", "উদ্দীপকের আলোকে রহিমের পদক্ষেপ ব্যাখ্যা করো।", "...", "মূল্যায়ন করো।", "...", "", "", ...REF_SAMPLE];
+        notes = ["উদ্দীপকে ছবি: Cloudinary URL দিন", ...REF_NOTES];
+      }
       break;
     case "short":
-      rows = [["উদ্দীপক (optional)", "প্রশ্ন*", "উত্তর", "ছবি URL"]];
-      sample = ["", "সালোকসংশ্লেষণ কী?", "সালোকসংশ্লেষণ হলো উদ্ভিদের খাদ্য তৈরির প্রক্রিয়া।", ""];
+      rows = [["উদ্দীপক (optional)", "প্রশ্ন*", "উত্তর", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+      sample = ["", "সালোকসংশ্লেষণ কী?", "সালোকসংশ্লেষণ হলো উদ্ভিদের খাদ্য তৈরির প্রক্রিয়া।", "", "", ...REF_SAMPLE];
+      notes = ["উত্তর ও ব্যাখ্যা দুটোই দিলে একসাথে সংরক্ষিত হবে", ...REF_NOTES];
       break;
     case "descriptive":
-      rows = [["প্রশ্ন ক*", "উত্তর ক", "প্রশ্ন খ", "উত্তর খ", "ছবি URL"]];
-      sample = ["মুক্তিযুদ্ধের কারণ ব্যাখ্যা করো।", "...", "মুক্তিযুদ্ধের ফলাফল আলোচনা করো।", "...", ""];
+      rows = [["প্রশ্ন ক*", "উত্তর ক", "প্রশ্ন খ", "উত্তর খ", "ছবি URL", "ব্যাখ্যা", ...REF_COLS]];
+      sample = ["মুক্তিযুদ্ধের কারণ ব্যাখ্যা করো।", "...", "মুক্তিযুদ্ধের ফলাফল আলোচনা করো।", "...", "", "", ...REF_SAMPLE];
+      notes = [...REF_NOTES];
       break;
   }
 
@@ -68,9 +106,10 @@ export function downloadTemplate(type: QType) {
     XLSX.utils.book_append_sheet(wb, nws, "Instructions");
   }
 
-  const filename = `${type}_template.xlsx`;
+  const filename = `${type}${type === "cq" && isMath ? "_math" : ""}_template.xlsx`;
   XLSX.writeFile(wb, filename);
 }
+
 
 // ============ Excel parsing ============
 export async function parseExcelFile(file: File, type: QType): Promise<ParsedQuestion[]> {
