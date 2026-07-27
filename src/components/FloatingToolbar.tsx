@@ -81,8 +81,33 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
   };
 
   const setColor = (color: string) => {
-    exec("foreColor", color);
+    if (!targetEl) return;
+    setCurrentColor(color);
+    const sel = window.getSelection();
+    const range = savedRange.current;
+    const hasTextSelection =
+      range && !range.collapsed && targetEl.contains(range.commonAncestorContainer);
+
+    if (hasTextSelection && sel) {
+      // Restore the selection that was lost when the popover opened
+      targetEl.focus();
+      sel.removeAllRanges();
+      sel.addRange(range!);
+      try { document.execCommand("styleWithCSS", false, "true"); } catch { /* noop */ }
+      document.execCommand("foreColor", false, color);
+    } else {
+      // No selection -> colour the whole editable element
+      targetEl.style.color = color;
+      targetEl.querySelectorAll<HTMLElement>("[style*='color']").forEach(el => {
+        el.style.color = color;
+      });
+      targetEl.querySelectorAll<HTMLFontElement>("font[color]").forEach(el => {
+        el.removeAttribute("color");
+        el.style.color = color;
+      });
+    }
   };
+
 
   if (!targetEl) return null;
 
