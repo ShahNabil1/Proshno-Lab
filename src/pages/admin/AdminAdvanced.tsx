@@ -170,7 +170,7 @@ export default function AdminAdvanced() {
   return (
     <div className="space-y-6">
       <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
-        <Settings className="w-6 h-6" /> অ্যাডভান্সড সেটিংস
+        <Settings className="w-6 h-6" /> সেটিংস
       </h1>
 
       <Card>

@@ -34,7 +34,7 @@ const allSidebarItems = [
   { path: "/admin/institutes", label: "প্রতিষ্ঠান", icon: Building2, group: "ইউজার ম্যানেজমেন্ট" },
   { path: "/admin/subscriptions", label: "সাবস্ক্রিপশন ও পেমেন্ট", icon: CreditCard, group: "ইউজার ম্যানেজমেন্ট" },
 
-  { path: "/admin/advanced", label: "অ্যাডভান্সড", icon: Wrench, group: "ডেভেলপার", developerOnly: true },
+  { path: "/admin/advanced", label: "সেটিংস", icon: Settings, group: "সেটিংস" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
