@@ -1267,9 +1267,10 @@ export default function QuestionPaperView() {
 
           {/* ===== HEADER with optional Marks Box ===== */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "flex-start", gap: "10px" }}>
               {/* Left: Marks Box */}
-              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+              <div style={{ justifySelf: "start", minWidth: 0, paddingTop: "16px" }}>
+
                 {settings.showMarksBox && (
                   <div style={{
                     display: "flex",
@@ -1298,8 +1299,9 @@ export default function QuestionPaperView() {
 
               {/* Center: Institute / class / subject */}
               <div style={{
-              flex: "1 1 auto",
               minWidth: 0,
+              justifySelf: "center",
+
               textAlign: "center",
               marginBottom: "0",
               ...(settings.showSheet && settings.sheetColoredBg ? {
@@ -1397,7 +1399,7 @@ export default function QuestionPaperView() {
               </div>
 
               {/* Right: Subject Code */}
-              <div style={{ flex: "0 0 auto", paddingTop: "16px" }}>
+              <div style={{ justifySelf: "end", minWidth: 0, paddingTop: "16px" }}>
                 {settings.showSubjectCode && (
                   <div className={editableClass} style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", fontSize: "0.95em", whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
@@ -1556,17 +1558,19 @@ export default function QuestionPaperView() {
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div data-section-header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontWeight: 700, fontSize: "0.95em", marginBottom: "4px" }}>
+              <div data-section-header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontWeight: 700, fontSize: "0.95em", marginBottom: "4px", width: settings.columns > 1 ? "calc(50% - 8px)" : "100%" }}>
                 <span
                   className={editableClass}
                   data-editable="mcq-title"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
+                  style={{ border: "1.5px solid #000", padding: "1px 8px", lineHeight: 1.4 }}
                 >
                   বহুনির্বাচনি অংশ (প্রতিটি প্রশ্নের মান ১)
                 </span>
                 <span className={editableClass} style={{ fontWeight: 700, whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
               </div>
+
 
 
               {/* Regular standalone MCQs */}
