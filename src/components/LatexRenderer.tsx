@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
@@ -8,32 +8,44 @@ interface LatexRendererProps {
   inline?: boolean;
 }
 
+// Module-level cache so repeated renders (screen + print copies, settings toggles,
+// remounts) never re-run KaTeX for the same source string.
+const renderCache = new Map<string, string>();
+const MAX_CACHE = 5000;
+
+function renderLatex(text: string): string {
+  if (!text) return "";
+  const cached = renderCache.get(text);
+  if (cached !== undefined) return cached;
+
+  const pattern = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\$([\s\S]*?)\$|\\\(([\s\S]*?)\\\)/g;
+  const html = text.replace(pattern, (match, dd, db, si, sp) => {
+    const display = dd ?? db;
+    const expr = display ?? si ?? sp;
+    const isDisplay = display !== undefined;
+    if (expr === undefined) return match;
+    try {
+      return katex.renderToString(expr, {
+        displayMode: isDisplay,
+        throwOnError: false,
+        trust: true,
+      });
+    } catch {
+      return `<span class="text-destructive">${match}</span>`;
+    }
+  });
+
+  if (renderCache.size > MAX_CACHE) renderCache.clear();
+  renderCache.set(text, html);
+  return html;
+}
+
 /**
  * Renders text with inline LaTeX expressions wrapped in $...$ or $$...$$.
  * Non-LaTeX text is rendered as-is.
  */
-export default function LatexRenderer({ text, className = "", inline = false }: LatexRendererProps) {
-  const html = useMemo(() => {
-    if (!text) return "";
-    // Match $$...$$, \[...\] (display) and $...$, \(...\) (inline)
-    const pattern = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\$([\s\S]*?)\$|\\\(([\s\S]*?)\\\)/g;
-    return text.replace(pattern, (match, dd, db, si, sp) => {
-      const display = dd ?? db;
-      const expr = display ?? si ?? sp;
-      const isDisplay = display !== undefined;
-      if (expr === undefined) return match;
-      try {
-        return katex.renderToString(expr, {
-          displayMode: isDisplay,
-          throwOnError: false,
-          trust: true,
-        });
-      } catch {
-        return `<span class="text-destructive">${match}</span>`;
-      }
-    });
-  }, [text]);
-
+function LatexRenderer({ text, className = "", inline = false }: LatexRendererProps) {
+  const html = useMemo(() => renderLatex(text), [text]);
 
   const Tag = inline ? "span" : "div";
 
@@ -44,3 +56,5 @@ export default function LatexRenderer({ text, className = "", inline = false }: 
     />
   );
 }
+
+export default memo(LatexRenderer);
