@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
+import { sortClasses } from "@/lib/classOrder";
 
 type QType = "mcq" | "cq" | "short" | "descriptive";
 const TYPE_LABELS: Record<QType, string> = {
@@ -60,7 +61,7 @@ export default function AutoQuestionCreate() {
 
   // Load classes & institute
   useEffect(() => {
-    supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(data || []));
+    supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(sortClasses(data || [])));
     if (user?.id) {
       supabase.from("institutes").select("*").eq("owner_id", user.id).maybeSingle().then(({ data }) => setInstitute(data));
     }

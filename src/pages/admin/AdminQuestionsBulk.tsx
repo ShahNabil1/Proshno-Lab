@@ -19,6 +19,7 @@ import {
   downloadTemplate, parseExcelFile, parsePastedText, toDbPayload,
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
+import { sortClasses } from "@/lib/classOrder";
 
 const CTX_KEY = "adminBulkContext.v1";
 const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
@@ -63,7 +64,7 @@ export default function AdminQuestionsBulk() {
   }, [classId, subjectId, chapterId, topicId, type]);
 
   useEffect(() => {
-    supabase.from("classes").select("id, name").order("id").then(({ data }) => setClasses(data || []));
+    supabase.from("classes").select("id, name").order("id").then(({ data }) => setClasses(sortClasses(data || [])));
   }, []);
   useEffect(() => {
     if (!classId) { setSubjects([]); return; }

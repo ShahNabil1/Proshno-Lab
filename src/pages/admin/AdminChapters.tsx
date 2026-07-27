@@ -17,6 +17,7 @@ import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
+import { sortClasses } from "@/lib/classOrder";
 
 const FONT = "'SolaimanLipi', sans-serif";
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
@@ -104,7 +105,7 @@ export default function AdminChapters() {
 
   useEffect(() => {
     if (permLoading) return;
-    supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(data || []));
+    supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(sortClasses(data || [])));
     supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => {
       setSubjects(data || []);
       setAllSubjects(data || []);

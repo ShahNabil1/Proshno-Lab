@@ -21,6 +21,7 @@ import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { sortClasses } from "@/lib/classOrder";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
 const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
@@ -174,7 +175,7 @@ export default function AdminQuestions() {
   const fetchItems = () => invalidateQuestions();
 
   useEffect(() => {
-    supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(data || []));
+    supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(sortClasses(data || [])));
     supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
     supabase.from("question_categories").select("id, name").order("name").then(({ data }) => setCategories(data || []));
   }, []);
