@@ -543,14 +543,18 @@
 [data-print-paper] .latex-renderer br {
   display: none;
 }
-/* Restore block <p> for multi-completion (বহুপদী সমাপ্তিসূচক) questions */
+/* Restore block <p> for multi-completion (বহুপদী সমাপ্তিসূচক) questions.
+   Wrapper stays inline so trailing info badges sit on the same line when space allows. */
 [data-print-paper] .mc-block-question .latex-renderer {
-  display: block;
+  display: inline;
 }
 [data-print-paper] .mc-block-question .latex-renderer p {
   display: block;
   margin: 0;
   padding: 0;
+}
+[data-print-paper] .mc-block-question .latex-renderer p:last-child {
+  display: inline;
 }
 [data-print-paper] .mc-block-question .latex-renderer br {
   display: initial;
