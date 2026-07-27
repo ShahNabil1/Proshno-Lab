@@ -543,14 +543,18 @@
 [data-print-paper] .latex-renderer br {
   display: none;
 }
-/* Restore block <p> for multi-completion (বহুপদী সমাপ্তিসূচক) questions */
+/* Restore block <p> for multi-completion (বহুপদী সমাপ্তিসূচক) questions.
+   Wrapper stays inline so trailing info badges sit on the same line when space allows. */
 [data-print-paper] .mc-block-question .latex-renderer {
-  display: block;
+  display: inline;
 }
 [data-print-paper] .mc-block-question .latex-renderer p {
   display: block;
   margin: 0;
   padding: 0;
+}
+[data-print-paper] .mc-block-question .latex-renderer p:last-child {
+  display: inline;
 }
 [data-print-paper] .mc-block-question .latex-renderer br {
   display: initial;
@@ -573,14 +577,18 @@
   margin: 4px 0;
 }
 
-/* mc-block-question: ensure block rendering for images/tables in question lists */
+/* mc-block-question: block rendering for images/tables, but keep wrapper inline
+   so the question-info badge can follow the last line of text. */
 .mc-block-question .latex-renderer {
-  display: block;
+  display: inline;
 }
 .mc-block-question .latex-renderer p {
   display: block;
   margin: 0;
   padding: 0;
+}
+.mc-block-question .latex-renderer p:last-child {
+  display: inline;
 }
 
 /* LatexRenderer: inline mode */
