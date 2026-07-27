@@ -51,26 +51,26 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
-        <div className="container flex items-center justify-between h-16 lg:h-[76px]">
+        <div className="container flex items-center justify-between gap-2 h-16 lg:h-[76px]">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2 lg:gap-3 group">
+          <Link to="/" className="flex items-center gap-2 lg:gap-3 group min-w-0 flex-1">
             <img
               src={brandMarkUrl}
               loading="eager"
               decoding="async"
               alt="প্রশ্নল্যাব লোগো"
-              className="h-11 w-11 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
+              className="h-9 w-9 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
             />
-            <div className="leading-none">
-
-              <BrandLogo size={38} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
-              <div className="flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide">
+            <div className="leading-none min-w-0">
+              <BrandLogo size={30} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
+              <div className="hidden sm:flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide whitespace-nowrap">
                 <span>শিক্ষকদের জন্য</span>
                 <span className="brand-free">ফ্রী</span>
                 <span>প্রশ্ন তৈরির প্ল্যাটফর্ম...</span>
               </div>
             </div>
           </Link>
+
 
 
           {/* Desktop nav */}
@@ -95,13 +95,13 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {user ? (
               <>
                 <Link to="/dashboard">
-                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-4 h-10 rounded-lg gap-2 shadow-sm">
-                    <LayoutDashboard className="w-4 h-4" />
-                    ড্যাশবোর্ড
+                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-2.5 sm:px-4 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm">
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">ড্যাশবোর্ড</span>
                   </Button>
                 </Link>
                 <Link to="/profile" className="hidden md:inline-flex">
@@ -113,7 +113,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
                   onClick={signOut}
                   aria-label="Logout"
                 >
@@ -124,13 +124,14 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <Link to="/login">
                 <Button
                   size="sm"
-                  className="btn-gold border-0 font-heading font-bold px-5 h-10 rounded-lg gap-2 shadow-sm"
+                  className="btn-gold border-0 font-heading font-bold px-3 sm:px-5 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-4 h-4 shrink-0" />
                   লগইন
                 </Button>
               </Link>
             )}
+
             {/* Mobile menu */}
             <button
               className="lg:hidden p-2 rounded-lg text-white hover:bg-white/10"
