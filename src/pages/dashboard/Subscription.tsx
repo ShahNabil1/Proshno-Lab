@@ -156,10 +156,10 @@ export default function Subscription() {
             <p className="text-white/70 text-sm">আপনার প্ল্যান পরিচালনা করুন ও নতুন প্যাকেজ এক্সপ্লোর করুন</p>
           </div>
           {primarySub && primarySub.ends_at && (
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4 min-w-[220px]">
-              <p className="text-xs text-white/60 mb-1">বর্তমান প্ল্যান: <span className="font-bold text-white">{primarySub.plan}</span></p>
-              <Progress value={getProgress(primarySub.starts_at, primarySub.ends_at)} className="h-2 mb-1.5 bg-white/20" />
-              <p className="text-xs text-white/80 text-center font-heading font-bold">{toBanglaNum(getDaysLeft(primarySub.ends_at))} দিন বাকি</p>
+            <div className="bg-[#022548] border border-white/15 shadow-lg rounded-xl p-4 min-w-[220px]">
+              <p className="text-xs text-white/70 mb-1">বর্তমান প্ল্যান: <span className="font-bold text-white">{primarySub.plan}</span></p>
+              <Progress value={getProgress(primarySub.starts_at, primarySub.ends_at)} className="h-2 mb-1.5 bg-white/25" />
+              <p className="text-xs text-white text-center font-heading font-bold">{toBanglaNum(getDaysLeft(primarySub.ends_at))} দিন বাকি</p>
             </div>
           )}
         </div>
