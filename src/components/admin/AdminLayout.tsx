@@ -104,6 +104,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Check if route is hidden for non-developers
   const isAdminPageHidden = !isDeveloper && adminHiddenPages.includes(currentPath);
 
+  // Developer-only routes
+  const isDeveloperOnlyRoute = allSidebarItems.some(
+    (item) => (item as any).developerOnly && (currentPath === item.path || currentPath.startsWith(item.path + "/"))
+  );
+  if (isDeveloperOnlyRoute && !isDeveloper) return <Navigate to="/admin" replace />;
+
   if ((!isRouteAllowed && currentPath !== "/admin") || isAdminPageHidden) {
     const firstAllowed = allowedPages?.[0] || "/admin";
     return <Navigate to={firstAllowed} replace />;
