@@ -38,6 +38,7 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
+  const [videoId, setVideoId] = useState<string | null>(null);
 
   const fetchReviews = () => {
     supabase.from("reviews")
@@ -50,7 +51,10 @@ export default function Index() {
 
   useEffect(() => {
     fetchReviews();
+    supabase.from("app_settings").select("value").eq("key", "homepage_video_url").maybeSingle()
+      .then(({ data }) => setVideoId(extractYouTubeId(String(data?.value ?? ""))));
   }, []);
+
 
   // লগডইন থাকলেও ইউজার হোম পেইজ দেখতে পারবে (হেডারে ড্যাশবোর্ড বাটন থাকে)
 
