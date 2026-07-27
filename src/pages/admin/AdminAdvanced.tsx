@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import YouTubePlayer, { extractYouTubeId } from "@/components/YouTubePlayer";
 import {
   CloudUpload, Settings, LayoutDashboard, PlusCircle, Package, FileText,
   Building2, CreditCard, Phone, MessageSquare, GraduationCap, BookOpen,
-  Layers, Users, Tag, HelpCircle, Star, Flag, ShieldCheck
+  Layers, Users, Tag, HelpCircle, Star, Flag, ShieldCheck, Youtube
 } from "lucide-react";
+
 
 const dashboardPages = [
   { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
@@ -85,6 +89,8 @@ export default function AdminAdvanced() {
   const [cloudBackup, setCloudBackup] = useState(false);
   const [hiddenPages, setHiddenPages] = useState<string[]>([]);
   const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [savingVideo, setSavingVideo] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,15 +98,37 @@ export default function AdminAdvanced() {
       supabase.from("app_settings").select("value").eq("key", "cloud_backup_enabled").maybeSingle(),
       supabase.from("app_settings").select("value").eq("key", "dashboard_hidden_pages").maybeSingle(),
       supabase.from("app_settings").select("value").eq("key", "admin_hidden_pages").maybeSingle(),
-    ]).then(([backupRes, hiddenRes, adminHiddenRes]) => {
+      supabase.from("app_settings").select("value").eq("key", "homepage_video_url").maybeSingle(),
+    ]).then(([backupRes, hiddenRes, adminHiddenRes, videoRes]) => {
       setCloudBackup(backupRes.data?.value === true);
       const hidden = hiddenRes.data?.value;
       setHiddenPages(Array.isArray(hidden) ? (hidden as string[]) : []);
       const adminHidden = adminHiddenRes.data?.value;
       setAdminHiddenPages(Array.isArray(adminHidden) ? (adminHidden as string[]) : []);
+      setVideoUrl(typeof videoRes.data?.value === "string" ? (videoRes.data.value as string) : "");
       setLoading(false);
     });
   }, []);
+
+  const saveVideoUrl = async () => {
+    const id = extractYouTubeId(videoUrl);
+    if (!id) {
+      toast.error("সঠিক ইউটিউব লিংক দিন");
+      return;
+    }
+    setSavingVideo(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "homepage_video_url", value: videoUrl.trim() as any, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    setSavingVideo(false);
+    if (error) {
+      toast.error("ভিডিও লিংক সেভ করতে সমস্যা হয়েছে");
+      return;
+    }
+    toast.success("হোমপেজের ভিডিও আপডেট হয়েছে");
+  };
+
+
 
   const handleToggle = async (checked: boolean) => {
     setCloudBackup(checked);
@@ -163,6 +191,44 @@ export default function AdminAdvanced() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Youtube className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <Label className="font-heading font-bold text-base">হোমপেজ ভিডিও</Label>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                হোম পেইজে দেখানো ইউটিউব ভিডিওর লিংক এখানে আপডেট করুন।
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="flex-1"
+            />
+            <Button onClick={saveVideoUrl} disabled={savingVideo}>
+              {savingVideo ? "সেভ হচ্ছে..." : "সেভ করুন"}
+            </Button>
+          </div>
+
+          {extractYouTubeId(videoUrl) ? (
+            <div className="max-w-xl">
+              <YouTubePlayer videoId={extractYouTubeId(videoUrl)!} title="প্রিভিউ" autoPlayOnView={false} />
+            </div>
+          ) : (
+            videoUrl && <p className="text-sm text-destructive">লিংকটি সঠিক ইউটিউব লিংক নয়।</p>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       <ToggleSection
         title="টিচার ড্যাশবোর্ড"

@@ -1,0 +1,2 @@
+insert into public.app_settings (key, value) values ('homepage_video_url', '"https://www.youtube.com/watch?v=dQw4w9WgXcQ"'::jsonb) on conflict (key) do nothing;
+create policy "Admins can manage app_settings" on public.app_settings for all to authenticated using (has_role(auth.uid(),'admin'::app_role)) with check (has_role(auth.uid(),'admin'::app_role));
