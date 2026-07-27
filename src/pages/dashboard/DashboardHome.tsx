@@ -158,7 +158,7 @@ export default function DashboardHome() {
                     <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">
-                        <LatexRenderer content={q.question || "প্রশ্ন"} />
+                        <LatexRenderer text={q.question || "প্রশ্ন"} inline />
                       </div>
                       <p className="text-xs text-muted-foreground">{(q as any).classes?.name} • {(q as any).subjects?.name}</p>
                     </div>
