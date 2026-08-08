@@ -13,6 +13,16 @@ interface LatexRendererProps {
 const renderCache = new Map<string, string>();
 const MAX_CACHE = 5000;
 
+// Long inline expressions (e.g. big tuple/set lists) have no natural break points,
+// so KaTeX renders them as one unbreakable box that overflows narrow columns.
+// Insert \allowbreak after commas so they can wrap onto the next line instead.
+function addBreakHints(expr: string): string {
+  if (expr.length < 40) return expr;
+  if (/\\(text|begin|mbox|hbox)/.test(expr)) return expr;
+  if (expr.includes("\\allowbreak")) return expr;
+  return expr.replace(/,(?!\s*\\allowbreak)/g, ",\\allowbreak ");
+}
+
 function renderLatex(text: string): string {
   if (!text) return "";
   const cached = renderCache.get(text);
@@ -25,7 +35,7 @@ function renderLatex(text: string): string {
     const isDisplay = display !== undefined;
     if (expr === undefined) return match;
     try {
-      return katex.renderToString(expr, {
+      return katex.renderToString(isDisplay ? expr : addBreakHints(expr), {
         displayMode: isDisplay,
         throwOnError: false,
         trust: true,
@@ -34,6 +44,7 @@ function renderLatex(text: string): string {
       return `<span class="text-destructive">${match}</span>`;
     }
   });
+
 
   if (renderCache.size > MAX_CACHE) renderCache.clear();
   renderCache.set(text, html);
