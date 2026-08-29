@@ -1966,7 +1966,7 @@ export default function QuestionPaperView() {
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
                           <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
-                          <LatexRenderer text={q.correct_answer || q.explanation || ""} />
+                          <AnswerContent text={q.correct_answer || q.explanation || ""} className="answer-content--inline-start" />
                         </div>
                       )}
                     </div>
@@ -2084,7 +2084,7 @@ export default function QuestionPaperView() {
                                   return (
                                     <div key={ai} style={{ marginBottom: "4px", lineHeight: 1.5 }}>
                                       <span style={{ fontWeight: 600 }}>({ansLabels[ai]}) </span>
-                                      <LatexRenderer text={ansText} />
+                                      <AnswerContent text={ansText} className="answer-content--inline-start" />
                                     </div>
                                   );
                                 })}
@@ -2191,16 +2191,16 @@ export default function QuestionPaperView() {
                                 {dd?.desc_ans_ka && (
                                   <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
                                     <span style={{ fontWeight: 600 }}>(ক) </span>
-                                    <LatexRenderer text={dd.desc_ans_ka} />
+                                    <AnswerContent text={dd.desc_ans_ka} className="answer-content--inline-start" />
                                   </div>
                                 )}
                                 {dd?.desc_ans_kha && (
                                   <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
                                     <span style={{ fontWeight: 600 }}>(খ) </span>
-                                    <LatexRenderer text={dd.desc_ans_kha} />
+                                    <AnswerContent text={dd.desc_ans_kha} className="answer-content--inline-start" />
                                   </div>
                                 )}
-                                {!hasDescAns && hasExpl && <LatexRenderer text={q.explanation!} />}
+                                {!hasDescAns && hasExpl && <AnswerContent text={q.explanation!} />}
                               </div>
                             );
                           })()}
