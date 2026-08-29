@@ -82,6 +82,14 @@ const stripPTags = (html: string): string => {
   return cleaned;
 };
 
+// Renders the explanation (ব্যাখ্যা) of an MCQ inside the answer sheet
+const McqExplanation = ({ text }: { text: string }) => (
+  <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,87,0.06)", fontSize: "0.88em", borderRadius: "0 4px 4px 0", breakInside: "avoid" }}>
+    <span style={{ fontWeight: 700, color: "#047857", marginRight: "4px" }}>ব্যাখ্যা:</span>
+    <LatexRenderer text={text} />
+  </div>
+);
+
 export default function QuestionPaperView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1644,6 +1652,7 @@ export default function QuestionPaperView() {
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                             </div>
                           </div>
                         </div>
@@ -1675,6 +1684,7 @@ export default function QuestionPaperView() {
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                             </div>
                           </div>
                         </div>
@@ -1721,6 +1731,7 @@ export default function QuestionPaperView() {
                                     return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
+                                {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                               </div>
                             </div>
                           </div>
@@ -1803,6 +1814,7 @@ export default function QuestionPaperView() {
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                                   </div>
                                 </div>
                               </div>
@@ -1849,6 +1861,7 @@ export default function QuestionPaperView() {
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                                   </div>
                                 </div>
                               </div>
