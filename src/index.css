@@ -555,6 +555,11 @@
 .latex-renderer .katex {
   white-space: normal;
 }
+[data-print-paper] .latex-renderer .katex-html > .base {
+  display: inline;
+  width: auto;
+  white-space: normal;
+}
 [data-print-paper] .latex-renderer {
   overflow-wrap: break-word;
 }
