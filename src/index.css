@@ -754,3 +754,52 @@
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+/* ===== Answer sheet (উত্তর / ব্যাখ্যা) — keep answers organized =====
+   Inside [data-print-paper] the generic .latex-renderer rules force inline
+   paragraphs and hide <br>. Answer bodies must keep their block structure. */
+.answer-content,
+[data-print-paper] .answer-content {
+  display: block;
+}
+.answer-content .latex-renderer,
+[data-print-paper] .answer-content .latex-renderer {
+  display: block;
+}
+.answer-content .latex-renderer p,
+[data-print-paper] .answer-content .latex-renderer p {
+  display: block;
+  margin: 0 0 3px;
+  padding: 0;
+  line-height: 1.65;
+}
+.answer-content .latex-renderer p:last-child,
+[data-print-paper] .answer-content .latex-renderer p:last-child {
+  margin-bottom: 0;
+}
+.answer-content .latex-renderer br,
+[data-print-paper] .answer-content .latex-renderer br {
+  display: initial;
+}
+.answer-content .latex-renderer ul,
+.answer-content .latex-renderer ol {
+  display: block;
+  margin: 2px 0 3px;
+  padding-left: 1.4em;
+}
+.answer-content .latex-renderer li { display: list-item; margin-bottom: 2px; }
+.answer-content .latex-renderer table,
+[data-print-paper] .answer-content .latex-renderer table {
+  display: table;
+  width: auto;
+  margin: 4px 0;
+}
+/* First line should start right after the "উত্তর:" / "(ক)" label */
+.answer-content--inline-start .latex-renderer > p:first-child,
+[data-print-paper] .answer-content--inline-start .latex-renderer > p:first-child {
+  display: inline;
+}
+.answer-content--inline-start,
+[data-print-paper] .answer-content--inline-start {
+  display: inline;
+}
