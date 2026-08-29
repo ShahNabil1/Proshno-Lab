@@ -82,13 +82,56 @@ const stripPTags = (html: string): string => {
   return cleaned;
 };
 
+/**
+ * Answers come from two sources:
+ *  - Rich text editor (manual single add) -> already valid HTML, keep as-is.
+ *  - Bulk upload / paste -> plain text, often a single squashed line.
+ * For plain text we smartly split into lines (newlines, and common Bangla
+ * math step markers outside math delimiters) so the output stays organized.
+ */
+const STEP_MARKERS = /(?:বা,|অর্থাৎ,|সুতরাং,|অতএব,|এখানে,|আবার,|∴|⇒)/;
+
+const formatAnswerContent = (raw: string): string => {
+  if (!raw) return "";
+  if (/<(p|br|div|ul|ol|li|table|img|h[1-6])\b/i.test(raw)) return raw;
+
+  let text = raw.replace(/\r\n/g, "\n").trim();
+
+  if (!text.includes("\n")) {
+    // Split before step markers, but never inside $...$ / \(...\) / \[...\] math
+    const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\])/g);
+    text = parts
+      .map((seg, i) =>
+        i % 2 === 1
+          ? seg
+          : seg.replace(new RegExp(`\\s*(${STEP_MARKERS.source})`, "g"), "\n$1")
+      )
+      .join("");
+  }
+
+  return text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => `<p>${l}</p>`)
+    .join("");
+};
+
+// Organized answer body (keeps RTE formatting, structures bulk plain text)
+const AnswerContent = ({ text, className = "" }: { text: string; className?: string }) => (
+  <div className={`answer-content ${className}`}>
+    <LatexRenderer text={formatAnswerContent(text)} />
+  </div>
+);
+
 // Renders the explanation (ব্যাখ্যা) of an MCQ inside the answer sheet
 const McqExplanation = ({ text }: { text: string }) => (
   <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,87,0.06)", fontSize: "0.88em", borderRadius: "0 4px 4px 0", breakInside: "avoid" }}>
     <span style={{ fontWeight: 700, color: "#047857", marginRight: "4px" }}>ব্যাখ্যা:</span>
-    <LatexRenderer text={text} />
+    <AnswerContent text={text} className="answer-content--inline-start" />
   </div>
 );
+
 
 export default function QuestionPaperView() {
   const navigate = useNavigate();
