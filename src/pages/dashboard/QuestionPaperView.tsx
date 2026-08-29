@@ -1396,7 +1396,7 @@ export default function QuestionPaperView() {
               >
                 {settings.showClassName && meta.className}
                 {settings.showClassName && settings.showSubjectName && " — "}
-                {settings.showSubjectName && `${meta.subjectName} ১ম পত্র`}
+                {settings.showSubjectName && meta.subjectName}
               </p>
             )}
             {settings.showChapterName && meta.chapterNames.length > 0 && (
