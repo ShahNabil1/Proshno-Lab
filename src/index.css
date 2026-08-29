@@ -530,17 +530,20 @@
 
 /* Unify KaTeX-rendered content with the site fonts:
    \text{} Bangla/English -> SolaimanLipi / Times New Roman, math letters -> Times New Roman italic.
-   KaTeX's own glyph fonts are kept for math symbols/delimiters so radicals & braces still render. */
+   KaTeX's own glyph fonts are kept for math symbols/delimiters so radicals & braces still render.
+   font-size: 1em forces the rendered text to match the surrounding system text size exactly. */
 .latex-renderer .katex .mathrm,
 .latex-renderer .katex .text,
 .latex-renderer .katex .textbf,
 .latex-renderer .katex .textit {
   font-family: 'SolaimanLipi', 'Times New Roman', serif;
+  font-size: 1em;
 }
 .latex-renderer .katex .mathnormal,
 .latex-renderer .katex .mathdefault {
   font-family: 'Times New Roman', Times, serif;
   font-style: italic;
+  font-size: 1em;
 }
 
 /* Paper view: normalize Tiptap HTML inside paper */
