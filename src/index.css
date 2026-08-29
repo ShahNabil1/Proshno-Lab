@@ -130,9 +130,9 @@
   .font-body { font-family: var(--font-body); }
   .font-heading { font-family: var(--font-heading); }
 
-  /* Canva-matched hero: solid navy-blue block on the left melting into white on the right */
+  /* Canva-matched hero: solid navy-blue block on the left melting into a soft blue-grey on the right */
   .gradient-hero {
-    background: linear-gradient(90deg, #21368a 0%, #253977 38%, #253978 46%, #4a5c9e 60%, #b9bed4 72%, #f2f1ec 84%, #faf9f5 100%);
+    background: linear-gradient(90deg, #21368a 0%, #253977 45%, #31468a 58%, #4a5c9e 72%, #7a87b0 88%, #a6afc8 100%);
   }
   .gradient-navy {
     background: linear-gradient(135deg, hsl(var(--navy)) 0%, hsl(var(--indigo)) 100%);
