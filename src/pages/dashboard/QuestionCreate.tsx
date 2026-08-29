@@ -1165,18 +1165,23 @@ export default function QuestionCreate() {
                     const displayQuestion = (q.type === "cq" && cData?.stem) ? cData.stem : q.question;
 
                     return (
-                      <>
-                        {q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text)) && (
-                          <div className="mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
-                            dangerouslySetInnerHTML={{ __html: q.stimulus_text }}
-                          />
-                        )}
+                      <div>
+                        <div
+                          key={`stim-${q.id}`}
+                          className={
+                            q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text))
+                              ? "mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
+                              : "hidden"
+                          }
+                          dangerouslySetInnerHTML={{ __html: q.stimulus_text || "" }}
+                        />
                         <div className="font-medium mb-3 flex items-baseline gap-0">
                           <span className="shrink-0">{globalIdx + 1}. </span>
-                          <div className="flex-1 mc-block-question"><LatexRenderer text={displayQuestion} /></div>
+                          <div className="flex-1 mc-block-question"><LatexRenderer key={`q-${q.id}`} text={displayQuestion} /></div>
                         </div>
-                      </>
+                      </div>
                     );
+
                   })()}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
