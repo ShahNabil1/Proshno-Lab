@@ -1652,6 +1652,7 @@ export default function QuestionPaperView() {
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                             </div>
                           </div>
                         </div>
@@ -1683,6 +1684,7 @@ export default function QuestionPaperView() {
                                   return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                             </div>
                           </div>
                         </div>
@@ -1729,6 +1731,7 @@ export default function QuestionPaperView() {
                                     return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                   })}
                                 </div>
+                                {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                               </div>
                             </div>
                           </div>
@@ -1811,6 +1814,7 @@ export default function QuestionPaperView() {
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                                   </div>
                                 </div>
                               </div>
@@ -1857,6 +1861,7 @@ export default function QuestionPaperView() {
                                         return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
                                   </div>
                                 </div>
                               </div>
