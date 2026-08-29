@@ -260,38 +260,10 @@ export default function QuestionPaperView() {
     }
   }, [searchParams]);
 
-  // Clear sessionStorage only when navigating away (not on refresh)
-  useEffect(() => {
-    return () => {
-      // Component unmount due to navigation — clear paper data
-      // On refresh, beforeunload fires but React unmount won't clear because the page reloads
-    };
-  }, []);
+  // Keep paper data in sessionStorage across navigation & refresh.
+  // It is only replaced when a new paper is generated, so returning
+  // from any other page restores the exact same paper.
 
-  // Clear sessionStorage on navigation (popstate / route change) but not refresh
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Mark that this is a refresh/close, not a navigation
-      sessionStorage.setItem("viewPaper_isRefresh", "true");
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
-    // If returning from a refresh, remove the flag
-    const isRefresh = sessionStorage.getItem("viewPaper_isRefresh");
-    if (isRefresh) {
-      sessionStorage.removeItem("viewPaper_isRefresh");
-    }
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // If unmounting without beforeunload (React navigation), clear data
-      if (!sessionStorage.getItem("viewPaper_isRefresh")) {
-        sessionStorage.removeItem("viewPaperQuestions");
-        sessionStorage.removeItem("viewPaperMeta");
-        sessionStorage.removeItem("viewPaperSettings");
-      }
-    };
-  }, []);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     if (!editingMode) return;
@@ -1109,9 +1081,13 @@ export default function QuestionPaperView() {
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
               // Store context IDs so create page can skip form
               if (questions.length > 0) {
-                const classId = String(questions[0].class_id || "");
-                const subjectId = String(questions[0].subject_id || "");
-                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const savedCtx = (() => {
+                  try { return JSON.parse(sessionStorage.getItem("viewPaperContext") || "null"); } catch { return null; }
+                })();
+                const classId = String(questions[0].class_id || savedCtx?.classId || "");
+                const subjectId = String(questions[0].subject_id || savedCtx?.subjectId || "");
+                const fromQs = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const chapterIds = [...new Set([...(savedCtx?.chapterIds || []).map(String), ...fromQs])];
                 sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
               }
               navigate("/dashboard/create?add_to_paper=true");
@@ -1128,9 +1104,13 @@ export default function QuestionPaperView() {
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
               if (questions.length > 0) {
-                const classId = String(questions[0].class_id || "");
-                const subjectId = String(questions[0].subject_id || "");
-                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const savedCtx = (() => {
+                  try { return JSON.parse(sessionStorage.getItem("viewPaperContext") || "null"); } catch { return null; }
+                })();
+                const classId = String(questions[0].class_id || savedCtx?.classId || "");
+                const subjectId = String(questions[0].subject_id || savedCtx?.subjectId || "");
+                const fromQs = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const chapterIds = [...new Set([...(savedCtx?.chapterIds || []).map(String), ...fromQs])];
                 sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
               }
               navigate("/dashboard/create?add_to_paper=true");

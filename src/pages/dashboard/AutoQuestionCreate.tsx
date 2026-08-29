@@ -208,7 +208,7 @@ export default function AutoQuestionCreate() {
         if (pickIds.length === 0) continue;
         const { data } = await supabase
           .from("questions")
-          .select("id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
+          .select("id, class_id, subject_id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
           .in("id", pickIds);
         const rows = (data || []) as any[];
         const order = new Map(pickIds.map((id, i) => [id, i]));
@@ -224,6 +224,7 @@ export default function AutoQuestionCreate() {
 
       const selectedChapterNames = selectedChapters.map(c => c.name);
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(picked));
+      sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(classId), subjectId: String(subjectId), chapterIds: ids.map(String) }));
       sessionStorage.setItem("viewPaperMeta", JSON.stringify({
         instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
         instituteUpazila: institute?.upazila || "",
