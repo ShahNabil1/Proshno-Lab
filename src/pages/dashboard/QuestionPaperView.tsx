@@ -670,14 +670,14 @@ export default function QuestionPaperView() {
   /* MCQ marks line */
   const mcqTotalMarks = mcqQuestions.length;
   const mcqMarksLine = mcqQuestions.length > 0
-    ? `${toBanglaNum(mcqQuestions.length)} x ${toBanglaNum(1)} = ${toBanglaNum(mcqTotalMarks)}`
+    ? `${toBanglaNum(mcqQuestions.length)} × ${toBanglaNum(1)} = ${toBanglaNum(mcqTotalMarks)}`
     : "";
 
   /* CQ marks line - dynamic based on toAnswer */
   const cqToAnswer = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
   const cqTotalMarks = cqToAnswer * 10;
   const cqMarksLine = cqQuestions.length > 0
-    ? `${toBanglaNum(10)} x ${toBanglaNum(cqToAnswer)} = ${toBanglaNum(cqTotalMarks)}`
+    ? `${toBanglaNum(10)} × ${toBanglaNum(cqToAnswer)} = ${toBanglaNum(cqTotalMarks)}`
     : "";
 
   /* CQ dynamic instruction */
@@ -1924,7 +1924,7 @@ export default function QuestionPaperView() {
           {shortQuestions.length > 0 && (() => {
             const shortToAnswer = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
             const shortTotalMarks = shortToAnswer * 2;
-            const shortMarksLine = `${toBanglaNum(shortToAnswer)} x ${toBanglaNum(2)} = ${toBanglaNum(shortTotalMarks)}`;
+            const shortMarksLine = `${toBanglaNum(shortToAnswer)} × ${toBanglaNum(2)} = ${toBanglaNum(shortTotalMarks)}`;
             const shortInstruction = shortQuestions.length === shortToAnswer
               ? ""
               : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`;
@@ -2104,7 +2104,7 @@ export default function QuestionPaperView() {
           {descriptiveQuestions.length > 0 && (() => {
             const descToAnswer = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
             const descTotalMarks = descToAnswer * 10;
-            const descMarksLine = `${toBanglaNum(10)} x ${toBanglaNum(descToAnswer)} = ${toBanglaNum(descTotalMarks)}`;
+            const descMarksLine = `${toBanglaNum(10)} × ${toBanglaNum(descToAnswer)} = ${toBanglaNum(descTotalMarks)}`;
             const descInstruction = descriptiveQuestions.length === descToAnswer
               ? ""
               : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`;
