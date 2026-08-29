@@ -549,6 +549,16 @@
   font-size: 1em;
 }
 
+/* Prevent long equation lines from overflowing across the column divider:
+   allow the browser to wrap between top-level KaTeX atoms and break long
+   unbroken text runs inside the paper view. */
+.latex-renderer .katex {
+  white-space: normal;
+}
+[data-print-paper] .latex-renderer {
+  overflow-wrap: break-word;
+}
+
 /* Paper view: normalize Tiptap HTML inside paper */
 [data-print-paper] .latex-renderer {
   display: inline;
