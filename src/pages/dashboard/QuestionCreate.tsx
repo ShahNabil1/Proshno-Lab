@@ -483,6 +483,7 @@ export default function QuestionCreate() {
     const selected = questions.filter(q => selectedIds.has(q.id));
     // Store in sessionStorage for the view page
     sessionStorage.setItem("viewPaperQuestions", JSON.stringify(selected));
+    sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(form.classId), subjectId: String(form.subjectId), chapterIds: (form.chapterIds || []).map(String) }));
     // Build topic names map for selected questions
     const selectedTopicIds = new Set(selected.map(q => q.topic_id).filter(Boolean));
     const topicNamesForPaper = topics.filter(t => selectedTopicIds.has(t.id)).map(t => t.name);

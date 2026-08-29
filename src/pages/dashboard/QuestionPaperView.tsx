@@ -1081,9 +1081,13 @@ export default function QuestionPaperView() {
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
               // Store context IDs so create page can skip form
               if (questions.length > 0) {
-                const classId = String(questions[0].class_id || "");
-                const subjectId = String(questions[0].subject_id || "");
-                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const savedCtx = (() => {
+                  try { return JSON.parse(sessionStorage.getItem("viewPaperContext") || "null"); } catch { return null; }
+                })();
+                const classId = String(questions[0].class_id || savedCtx?.classId || "");
+                const subjectId = String(questions[0].subject_id || savedCtx?.subjectId || "");
+                const fromQs = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const chapterIds = [...new Set([...(savedCtx?.chapterIds || []).map(String), ...fromQs])];
                 sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
               }
               navigate("/dashboard/create?add_to_paper=true");
@@ -1100,9 +1104,13 @@ export default function QuestionPaperView() {
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
               sessionStorage.setItem("existingPaperSettings", JSON.stringify(settings));
               if (questions.length > 0) {
-                const classId = String(questions[0].class_id || "");
-                const subjectId = String(questions[0].subject_id || "");
-                const chapterIds = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const savedCtx = (() => {
+                  try { return JSON.parse(sessionStorage.getItem("viewPaperContext") || "null"); } catch { return null; }
+                })();
+                const classId = String(questions[0].class_id || savedCtx?.classId || "");
+                const subjectId = String(questions[0].subject_id || savedCtx?.subjectId || "");
+                const fromQs = [...new Set(questions.map(q => String(q.chapter_id || "")))].filter(Boolean);
+                const chapterIds = [...new Set([...(savedCtx?.chapterIds || []).map(String), ...fromQs])];
                 sessionStorage.setItem("existingPaperContext", JSON.stringify({ classId, subjectId, chapterIds }));
               }
               navigate("/dashboard/create?add_to_paper=true");
