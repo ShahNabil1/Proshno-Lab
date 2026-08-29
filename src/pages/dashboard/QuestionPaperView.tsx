@@ -260,38 +260,10 @@ export default function QuestionPaperView() {
     }
   }, [searchParams]);
 
-  // Clear sessionStorage only when navigating away (not on refresh)
-  useEffect(() => {
-    return () => {
-      // Component unmount due to navigation — clear paper data
-      // On refresh, beforeunload fires but React unmount won't clear because the page reloads
-    };
-  }, []);
+  // Keep paper data in sessionStorage across navigation & refresh.
+  // It is only replaced when a new paper is generated, so returning
+  // from any other page restores the exact same paper.
 
-  // Clear sessionStorage on navigation (popstate / route change) but not refresh
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Mark that this is a refresh/close, not a navigation
-      sessionStorage.setItem("viewPaper_isRefresh", "true");
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
-    // If returning from a refresh, remove the flag
-    const isRefresh = sessionStorage.getItem("viewPaper_isRefresh");
-    if (isRefresh) {
-      sessionStorage.removeItem("viewPaper_isRefresh");
-    }
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // If unmounting without beforeunload (React navigation), clear data
-      if (!sessionStorage.getItem("viewPaper_isRefresh")) {
-        sessionStorage.removeItem("viewPaperQuestions");
-        sessionStorage.removeItem("viewPaperMeta");
-        sessionStorage.removeItem("viewPaperSettings");
-      }
-    };
-  }, []);
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     if (!editingMode) return;
