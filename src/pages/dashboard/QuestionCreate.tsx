@@ -18,6 +18,7 @@ import LatexRenderer from "@/components/LatexRenderer";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
+import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses } from "@/lib/classOrder";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
@@ -75,6 +76,7 @@ const boardList = [
 
 export default function QuestionCreate() {
   const { user } = useAuth();
+  const { unlimited: unlimitedAccess } = useUnlimitedAccess();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const addToPaper = searchParams.get("add_to_paper") === "true";
@@ -208,6 +210,7 @@ export default function QuestionCreate() {
 
   // Check access: user_permissions OR active subscriptions
   useEffect(() => {
+    if (unlimitedAccess) { setHasSubscription(true); return; }
     if (!user?.id || !form.classId || !form.subjectId) { setHasSubscription(false); return; }
 
     let cancelled = false;
@@ -254,7 +257,7 @@ export default function QuestionCreate() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, form.classId, form.subjectId, classes, subjects]);
+  }, [user?.id, form.classId, form.subjectId, classes, subjects, unlimitedAccess]);
 
   // Load topics when chapters selected
   useEffect(() => {
