@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
+import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses } from "@/lib/classOrder";
 
 type QType = "mcq" | "cq" | "short" | "descriptive";
@@ -37,6 +38,7 @@ const STEPS = [
 
 export default function AutoQuestionCreate() {
   const { user } = useAuth();
+  const { unlimited: unlimitedAccess } = useUnlimitedAccess();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
 
@@ -84,6 +86,7 @@ export default function AutoQuestionCreate() {
 
   // Access check
   useEffect(() => {
+    if (unlimitedAccess) { setHasAccess(true); return; }
     if (!user?.id || !classId || !subjectId) { setHasAccess(null); return; }
     let cancel = false;
     (async () => {
@@ -99,7 +102,7 @@ export default function AutoQuestionCreate() {
       setHasAccess(subs.some(s => planCoversSelection(s.plan || "", cls.name, sub.name)));
     })();
     return () => { cancel = true; };
-  }, [user?.id, classId, subjectId, classes, subjects]);
+  }, [user?.id, classId, subjectId, classes, subjects, unlimitedAccess]);
 
   // Live counts per type based on selected chapters
   useEffect(() => {
