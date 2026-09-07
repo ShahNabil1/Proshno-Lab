@@ -340,8 +340,8 @@ export default function Subscription() {
                         const allSubjectComingSoon = allSubjectPkg?.is_coming_soon;
                         const isIndividualSubject = pkg.subject_name !== "সকল বিষয়";
                         const isComingSoon = pkg.is_coming_soon || (isIndividualSubject && allSubjectComingSoon);
-                        const isDisabledByAllSubject = isIndividualSubject && (allSubjectSelected || isPurchased(allSubjectPkg!));
                         const allSubjectBought = allSubjectPkg ? isPurchased(allSubjectPkg) : false;
+                        const isDisabledByAllSubject = isIndividualSubject && (allSubjectSelected || allSubjectBought);
                         const effectivelyBought = bought || (isIndividualSubject && allSubjectBought);
                         const isSelected = selectedPkgs.has(pkg.id);
                         const isDisabled = isComingSoon || isDisabledByAllSubject || effectivelyBought;
