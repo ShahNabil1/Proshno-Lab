@@ -163,6 +163,75 @@ export default function QuestionCreate() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
 
+  // ---- Draft persistence: keep step/form/selection alive across page refresh ----
+  const DRAFT_KEY = "questionCreateDraft";
+  const draftRestoredRef = useRef(false);
+  const [restoringDraft, setRestoringDraft] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = sessionStorage.getItem("questionCreateDraft");
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      return d?.step && d.step !== "form";
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (addToPaper) { draftRestoredRef.current = true; setRestoringDraft(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = sessionStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (!d?.form?.classId || !d?.form?.subjectId || !d.step || d.step === "form") return;
+        setForm(d.form);
+        if (d.step === "questionSet" && !Array.isArray(d.questionIds)) {
+          if (!cancelled) setStep("questionSet");
+          return;
+        }
+        const rows = await fetchQuestionRows(d.form);
+        if (cancelled) return;
+        const order: number[] = Array.isArray(d.questionIds) ? d.questionIds : [];
+        if (order.length > 0) {
+          const pos = new Map(order.map((id, i) => [id, i]));
+          rows.sort((a, b) => (pos.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+        }
+        setQuestions(rows);
+        setSelectedIds(new Set<number>(Array.isArray(d.selectedIds) ? d.selectedIds : []));
+        if (d.filterType !== undefined) setFilterType(d.filterType);
+        if (d.currentPage) setCurrentPage(d.currentPage);
+        setStep(d.step);
+      } catch {
+        // ignore corrupt draft
+      } finally {
+        if (!cancelled) { draftRestoredRef.current = true; setRestoringDraft(false); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [addToPaper]);
+
+  // Save draft whenever meaningful state changes (after restore has completed)
+  useEffect(() => {
+    if (addToPaper || !draftRestoredRef.current) return;
+    try {
+      if (step === "form") {
+        sessionStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        step,
+        form,
+        questionIds: questions.map(q => q.id),
+        selectedIds: Array.from(selectedIds),
+        filterType,
+        currentPage,
+      }));
+    } catch { /* storage full – ignore */ }
+  });
+
+
+
   // Load existing paper question IDs when in add_to_paper mode and auto-skip form
   const [autoSkipDone, setAutoSkipDone] = useState(false);
   useEffect(() => {
@@ -341,6 +410,36 @@ export default function QuestionCreate() {
     });
   };
 
+  const fetchQuestionRows = async (f: { classId: string; subjectId: string; chapterIds: string[] }) => {
+    // Always fetch ALL question types; client-side sidebar filter handles type filtering.
+    // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
+    const PAGE_SIZE = 1000;
+    const buildQuery = (from: number, to: number) => {
+      let q = supabase.from("questions").select("*, chapters!inner(is_active)")
+        .eq("class_id", Number(f.classId))
+        .eq("subject_id", Number(f.subjectId))
+        .eq("chapters.is_active", true);
+      if (f.chapterIds.length > 0) {
+        q = q.in("chapter_id", f.chapterIds.map(Number));
+      }
+      return q.order("id", { ascending: true }).range(from, to);
+    };
+
+    const allRows: any[] = [];
+    let page = 0;
+    for (let i = 0; i < 50; i++) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await buildQuery(from, to);
+      if (error) throw error;
+      const batch = data || [];
+      allRows.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      page++;
+    }
+    return allRows;
+  };
+
   const handleCreateQuestionSet = async () => {
     if (!form.classId || !form.subjectId) {
       toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
@@ -348,34 +447,8 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      // Always fetch ALL question types; client-side sidebar filter handles type filtering.
-      // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
-      const PAGE_SIZE = 1000;
-      const buildQuery = (from: number, to: number) => {
-        let q = supabase.from("questions").select("*, chapters!inner(is_active)")
-          .eq("class_id", Number(form.classId))
-          .eq("subject_id", Number(form.subjectId))
-          .eq("chapters.is_active", true);
-        if (form.chapterIds.length > 0) {
-          q = q.in("chapter_id", form.chapterIds.map(Number));
-        }
-        return q.order("id", { ascending: true }).range(from, to);
-      };
+      const allRows = await fetchQuestionRows(form);
 
-      const allRows: any[] = [];
-      let page = 0;
-      // Loop until a page returns less than PAGE_SIZE (final page)
-      // Safety cap of 50 iterations (=> max 50,000 questions) to avoid runaway loops.
-      for (let i = 0; i < 50; i++) {
-        const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-        const { data, error } = await buildQuery(from, to);
-        if (error) throw error;
-        const batch = data || [];
-        allRows.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-        page++;
-      }
 
       // Filter out questions already in the paper
       const filtered = addToPaper
@@ -615,6 +688,14 @@ export default function QuestionCreate() {
       };
     }
   });
+
+  if (restoringDraft) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 text-center text-muted-foreground">
+        আপনার প্রশ্নপত্র পুনরুদ্ধার করা হচ্ছে...
+      </div>
+    );
+  }
 
   // ─── STEP 2: Question Set Header ───
   if (step === "questionSet") {
