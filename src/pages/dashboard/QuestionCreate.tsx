@@ -896,7 +896,7 @@ export default function QuestionCreate() {
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
         {/* Main content - independently scrollable on desktop */}
         <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="sticky top-0 z-20 flex items-center justify-between flex-wrap gap-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 -mx-2 px-2 border-b border-border/60 shadow-sm">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium">Selected: {selectedIds.size}/{questions.length}</span>
               <Button variant="outline" size="sm" onClick={selectAll}>
