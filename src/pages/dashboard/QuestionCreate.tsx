@@ -921,10 +921,22 @@ export default function QuestionCreate() {
 
         {/* Board filter */}
         <div className="border border-border rounded-lg p-3">
-          <h4 className="font-heading font-bold text-sm mb-2">বোর্ড</h4>
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="mb-2"><SelectValue placeholder="Year" /></SelectTrigger>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-heading font-bold text-sm">বোর্ড</h4>
+            {(filterBoards.size > 0 || !!filterYear) && (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+                onClick={() => { setFilterBoards(new Set()); setFilterYear(""); }}
+              >
+                সাফ করুন
+              </button>
+            )}
+          </div>
+          <Select value={filterYear || "all"} onValueChange={(v) => setFilterYear(v === "all" ? "" : v)}>
+            <SelectTrigger className="mb-2"><SelectValue placeholder="সব সাল" /></SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">সব সাল</SelectItem>
               {["2020", "2021", "2022", "2023", "2024", "2025"].map(y => (
                 <SelectItem key={y} value={y}>{y}</SelectItem>
               ))}
