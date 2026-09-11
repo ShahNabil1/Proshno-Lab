@@ -598,6 +598,24 @@
 /* Restore block for tables/images inside paper latex */
 [data-print-paper] .latex-renderer table {
   display: table;
+  /* Tables must follow the paper's font family/size settings */
+  font-family: inherit;
+  font-size: 1em;
+  /* Never spill over the column divider */
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+[data-print-paper] .latex-renderer table th,
+[data-print-paper] .latex-renderer table td {
+  font-family: inherit;
+  font-size: 1em;
+  padding: 0.15em 0.3em;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 [data-print-paper] .latex-renderer img:not([width]):not([data-watermark-img]) {
   display: block;
@@ -663,7 +681,7 @@
   border: 1px solid hsl(var(--border));
   padding: 0.35rem 0.5rem;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.9em;
 }
 .latex-renderer th {
   background: hsl(var(--muted));
