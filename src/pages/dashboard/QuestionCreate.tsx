@@ -689,6 +689,14 @@ export default function QuestionCreate() {
     }
   });
 
+  if (restoringDraft) {
+    return (
+      <div className="max-w-3xl mx-auto py-16 text-center text-muted-foreground">
+        আপনার প্রশ্নপত্র পুনরুদ্ধার করা হচ্ছে...
+      </div>
+    );
+  }
+
   // ─── STEP 2: Question Set Header ───
   if (step === "questionSet") {
     return (
