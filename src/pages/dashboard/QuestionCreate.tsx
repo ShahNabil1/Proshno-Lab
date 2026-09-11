@@ -1303,32 +1303,34 @@ export default function QuestionCreate() {
                     const cData = (q.type === "cq" || q.type === "descriptive") && q.creative_data
                       ? (typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data)
                       : null;
-                    // For CQ, prefer creative_data.stem (full stimulus with images/tables)
-                    const displayQuestion = (q.type === "cq" && cData?.stem) ? cData.stem : q.question;
-                    // CQ/Descriptive: the stem is already shown as the question body,
-                    // so never repeat stimulus_text above it.
-                    const showStimulus =
-                      q.type !== "cq" && q.type !== "descriptive" &&
-                      !!q.stimulus_text &&
-                      (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text));
+                    // For CQ/descriptive, the stimulus/stem IS the question prompt (never duplicate)
+                    const isCqOrDesc = q.type === "cq" || q.type === "descriptive";
+                    const displayQuestion = isCqOrDesc
+                      ? (cData?.stem || q.stimulus_text || q.question)
+                      : q.question;
+
+                    const hasSeparateStimulus = !isCqOrDesc && Boolean(
+                      q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text))
+                    );
 
                     return (
                       <div>
-                        {showStimulus && (
+                        {hasSeparateStimulus && (
                           <div
                             key={`stim-${q.id}`}
-                            className="mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
-                            dangerouslySetInnerHTML={{ __html: q.stimulus_text || "" }}
-                          />
+                            className="question-picker-stimulus mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
+                          >
+                            <LatexRenderer text={q.stimulus_text || ""} />
+                          </div>
                         )}
-
-                        <div className="font-medium mb-3 flex items-baseline gap-0">
-                          <span className="shrink-0">{globalIdx + 1}. </span>
-                          <div className="flex-1 mc-block-question"><LatexRenderer key={`q-${q.id}`} text={displayQuestion} /></div>
+                        <div className="font-medium mb-3 flex items-baseline gap-1">
+                          <span className="shrink-0 font-semibold">{globalIdx + 1}. </span>
+                          <div className="flex-1 mc-block-question min-w-0">
+                            <LatexRenderer key={`q-${q.id}`} text={displayQuestion} />
+                          </div>
                         </div>
                       </div>
                     );
-
                   })()}
                   {q.type === "mcq" && q.option_a && (
                     <div className="grid grid-cols-2 gap-2">
@@ -1367,9 +1369,11 @@ export default function QuestionCreate() {
                           const val = data?.[f.key];
                           if (!val) return null;
                           return (
-                            <div key={f.key} className="text-sm">
-                              <span className="font-semibold">({f.label}) </span>
-                              <LatexRenderer text={val} inline />
+                            <div key={f.key} className="text-sm flex items-start gap-1.5 leading-relaxed">
+                              <span className="font-semibold shrink-0 select-none">({f.label})</span>
+                              <div className="flex-1 min-w-0 cq-sub-content">
+                                <LatexRenderer text={val} inline />
+                              </div>
                             </div>
                           );
                         })}

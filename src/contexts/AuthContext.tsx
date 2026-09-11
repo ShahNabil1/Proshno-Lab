@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { analytics } from "@/lib/analytics";
+import {
+  createLocalMockAdmin,
+  disableLocalMockAdmin,
+  isLocalMockAdminEnabled,
+} from "@/lib/localDevAuth";
 
 interface AuthContextType {
   session: Session | null;
@@ -28,6 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (isLocalMockAdminEnabled()) {
+      setSession(null);
+      setUser(createLocalMockAdmin());
+      setLoading(false);
+      return;
+    }
+
     void syncSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -100,6 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (isLocalMockAdminEnabled()) {
+      disableLocalMockAdmin();
+      setSession(null);
+      setUser(null);
+      return;
+    }
     await supabase.auth.signOut();
   };
 

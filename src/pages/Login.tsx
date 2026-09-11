@@ -1,10 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BrandLogo from "@/components/BrandLogo";
+import { enableLocalMockAdmin, isLocalDevelopment } from "@/lib/localDevAuth";
 
 export default function Login() {
   const { signInWithGoogle, user, loading } = useAuth();
+  const localDevelopment = isLocalDevelopment();
 
   if (loading) return null;
   if (user) return <Navigate to="/dashboard" replace />;
@@ -35,6 +37,33 @@ export default function Login() {
             </svg>
             Google দিয়ে ফ্রি লগইন / রেজিস্ট্রেশন করুন
           </Button>
+
+          {localDevelopment && (
+            <>
+              <div className="my-4 flex items-center gap-3" aria-hidden="true">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">লোকাল টেস্ট</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full font-heading font-semibold rounded-xl"
+                  onClick={() => {
+                    enableLocalMockAdmin();
+                    window.location.assign("/admin");
+                  }}
+                >
+                  লোকাল টেস্ট Admin চালু করুন
+                </Button>
+                <Button asChild size="lg" variant="outline" className="w-full font-heading font-semibold rounded-xl">
+                  <Link to="/login/email">ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন</Link>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

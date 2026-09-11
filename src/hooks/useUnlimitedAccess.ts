@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 
 /**
  * Admin / developer accounts have full access to every class & subject
@@ -9,10 +10,17 @@ import { useAuth } from "@/contexts/AuthContext";
  */
 export function useUnlimitedAccess() {
   const { user } = useAuth();
-  const [unlimited, setUnlimited] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const localMockAdmin = isLocalMockAdminEnabled();
+  const [unlimited, setUnlimited] = useState(localMockAdmin);
+  const [loading, setLoading] = useState(!localMockAdmin);
 
   useEffect(() => {
+    if (localMockAdmin) {
+      setUnlimited(true);
+      setLoading(false);
+      return;
+    }
+
     if (!user?.id) { setUnlimited(false); setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
@@ -22,7 +30,7 @@ export function useUnlimitedAccess() {
       setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, localMockAdmin]);
 
   return { unlimited, loading };
 }

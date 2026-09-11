@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, PlusCircle, BookOpen, Package, FileText,
-  Building2, CreditCard, MessageSquare, Phone, Menu, LogOut, User, Shield, Home
+  LayoutDashboard, PlusSquare, Tv, PlaySquare, Database,
+  FileText, GraduationCap, Building2, CreditCard,
+  PlayCircle, Grid, KeyRound, CheckCircle2,
+  PhoneCall, MessageSquare, Menu, LogOut, User, Shield, Home, Sparkles, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 
 import BrandLogo from "@/components/BrandLogo";
+import { brandMarkUrl } from "@/lib/brandAssets";
 import { Button } from "@/components/ui/button";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
@@ -25,19 +29,17 @@ const baseSidebarGroups = [
     label: "সার্বিক চিত্র",
     items: [
       { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-      { path: "/dashboard/create", label: "১ ক্লিকে প্রশ্ন তৈরি", icon: PlusCircle },
-    ],
-  },
-  {
-    label: "প্যাকেজ",
-    items: [
-      { path: "/dashboard/packages", label: "রেডি প্রশ্ন/সাজেশন", icon: Package },
+      { path: "/dashboard/create", label: "১ ক্লিকে প্রশ্ন তৈরি", icon: PlusSquare },
+      { path: "/dashboard/smartboard", label: "স্মার্টবোর্ড", icon: Tv },
+      { path: "/demo", label: "টিউটোরিয়াল", icon: PlaySquare },
+      { path: "/dashboard/packages", label: "প্রশ্নব্যাংক", icon: Database },
     ],
   },
   {
     label: "ব্যবস্থাপনা",
     items: [
       { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText, requiresCloudBackup: true },
+      { path: "/dashboard/students", label: "শিক্ষার্থী", icon: GraduationCap },
     ],
   },
   {
@@ -48,9 +50,18 @@ const baseSidebarGroups = [
     ],
   },
   {
+    label: "OMR সংক্রান্ত",
+    items: [
+      { path: "/dashboard/omr-tutorial", label: "OMR টিউটোরিয়াল", icon: PlayCircle },
+      { path: "/dashboard/omr-create", label: "OMR তৈরি", icon: Grid },
+      { path: "/dashboard/omr-tokens", label: "OMR টোকেন", icon: KeyRound },
+      { path: "/dashboard/omr-evaluation", label: "OMR মূল্যায়ন", icon: CheckCircle2 },
+    ],
+  },
+  {
     label: "হেল্প লাইন",
     items: [
-      { path: "/dashboard/contact", label: "যোগাযোগ", icon: Phone },
+      { path: "/dashboard/contact", label: "যোগাযোগ", icon: PhoneCall },
       { path: "/dashboard/feedback", label: "মতামত", icon: MessageSquare },
     ],
   },
@@ -80,6 +91,7 @@ function useDashboardHiddenPages() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
+  const localMockAdmin = isLocalMockAdminEnabled();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -88,20 +100,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     localStorage.setItem("dashboard_sidebar_collapsed", desktopCollapsed ? "1" : "0");
   }, [desktopCollapsed]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [hasInstitute, setHasInstitute] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState(localMockAdmin);
+  const [hasInstitute, setHasInstitute] = useState<boolean | null>(localMockAdmin ? true : null);
   const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
+  const isQuestionPaperView = location.pathname === "/dashboard/view-paper";
   const navigate = useNavigate();
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
 
-  // Auto-collapse sidebar on view-paper page for maximum workspace
+  // Keep the main navigation visible when entering the paper builder.
+  // Teachers can still collapse it manually from the header control.
   useEffect(() => {
     if (location.pathname.startsWith("/dashboard/view-paper")) {
-      setDesktopCollapsed(true);
+      setDesktopCollapsed(false);
     }
   }, [location.pathname]);
 
@@ -124,6 +138,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!user) return;
+    if (localMockAdmin) {
+      setIsAdmin(true);
+      setHasInstitute(true);
+      setIsBanned(false);
+      return;
+    }
+
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
     
@@ -132,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     supabase.from("teachers").select("is_banned").eq("id", user.id).maybeSingle()
       .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));
-  }, [user]);
+  }, [user, localMockAdmin]);
 
   // Redirect if current page is hidden
   const currentPath = location.pathname;
@@ -161,37 +182,88 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex bg-background font-body relative">
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
+      {/* ProshnoLab Left Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[220px] bg-card border-r border-border flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden",
+        "fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         desktopCollapsed
           ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
-          : "lg:w-[220px] lg:translate-x-0 lg:opacity-100"
+          : "lg:w-[260px] lg:translate-x-0 lg:opacity-100"
       )}>
-        <Link to="/dashboard" className="h-16 flex items-center justify-center gap-2.5 px-4 border-b border-border shrink-0 hover:bg-muted/50 transition-colors">
-          <BrandLogo size={32} plate={false} />
-        </Link>
+        {/* Brand Logo Header */}
+        <div className="min-h-[86px] flex items-center justify-between px-3.5 py-3 border-b border-white/15 shrink-0 bg-[#07162b] shadow-sm">
+          <Link
+            to="/"
+            onClick={(e) => {
+              if (needsLeaveConfirm) {
+                e.preventDefault();
+                setConfirmLeave(true);
+              }
+              setSidebarOpen(false);
+            }}
+            className="flex items-center gap-3 min-w-0 group"
+            title="হোম পেইজে যান"
+          >
+            <img
+              src={brandMarkUrl}
+              alt="প্রশ্নল্যাব"
+              className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-amber-400/50 group-hover:ring-[#F4C053] transition-all shadow-md"
+            />
+            <div className="flex flex-col min-w-0 leading-none">
+              <BrandLogo size={40} className="[&_.text-brand-navy]:text-white font-bold drop-shadow-sm tracking-tight" />
+              <span className="text-[13px] text-amber-300 font-semibold tracking-wide mt-1.5 leading-none">
+                স্মার্ট প্রশ্নব্যাংক প্ল্যাটফর্ম
+              </span>
+            </div>
+          </Link>
 
+          {/* Close button for mobile */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1 shrink-0"
+            aria-label="সাইডবার বন্ধ করুন"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-          {sidebarGroups.map((group) => (
-            <div key={group.label}>
-              <p className="text-[11px] font-heading font-semibold uppercase tracking-wider text-muted-foreground px-3 mb-1.5">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
+        {/* Scrollable Navigation Groups */}
+        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-2 text-white custom-sidebar-scrollbar [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
+          {sidebarGroups.map((group, gIdx) => (
+            <div key={group.label || gIdx}>
+              {group.label ? (
+                <p className="text-[13px] font-heading font-bold tracking-wide text-white px-2.5 pt-2 pb-1">
+                  {group.label}
+                </p>
+              ) : null}
+              <div className="space-y-1">
                 {group.items.map((item) => {
                   const active = location.pathname === item.path;
                   return (
-                    <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
                       className={cn(
-                        "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}>
-                      <item.icon className="w-4 h-4 shrink-0" />
+                        "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[15px] font-semibold transition-all duration-150 leading-tight select-none",
+                        active
+                          ? "bg-[#C8D5E5] text-[#0A1E38] shadow-sm font-bold"
+                          : "text-white hover:bg-white/10"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "w-[26px] h-[26px] rounded flex items-center justify-center shrink-0 border transition-colors",
+                          active
+                            ? "border-[#0A1E38]/40 text-[#0A1E38] bg-[#0A1E38]/10"
+                            : "border-white/40 text-white bg-white/5 group-hover:border-white"
+                        )}
+                      >
+                        <item.icon className="w-3.5 h-3.5" />
+                      </div>
                       <span className="truncate">{item.label}</span>
                     </Link>
                   );
@@ -201,31 +273,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {isAdmin && (
-          <div className="p-3 border-t border-border">
-            <Link to="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-primary hover:bg-primary/10">
-              <Shield className="w-4 h-4" /> Admin Panel
+        {/* Affiliate Program Button (Screenshot Inspired) */}
+        <div className="p-2.5 pt-1.5 shrink-0 border-t border-white/10 bg-[#07162b]/80 space-y-1.5">
+          <Link
+            to="/dashboard/affiliate"
+            onClick={() => setSidebarOpen(false)}
+            className={cn(
+              "flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold text-center transition-all duration-150 shadow-sm border",
+              location.pathname === "/dashboard/affiliate"
+                ? "bg-[#C8D5E5] text-[#0A1E38] border-transparent font-bold"
+                : "bg-[#0f2c54] hover:bg-[#153e77] text-white border-[#1e467d] hover:border-amber-400/60"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#F4C053] shrink-0 animate-pulse" />
+            <span className="truncate">প্রশ্নল্যাব এফিলিয়েট প্রোগ্রাম</span>
+          </Link>
+
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-amber-300 hover:bg-amber-400/10 border border-amber-400/20 transition-colors"
+            >
+              <Shield className="w-3.5 h-3.5" /> এডমিন প্যানেল
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </aside>
 
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => {
-            if (window.innerWidth >= 1024) setDesktopCollapsed(v => !v);
-            else setSidebarOpen(true);
-          }} title="সাইডবার">
-            <Menu className="w-5 h-5" />
-          </Button>
+          {/* Mobile-only menu toggle (hidden on desktop) */}
           <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 h-9 ml-1"
-            onClick={goHome}
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+            title="মেন্যু"
           >
-            <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">হোম পেইজে যান</span>
+            <Menu className="w-5 h-5" />
           </Button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
@@ -266,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Onboarding modal - blocks dashboard until institute is registered */}
       <OnboardingModal
-        open={hasInstitute === false}
+        open={!localMockAdmin && hasInstitute === false}
         onComplete={() => setHasInstitute(true)}
       />
     </div>

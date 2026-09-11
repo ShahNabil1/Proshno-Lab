@@ -1,5 +1,5 @@
 import { isCorrectOption } from "@/lib/answerKey";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Settings, Plus, Minus, Save, Pencil, Upload } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Download, Settings, Plus, Minus, Save, Pencil, Upload, SlidersHorizontal } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,8 +16,10 @@ import FloatingToolbar from "@/components/FloatingToolbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCloudBackup } from "@/hooks/useCloudBackup";
+import { findRepeatedStimuli, hasRenderableStimulus, normalizeStimulusKey } from "@/lib/stimulusGroups";
 
 interface QuestionRow {
   id: number;
@@ -59,6 +61,10 @@ type PaperSize = "A4" | "Letter" | "Legal" | "A5";
 type OptionStyle = "none" | "bracket" | "dot" | "paren";
 type ColumnCount = 1 | 2 | 3;
 type TextAlign = "left" | "center" | "right" | "justify";
+
+// Match eproshnobank's subtle, print-friendly question-column separator.
+const COLUMN_DIVIDER_STYLE = "0.5px solid #b8b8b8";
+const PREVIEW_FONT_SCALE = 16 / 14;
 
 /* Convert index to Bangla numeral */
 const toBanglaNum = (n: number): string => {
@@ -138,14 +144,14 @@ export default function QuestionPaperView() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const [saving, setSaving] = useState(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
   const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pageSetupOpen, setPageSetupOpen] = useState(false);
+  const [pageNumberOpen, setPageNumberOpen] = useState(false);
 
   // Inline editing state
   const [activeEditEl, setActiveEditEl] = useState<HTMLElement | null>(null);
@@ -158,20 +164,27 @@ export default function QuestionPaperView() {
     showImportantQ: false,
     showQuestionInfo: false,
     showStudentInfo: false,
-    showMarksBox: false,
-    showSubjectCode: false,
+    showMarksBox: true,
+    showSubjectCode: true,
     showClassName: true,
     showSubjectName: true,
-    showChapterName: false,
-    showSetCode: false,
+    showChapterName: true,
+    showSetCode: true,
     showProgramName: true,
     showInstruction: true,
     paperSize: "A4" as PaperSize,
+    showPageNumbers: false,
+    pageMarginTop: 0,
+    pageMarginBottom: 0,
+    pageMarginLeft: 0,
+    pageMarginRight: 0,
     optionStyle: "none" as OptionStyle,
     fontLang: "bangla",
     fontSize: 14,
     columns: 2 as ColumnCount,
     columnDivider: true,
+    questionGap: 6,
+    columnGap: 5,
     textAlign: "justify" as TextAlign,
     showDuplicateMarker: false,
     showSheet: false,
@@ -203,29 +216,6 @@ export default function QuestionPaperView() {
     shortToAnswer: 0,
     descToAnswer: 0,
   });
-
-  // Measure container width for responsive scaling
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width - 32);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const paperWidthPx = useMemo(() => {
-    const map: Record<PaperSize, number> = { A4: 780, Letter: 800, Legal: 800, A5: 560 };
-    return map[settings.paperSize];
-  }, [settings.paperSize]);
-
-  const paperScale = useMemo(() => {
-    if (!containerWidth || containerWidth >= paperWidthPx) return 1;
-    return containerWidth / paperWidthPx;
-  }, [containerWidth, paperWidthPx]);
 
   // Cloud backup hook
   const { cloudBackupEnabled } = useCloudBackup();
@@ -580,22 +570,8 @@ export default function QuestionPaperView() {
       case "paren": return `${label})`;
       case "dot": return `${label}.`;
       case "none": return (
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "1.55em",
-            height: "1.55em",
-            borderRadius: "9999px",
-            border: "1.2px solid #000",
-            fontSize: "0.78em",
-            lineHeight: 1,
-            fontWeight: 600,
-            verticalAlign: "middle",
-          }}
-        >
-          {label}
+        <span className="mcq-option-label-circle">
+          <span className="mcq-option-label-glyph">{label}</span>
         </span>
       );
       default: return label;
@@ -626,7 +602,7 @@ export default function QuestionPaperView() {
 
   /* Paper size widths for preview */
   const paperPreviewWidths: Record<PaperSize, string> = {
-    A4: "780px", Letter: "800px", Legal: "800px", A5: "560px",
+    A4: "794px", Letter: "816px", Legal: "816px", A5: "560px",
   };
 
   /* Detect duplicate questions */
@@ -666,12 +642,6 @@ export default function QuestionPaperView() {
       </div>
     );
   }
-
-  /* MCQ marks line */
-  const mcqTotalMarks = mcqQuestions.length;
-  const mcqMarksLine = mcqQuestions.length > 0
-    ? `${toBanglaNum(mcqQuestions.length)} × ${toBanglaNum(1)} = ${toBanglaNum(mcqTotalMarks)}`
-    : "";
 
   /* CQ marks line - dynamic based on toAnswer */
   const cqToAnswer = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
@@ -816,37 +786,86 @@ export default function QuestionPaperView() {
 
         <div className="mb-3">
           <Label className="text-xs text-muted-foreground">টেক্সট এলাইনমেন্ট</Label>
-          <div className="flex gap-1 mt-1">
-            {(["left", "center", "right", "justify"] as TextAlign[]).map(a => (
-              <Button key={a} size="sm" variant={settings.textAlign === a ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("textAlign", a)}>
-                {a === "left" ? "≡←" : a === "center" ? "≡↔" : a === "right" ? "≡→" : "≡≡"}
+          <div className="text-align-selector mt-1">
+            {(["left", "center", "right", "justify"] as TextAlign[]).map(a => {
+              const AlignmentIcon = a === "left" ? AlignLeft : a === "center" ? AlignCenter : a === "right" ? AlignRight : AlignJustify;
+              return (
+              <Button key={a} size="sm" variant="outline" className="text-align-control" data-active={settings.textAlign === a} aria-label={`${a} alignment`} title={`${a} alignment`} onClick={() => updateSetting("textAlign", a)}>
+                <AlignmentIcon aria-hidden="true" />
               </Button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         <div className="mb-3">
           <Label className="text-xs text-muted-foreground">পেপার সাইজ</Label>
-          <div className="flex gap-1 mt-1">
+          <div className="paper-size-selector mt-1">
             {(["A4", "Letter", "Legal", "A5"] as PaperSize[]).map(s => (
-              <Button key={s} size="sm" variant={settings.paperSize === s ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("paperSize", s)}>
-                {s}
+              <Button key={s} variant="outline" className="paper-size-control" data-active={settings.paperSize === s} onClick={() => updateSetting("paperSize", s)}>
+                <span className="paper-size-sheet" data-paper-size={s.toLowerCase()} aria-hidden="true" />
+                <span>{s}</span>
               </Button>
             ))}
           </div>
         </div>
 
+        <div className="mb-1 space-y-1">
+          <div className="flex items-center justify-between rounded-md bg-muted/70 p-2">
+            <span className="text-sm">Page Setup</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 bg-background shadow-sm hover:bg-accent"
+              aria-label="Page Setup খুলুন"
+              onClick={() => setPageSetupOpen(true)}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/70 p-2">
+            <span className="text-sm">পৃষ্ঠা নম্বর</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                aria-label="পৃষ্ঠা নম্বর"
+                checked={settings.showPageNumbers}
+                onCheckedChange={(value) => updateSetting("showPageNumbers", value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 bg-background shadow-sm hover:bg-accent"
+                aria-label="পৃষ্ঠা নম্বর সেটিংস খুলুন"
+                onClick={() => setPageNumberOpen(true)}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-3">
           <Label className="text-xs text-muted-foreground">অপশন স্টাইল</Label>
-          <div className="flex gap-1 mt-1">
+          <div className="option-style-selector mt-1">
             {([
-              { v: "none" as OptionStyle, l: "○" },
-              { v: "bracket" as OptionStyle, l: "( )" },
-              { v: "dot" as OptionStyle, l: "." },
-              { v: "paren" as OptionStyle, l: ")" },
+              { v: "none" as OptionStyle, l: "○", name: "বৃত্ত" },
+              { v: "bracket" as OptionStyle, l: "( )", name: "বন্ধনী" },
+              { v: "dot" as OptionStyle, l: ".", name: "ডট" },
+              { v: "paren" as OptionStyle, l: ")", name: "শেষ বন্ধনী" },
             ]).map(s => (
-              <Button key={s.v} size="sm" variant={settings.optionStyle === s.v ? "default" : "outline"} className="flex-1 text-xs px-2" onClick={() => updateSetting("optionStyle", s.v)}>
-                {s.l}
+              <Button
+                key={s.v}
+                size="sm"
+                variant={settings.optionStyle === s.v ? "default" : "outline"}
+                className="option-style-control"
+                data-active={settings.optionStyle === s.v}
+                aria-label={`${s.name} অপশন স্টাইল`}
+                title={s.name}
+                onClick={() => updateSetting("optionStyle", s.v)}
+              >
+                {s.v === "none" ? <span className="option-style-circle-preview" aria-hidden="true" /> : s.l}
               </Button>
             ))}
           </div>
@@ -858,6 +877,7 @@ export default function QuestionPaperView() {
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="bangla">সোলাইমান লিপি</SelectItem>
+              <SelectItem value="omicronbangla">Bangla — OmicronLab</SelectItem>
               <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
               <SelectItem value="timesnewroman">Times New Roman</SelectItem>
             </SelectContent>
@@ -903,6 +923,37 @@ export default function QuestionPaperView() {
             <span className="text-xs">কলাম ডিভাইডার</span>
             <Switch checked={settings.columnDivider} onCheckedChange={(v) => updateSetting("columnDivider", v)} />
           </div>
+          <div className="mt-2 space-y-4 rounded-md border border-border p-3">
+            <div>
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span>প্রশ্নের নিচে গ্যাপ</span>
+                <span>{settings.questionGap}px</span>
+              </div>
+              <Slider
+                aria-label="প্রশ্নের নিচে গ্যাপ"
+                value={[settings.questionGap]}
+                min={0}
+                max={20}
+                step={1}
+                onValueChange={([value]) => updateSetting("questionGap", value)}
+              />
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span>কলামের গ্যাপ</span>
+                <span>{settings.columnGap}px</span>
+              </div>
+              <Slider
+                aria-label="কলামের গ্যাপ"
+                value={[settings.columnGap]}
+                min={0}
+                max={30}
+                step={1}
+                disabled={settings.columns === 1}
+                onValueChange={([value]) => updateSetting("columnGap", value)}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -915,14 +966,13 @@ export default function QuestionPaperView() {
               <span className="text-sm">পুনরাবৃত্ত প্রশ্ন শনাক্ত</span>
               <Switch checked={settings.showDuplicateMarker} onCheckedChange={(v) => updateSetting("showDuplicateMarker", v)} />
             </div>
-            <p className="text-[10px] text-muted-foreground">একই প্রশ্ন একাধিকবার নির্বাচিত হলে সহজে শনাক্ত ও পরিবর্তন করা যাবে।</p>
+            <p className="paper-setting-help text-[10px] text-muted-foreground">একই প্রশ্ন একাধিকবার নির্বাচিত হলে সহজে শনাক্ত ও পরিবর্তন করা যাবে।</p>
           </div>
           <div>
             <div className="flex items-center justify-between">
               <span className="text-sm">শীট</span>
               <Switch checked={settings.showSheet} onCheckedChange={(v) => updateSetting("showSheet", v)} />
             </div>
-            <p className="text-[10px] text-muted-foreground">শীট তৈরী সেটিংগুলো অটোমেটিক সেট থাকবে সবসময়।</p>
           </div>
           {settings.showSheet && (
             <div className="ml-1 space-y-2 border rounded-md p-2 bg-muted/30">
@@ -1095,7 +1145,10 @@ export default function QuestionPaperView() {
   );
 
   return (
-    <div className="lg:grid lg:grid-cols-[1fr_300px] gap-0 -m-4 md:-m-6 relative">
+    <div
+      className="paper-builder-shell xl:grid -m-4 md:-m-6 relative bg-[#eef1f4]"
+      style={{ gridTemplateColumns: "minmax(0, 1fr) 256px", gap: "20px", padding: "16px 16px 0" }}
+    >
       {/* Floating Toolbar */}
       <FloatingToolbar
         targetEl={activeEditEl}
@@ -1122,10 +1175,28 @@ export default function QuestionPaperView() {
       )}
 
       {/* Paper preview */}
-      <div className="p-4 md:p-6 overflow-y-auto lg:h-[calc(100vh-64px)]" ref={scrollContainerRef}>
+      <style>{`
+        @media print {
+          @page {
+            margin-top: calc(10mm + ${settings.pageMarginTop}px);
+            margin-right: calc(10mm + ${settings.pageMarginRight}px);
+            margin-bottom: calc(10mm + ${settings.pageMarginBottom}px);
+            margin-left: calc(10mm + ${settings.pageMarginLeft}px);
+            ${settings.showPageNumbers ? `
+            @bottom-center {
+              content: counter(page);
+              font-family: Arial, sans-serif;
+              font-size: 11px;
+              color: #000;
+            }` : ""}
+          }
+        }
+      `}</style>
+      <div className="paper-preview-scroll overflow-y-auto xl:h-[calc(100vh-80px)] bg-[#eef1f4]">
         {!isMobile && (
-          <div className="mb-4 flex items-center gap-3 max-w-[800px] mx-auto">
-            <Button variant="outline" size="sm" onClick={() => {
+          <div className="paper-quick-settings mb-4 mx-auto" style={{ maxWidth: paperPreviewWidths[settings.paperSize] }}>
+            <div className="paper-quick-settings-title">কুইক সেটিংস</div>
+            <Button className="paper-quick-settings-action flex mx-auto bg-[#059669] hover:bg-[#047857] text-white shadow-none" size="sm" onClick={() => {
               sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
               sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
@@ -1180,30 +1251,38 @@ export default function QuestionPaperView() {
           </Alert>
         )}
 
-        {/* Scaling wrapper: maintains fixed desktop width, scales down on mobile */}
+        {/* Responsive preview: paper and quick settings share the same fluid width. */}
         <div className="mx-auto" data-print-scale-wrapper style={{
-          width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
-          maxWidth: '100%',
-          transformOrigin: "top left",
-          transform: isMobile ? 'none' : `scale(${paperScale})`,
-          marginBottom: isMobile ? 0 : `calc((${paperScale} - 1) * -50%)`,
+          width: '100%',
+          maxWidth: paperPreviewWidths[settings.paperSize],
         }}>
         <div
           className="font-paper"
           ref={paperRef}
           data-print-paper
+          data-content-align={settings.textAlign}
           style={{
-            width: isMobile ? '100%' : paperPreviewWidths[settings.paperSize],
-            fontSize: `${settings.fontSize}px`,
-            lineHeight: 1.35,
+            "--paper-question-gap": `${settings.questionGap}px`,
+            "--paper-print-font-size": `${settings.fontSize}px`,
+            width: '100%',
+            // Screen-only magnification: default 14px looks like the former
+            // 16px preview, while print/PDF restores the real selected size.
+            fontSize: `${settings.fontSize * PREVIEW_FONT_SCALE}px`,
+            lineHeight: 1.45,
             userSelect: "none",
             WebkitUserSelect: "none",
-            padding: isMobile ? "12px 10px" : "28px 44px",
+            paddingTop: `${(isMobile ? 12 : 38) + settings.pageMarginTop}px`,
+            paddingRight: `${(isMobile ? 10 : 38) + settings.pageMarginRight}px`,
+            paddingBottom: `${(isMobile ? 12 : 38) + settings.pageMarginBottom}px`,
+            paddingLeft: `${(isMobile ? 10 : 38) + settings.pageMarginLeft}px`,
             color: "#000",
             background: "#fff",
-            boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
+            border: "1px solid #e0e4e9",
+            boxShadow: "0 4px 18px rgba(30, 41, 59, 0.07)",
             fontFamily: settings.fontLang === "solaimanlipi"
               ? "'SolaimanLipi', 'Arial', sans-serif"
+              : settings.fontLang === "omicronbangla"
+              ? "'OmicronBangla', 'SolaimanLipi', 'Arial', sans-serif"
               : settings.fontLang === "kalpurush"
               ? "'Kalpurush', 'Arial', sans-serif"
               : settings.fontLang === "timesnewroman"
@@ -1212,7 +1291,7 @@ export default function QuestionPaperView() {
             textAlign: settings.textAlign,
             position: "relative",
             overflow: "visible",
-          }}
+          } as CSSProperties}
         >
           {/* ===== WATERMARK =====
               Two layers so the watermark appears on EVERY page:
@@ -1332,307 +1411,199 @@ export default function QuestionPaperView() {
             );
           })()}
 
-          {/* ===== HEADER with optional Marks Box ===== */}
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "flex-start", gap: "10px" }}>
-              {/* Left: Marks Box */}
-              <div style={{ justifySelf: "start", minWidth: 0, paddingTop: "16px" }}>
-
-                {settings.showMarksBox && (
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0",
-                    fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
-                    fontSize: "0.85em",
-                    fontWeight: 700,
-                  }}>
-                    <span className={editableClass} style={{
-                      border: "1.5px solid #000",
-                      padding: "2px 8px",
-                      lineHeight: 1.4,
-                      whiteSpace: "nowrap",
-                    }} onClick={handleEditableClick} suppressContentEditableWarning>প্রাপ্ত নম্বর</span>
-                    <span style={{
-                      border: "1.5px solid #000",
-                      borderLeft: "none",
-                      padding: "2px 18px",
-                      minWidth: "50px",
-                      lineHeight: 1.4,
-                    }}>&nbsp;</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Center: Institute / class / subject */}
-              <div style={{
-              minWidth: 0,
-              justifySelf: "center",
-
-              textAlign: "center",
-              marginBottom: "0",
-              ...(settings.showSheet && settings.sheetColoredBg ? {
-                backgroundColor: settings.sheetBgColor,
-                color: settings.sheetTextColor,
-                padding: "8px 12px",
-              } : {}),
-            }}>
-            <h1
-              className={editableClass}
-              style={{ fontSize: "1.35em", fontWeight: 800, lineHeight: 1.3, margin: 0 }}
-              data-editable="institute"
-              onClick={handleEditableClick}
-              suppressContentEditableWarning
-            >
-              {meta.instituteName}
-            </h1>
-            {/* Address below institute name */}
-            {settings.showAddress && (() => {
-              const parts: string[] = [];
-              if (settings.showAddressSpecific && (settings.addressText || meta.instituteSpecificAddress)) parts.push(settings.addressText || meta.instituteSpecificAddress || "");
-              if (settings.showAddressUpazila && meta.instituteUpazila) parts.push(meta.instituteUpazila);
-              if (settings.showAddressDistrict && meta.instituteDistrict) parts.push(meta.instituteDistrict);
-              if (settings.showAddressDivision && meta.instituteDivision) parts.push(meta.instituteDivision);
-              const addressStr = parts.join(", ");
-              return addressStr ? (
-                <p
+          {/* ===== PROFESSIONAL PAPER HEADER ===== */}
+          <header className="paper-document-header">
+            <div className="paper-document-heading">
+              <div
+                className="paper-document-heading-center"
+                style={settings.showSheet && settings.sheetColoredBg ? {
+                  backgroundColor: settings.sheetBgColor,
+                  color: settings.sheetTextColor,
+                } : undefined}
+              >
+                <h1
                   className={editableClass}
-                  style={{ fontSize: "0.85em", margin: "0", fontWeight: 600 }}
-                  data-editable="address"
+                  data-editable="institute"
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  {addressStr}
-                </p>
-              ) : null;
-            })()}
-            {settings.showProgramName && meta.programName && (
-              <p
-                className={editableClass}
-                style={{ fontSize: "1.05em", fontWeight: 700, margin: "1px 0 0" }}
-                data-editable="program"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                {meta.programName}
-              </p>
-            )}
-            {(settings.showClassName || settings.showSubjectName) && (
-              <p
-                className={editableClass}
-                data-editable="classSubject"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-                style={{ fontSize: "0.95em", margin: "1px 0 0" }}
-              >
-                {settings.showClassName && meta.className}
-                {settings.showClassName && settings.showSubjectName && " — "}
-                {settings.showSubjectName && meta.subjectName}
-              </p>
-            )}
-            {settings.showChapterName && meta.chapterNames.length > 0 && (
-              <p
-                className={editableClass}
-                style={{ fontSize: "0.85em", margin: "1px 0 0" }}
-                data-editable="chapters"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                ({meta.chapterNames.join(", ")})
-              </p>
-            )}
-            {/* ===== SHEET: Instructor, Profile, Topic inside header ===== */}
-            {settings.showSheet && settings.sheetInstructorName && meta.teacherName && (
-              <p className={editableClass} style={{ fontSize: "0.95em", fontWeight: 700, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                ইন্সট্রাক্টর: {meta.teacherName}
-              </p>
-            )}
-            {settings.showSheet && settings.sheetInstructorProfile && (
-              <p
-                className={editableClass}
-                style={{ fontSize: "0.85em", margin: "0", color: settings.sheetColoredBg ? settings.sheetTextColor : "#0066cc" }}
-                data-editable="instructor-profile"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                {settings.sheetInstructorProfileText || "+ Write Your Profile Here"}
-              </p>
-            )}
-            {settings.showSheet && settings.sheetTopic && meta.topicNames && meta.topicNames.length > 0 && (
-              <p className={editableClass} style={{ fontSize: "0.85em", fontWeight: 600, margin: "1px 0 0" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                লেকচার টপিক: {meta.topicNames.join(", ")}
-              </p>
-            )}
-              </div>
+                  {meta.instituteName}
+                </h1>
 
-              {/* Right: Subject Code */}
-              <div style={{ justifySelf: "end", minWidth: 0, paddingTop: "16px" }}>
-                {settings.showSubjectCode && (
-                  <div className={editableClass} style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "6px", fontSize: "0.95em", whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
-                      বিষয় কোড :
-                      <span style={{ display: "inline-flex", gap: "0" }}>
-                        {(meta.subjectCode || "১৭৮").split("").map((digit, i) => (
-                          <span key={i} style={{
-                            border: "1.5px solid #000",
-                            borderLeft: i === 0 ? "1.5px solid #000" : "none",
-                            padding: "1px 6px",
-                            fontWeight: 700,
-                            fontSize: "1em",
-                            lineHeight: 1.3,
-                            minWidth: "22px",
-                            textAlign: "center" as const,
-                          }}>{digit}</span>
-                        ))}
-                      </span>
-                    </span>
-                  </div>
+                {settings.showAddress && (() => {
+                  const parts: string[] = [];
+                  if (settings.showAddressSpecific && (settings.addressText || meta.instituteSpecificAddress)) parts.push(settings.addressText || meta.instituteSpecificAddress || "");
+                  if (settings.showAddressUpazila && meta.instituteUpazila) parts.push(meta.instituteUpazila);
+                  if (settings.showAddressDistrict && meta.instituteDistrict) parts.push(meta.instituteDistrict);
+                  if (settings.showAddressDivision && meta.instituteDivision) parts.push(meta.instituteDivision);
+                  const address = parts.join(", ");
+                  return address ? (
+                    <p className={`${editableClass} paper-header-address`} data-editable="address" onClick={handleEditableClick} suppressContentEditableWarning>
+                      {address}
+                    </p>
+                  ) : null;
+                })()}
+
+                {settings.showProgramName && meta.programName && (
+                  <p className={`${editableClass} paper-header-program`} data-editable="program" onClick={handleEditableClick} suppressContentEditableWarning>
+                    {meta.programName}
+                  </p>
+                )}
+                {settings.showClassName && (
+                  <p className={`${editableClass} paper-header-class`} data-editable="class" onClick={handleEditableClick} suppressContentEditableWarning>
+                    {meta.className}
+                  </p>
+                )}
+                {settings.showSubjectName && (
+                  <p className={`${editableClass} paper-header-subject`} data-editable="subject" onClick={handleEditableClick} suppressContentEditableWarning>
+                    {meta.subjectName}
+                  </p>
+                )}
+                {settings.showChapterName && meta.chapterNames.length > 0 && (
+                  <p className={`${editableClass} paper-header-chapter`} data-editable="chapters" onClick={handleEditableClick} suppressContentEditableWarning>
+                    {meta.chapterNames.join(", ")}
+                  </p>
+                )}
+
+                {settings.showSheet && settings.sheetInstructorName && meta.teacherName && (
+                  <p className={`${editableClass} paper-header-sheet-title`} onClick={handleEditableClick} suppressContentEditableWarning>
+                    ইন্সট্রাক্টর: {meta.teacherName}
+                  </p>
+                )}
+                {settings.showSheet && settings.sheetInstructorProfile && (
+                  <p
+                    className={`${editableClass} paper-header-sheet-detail`}
+                    style={{ color: settings.sheetColoredBg ? settings.sheetTextColor : "#0066cc" }}
+                    data-editable="instructor-profile"
+                    onClick={handleEditableClick}
+                    suppressContentEditableWarning
+                  >
+                    {settings.sheetInstructorProfileText || "+ Write Your Profile Here"}
+                  </p>
+                )}
+                {settings.showSheet && settings.sheetTopic && meta.topicNames && meta.topicNames.length > 0 && (
+                  <p className={`${editableClass} paper-header-sheet-detail`} onClick={handleEditableClick} suppressContentEditableWarning>
+                    লেকচার টপিক: {meta.topicNames.join(", ")}
+                  </p>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Lecture number & date row outside colored bg */}
-          {settings.showSheet && (settings.sheetLectureNumber || settings.sheetDate) && (
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: "0.85em",
-              margin: "2px 0 0",
-              zIndex: 1,
-              position: "relative",
-            }}>
-              {settings.sheetLectureNumber && (
-                <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>
-                  লেকচার নম্বরঃ {settings.sheetLectureNumberText || "১"}
-                </span>
+              {settings.showMarksBox && (
+                <div className="paper-header-marks-box">
+                  <span className={`${editableClass} paper-header-marks-label`} onClick={handleEditableClick} suppressContentEditableWarning>
+                    <svg className="paper-header-marks-label-fill" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                      <rect width="100" height="100" fill="#000" />
+                    </svg>
+                    <span>প্রাপ্ত নম্বর</span>
+                  </span>
+                  <span aria-hidden="true">&nbsp;</span>
+                </div>
               )}
-              {settings.sheetDate && (
-                <span className={editableClass} style={{ fontWeight: 600, marginLeft: "auto" }} onClick={handleEditableClick} suppressContentEditableWarning>
-                  Date: {new Date().toLocaleDateString("en-US", { timeZone: "Asia/Dhaka", month: "short", day: "numeric", year: "numeric" })}
-                </span>
+
+              {settings.showSubjectCode && (
+                <div className={`${editableClass} paper-header-subject-code`} onClick={handleEditableClick} suppressContentEditableWarning>
+                  <span>বিষয় কোড :</span>
+                  <span className="paper-header-code-cells">
+                    {(meta.subjectCode || "১৭৮").split("").map((digit, index) => (
+                      <span key={`${digit}-${index}`}>{digit}</span>
+                    ))}
+                  </span>
+                </div>
               )}
+
+              {settings.showSetCode && (
+                <div className={`${editableClass} paper-header-set-code`} data-editable="setCode" onClick={handleEditableClick} suppressContentEditableWarning>
+                  <span>সেট কোড:</span>
+                  <span>ক</span>
+                </div>
+              )}
+
+              {settings.showSheet && (settings.sheetLectureNumber || settings.sheetDate) && (
+                <div className="paper-header-lecture-row">
+                  {settings.sheetLectureNumber && (
+                    <span className={editableClass} onClick={handleEditableClick} suppressContentEditableWarning>
+                      লেকচার নম্বরঃ {settings.sheetLectureNumberText || "১"}
+                    </span>
+                  )}
+                  {settings.sheetDate && (
+                    <span className={editableClass} onClick={handleEditableClick} suppressContentEditableWarning>
+                      Date: {new Date().toLocaleDateString("en-US", { timeZone: "Asia/Dhaka", month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className={`paper-header-time-marks${settings.showStudentInfo ? "" : " paper-header-divider"}`}>
+                <span className={editableClass} data-editable="time" onClick={handleEditableClick} suppressContentEditableWarning>
+                  {formatTime(totalTimeMinutes)}
+                </span>
+                <span className={editableClass} data-editable="marks" onClick={handleEditableClick} suppressContentEditableWarning>
+                  পূর্ণমান— {toBanglaNum(totalMarks)}
+                </span>
+              </div>
             </div>
-          )}
 
-          {settings.showSetCode && (
-            <div style={{ textAlign: "right", margin: "2px 0" }}>
-              <span
-                className={editableClass}
-                data-editable="setCode"
-                onClick={handleEditableClick}
-                suppressContentEditableWarning
-              >
-                সেট: <span style={{ border: "1.5px solid #000", padding: "0 5px", fontWeight: 700 }}>ক</span>
-              </span>
-            </div>
-          )}
+            {settings.showStudentInfo && (
+              <div className="paper-header-student-info paper-header-divider">
+                <div className={`${editableClass} paper-header-student-field paper-header-student-name`} onClick={handleEditableClick} suppressContentEditableWarning>
+                  <span>শিক্ষার্থীর নাম:</span>
+                  <span className="paper-header-student-line" aria-hidden="true" />
+                </div>
+                <div className={`${editableClass} paper-header-student-field paper-header-student-branch`} onClick={handleEditableClick} suppressContentEditableWarning>
+                  <span>শাখা:</span>
+                  <span className="paper-header-student-line" aria-hidden="true" />
+                </div>
+                <div className={`${editableClass} paper-header-student-field paper-header-student-roll`} onClick={handleEditableClick} suppressContentEditableWarning>
+                  <span>রোল:</span>
+                  <span className="paper-header-student-line" aria-hidden="true" />
+                </div>
+              </div>
+            )}
 
-          {/* ===== TIME / MARKS ROW ===== */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontWeight: 600,
-              fontSize: "0.95em",
-              padding: "0 0 2px",
-              margin: "4px 0 2px",
-              borderBottom: "1px solid rgba(0,0,0,0.2)",
-            }}
-          >
-            <span
-              className={editableClass}
-              data-editable="time"
-              onClick={handleEditableClick}
-              suppressContentEditableWarning
-            >
-              {formatTime(totalTimeMinutes)}
-            </span>
-            <span
-              className={editableClass}
-              data-editable="marks"
-              onClick={handleEditableClick}
-              suppressContentEditableWarning
-            >
-              পূর্ণমান— {toBanglaNum(totalMarks)}
-            </span>
-          </div>
-
-          {/* ===== STUDENT INFO ===== */}
-          {settings.showStudentInfo && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: "8px",
-                fontSize: "0.88em",
-                padding: "3px 0",
-                borderBottom: "1px solid #000",
-                fontFamily: "'SolaimanLipi', 'Arial', sans-serif",
-              }}
-            >
-              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>শিক্ষার্থীর নাম:</span>
-              <span style={{ flex: 1, borderBottom: "1.5px dotted #000", minWidth: "80px" }}>&nbsp;</span>
-              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>শাখা:</span>
-              <span style={{ borderBottom: "1.5px dotted #000", minWidth: "80px", width: "120px" }}>&nbsp;</span>
-              <span className={editableClass} style={{ whiteSpace: "nowrap", fontWeight: 600, marginLeft: "12px" }} onClick={handleEditableClick} suppressContentEditableWarning>রোল:</span>
-              <span style={{ borderBottom: "1.5px dotted #000", minWidth: "60px", width: "100px" }}>&nbsp;</span>
-            </div>
-          )}
-
-          {/* ===== INSTRUCTION ===== */}
-          {settings.showInstruction && (
-            <p
-              className={editableClass}
-              style={{ textAlign: "center", fontSize: "0.8em", margin: "2px 0", fontStyle: "italic" }}
-              data-editable="instruction"
-              onClick={handleEditableClick}
-              suppressContentEditableWarning
-            >
-              [প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবেনা]
-            </p>
-          )}
+            {settings.showInstruction && (
+              <div className="paper-header-instructions">
+                {mcqQuestions.length > 0 && (
+                  <p className={editableClass} data-editable="instruction" onClick={handleEditableClick} suppressContentEditableWarning>
+                    <i><strong>দ্রষ্টব্য:</strong> সরবরাহকৃত বহুনির্বাচনি অভীক্ষার উত্তরপত্রে প্রশ্নের ক্রমিক নম্বরের বিপরীতে প্রদত্ত বর্ণসম্বলিত বৃত্তসমূহ হতে সঠিক উত্তরের বৃত্তটি</i>{" "}
+                    <span className="paper-instruction-answer-marker" aria-label="ভরাট বৃত্ত">
+                      <span aria-hidden="true">(</span>
+                      <span className="paper-instruction-filled-circle" aria-hidden="true" />
+                      <span aria-hidden="true">)</span>
+                    </span>{" "}
+                    <i>বল পয়েন্ট কলম দ্বারা সম্পূর্ণ ভরাট করো। প্রতিটি প্রশ্নের মান ১।</i>
+                  </p>
+                )}
+                <p className="paper-header-no-mark">প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবে না।</p>
+              </div>
+            )}
+          </header>
 
           {/* ===== MCQ SECTION ===== */}
           {mcqQuestions.length > 0 && (() => {
             // Note: isMultiCompletionQ detection removed — all MCQs treated uniformly
 
-            // Keep standalone MCQs in their original order, whether or not they contain an image/stimulus.
-            // Shared-stimulus groups remain grouped, but a single illustrated MCQ must never be moved to the end.
+            // Group MCQs by their stored group ID. Older bulk uploads did not
+            // save that ID, so identical repeated stimuli are grouped as a
+            // backwards-compatible fallback.
+            const repeatedStimuli = findRepeatedStimuli(mcqQuestions, q => q.stimulus_text);
+            const stimulusGroupKey = (q: QuestionRow): string | null => {
+              const normalizedStimulus = normalizeStimulusKey(q.stimulus_text);
+              return q.stimulus_group_id
+                ? `id:${q.stimulus_group_id}`
+                : repeatedStimuli.has(normalizedStimulus)
+                  ? `stimulus:${normalizedStimulus}`
+                  : null;
+            };
+            // All MCQs must share one column-flow container. Splitting them
+            // into standalone/group containers makes the visible sequence jump.
+            const standalone = mcqQuestions;
             const grouped = new Map<string, QuestionRow[]>();
-            const standalone: QuestionRow[] = [];
-
-            mcqQuestions.forEach(q => {
-              if (q.stimulus_group_id) {
-                if (!grouped.has(q.stimulus_group_id)) grouped.set(q.stimulus_group_id, []);
-                grouped.get(q.stimulus_group_id)!.push(q);
-              } else {
-                standalone.push(q);
-              }
-            });
 
             // Number questions continuously in their rendered order.
             let mcqNumber = 0;
 
             return (
             <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-              <div data-section-header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontWeight: 700, fontSize: "0.95em", marginBottom: "4px", width: settings.columns > 1 ? "calc(50% - 8px)" : "100%" }}>
-                <span
-                  className={editableClass}
-                  data-editable="mcq-title"
-                  onClick={handleEditableClick}
-                  suppressContentEditableWarning
-                  style={{ padding: "1px 8px", lineHeight: 1.4 }}
-                >
-                  বহুনির্বাচনি অংশ (প্রতিটি প্রশ্নের মান ১)
-                </span>
-                <span className={editableClass} style={{ fontWeight: 700, whiteSpace: "nowrap" }} onClick={handleEditableClick} suppressContentEditableWarning>{mcqMarksLine}</span>
-              </div>
-
-
-
               {/* Regular standalone MCQs */}
               {standalone.length > 0 && (() => {
                 const cols = settings.columns;
@@ -1651,17 +1622,19 @@ export default function QuestionPaperView() {
                 const printColumnStyle = {
                   display: "none",
                   columnCount: cols,
-                  columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
-                  columnRule: cols > 1 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                  columnGap: cols > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: cols > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
                   columnFill: "auto" as const,
                 };
 
                 const screenColumnStyle = {
                   columnCount: cols,
-                  columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
-                  columnRule: cols > 1 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                  columnGap: cols > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: cols > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
                   columnFill: "balance" as const,
                 };
+                const screenShownStimuli = new Set<string>();
+                const printShownStimuli = new Set<string>();
                 return (
                 <>
                   <div className="mcq-screen-layout mcq-print-columns" style={screenColumnStyle}>
@@ -1669,28 +1642,32 @@ export default function QuestionPaperView() {
                       const idx = standaloneBaseNumber + itemIdx + 1;
                       const isDuplicate = duplicateIds.has(q.id);
                       const refStr = formatRefs(q);
+                      const groupKey = stimulusGroupKey(q);
+                      const showStimulus = hasRenderableStimulus(q.stimulus_text) && (!groupKey || !screenShownStimuli.has(groupKey));
+                      if (groupKey && showStimulus) screenShownStimuli.add(groupKey);
                       return (
-                        <div key={q.id} className={`${editableClass} mcq-print-item`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: "1px" }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                          {q.stimulus_text && (
-                            <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              <LatexRenderer text={q.stimulus_text} />
+                        <div key={q.id} className={`${editableClass} mcq-print-item`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                          {showStimulus && (
+                            <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
+                              {groupKey && <div style={{ fontWeight: 500 }}>নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:</div>}
+                              <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
                               <div className="mc-block-question" style={{ display: "block" }}>
                                 <LatexRenderer inline text={q.question} />
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
+                                {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                               </div>
 
-                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = ["ক", "খ", "গ", "ঘ"][oi];
                                   const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
-                                  return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                  return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
                               {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
@@ -1706,28 +1683,32 @@ export default function QuestionPaperView() {
                       const idx = standaloneBaseNumber + itemIdx + 1;
                       const isDuplicate = duplicateIds.has(q.id);
                       const refStr = formatRefs(q);
+                      const groupKey = stimulusGroupKey(q);
+                      const showStimulus = hasRenderableStimulus(q.stimulus_text) && (!groupKey || !printShownStimuli.has(groupKey));
+                      if (groupKey && showStimulus) printShownStimuli.add(groupKey);
                       return (
-                        <div key={`print-${q.id}`} className="mcq-print-item" style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }}>
-                          {q.stimulus_text && (
-                            <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              <LatexRenderer text={q.stimulus_text} />
+                        <div key={`print-${q.id}`} className="mcq-print-item" style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }}>
+                          {showStimulus && (
+                            <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
+                              {groupKey && <div style={{ fontWeight: 500 }}>নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:</div>}
+                              <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
                               <div className="mc-block-question" style={{ display: "block" }}>
                                 <LatexRenderer inline text={q.question} />
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
+                                {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                               </div>
 
-                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = ["ক", "খ", "গ", "ঘ"][oi];
                                   const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
-                                  return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                  return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
                               {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
@@ -1760,8 +1741,8 @@ export default function QuestionPaperView() {
                 const printColumnStyle = {
                   display: "none",
                   columnCount: cols,
-                  columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
-                  columnRule: cols > 1 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                  columnGap: cols > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: cols > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
                   columnFill: "auto" as const,
                 };
 
@@ -1781,7 +1762,7 @@ export default function QuestionPaperView() {
                       style={{
                         display: "grid",
                         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                        columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
+                        columnGap: cols > 1 ? `${settings.columnGap}px` : "0",
                         alignItems: "start",
                       }}
                     >
@@ -1790,7 +1771,7 @@ export default function QuestionPaperView() {
                           key={`screen-col-${groupId}-${colIdx}`}
                           style={{
                             minWidth: 0,
-                            borderLeft: colIdx > 0 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                            borderLeft: colIdx > 0 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
                             paddingLeft: colIdx > 0 && settings.columnDivider ? "12px" : undefined,
                           }}
                         >
@@ -1799,18 +1780,18 @@ export default function QuestionPaperView() {
                             if (!q) return null;
                             const idx = groupBaseNum + groupQs.findIndex(item => item.id === q.id) + 1;
                             return (
-                              <div key={`${q.id}-${rowIdx}`} className={`${editableClass} mcq-print-item`} style={{ marginBottom: "1px" }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                              <div key={`${q.id}-${rowIdx}`} className={`${editableClass} mcq-print-item`} style={{ marginBottom: `${settings.questionGap}px` }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                                 <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = ["ক", "খ", "গ", "ঘ"][oi];
                                         const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
-                                        return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                        return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
                                     {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
@@ -1828,7 +1809,7 @@ export default function QuestionPaperView() {
                       style={{
                         display: "none",
                         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                        columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
+                        columnGap: cols > 1 ? `${settings.columnGap}px` : "0",
                         alignItems: "start",
                       }}
                     >
@@ -1837,7 +1818,7 @@ export default function QuestionPaperView() {
                           key={`print-col-${groupId}-${colIdx}`}
                           style={{
                             minWidth: 0,
-                            borderLeft: colIdx > 0 && settings.columnDivider ? "0.5px solid #555" : undefined,
+                            borderLeft: colIdx > 0 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
                             paddingLeft: colIdx > 0 && settings.columnDivider ? "12px" : undefined,
                           }}
                         >
@@ -1846,18 +1827,18 @@ export default function QuestionPaperView() {
                             if (!q) return null;
                             const idx = groupBaseNum + groupQs.findIndex(item => item.id === q.id) + 1;
                             return (
-                              <div key={`print-${q.id}-${rowIdx}`} className="mcq-print-item">
+                              <div key={`print-${q.id}-${rowIdx}`} className="mcq-print-item" style={{ marginBottom: `${settings.questionGap}px` }}>
                                 <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = ["ক", "খ", "গ", "ঘ"][oi];
                                         const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
-                                        return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
+                                        return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
                                     {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
@@ -1907,7 +1888,7 @@ export default function QuestionPaperView() {
                   <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{shortInstruction}</span>
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
                 {shortQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -1916,7 +1897,7 @@ export default function QuestionPaperView() {
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "block" }}>
                         <LatexRenderer inline text={`${padBangla(num)}। ${q.question}`} />
-                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", marginLeft: "5px" }}>{refStr}</span>}
+                        {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                       </div>
 
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
@@ -1950,7 +1931,7 @@ export default function QuestionPaperView() {
                 <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqInstruction}</span>
                 <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqMarksLine}</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
                 {cqQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -1970,7 +1951,7 @@ export default function QuestionPaperView() {
                             return (
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                                 <span className="mc-block-question"><LatexRenderer text={stemText} /></span>
-                                {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "8px" }}>{refStr}</span>}
+                                {settings.showQuestionInfo && refStr && <span className="paper-question-info paper-question-info--flex"><mark>{refStr}</mark></span>}
                               </div>
                             );
                           })()}
@@ -2087,7 +2068,7 @@ export default function QuestionPaperView() {
                   <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{descInstruction}</span>
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
                 {descriptiveQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -2107,7 +2088,7 @@ export default function QuestionPaperView() {
                           {padBangla(num)}।
                         </span>
                         <div style={{ flex: 1 }}>
-                        {settings.showQuestionInfo && refStr && <span style={{ fontSize: "0.78em", whiteSpace: "nowrap", flexShrink: 0 }}>{refStr}</span>}
+                        {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                       {dData && (
                         <div>
                           {dData.desc_q_ka && (
@@ -2176,16 +2157,16 @@ export default function QuestionPaperView() {
       </div>
 
       {/* ===== SETTINGS SIDEBAR (Desktop) ===== */}
-      <aside className="hidden lg:block border-l border-border h-[calc(100vh-64px)] sticky top-0 overflow-y-auto">
-        <div className="p-4 space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-heading font-bold text-center mb-3 flex items-center justify-center gap-2">
+      <aside className="hidden xl:block bg-[#f7f8fa] h-[calc(100vh-80px)] sticky top-0 overflow-y-auto">
+        <div className="p-2 space-y-2">
+          <Card className="paper-settings-card">
+            <CardContent className="p-0">
+              <h3 className="paper-settings-title font-heading font-bold text-center mb-3 flex items-center justify-center gap-2">
                 <Settings className="h-4 w-4" /> সেটিংস
               </h3>
 
-              <div className="flex gap-2 mb-4">
-                <Button className="flex-1 gradient-green text-primary-foreground border-0 font-heading font-semibold" onClick={handleDownload}>
+              <div className="paper-settings-sticky-actions flex gap-2 mb-4">
+                <Button className="flex-1 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload}>
                   <Download className="h-4 w-4 mr-2" /> ডাউনলোড
                 </Button>
                 {cloudBackupEnabled && (
@@ -2195,7 +2176,7 @@ export default function QuestionPaperView() {
                 )}
               </div>
 
-              {settingsContent}
+              <div className="paper-settings-groups">{settingsContent}</div>
             </CardContent>
           </Card>
         </div>
@@ -2220,10 +2201,74 @@ export default function QuestionPaperView() {
                 </Button>
               )}
             </div>
-            {settingsContent}
+            <div className="paper-settings-groups">{settingsContent}</div>
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={pageSetupOpen} onOpenChange={setPageSetupOpen}>
+        <DialogContent className="page-settings-dialog max-w-md overflow-hidden p-0">
+          <DialogHeader className="bg-slate-700 px-4 py-3 text-left text-white">
+            <DialogTitle>Page Setup</DialogTitle>
+            <DialogDescription className="sr-only">প্রশ্নপত্রের চারপাশের স্পেস ও পেপার সাইজ পরিবর্তন করুন।</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 px-4 pb-5">
+            <p className="text-xs text-muted-foreground">প্রশ্নপত্রের ডানে, বামে, উপরে, নিচের স্পেস কমানো বাড়ানো করা যাবে।</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+              {([
+                { key: "pageMarginTop" as const, label: "উপরে", max: 100 },
+                { key: "pageMarginBottom" as const, label: "নিচে", max: 100 },
+                { key: "pageMarginLeft" as const, label: "বামে", max: 120 },
+                { key: "pageMarginRight" as const, label: "ডানে", max: 120 },
+              ]).map(item => (
+                <div key={item.key}>
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span>{item.label}</span>
+                    <span>{settings[item.key]}px</span>
+                  </div>
+                  <Slider
+                    aria-label={item.label}
+                    value={[settings[item.key]]}
+                    min={0}
+                    max={item.max}
+                    step={1}
+                    onValueChange={([value]) => updateSetting(item.key, value)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border pt-4">
+              <Label className="text-xs text-muted-foreground">পেপার সাইজ</Label>
+              <div className="paper-size-selector mt-2">
+                {(["A4", "Letter", "Legal", "A5"] as PaperSize[]).map(size => (
+                  <Button key={size} variant="outline" className="paper-size-control" data-active={settings.paperSize === size} onClick={() => updateSetting("paperSize", size)}>
+                    <span className="paper-size-sheet" data-paper-size={size.toLowerCase()} aria-hidden="true" />
+                    <span>{size}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pageNumberOpen} onOpenChange={setPageNumberOpen}>
+        <DialogContent className="page-settings-dialog max-w-sm overflow-hidden p-0">
+          <DialogHeader className="bg-slate-700 px-4 py-3 text-left text-white">
+            <DialogTitle>পৃষ্ঠা নম্বর সংযুক্ত</DialogTitle>
+            <DialogDescription className="sr-only">PDF-এ স্বয়ংক্রিয় পৃষ্ঠা নম্বর যুক্ত করুন।</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 px-6 pb-6 pt-3">
+            <Button
+              className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={() => updateSetting("showPageNumbers", !settings.showPageNumbers)}
+            >
+              {settings.showPageNumbers ? "পৃষ্ঠা নম্বর বন্ধ করুন" : "পৃষ্ঠা নম্বর চালু করুন"}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">চালু করলে PDF-এ স্বয়ংক্রিয়ভাবে পৃষ্ঠা নম্বর যুক্ত হবে।</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

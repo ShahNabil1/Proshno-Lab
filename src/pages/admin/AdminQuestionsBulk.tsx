@@ -22,6 +22,7 @@ import {
 import AIExtract from "@/components/admin/bulk/AIExtract";
 import PasteGuide from "@/components/admin/bulk/PasteGuide";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
+import { findRepeatedStimuli, normalizeStimulusKey } from "@/lib/stimulusGroups";
 
 const CTX_KEY = "adminBulkContext.v1";
 const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
@@ -187,7 +188,14 @@ export default function AdminQuestionsBulk() {
     cancelRef.current = false;
     setCancelled(false);
     setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
-    const stimulusGroup = type === "mcq" && valid.some((q) => q.stimulus) ? null : null;
+    const repeatedStimuli = type === "mcq"
+      ? findRepeatedStimuli(valid, q => q.stimulus)
+      : new Set<string>();
+    const stimulusGroups = new Map<string, string>();
+
+    repeatedStimuli.forEach((stimulusKey) => {
+      stimulusGroups.set(stimulusKey, crypto.randomUUID());
+    });
 
     const chunks: FailedChunk[] = [];
     for (let i = 0; i < valid.length; i += CHUNK) {
@@ -196,14 +204,17 @@ export default function AdminQuestionsBulk() {
         id: `c-${i}`,
         rows: slice.map((_, k) => i + k + 1),
         error: "",
-        payloads: slice.map((q) => toDbPayload(q, {
-          class_id: Number(classId),
-          subject_id: Number(subjectId),
-          chapter_id: Number(chapterId),
-          topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
-          teacher_id: user.id,
-          stimulus_group_id: stimulusGroup,
-        })),
+        payloads: slice.map((q) => {
+          const stimulusKey = normalizeStimulusKey(q.stimulus);
+          return toDbPayload(q, {
+            class_id: Number(classId),
+            subject_id: Number(subjectId),
+            chapter_id: Number(chapterId),
+            topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
+            teacher_id: user.id,
+            stimulus_group_id: stimulusGroups.get(stimulusKey) || null,
+          });
+        }),
       });
     }
 

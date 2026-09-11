@@ -67,7 +67,7 @@
     --slate-alt: 0 0% 100%;
 
     /* Marketing/hero display font only (opt-in via .font-heading) */
-    --font-heading: 'NotoSerifBengali', 'SolaimanLipi', 'Kalpurush', serif;
+    --font-heading: 'SolaimanLipi', 'Kalpurush', serif;
     /* Global UI font: SolaimanLipi for Bangla, Times New Roman for English */
     --font-body: 'SolaimanLipi', 'Times New Roman', 'Kalpurush', Times, serif;
 
@@ -111,6 +111,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -311,20 +314,328 @@
   text-decoration: underline;
 }
 
+/* Professional question-paper header */
+.paper-document-header {
+  position: relative;
+  z-index: 1;
+  color: #000;
+  text-align: left;
+}
+
+.paper-document-heading {
+  position: relative;
+}
+
+.paper-document-heading-center {
+  min-height: 7em;
+  padding: 0 12px;
+  text-align: center;
+}
+
+.paper-document-heading-center h1 {
+  margin: 0;
+  font-family: inherit;
+  font-size: 1.43em;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.paper-header-address,
+.paper-header-program,
+.paper-header-class,
+.paper-header-subject,
+.paper-header-chapter,
+.paper-header-sheet-title,
+.paper-header-sheet-detail {
+  margin: 0;
+  text-align: center;
+}
+
+.paper-header-address {
+  font-size: 0.88em;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.paper-header-program,
+.paper-header-class {
+  font-size: 1.28em;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.paper-header-program {
+  margin-top: 1px;
+}
+
+.paper-header-class {
+  margin-top: 2px;
+}
+
+.paper-header-subject,
+.paper-header-chapter {
+  margin-top: 2px;
+  font-size: 1.14em;
+  line-height: 1.15;
+}
+
+.paper-header-sheet-title {
+  margin-top: 2px;
+  font-size: 1em;
+  font-weight: 700;
+}
+
+.paper-header-sheet-detail {
+  margin-top: 1px;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.paper-header-marks-box {
+  position: absolute;
+  top: 3.4em;
+  left: 0;
+  display: flex;
+  align-items: stretch;
+  font-family: 'SolaimanLipi', 'Arial', sans-serif;
+  font-size: 1.14em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.paper-header-marks-box > span {
+  min-height: 26px;
+  border: 1.5px solid #000;
+  padding: 2px 6px;
+}
+
+.paper-header-marks-box > span:first-child {
+  background: #000;
+  color: #fff;
+}
+
+.paper-header-marks-label {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.paper-header-marks-label-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.paper-header-marks-label > span {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+}
+
+.paper-header-marks-box > span:last-child {
+  min-width: 52px;
+  border-left: 0;
+}
+
+.paper-header-subject-code,
+.paper-header-set-code {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 1.14em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.paper-header-subject-code {
+  top: 3.4em;
+}
+
+.paper-header-set-code {
+  top: 1.4em;
+}
+
+.paper-header-code-cells {
+  display: inline-flex;
+}
+
+.paper-header-code-cells > span,
+.paper-header-set-code > span:last-child {
+  min-width: 24px;
+  border: 2px solid #000;
+  padding: 1px 5px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.paper-header-code-cells > span + span {
+  border-left: 0;
+}
+
+.paper-header-lecture-row,
+.paper-header-time-marks {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paper-header-lecture-row {
+  margin-top: 2px;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.paper-header-time-marks {
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.paper-header-divider {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.paper-header-time-marks.paper-header-divider {
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+}
+
+.paper-header-student-info {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  margin-bottom: 4px;
+  overflow: hidden;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.paper-header-student-field {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.paper-header-student-name {
+  grid-column: span 7 / span 7;
+}
+
+.paper-header-student-branch {
+  grid-column: span 3 / span 3;
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+.paper-header-student-roll {
+  grid-column: span 2 / span 2;
+}
+
+.paper-header-student-field > span:first-child {
+  white-space: nowrap;
+}
+
+.paper-header-student-line {
+  flex: 1 1 0%;
+  height: 20px;
+  margin-left: 8px;
+  border-bottom: 1px dotted #000;
+}
+
+.paper-header-instructions {
+  width: 100%;
+  text-align: center;
+}
+
+.paper-header-instructions p {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.paper-header-instructions p:first-child {
+  font-style: normal;
+}
+
+.paper-instruction-answer-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.04em;
+  color: #000;
+  font-family: Arial, sans-serif;
+  font-size: 1em;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: -0.06em;
+}
+
+.paper-instruction-filled-circle {
+  display: block;
+  width: calc(0.72em + 3px);
+  height: calc(0.72em + 3px);
+  flex: 0 0 calc(0.72em + 3px);
+  border-radius: 50%;
+  background: #000;
+}
+
+.paper-header-no-mark {
+  margin: 4px 0 !important;
+  max-width: 100% !important;
+  font-weight: 700;
+  font-style: normal !important;
+}
+
+@media screen and (max-width: 640px) {
+  .paper-document-heading-center {
+    min-height: 0;
+  }
+
+  .paper-header-marks-box,
+  .paper-header-subject-code,
+  .paper-header-set-code {
+    position: static;
+    width: max-content;
+    margin-top: 5px;
+    font-size: 1em;
+  }
+
+  .paper-header-subject-code,
+  .paper-header-set-code {
+    margin-left: auto;
+  }
+
+  .paper-header-student-info {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
 /* ===== PRINT / PDF EXPORT ===== */
 .mcq-print-layout {
   display: none;
 }
 
-/* Screen: keep MCQ items intact across columns */
+/* Preview uses the same continuous column flow as print. Allow a question to
+   continue into the next column instead of reserving a large blank block. */
 .mcq-screen-layout .mcq-print-item,
 .mcq-print-columns .mcq-print-item {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
-  /* inline-block + width 100% is the most reliable way to prevent
-     CSS multi-column from splitting an item across columns */
-  display: inline-block;
+  break-inside: auto;
+  -webkit-column-break-inside: auto;
+  page-break-inside: auto;
+  display: block;
   width: 100%;
   vertical-align: top;
 }
@@ -333,27 +644,43 @@
    so a tall stimulus never lands in a separate column from its question */
 .mcq-screen-layout .mcq-print-item > *,
 .mcq-print-columns .mcq-print-item > * {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
+  break-inside: auto;
+  -webkit-column-break-inside: auto;
+  page-break-inside: auto;
 }
 
 @media print {
   /* Dynamic page size from data attribute */
   @page {
-    margin: 5mm 10mm;
+    margin: 10mm;
   }
 
-  .mcq-screen-layout {
+  /* Print the exact MCQ tree shown in preview. Keeping a second print-only
+     copy caused different question order, column flow and spacing. */
+  .paper-builder-shell {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .paper-preview-scroll,
+  [data-print-scale-wrapper] {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hidden preview controls must not reserve printable space. */
+  .paper-quick-settings {
     display: none !important;
   }
 
   .mcq-print-layout {
-    display: block !important;
+    display: none !important;
   }
 
   .mcq-print-layout-grid {
-    display: grid !important;
+    display: none !important;
   }
 
   /* ===== WATERMARK PRINT BEHAVIOUR =====
@@ -382,17 +709,25 @@
   }
 
   [data-print-paper] .mcq-print-columns {
-    column-fill: auto !important;
+    /* Word-style continuous section: preserve question order across columns,
+       then balance the final fragment so the last page has no empty columns. */
+    column-fill: balance !important;
   }
 
   [data-print-paper] .mcq-print-item {
-    display: inline-block !important;
+    display: block !important;
     width: 100% !important;
     vertical-align: top;
-    margin-bottom: 2px;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    -webkit-column-break-inside: avoid !important;
+    margin-bottom: var(--paper-question-gap, 6px) !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    -webkit-column-break-inside: auto !important;
+  }
+
+  [data-print-paper] .mcq-print-item > * {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    -webkit-column-break-inside: auto !important;
   }
 
   /* Hide everything except the paper */
@@ -413,11 +748,16 @@
     top: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    font-size: var(--paper-print-font-size, 14px) !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
-    font-family: 'SolaimanLipi', 'Arial', sans-serif !important;
+    border: 0 !important;
+    outline: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     transform: none !important;
+    zoom: 1 !important;
     overflow: visible !important;
     height: auto !important;
   }
@@ -447,6 +787,14 @@
   [data-print-paper] [data-editable="short-title"] {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* MCQ columns intentionally use continuous flow in print. This overrides
+     the generic keep-together rule above so no column ends with a large gap. */
+  [data-print-paper] [data-editable^="mcq-"] {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    -webkit-column-break-inside: auto !important;
   }
 
   /* Allow large blocks (CQ, Descriptive) to split across pages */
@@ -497,7 +845,8 @@
   }
   [data-print-paper] img:not([data-watermark-img]) {
     max-width: 100% !important;
-    height: auto !important;
+    /* Do not set height here: an explicitly saved height must survive print,
+       while images without one naturally fall back to auto. */
     object-fit: contain;
     display: inline-block;
     margin: 4px 0;
@@ -506,7 +855,7 @@
   /* Hide sidebar, nav, buttons, alerts */
   aside,
   nav,
-  header,
+  header:not(.paper-document-header),
   .sidebar,
   button,
   [role="alert"] {
@@ -645,13 +994,113 @@
   display: inline;
 }
 
+/* Match eproshnobank's question-reference badge: right-aligned yellow mark. */
+.paper-question-info {
+  float: right;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.paper-question-info mark {
+  display: block;
+  padding: 0;
+  background-color: rgb(255, 255, 0);
+  color: rgb(0, 0, 0);
+}
+
+.paper-question-info--flex {
+  float: none;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Keep the close control legible over the dark page-settings dialog header. */
+.page-settings-dialog > button {
+  top: 9px;
+  right: 10px;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff !important;
+  opacity: 1;
+}
+
+.page-settings-dialog > button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  opacity: 1;
+}
+
+.page-settings-dialog > button svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+/* Manual question picker: render every stimulus diagram in one predictable frame.
+   Important overrides inconsistent dimensions saved in legacy rich-text HTML. */
+.question-picker-stimulus img {
+  display: block !important;
+  width: min(100%, 320px) !important;
+  height: 220px !important;
+  max-width: 100% !important;
+  max-height: 220px !important;
+  object-fit: contain !important;
+  object-position: left center;
+  margin: 0.25rem 0 !important;
+}
+
+@media (max-width: 640px) {
+  .question-picker-stimulus img {
+    width: min(100%, 280px) !important;
+    height: 190px !important;
+    max-height: 190px !important;
+  }
+}
+
 /* LatexRenderer: inline mode */
 .latex-renderer--inline {
   display: inline;
 }
-.latex-renderer--inline p {
+.latex-renderer--inline p,
+.latex-renderer--inline div {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.latex-renderer--inline .katex-display {
+  display: inline-block !important;
+  margin: 0 4px !important;
+}
+
+/* CQ sub-questions content: keep text inline beside the label */
+.cq-sub-content {
   display: inline;
-  margin: 0;
+}
+.cq-sub-content p,
+.cq-sub-content div {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.cq-sub-content p + p {
+  display: block !important;
+  margin-top: 4px !important;
+}
+.cq-sub-content .katex-display {
+  display: inline-block !important;
+  margin: 0 4px !important;
 }
 
 /* Paper preview: constrain images without explicit size
@@ -698,6 +1147,375 @@
   margin: 0.25rem 0;
 }
 
+/* Paper alignment controls also position block images. Rich-text images may
+   carry legacy inline margins, so the selected document setting wins here. */
+[data-print-paper][data-content-align="left"] .latex-renderer img {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+[data-print-paper][data-content-align="center"] .latex-renderer img {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+[data-print-paper][data-content-align="right"] .latex-renderer img {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+[data-print-paper][data-content-align="justify"] .latex-renderer img {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* Start MCQ stimuli at the same horizontal position as question text,
+   leaving the question-number gutter clear. */
+[data-print-paper] .mcq-stimulus {
+  padding-left: 1.8rem !important;
+}
+
+/* MCQ diagrams occupy exactly the first option column: from the left edge of
+   ক up to (but never over) the start of খ. Keep the saved/current height so
+   fitting the column only stretches the diagram horizontally. */
+[data-print-paper] .mcq-print-item .mcq-stimulus .latex-renderer img:not([data-watermark-img]),
+[data-print-paper] .mcq-print-item .mc-block-question .latex-renderer img:not([data-watermark-img]) {
+  display: block !important;
+  box-sizing: border-box;
+  width: 50% !important;
+  max-width: 50% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  object-fit: fill;
+  object-position: left center;
+}
+
+/* Question-paper settings: clearly separated, low-glare control groups. */
+.paper-builder-shell {
+  --primary: 160 94% 30%;
+  --ring: 160 94% 30%;
+}
+
+/* Hide only the paper-preview scrollbar while preserving wheel, touchpad,
+   keyboard and touch scrolling. */
+.paper-preview-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.paper-preview-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.paper-settings-card {
+  overflow: visible;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.paper-settings-title {
+  min-height: 3rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e5e8ec;
+  border-radius: 2px;
+  background: #f6f7f8;
+  color: #172b3f;
+  font-size: 1.125rem;
+  box-shadow: 0 1px 2px rgba(30, 41, 59, 0.035);
+}
+
+.paper-settings-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.paper-settings-groups > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.paper-settings-groups > div > h4 {
+  margin: 0 0 0.35rem !important;
+  padding: 0.6rem 0.7rem;
+  border-top: 1px solid #9fcfc3;
+  border-radius: 2px 2px 0 0;
+  background: #eaf6f2;
+  color: #173c35;
+  font-size: 1.075rem;
+  line-height: 1.35;
+}
+
+.paper-settings-groups > div > .mb-3,
+.paper-settings-groups > div > .space-y-2 > .flex.items-center.justify-between,
+.paper-settings-groups > div > .space-y-2 > div > .flex.items-center.justify-between {
+  min-height: 2.5rem;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 2px;
+  background: #f2f4f6;
+  line-height: 1.5;
+}
+
+.paper-settings-groups .text-sm {
+  font-size: 1rem;
+}
+
+.paper-settings-groups .text-xs {
+  font-size: 0.875rem;
+}
+
+.paper-settings-groups .text-\[10px\] {
+  font-size: 0.75rem;
+}
+
+.paper-settings-groups button:not([role="switch"]),
+.paper-settings-groups input,
+.paper-settings-groups [role="combobox"],
+.paper-settings-sticky-actions button {
+  border-radius: 2px !important;
+  font-size: 1rem;
+}
+
+.paper-settings-sticky-actions button {
+  font-size: 1rem;
+}
+
+.paper-settings-groups > div > .mb-3:last-child {
+  margin-bottom: 0;
+}
+
+.paper-settings-groups > div > .space-y-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.paper-settings-groups > div > .space-y-2 > * {
+  margin-top: 0 !important;
+}
+
+.paper-setting-help {
+  margin-top: 0.35rem !important;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #e7ebef;
+  border-radius: 3px;
+  background: #fff;
+  color: #425466;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.paper-settings-groups button,
+.paper-settings-groups [role="switch"] {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.paper-settings-groups button:active {
+  transform: translateY(1px);
+}
+
+/* Compact alignment controls matching the reference editor. */
+.text-align-selector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.text-align-control {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-color: transparent;
+  background: #fff;
+  color: #425466;
+  box-shadow: none;
+}
+
+.text-align-control svg {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+.text-align-control[data-active="true"],
+.text-align-control[data-active="true"]:hover {
+  border-color: #059669;
+  background: #059669;
+  color: #fff;
+}
+
+/* Paper-size cards use a page silhouette with its label underneath. */
+.paper-size-selector {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.paper-size-control {
+  height: 6.5rem;
+  min-width: 0;
+  padding: 0.55rem 0.25rem 0.45rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
+  border-color: #dce3ea;
+  background: #fff;
+  color: #111827;
+  box-shadow: none;
+}
+
+.paper-size-sheet {
+  display: block;
+  height: 3.5rem;
+  border: 1px solid #dce3ea;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(30, 41, 59, 0.1);
+}
+
+.paper-size-sheet[data-paper-size="a4"],
+.paper-size-sheet[data-paper-size="a5"] {
+  width: 2.47rem;
+}
+
+.paper-size-sheet[data-paper-size="letter"] {
+  width: 2.7rem;
+}
+
+.paper-size-sheet[data-paper-size="legal"] {
+  width: 2.13rem;
+}
+
+.paper-size-control[data-active="true"],
+.paper-size-control[data-active="true"]:hover {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #111827;
+}
+
+/* Match the reference editor's compact, flat option-style selector. */
+.option-style-selector {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.option-style-control {
+  width: 100%;
+  height: 2.5rem;
+  min-width: 0;
+  padding: 0 0.5rem;
+  border-radius: 0.2rem;
+  border-color: #e3e7eb;
+  background: #fff;
+  color: #172b3f;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 400;
+  box-shadow: none;
+}
+
+.option-style-control:hover {
+  background: #f8faf9;
+  border-color: #cfd8d4;
+}
+
+.option-style-control[data-active="true"],
+.option-style-control[data-active="true"]:hover {
+  border-color: #059669;
+  background: #059669;
+  color: #fff;
+}
+
+.option-style-circle-preview {
+  display: block;
+  width: 1.38rem;
+  height: 1.38rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: transparent;
+}
+
+/* Printed MCQ labels: reference-sized ring and full-size Bangla letter. */
+.mcq-option-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32em;
+  min-width: 0;
+}
+
+.mcq-option-label-circle {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 1.15em;
+  height: 1.15em;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 1.15em;
+  border: 1.2px solid #6f7884;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  color: #111827;
+  line-height: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.mcq-option-label-glyph {
+  display: block;
+  width: 100%;
+  font-family: var(--font-heading);
+  font-size: 1.08em;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  transform: translateY(-0.015em);
+}
+
+.paper-settings-sticky-actions {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 0.55rem 0;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid #e1e5ea;
+  box-shadow: 0 5px 10px -10px rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.paper-builder-shell aside {
+  scrollbar-width: thin;
+  scrollbar-color: #aeb7c2 transparent;
+}
+
+.paper-quick-settings {
+  display: flow-root;
+  border-top: 2px solid #23a985;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(30, 41, 59, 0.04);
+}
+
+.paper-quick-settings-action {
+  min-height: 2.25rem;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  border-radius: 1px !important;
+}
+
+.paper-quick-settings-title {
+  padding: 0.35rem 0.75rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #16372f;
+  background: #eaf8f3;
+}
+
 @keyframes comingSoonShimmer {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -718,6 +1536,14 @@
 
 
 /* ── Primary Bangla UI font: Noto Serif Bengali Bold ────────────────────── */
+@font-face {
+  font-family: 'OmicronBangla';
+  src: url('/fonts/Bangla.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'NotoSerifBengali';
   src: url('/fonts/NotoSerifBengali-Bold.ttf') format('truetype');
