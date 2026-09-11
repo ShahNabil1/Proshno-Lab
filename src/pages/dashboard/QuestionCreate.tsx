@@ -19,7 +19,7 @@ import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
 const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল", all: "সকল প্রকার" };
@@ -205,7 +205,7 @@ export default function QuestionCreate() {
   useEffect(() => {
     if (!form.subjectId) { setChapters([]); setTopics([]); return; }
     supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).eq("is_active", true).order("name")
-      .then(({ data }) => setChapters((data as any[]) || []));
+      .then(({ data }) => setChapters(sortChapters((data as any[]) || [])));
   }, [form.subjectId]);
 
   // Check access: user_permissions OR active subscriptions

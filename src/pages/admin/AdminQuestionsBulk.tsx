@@ -21,7 +21,7 @@ import {
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
 import PasteGuide from "@/components/admin/bulk/PasteGuide";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 const CTX_KEY = "adminBulkContext.v1";
 const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
@@ -76,7 +76,7 @@ export default function AdminQuestionsBulk() {
   useEffect(() => {
     if (!subjectId) { setChapters([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
-      .then(({ data }) => setChapters(data || []));
+      .then(({ data }) => setChapters(sortChapters(data || [])));
   }, [subjectId]);
   useEffect(() => {
     if (!chapterId) { setTopics([]); return; }

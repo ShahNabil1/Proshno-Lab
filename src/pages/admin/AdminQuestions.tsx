@@ -22,7 +22,7 @@ import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
 const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
@@ -89,7 +89,7 @@ export default function AdminQuestions() {
   useEffect(() => {
     if (!filterSubjectId) { setFilterChapters([]); setFilterTopics([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
-      .then(({ data }) => setFilterChapters(data || []));
+      .then(({ data }) => setFilterChapters(sortChapters(data || [])));
   }, [filterSubjectId]);
 
   // Load topics for filter
@@ -190,7 +190,7 @@ export default function AdminQuestions() {
   useEffect(() => {
     if (!form.subject_id) return;
     supabase.from("chapters").select("id, name").eq("subject_id", Number(form.subject_id)).order("name")
-      .then(({ data }) => setChapters(data || []));
+      .then(({ data }) => setChapters(sortChapters(data || [])));
   }, [form.subject_id]);
 
   // Load topics when chapter changes
