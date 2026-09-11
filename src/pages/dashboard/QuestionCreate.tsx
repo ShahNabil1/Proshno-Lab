@@ -474,25 +474,14 @@ export default function QuestionCreate() {
       });
     }
 
-    if (filterBoards.size > 0) {
-      result = result.filter(r => {
-        const refs = Array.isArray(r.board_references) ? r.board_references : [];
-        return refs.some((ref: any) => {
-          const boardMatch = filterBoards.has(ref.board);
-          const yearMatch = !filterYear || ref.year === filterYear;
-          return boardMatch && yearMatch;
-        });
-      });
+    if (filterBoards.size > 0 || filterYear) {
+      result = result.filter(r => refMatchesBoardYear(r.board_references, filterBoards, filterYear));
     }
 
     // Special search filters (radio - only one active at a time)
     if (filterSpecial === "board") {
       // Repeated board questions: appeared in 2+ different boards
-      result = result.filter(r => {
-        const refs = Array.isArray(r.board_references) ? r.board_references : [];
-        const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
-        return uniqueBoards.size >= 2;
-      });
+      result = result.filter(r => countUniqueBoards(r.board_references) >= 2);
     } else if (filterSpecial === "math") {
       // Mathematical: contains LaTeX symbols
       result = result.filter(r => {
