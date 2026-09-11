@@ -73,6 +73,68 @@ const boardList = [
   "যশোর বোর্ড", "সিলেট বোর্ড", "রাজশাহী বোর্ড", "ময়মনসিংহ বোর্ড", "চট্টগ্রাম বোর্ড",
 ];
 
+// --- Board / year reference normalization -------------------------------
+// Stored references use many shapes: "সিলেট", "সি. বো.", "সি. বো.'", "SB",
+// and years in Bangla digits ("২০২১") or 2-digit short form ("২৫").
+const bnDigitsToLatin = (s: string) =>
+  s.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+
+const normalizeYear = (value: any): string => {
+  const digits = bnDigitsToLatin(String(value ?? "")).replace(/\D/g, "");
+  if (digits.length >= 4) return digits.slice(-4);
+  if (digits.length === 2) return `20${digits}`;
+  return "";
+};
+
+const BOARD_ALIASES: Record<string, string> = {};
+const registerBoard = (canonical: string, aliases: string[]) => {
+  aliases.forEach((a) => { BOARD_ALIASES[a] = canonical; });
+};
+registerBoard("ঢাকা বোর্ড", ["ঢাকা", "ঢা", "db", "dhaka", "ঢাকাবোর্ড"]);
+registerBoard("বরিশাল বোর্ড", ["বরিশাল", "ব", "bb", "barishal", "barisal"]);
+registerBoard("দিনাজপুর বোর্ড", ["দিনাজপুর", "দি", "dib", "dinajpur"]);
+registerBoard("কুমিল্লা বোর্ড", ["কুমিল্লা", "কু", "cub", "cumilla", "comilla"]);
+registerBoard("যশোর বোর্ড", ["যশোর", "য", "jb", "jessore", "jashore"]);
+registerBoard("সিলেট বোর্ড", ["সিলেট", "সি", "sb", "sylhet"]);
+registerBoard("রাজশাহী বোর্ড", ["রাজশাহী", "রা", "rb", "rajshahi"]);
+registerBoard("ময়মনসিংহ বোর্ড", ["ময়মনসিংহ", "ম", "mb", "mymensingh"]);
+registerBoard("চট্টগ্রাম বোর্ড", ["চট্টগ্রাম", "চ", "ctg", "chattogram", "chittagong"]);
+
+const canonicalBoard = (value: any): string | null => {
+  let key = String(value ?? "")
+    .replace(/[০-৯0-9]/g, "")
+    .replace(/বোর্ড/g, "")
+    .replace(/বো/g, "")
+    .replace(/[.\s'’‘"`,\-–—()]/g, "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  return BOARD_ALIASES[key] ?? null;
+};
+
+const refMatchesBoardYear = (
+  refs: any,
+  boards: Set<string>,
+  year: string
+): boolean => {
+  const list = Array.isArray(refs) ? refs : [];
+  return list.some((ref: any) => {
+    const boardOk = boards.size === 0 || (() => {
+      const c = canonicalBoard(ref?.board);
+      return !!c && boards.has(c);
+    })();
+    const yearOk = !year || normalizeYear(ref?.year) === normalizeYear(year);
+    return boardOk && yearOk;
+  });
+};
+
+const countUniqueBoards = (refs: any): number => {
+  const list = Array.isArray(refs) ? refs : [];
+  const set = new Set(list.map((r: any) => canonicalBoard(r?.board) ?? String(r?.board ?? "")));
+  set.delete("");
+  return set.size;
+};
+
 
 export default function QuestionCreate() {
   const { user } = useAuth();
@@ -412,25 +474,14 @@ export default function QuestionCreate() {
       });
     }
 
-    if (filterBoards.size > 0) {
-      result = result.filter(r => {
-        const refs = Array.isArray(r.board_references) ? r.board_references : [];
-        return refs.some((ref: any) => {
-          const boardMatch = filterBoards.has(ref.board);
-          const yearMatch = !filterYear || ref.year === filterYear;
-          return boardMatch && yearMatch;
-        });
-      });
+    if (filterBoards.size > 0 || filterYear) {
+      result = result.filter(r => refMatchesBoardYear(r.board_references, filterBoards, filterYear));
     }
 
     // Special search filters (radio - only one active at a time)
     if (filterSpecial === "board") {
       // Repeated board questions: appeared in 2+ different boards
-      result = result.filter(r => {
-        const refs = Array.isArray(r.board_references) ? r.board_references : [];
-        const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
-        return uniqueBoards.size >= 2;
-      });
+      result = result.filter(r => countUniqueBoards(r.board_references) >= 2);
     } else if (filterSpecial === "math") {
       // Mathematical: contains LaTeX symbols
       result = result.filter(r => {
@@ -937,29 +988,12 @@ export default function QuestionCreate() {
                 });
               }
 
-              if (filterBoards.size > 0) {
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  return refs.some((ref: any) => {
-                    const boardMatch = filterBoards.has(ref.board);
-                    const yearMatch = !filterYear || ref.year === filterYear;
-                    return boardMatch && yearMatch;
-                  });
-                });
-              } else if (filterYear) {
-                // Year selected without board → still narrow by year
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  return refs.some((ref: any) => ref.year === filterYear);
-                });
+              if (filterBoards.size > 0 || filterYear) {
+                result = result.filter(r => refMatchesBoardYear(r.board_references, filterBoards, filterYear));
               }
 
               if (filterSpecial === "board") {
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
-                  return uniqueBoards.size >= 2;
-                });
+                result = result.filter(r => countUniqueBoards(r.board_references) >= 2);
               } else if (filterSpecial === "math") {
                 result = result.filter(r => {
                   const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
