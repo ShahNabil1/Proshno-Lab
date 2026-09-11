@@ -449,6 +449,12 @@ export default function AdminQuestionsBulk() {
                         <div>গ) <LatexRenderer inline text={q.creative_data.q_ga || ""} /></div>{q.creative_data.q_gha && <div>ঘ) <LatexRenderer inline text={q.creative_data.q_gha} /></div>}
                       </div>
                     )}
+                    {q.type === "descriptive" && q.creative_data && (
+                      <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                        {q.creative_data.desc_q_ka && <div>ক) <LatexRenderer inline text={q.creative_data.desc_q_ka} /></div>}
+                        {q.creative_data.desc_q_kha && <div>খ) <LatexRenderer inline text={q.creative_data.desc_q_kha} /></div>}
+                      </div>
+                    )}
                     {q.errors.length > 0 && (
                       <div className="mt-1 flex items-start gap-1 text-xs text-red-600">
                         <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
