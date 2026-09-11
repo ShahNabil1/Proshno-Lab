@@ -249,17 +249,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           {/* Bottom bar */}
           <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-white/70">
             <div>© 2026 Proshno Lab. All rights reserved.</div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/80">
-              <span>Developed by</span>
-              <a
-                href="https://www.shahnabil.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-white hover:text-[#F4C053] transition-colors"
-              >
-                Shahriar Nabil
-              </a>
-            </div>
             <div className="flex items-center gap-2">
               <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
               <span className="text-white/40">•</span>
