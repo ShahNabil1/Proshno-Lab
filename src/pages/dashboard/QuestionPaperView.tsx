@@ -1599,28 +1599,21 @@ export default function QuestionPaperView() {
           {mcqQuestions.length > 0 && (() => {
             // Note: isMultiCompletionQ detection removed — all MCQs treated uniformly
 
-            // Group MCQs: separate standalone vs grouped by stimulus_group_id
-            const standaloneWithStimulus: QuestionRow[] = []; // single MCQ with optional stimulus
+            // Keep standalone MCQs in their original order, whether or not they contain an image/stimulus.
+            // Shared-stimulus groups remain grouped, but a single illustrated MCQ must never be moved to the end.
             const grouped = new Map<string, QuestionRow[]>();
             const standalone: QuestionRow[] = [];
 
             mcqQuestions.forEach(q => {
-              // Treat stimulus as present if it contains text OR rich media (image/table/svg/figure)
-              const hasStimulus = !!q.stimulus_text && (
-                q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 ||
-                /<(img|table|svg|figure)\b/i.test(q.stimulus_text)
-              );
               if (q.stimulus_group_id) {
                 if (!grouped.has(q.stimulus_group_id)) grouped.set(q.stimulus_group_id, []);
                 grouped.get(q.stimulus_group_id)!.push(q);
-              } else if (hasStimulus) {
-                standaloneWithStimulus.push(q);
               } else {
                 standalone.push(q);
               }
             });
 
-            // Build rendering order: standalone first, then standalone-with-stimulus, then groups
+            // Number questions continuously in their rendered order.
             let mcqNumber = 0;
 
             return (
@@ -1678,6 +1671,11 @@ export default function QuestionPaperView() {
                       const refStr = formatRefs(q);
                       return (
                         <div key={q.id} className={`${editableClass} mcq-print-item`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: "1px" }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                          {q.stimulus_text && (
+                            <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
+                              <LatexRenderer text={q.stimulus_text} />
+                            </div>
+                          )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                             <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
@@ -1710,6 +1708,11 @@ export default function QuestionPaperView() {
                       const refStr = formatRefs(q);
                       return (
                         <div key={`print-${q.id}`} className="mcq-print-item" style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }}>
+                          {q.stimulus_text && (
+                            <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
+                              <LatexRenderer text={q.stimulus_text} />
+                            </div>
+                          )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
                             <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
                             <div style={{ flex: 1 }}>
@@ -1735,53 +1738,6 @@ export default function QuestionPaperView() {
                     })}
                   </div>
                 </>
-                );
-              })()}
-
-              {/* Standalone MCQs with optional stimulus (not grouped) — flow into columns */}
-              {standaloneWithStimulus.length > 0 && (() => {
-                const cols = settings.columns;
-                const swsBaseNumber = mcqNumber;
-                mcqNumber += standaloneWithStimulus.length;
-                const swsColumnStyle = {
-                  columnCount: cols,
-                  columnGap: cols > 1 ? (settings.columnDivider ? "16px" : "12px") : "0",
-                  columnRule: cols > 1 && settings.columnDivider ? "0.5px solid #555" : undefined,
-                  columnFill: "balance" as const,
-                };
-                return (
-                  <div className="mcq-print-columns" style={swsColumnStyle}>
-                    {standaloneWithStimulus.map((q, itemIdx) => {
-                      const idx = swsBaseNumber + itemIdx + 1;
-                      return (
-                        <div key={q.id} className="mcq-print-item" style={{ marginTop: "6px" }}>
-                          {q.stimulus_text && (
-                            <div style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              <LatexRenderer text={q.stimulus_text} />
-                            </div>
-                          )}
-                          <div className={editableClass} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                              <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(idx)}।</span>
-                              <div style={{ flex: 1 }}>
-                                <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
-                                <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.92em", lineHeight: 1.15, marginTop: "0" }}>
-                                  {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
-                                    const val = q[key]; if (!val) return null;
-                                    const cleaned = stripPTags(val);
-                                    const label = ["ক", "খ", "গ", "ঘ"][oi];
-                                    const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
-                                    return (<span key={key} style={{ display: "inline-flex", alignItems: "baseline", gap: "4px", ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
-                                  })}
-                                </div>
-                                {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 );
               })()}
 
