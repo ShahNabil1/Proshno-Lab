@@ -341,6 +341,36 @@ export default function QuestionCreate() {
     });
   };
 
+  const fetchQuestionRows = async (f: { classId: string; subjectId: string; chapterIds: string[] }) => {
+    // Always fetch ALL question types; client-side sidebar filter handles type filtering.
+    // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
+    const PAGE_SIZE = 1000;
+    const buildQuery = (from: number, to: number) => {
+      let q = supabase.from("questions").select("*, chapters!inner(is_active)")
+        .eq("class_id", Number(f.classId))
+        .eq("subject_id", Number(f.subjectId))
+        .eq("chapters.is_active", true);
+      if (f.chapterIds.length > 0) {
+        q = q.in("chapter_id", f.chapterIds.map(Number));
+      }
+      return q.order("id", { ascending: true }).range(from, to);
+    };
+
+    const allRows: any[] = [];
+    let page = 0;
+    for (let i = 0; i < 50; i++) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await buildQuery(from, to);
+      if (error) throw error;
+      const batch = data || [];
+      allRows.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      page++;
+    }
+    return allRows;
+  };
+
   const handleCreateQuestionSet = async () => {
     if (!form.classId || !form.subjectId) {
       toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
@@ -348,34 +378,8 @@ export default function QuestionCreate() {
     }
     setLoading(true);
     try {
-      // Always fetch ALL question types; client-side sidebar filter handles type filtering.
-      // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
-      const PAGE_SIZE = 1000;
-      const buildQuery = (from: number, to: number) => {
-        let q = supabase.from("questions").select("*, chapters!inner(is_active)")
-          .eq("class_id", Number(form.classId))
-          .eq("subject_id", Number(form.subjectId))
-          .eq("chapters.is_active", true);
-        if (form.chapterIds.length > 0) {
-          q = q.in("chapter_id", form.chapterIds.map(Number));
-        }
-        return q.order("id", { ascending: true }).range(from, to);
-      };
+      const allRows = await fetchQuestionRows(form);
 
-      const allRows: any[] = [];
-      let page = 0;
-      // Loop until a page returns less than PAGE_SIZE (final page)
-      // Safety cap of 50 iterations (=> max 50,000 questions) to avoid runaway loops.
-      for (let i = 0; i < 50; i++) {
-        const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-        const { data, error } = await buildQuery(from, to);
-        if (error) throw error;
-        const batch = data || [];
-        allRows.push(...batch);
-        if (batch.length < PAGE_SIZE) break;
-        page++;
-      }
 
       // Filter out questions already in the paper
       const filtered = addToPaper
