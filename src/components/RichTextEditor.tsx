@@ -69,7 +69,7 @@ export default function RichTextEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "biekabnpseyardqgutbp";
     if (!projectId) return;
     fetch(`https://${projectId}.supabase.co/functions/v1/cloudinary-config`)
       .then(r => r.json())
