@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 export default function AdminTopics() {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ export default function AdminTopics() {
     if (!filterSubjectId) { setChapters([]); return; }
     setLoadingChapters(true);
     supabase.from("chapters").select("id, name").eq("subject_id", Number(filterSubjectId)).order("name")
-      .then(({ data }) => { setChapters(data || []); setLoadingChapters(false); });
+      .then(({ data }) => { setChapters(sortChapters(data || [])); setLoadingChapters(false); });
   }, [filterSubjectId]);
 
   // Load topics when chapter is selected
@@ -109,7 +109,7 @@ export default function AdminTopics() {
     setModalLoadingCh(true);
     setModalChapterId("");
     supabase.from("chapters").select("id, name").eq("subject_id", Number(modalSubjectId)).order("name")
-      .then(({ data }) => { setModalChapters(data || []); setModalLoadingCh(false); });
+      .then(({ data }) => { setModalChapters(sortChapters(data || [])); setModalLoadingCh(false); });
   }, [modalSubjectId]);
 
   const resetFilters = () => {

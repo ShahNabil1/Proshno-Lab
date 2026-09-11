@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, ArrowUp, ArrowDown, Edit, Eye, FileText, Search } from "lucide-react";
 import LatexRenderer from "@/components/LatexRenderer";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 const toBanglaNum = (n: number) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 
@@ -108,7 +108,7 @@ export default function AdminSuggestions() {
   useEffect(() => {
     if (!subjectId) { setChapters([]); return; }
     supabase.from("chapters").select("id, name, subject_id").eq("subject_id", +subjectId).eq("is_active", true).order("id")
-      .then(({ data }) => setChapters(data || []));
+      .then(({ data }) => setChapters(sortChapters(data || [])));
   }, [subjectId]);
 
   const openCreate = () => {

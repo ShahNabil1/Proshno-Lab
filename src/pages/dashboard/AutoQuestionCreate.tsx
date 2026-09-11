@@ -14,7 +14,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListCheck
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 type QType = "mcq" | "cq" | "short" | "descriptive";
 const TYPE_LABELS: Record<QType, string> = {
@@ -80,7 +80,7 @@ export default function AutoQuestionCreate() {
   useEffect(() => {
     if (!subjectId) { setChapters([]); setChapterIds([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
-      .then(({ data }) => setChapters((data as any) || []));
+      .then(({ data }) => setChapters(sortChapters((data as any) || [])));
     setChapterIds([]);
   }, [subjectId]);
 

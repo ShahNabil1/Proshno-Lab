@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
+import { sortChapters } from "@/lib/classOrder";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -117,7 +118,7 @@ export default function DemoPage() {
           class_id: ch.subjects?.class_id || 0,
           class_name: ch.subjects?.classes?.name || "",
         }));
-        setFreeChapters(mapped);
+        setFreeChapters(sortChapters(mapped));
         // Auto-select if only one class
         const uniqueClasses = [...new Set(mapped.map(c => c.class_id))];
         if (uniqueClasses.length === 1) {

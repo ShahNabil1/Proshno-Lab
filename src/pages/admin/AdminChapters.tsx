@@ -18,7 +18,7 @@ import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
-import { sortClasses } from "@/lib/classOrder";
+import { sortClasses, sortChapters } from "@/lib/classOrder";
 
 const FONT = "'SolaimanLipi', sans-serif";
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
@@ -140,7 +140,7 @@ export default function AdminChapters() {
         isSubjectAllowed(ch.subjects?.class_id, ch.subject_id)
       );
     }
-    setChapters(filtered as ChapterItem[]);
+    setChapters(sortChapters(filtered as any) as ChapterItem[]);
 
     // Fetch question counts per chapter
     const chapterIds = filtered.map((ch: any) => ch.id);

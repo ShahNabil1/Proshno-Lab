@@ -36,3 +36,25 @@ export function sortClasses<T extends { name?: string | null; id?: number }>(lis
     return (a.name || "").localeCompare(b.name || "", "bn");
   });
 }
+
+// ---- Chapter ordering ----------------------------------------------------
+const BN_DIGITS: Record<string, string> = { "০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9" };
+
+/** Leading chapter number from a name, e.g. "১০. দূরত্ব" -> 10. Returns Infinity when absent. */
+export function getChapterNumber(name?: string | null): number {
+  if (!name) return Number.POSITIVE_INFINITY;
+  const normalized = name.trim().replace(/[০-৯]/g, (d) => BN_DIGITS[d]);
+  const match = normalized.match(/^\s*(\d+)/);
+  return match ? parseInt(match[1], 10) : Number.POSITIVE_INFINITY;
+}
+
+/** Sorts chapters by their leading serial number (1, 2, 3 … ), then by name. */
+export function sortChapters<T extends { name?: string | null; id?: number }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const diff = getChapterNumber(a.name) - getChapterNumber(b.name);
+    if (diff !== 0 && Number.isFinite(diff)) return diff;
+    const an = getChapterNumber(a.name), bn = getChapterNumber(b.name);
+    if (an !== bn) return an - bn;
+    return (a.name || "").localeCompare(b.name || "", "bn");
+  });
+}
