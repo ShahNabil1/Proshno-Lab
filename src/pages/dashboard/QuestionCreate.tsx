@@ -230,6 +230,18 @@ export default function QuestionCreate() {
     } catch { /* storage full – ignore */ }
   });
 
+  // Draft is only meant to survive a page refresh (reload does not unmount React).
+  // Leaving the page / going back should start fresh next time.
+  useEffect(() => {
+    return () => {
+      if (draftRestoredRef.current) {
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+      }
+    };
+  }, []);
+
+
+
 
 
   // Load existing paper question IDs when in add_to_paper mode and auto-skip form
