@@ -663,7 +663,7 @@
   border: 1px solid hsl(var(--border));
   padding: 0.35rem 0.5rem;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.9em;
 }
 .latex-renderer th {
   background: hsl(var(--muted));
