@@ -40,21 +40,37 @@ export function sortClasses<T extends { name?: string | null; id?: number }>(lis
 // ---- Chapter ordering ----------------------------------------------------
 const BN_DIGITS: Record<string, string> = { "০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9" };
 
-/** Leading chapter number from a name, e.g. "১০. দূরত্ব" -> 10. Returns Infinity when absent. */
-export function getChapterNumber(name?: string | null): number {
-  if (!name) return Number.POSITIVE_INFINITY;
-  const normalized = name.trim().replace(/[০-৯]/g, (d) => BN_DIGITS[d]);
-  const match = normalized.match(/^\s*(\d+)/);
-  return match ? parseInt(match[1], 10) : Number.POSITIVE_INFINITY;
+function normalizeDigits(name: string): string {
+  return name.replace(/[০-৯]/g, (d) => BN_DIGITS[d]);
 }
 
-/** Sorts chapters by their leading serial number (1, 2, 3 … ), then by name. */
+/**
+ * First number found in a name, e.g. "১০. দূরত্ব" -> 10, "অধ্যায় ১০ - ..." -> 10,
+ * "Unit 12 : Roots" -> 12, "কবিতা ১৪ - ..." -> 14. Infinity when absent.
+ */
+export function getChapterNumber(name?: string | null): number {
+  if (!name) return Number.POSITIVE_INFINITY;
+  const match = normalizeDigits(name.trim()).match(/\d+/);
+  return match ? parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
+}
+
+/** Label prefix before the first number, e.g. "কবিতা ২ - ..." -> "কবিতা", "Unit 3" -> "unit". */
+function getChapterLabel(name?: string | null): string {
+  if (!name) return "";
+  const normalized = normalizeDigits(name.trim());
+  const idx = normalized.search(/\d/);
+  const prefix = idx === -1 ? normalized : normalized.slice(0, idx);
+  return prefix.replace(/[\s.\-:—–|)(]+/g, " ").trim().toLowerCase();
+}
+
+/** Sorts chapters by label group, then by their serial number (1, 2, 3 … ), then by name. */
 export function sortChapters<T extends { name?: string | null; id?: number }>(list: T[]): T[] {
   return [...list].sort((a, b) => {
-    const diff = getChapterNumber(a.name) - getChapterNumber(b.name);
-    if (diff !== 0 && Number.isFinite(diff)) return diff;
+    const la = getChapterLabel(a.name), lb = getChapterLabel(b.name);
+    if (la !== lb) return la.localeCompare(lb, "bn");
     const an = getChapterNumber(a.name), bn = getChapterNumber(b.name);
     if (an !== bn) return an - bn;
     return (a.name || "").localeCompare(b.name || "", "bn");
   });
 }
+
