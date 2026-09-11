@@ -988,29 +988,12 @@ export default function QuestionCreate() {
                 });
               }
 
-              if (filterBoards.size > 0) {
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  return refs.some((ref: any) => {
-                    const boardMatch = filterBoards.has(ref.board);
-                    const yearMatch = !filterYear || ref.year === filterYear;
-                    return boardMatch && yearMatch;
-                  });
-                });
-              } else if (filterYear) {
-                // Year selected without board → still narrow by year
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  return refs.some((ref: any) => ref.year === filterYear);
-                });
+              if (filterBoards.size > 0 || filterYear) {
+                result = result.filter(r => refMatchesBoardYear(r.board_references, filterBoards, filterYear));
               }
 
               if (filterSpecial === "board") {
-                result = result.filter(r => {
-                  const refs = Array.isArray(r.board_references) ? r.board_references : [];
-                  const uniqueBoards = new Set(refs.map((ref: any) => ref.board));
-                  return uniqueBoards.size >= 2;
-                });
+                result = result.filter(r => countUniqueBoards(r.board_references) >= 2);
               } else if (filterSpecial === "math") {
                 result = result.filter(r => {
                   const text = `${r.question || ""} ${r.option_a || ""} ${r.option_b || ""} ${r.option_c || ""} ${r.option_d || ""} ${r.stimulus_text || ""}`;
