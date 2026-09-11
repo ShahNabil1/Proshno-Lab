@@ -163,6 +163,75 @@ export default function QuestionCreate() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
 
+  // ---- Draft persistence: keep step/form/selection alive across page refresh ----
+  const DRAFT_KEY = "questionCreateDraft";
+  const draftRestoredRef = useRef(false);
+  const [restoringDraft, setRestoringDraft] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = sessionStorage.getItem("questionCreateDraft");
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      return d?.step && d.step !== "form";
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (addToPaper) { draftRestoredRef.current = true; setRestoringDraft(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = sessionStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (!d?.form?.classId || !d?.form?.subjectId || !d.step || d.step === "form") return;
+        setForm(d.form);
+        if (d.step === "questionSet" && !Array.isArray(d.questionIds)) {
+          if (!cancelled) setStep("questionSet");
+          return;
+        }
+        const rows = await fetchQuestionRows(d.form);
+        if (cancelled) return;
+        const order: number[] = Array.isArray(d.questionIds) ? d.questionIds : [];
+        if (order.length > 0) {
+          const pos = new Map(order.map((id, i) => [id, i]));
+          rows.sort((a, b) => (pos.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+        }
+        setQuestions(rows);
+        setSelectedIds(new Set<number>(Array.isArray(d.selectedIds) ? d.selectedIds : []));
+        if (d.filterType !== undefined) setFilterType(d.filterType);
+        if (d.currentPage) setCurrentPage(d.currentPage);
+        setStep(d.step);
+      } catch {
+        // ignore corrupt draft
+      } finally {
+        if (!cancelled) { draftRestoredRef.current = true; setRestoringDraft(false); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [addToPaper]);
+
+  // Save draft whenever meaningful state changes (after restore has completed)
+  useEffect(() => {
+    if (addToPaper || !draftRestoredRef.current) return;
+    try {
+      if (step === "form") {
+        sessionStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        step,
+        form,
+        questionIds: questions.map(q => q.id),
+        selectedIds: Array.from(selectedIds),
+        filterType,
+        currentPage,
+      }));
+    } catch { /* storage full – ignore */ }
+  });
+
+
+
   // Load existing paper question IDs when in add_to_paper mode and auto-skip form
   const [autoSkipDone, setAutoSkipDone] = useState(false);
   useEffect(() => {
