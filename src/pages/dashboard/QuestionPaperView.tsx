@@ -1958,8 +1958,15 @@ export default function QuestionPaperView() {
 
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                      <div style={{ display: "block" }}>
+                        <span className="mc-block-question">
+                          <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
+                        </span>
+                        {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
+                      </div>
+
                       {showStimulus && (
-                        <div className="short-stimulus" style={{ marginBottom: "4px", padding: "2px 0" }}>
+                        <div className="short-stimulus" style={{ marginTop: "3px", marginBottom: "4px", padding: "2px 0", paddingLeft: "1.8rem" }}>
                           {groupKey && (
                             <div style={{ fontWeight: 500, fontStyle: "italic", marginBottom: "2px" }}>
                               {isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}
@@ -1970,12 +1977,6 @@ export default function QuestionPaperView() {
                           </div>
                         </div>
                       )}
-                      <div style={{ display: "block" }}>
-                        <span className="mc-block-question">
-                          <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
-                        </span>
-                        {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
-                      </div>
 
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>

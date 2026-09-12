@@ -1335,9 +1335,10 @@ export default function QuestionCreate() {
                       q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text))
                     );
 
+                    const isShort = q.type === "short";
                     return (
                       <div>
-                        {hasSeparateStimulus && (
+                        {hasSeparateStimulus && !isShort && (
                           <div
                             key={`stim-${q.id}`}
                             className="question-picker-stimulus mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
@@ -1351,6 +1352,14 @@ export default function QuestionCreate() {
                             <LatexRenderer key={`q-${q.id}`} text={displayQuestion} />
                           </div>
                         </div>
+                        {hasSeparateStimulus && isShort && (
+                          <div
+                            key={`stim-${q.id}`}
+                            className="question-picker-stimulus mb-3 p-3 border-l-2 border-primary/30 bg-muted/30 rounded-r italic text-sm rich-text-content"
+                          >
+                            <LatexRenderer text={q.stimulus_text || ""} />
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
