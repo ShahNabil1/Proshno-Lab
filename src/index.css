@@ -640,6 +640,15 @@
   vertical-align: top;
 }
 
+/* CQ, SQ and Descriptive questions should never break across columns */
+.cq-question-container .mcq-print-item,
+.short-question-container .mcq-print-item,
+.desc-question-container .mcq-print-item {
+  break-inside: avoid !important;
+  -webkit-column-break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
 /* Inner blocks (stimulus + question body) must also resist splitting
    so a tall stimulus never lands in a separate column from its question */
 .mcq-screen-layout .mcq-print-item > *,

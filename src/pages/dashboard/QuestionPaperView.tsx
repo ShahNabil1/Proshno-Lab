@@ -987,7 +987,7 @@ export default function QuestionPaperView() {
         </div>
 
         <div className="mb-3">
-          <Label className="text-xs text-muted-foreground">কলাম (MCQ)</Label>
+          <Label className="text-xs text-muted-foreground">কলাম সংখ্যা</Label>
           <div className="flex gap-1 mt-1">
             {([1, 2, 3] as ColumnCount[]).map(c => (
               <Button key={c} size="sm" variant={settings.columns === c ? "default" : "outline"} className="flex-1 text-xs" onClick={() => updateSetting("columns", c)}>
@@ -1989,7 +1989,15 @@ export default function QuestionPaperView() {
                   <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{shortInstruction}</span>
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
+              <div
+                className="short-question-container mcq-print-columns"
+                style={{
+                  columnCount: settings.columns,
+                  columnGap: settings.columns > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: settings.columns > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
+                  columnFill: "balance" as const,
+                }}
+              >
                 {shortQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -1999,7 +2007,21 @@ export default function QuestionPaperView() {
                   if (groupKey && showStimulus) shownShortStimuli.add(groupKey);
 
                   return (
-                    <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                    <div
+                      key={q.id}
+                      className={`${editableClass} mcq-print-item`}
+                      style={{
+                        background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                        breakInside: "avoid",
+                        pageBreakInside: "avoid",
+                        marginBottom: `${settings.questionGap}px`,
+                        display: "block",
+                        width: "100%",
+                      }}
+                      data-editable={`short-${q.id}`}
+                      onClick={(e) => handleEditableClick(e, q.id)}
+                      suppressContentEditableWarning
+                    >
                       <div style={{ display: "block" }}>
                         <span className="mc-block-question">
                           <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
@@ -2051,7 +2073,15 @@ export default function QuestionPaperView() {
                 <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqInstruction}</span>
                 <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqMarksLine}</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
+              <div
+                className="cq-question-container mcq-print-columns"
+                style={{
+                  columnCount: settings.columns,
+                  columnGap: settings.columns > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: settings.columns > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
+                  columnFill: "balance" as const,
+                }}
+              >
                 {cqQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -2064,7 +2094,21 @@ export default function QuestionPaperView() {
                   const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
                   const isDuplicate = duplicateIds.has(q.id);
                   return (
-                    <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                    <div
+                      key={q.id}
+                      className={`${editableClass} mcq-print-item`}
+                      style={{
+                        background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                        breakInside: "avoid",
+                        pageBreakInside: "avoid",
+                        marginBottom: `${settings.questionGap}px`,
+                        display: "block",
+                        width: "100%",
+                      }}
+                      data-editable={`cq-${q.id}`}
+                      onClick={(e) => handleEditableClick(e, q.id)}
+                      suppressContentEditableWarning
+                    >
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padPaperNumber(num)}{isEnglishVersion ? "." : "।"}</span>
                         <div style={{ flex: 1 }}>
@@ -2192,7 +2236,15 @@ export default function QuestionPaperView() {
                   <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{descInstruction}</span>
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: `${settings.questionGap}px` }}>
+              <div
+                className="desc-question-container mcq-print-columns"
+                style={{
+                  columnCount: settings.columns,
+                  columnGap: settings.columns > 1 ? `${settings.columnGap}px` : "0",
+                  columnRule: settings.columns > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
+                  columnFill: "balance" as const,
+                }}
+              >
                 {descriptiveQuestions.map((q, idx) => {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
@@ -2201,8 +2253,15 @@ export default function QuestionPaperView() {
                   return (
                     <div
                       key={q.id}
-                      className={editableClass}
-                      style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }}
+                      className={`${editableClass} mcq-print-item`}
+                      style={{
+                        background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined,
+                        breakInside: "avoid",
+                        pageBreakInside: "avoid",
+                        marginBottom: `${settings.questionGap}px`,
+                        display: "block",
+                        width: "100%",
+                      }}
                       data-editable={`desc-${q.id}`}
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
