@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCloudBackup } from "@/hooks/useCloudBackup";
 import { findRepeatedStimuli, hasRenderableStimulus, normalizeStimulusKey } from "@/lib/stimulusGroups";
+import InPaperOmrBox from "@/components/paper/InPaperOmrBox";
+import ChirkutAnswerSheet from "@/components/paper/ChirkutAnswerSheet";
 
 interface QuestionRow {
   id: number;
@@ -156,6 +158,9 @@ export default function QuestionPaperView() {
   // Settings
   const [settings, setSettings] = useState({
     showAnswerSheet: false,
+    showChirkutAnswer: false,
+    showInPaperOmr: false,
+    omrColumns: 4 as 2 | 3 | 4,
     showImportantQ: false,
     showQuestionInfo: false,
     showStudentInfo: false,
@@ -700,8 +705,45 @@ export default function QuestionPaperView() {
       <div className="border-b border-border pb-3 mb-3">
         <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নে সংযুক্তি</h4>
         <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">উত্তরপত্র (বিস্তারিত)</span>
+            <Switch checked={settings.showAnswerSheet} onCheckedChange={(v) => updateSetting("showAnswerSheet", v)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm">চিরকুট উত্তরপত্র</span>
+              <p className="text-[10px] text-muted-foreground">কাগজ বাঁচাতে ছোট স্ট্রিপ আকারে উত্তরমালা</p>
+            </div>
+            <Switch checked={settings.showChirkutAnswer} onCheckedChange={(v) => updateSetting("showChirkutAnswer", v)} />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm">প্রশ্নে OMR সংযুক্ত</span>
+                <p className="text-[10px] text-muted-foreground">প্রশ্নপত্রের নিচেই প্রিন্টযোগ্য ওএমআর শিট</p>
+              </div>
+              <Switch checked={settings.showInPaperOmr} onCheckedChange={(v) => updateSetting("showInPaperOmr", v)} />
+            </div>
+            {settings.showInPaperOmr && (
+              <div className="ml-1 flex items-center justify-between border rounded p-1.5 bg-muted/30">
+                <span className="text-xs text-muted-foreground">OMR কলাম:</span>
+                <div className="flex gap-1">
+                  {([2, 3, 4] as const).map((col) => (
+                    <Button
+                      key={col}
+                      size="sm"
+                      variant={settings.omrColumns === col ? "default" : "outline"}
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => updateSetting("omrColumns", col)}
+                    >
+                      {toBanglaNum(col)} কলাম
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           {([
-            { key: "showAnswerSheet" as const, label: "উত্তরপত্র" },
             { key: "showImportantQ" as const, label: "গুরুত্বপূর্ণ প্রশ্ন" },
             { key: "showQuestionInfo" as const, label: "প্রশ্নের তথ্য" },
             { key: "showStudentInfo" as const, label: "শিক্ষার্থীর তথ্য" },
@@ -2239,6 +2281,34 @@ export default function QuestionPaperView() {
             </div>
             );
           })()}
+
+          {/* In-Paper OMR Box */}
+          {settings.showInPaperOmr && mcqQuestions.length > 0 && (
+            <InPaperOmrBox
+              totalQuestions={mcqQuestions.length}
+              columns={settings.omrColumns || 4}
+              isEnglishVersion={isEnglishVersion}
+              setCode={isEnglishVersion ? "A" : "ক"}
+              showSetCode={settings.showSetCode}
+              showStudentInfo={settings.showStudentInfo}
+              instituteName={meta?.instituteName}
+              subjectName={meta?.subjectName}
+            />
+          )}
+
+          {/* Chirkut Mini Answer Sheet */}
+          {settings.showChirkutAnswer && (
+            <ChirkutAnswerSheet
+              questions={sortedQuestions}
+              instituteName={meta?.instituteName}
+              subjectName={meta?.subjectName}
+              className={meta?.className}
+              setCode={isEnglishVersion ? "A" : "ক"}
+              showSetCode={settings.showSetCode}
+              isEnglishVersion={isEnglishVersion}
+              columns={5}
+            />
+          )}
 
           {/* Address moved to header */}
         </div>
