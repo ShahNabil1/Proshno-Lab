@@ -24,9 +24,12 @@ export function useUnlimitedAccess() {
     if (!user?.id) { setUnlimited(false); setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
-    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
+    Promise.all([
+      supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+      supabase.rpc("has_role", { _user_id: user.id, _role: "developer" }),
+    ]).then(([adminResult, developerResult]) => {
       if (cancelled) return;
-      setUnlimited(!!data);
+      setUnlimited(!!adminResult.data || !!developerResult.data);
       setLoading(false);
     });
     return () => { cancelled = true; };

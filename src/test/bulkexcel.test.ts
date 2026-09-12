@@ -26,5 +26,12 @@ describe("bulk",()=>{
   expect(p.explanation).toBe("ans\nexp");
   expect(p.board_references.length).toBe(1);
  });
+ it("normalizes imported HTML spacing and keeps image URLs",async()=>{
+  const imageUrl="https://res.cloudinary.com/demo/image/upload/sample.webp";
+  const f=mk([["উদ্দীপক","প্রশ্ন*","উত্তর","ছবি URL"],["","&nbsp;চিত্রটি দেখ।<br>\n","answer",imageUrl]]);
+  const [q]=await parseExcelFile(f,"short");
+  expect(q.question).toBe("চিত্রটি দেখ।");
+  expect(q.stimulus).toContain(`<img src="${imageUrl}"`);
+ });
  it("ref parse",()=>{expect(parseRefCell("ঢাকা : ২০২৩")).toEqual([{name:"ঢাকা",year:"২০২৩"}]);});
 });

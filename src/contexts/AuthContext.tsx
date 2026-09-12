@@ -62,10 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isEmbedded = window.self !== window.top;
 
     if (!isEmbedded) {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },
       });
+      if (error) throw error;
       return;
     }
 

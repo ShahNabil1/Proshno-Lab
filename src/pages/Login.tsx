@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BrandLogo from "@/components/BrandLogo";
-import { enableLocalMockAdmin, isLocalDevelopment } from "@/lib/localDevAuth";
+import { isLocalDevelopment } from "@/lib/localDevAuth";
 
 export default function Login() {
   const { signInWithGoogle, user, loading } = useAuth();
@@ -42,24 +42,18 @@ export default function Login() {
             <>
               <div className="my-4 flex items-center gap-3" aria-hidden="true">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">লোকাল টেস্ট</span>
+                <span className="text-xs text-muted-foreground">লোকাল ফুল-ডাটা টেস্ট</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="w-full font-heading font-semibold rounded-xl"
-                  onClick={() => {
-                    enableLocalMockAdmin();
-                    window.location.assign("/admin");
-                  }}
-                >
-                  লোকাল টেস্ট Admin চালু করুন
-                </Button>
+              <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Main database-এর সব subject ও প্রশ্ন পরীক্ষা করতে উপরের Google বাটন
+                  অথবা নিচের বাটন দিয়ে আপনার আসল Admin/Developer account-এ লগইন করুন।
+                  নিরাপত্তার জন্য fake admin দিয়ে protected database data দেখানো হয় না।
+                </p>
                 <Button asChild size="lg" variant="outline" className="w-full font-heading font-semibold rounded-xl">
-                  <Link to="/login/email">ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন</Link>
+                  <Link to="/login/email">Admin/Developer ইমেইল দিয়ে লগইন করুন</Link>
                 </Button>
               </div>
             </>

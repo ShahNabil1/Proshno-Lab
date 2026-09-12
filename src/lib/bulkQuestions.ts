@@ -34,7 +34,15 @@ export type ParsedQuestion = {
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-const s = (v: any) => (v == null ? "" : String(v).trim());
+const s = (v: any) => (
+  v == null
+    ? ""
+    : String(v)
+        .replace(/&nbsp;|&#160;/gi, " ")
+        .replace(/\u00a0/g, " ")
+        .replace(/(?:<br\s*\/?>\s*)+$/gi, "")
+        .trim()
+);
 
 export const isMathSubjectName = (name?: string | null) =>
   /^(গণিত|উচ্চতর গণিত|math|higher\s*math)/i.test(String(name || "").trim());

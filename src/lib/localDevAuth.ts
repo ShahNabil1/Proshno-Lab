@@ -3,16 +3,23 @@ import type { User } from "@supabase/supabase-js";
 const LOCAL_MOCK_ADMIN_KEY = "proshnolab.localMockAdmin.v1";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
+// The UI-only mock cannot bypass Supabase RLS, so keep it opt-in. Full local
+// database testing must use a real authenticated admin/developer account.
+const isLocalUiMockAllowed = (): boolean =>
+  import.meta.env.VITE_ENABLE_LOCAL_UI_MOCK_ADMIN === "true";
+
 export const isLocalDevelopment = (): boolean =>
   import.meta.env.DEV &&
   typeof window !== "undefined" &&
   LOCAL_HOSTS.has(window.location.hostname);
 
 export const isLocalMockAdminEnabled = (): boolean =>
-  isLocalDevelopment() && localStorage.getItem(LOCAL_MOCK_ADMIN_KEY) === "1";
+  isLocalDevelopment() &&
+  isLocalUiMockAllowed() &&
+  localStorage.getItem(LOCAL_MOCK_ADMIN_KEY) === "1";
 
 export const enableLocalMockAdmin = (): void => {
-  if (!isLocalDevelopment()) return;
+  if (!isLocalDevelopment() || !isLocalUiMockAllowed()) return;
   localStorage.setItem(LOCAL_MOCK_ADMIN_KEY, "1");
 };
 

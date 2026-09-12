@@ -1,5 +1,5 @@
 import { isCorrectOption } from "@/lib/answerKey";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
+import SubjectPicker from "@/components/dashboard/SubjectPicker";
+import {
+  filterSubjectsByVersion,
+  getRelatedVersionClassIds,
+  isEnglishVersionClass,
+  type SubjectVersion,
+} from "@/lib/subjectVersion";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive", "mcq_short", "mcq_short_cq", "all"];
 const typeLabels: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক", mcq_short: "MCQ, সংক্ষিপ্ত", mcq_short_cq: "MCQ, সংক্ষিপ্ত, সৃজনশীল", all: "সকল প্রকার" };
@@ -147,17 +154,33 @@ export default function QuestionCreate() {
     programName: "",
     classId: "",
     subjectId: "",
+    subjectIds: [] as string[],
     chapterIds: [] as string[],
     type: "mcq",
     count: "100",
   });
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
-  const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
-  const [chapters, setChapters] = useState<{ id: number; name: string; is_free: boolean }[]>([]);
+  const [subjects, setSubjects] = useState<{ id: number; class_id: number; name: string; subject_code?: string | null }[]>([]);
+  const [chapters, setChapters] = useState<{ id: number; name: string; is_free: boolean; subject_id?: number }[]>([]);
   const [topics, setTopics] = useState<{ id: number; name: string; chapter_id: number }[]>([]);
   const [warningDialog, setWarningDialog] = useState<WarningField>(null);
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [subjectVersion, setSubjectVersion] = useState<SubjectVersion>("bangla");
+
+  const selectedSubjectIds = useMemo(() => {
+    if (form.subjectIds && form.subjectIds.length > 0) return form.subjectIds;
+    if (form.subjectId) return form.subjectId.split(",").map((s) => s.trim()).filter(Boolean);
+    return [];
+  }, [form.subjectId, form.subjectIds]);
+
+  const selectedSubjects = useMemo(() => {
+    return subjects.filter((s) => selectedSubjectIds.includes(String(s.id)));
+  }, [selectedSubjectIds, subjects]);
+
+  const selectedSubject = selectedSubjects[0];
+  const effectiveClassId = selectedSubject?.class_id || Number(form.classId || 0);
+  const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -340,21 +363,22 @@ export default function QuestionCreate() {
   // Load subjects when class changes
   useEffect(() => {
     if (!form.classId) { setSubjects([]); return; }
-    supabase.from("subjects").select("id, name, subject_code").eq("class_id", Number(form.classId)).order("name")
-      .then(({ data }) => setSubjects(data || []));
-  }, [form.classId]);
+    const relatedClassIds = getRelatedVersionClassIds(form.classId, classes);
+    supabase.from("subjects").select("id, class_id, name, subject_code").in("class_id", relatedClassIds).order("name")
+      .then(({ data }) => setSubjects((data as any) || []));
+  }, [form.classId, classes]);
 
-  // Load chapters when subject changes
+  // Load chapters when subjects change
   useEffect(() => {
-    if (!form.subjectId) { setChapters([]); setTopics([]); return; }
-    supabase.from("chapters").select("id, name, is_free").eq("subject_id", Number(form.subjectId)).eq("is_active", true).order("name")
+    if (selectedSubjectIds.length === 0) { setChapters([]); setTopics([]); return; }
+    supabase.from("chapters").select("id, name, is_free, subject_id").in("subject_id", selectedSubjectIds.map(Number)).eq("is_active", true).order("name")
       .then(({ data }) => setChapters(sortChapters((data as any[]) || [])));
-  }, [form.subjectId]);
+  }, [selectedSubjectIds.join(",")]);
 
   // Check access: user_permissions OR active subscriptions
   useEffect(() => {
     if (unlimitedAccess) { setHasSubscription(true); return; }
-    if (!user?.id || !form.classId || !form.subjectId) { setHasSubscription(false); return; }
+    if (!user?.id || !effectiveClassId || selectedSubjectIds.length === 0) { setHasSubscription(false); return; }
 
     let cancelled = false;
 
@@ -362,11 +386,10 @@ export default function QuestionCreate() {
       const [{ data: permData }, { data: subs }] = await Promise.all([
         supabase
           .from("user_permissions")
-          .select("id")
+          .select("id, subject_id")
           .eq("user_id", user.id)
-          .eq("class_id", Number(form.classId))
-          .eq("subject_id", Number(form.subjectId))
-          .limit(1),
+          .eq("class_id", effectiveClassId)
+          .in("subject_id", selectedSubjectIds.map(Number)),
         supabase
           .from("subscriptions")
           .select("plan")
@@ -376,23 +399,17 @@ export default function QuestionCreate() {
 
       if (cancelled) return;
 
-      if (permData && permData.length > 0) {
-        setHasSubscription(true);
-        return;
-      }
+      const permSubjectIds = new Set((permData || []).map(p => String((p as any).subject_id)));
+      const selectedClass = classes.find(c => c.id === effectiveClassId);
 
-      const selectedClass = classes.find(c => String(c.id) === String(form.classId));
-      const selectedSubject = subjects.find(s => String(s.id) === String(form.subjectId));
-      if (!selectedClass || !selectedSubject || !subs || subs.length === 0) {
-        setHasSubscription(false);
-        return;
-      }
+      const allHaveAccess = selectedSubjectIds.every(subId => {
+        if (permSubjectIds.has(subId)) return true;
+        const sub = subjects.find(s => String(s.id) === String(subId));
+        if (!selectedClass || !sub || !subs || subs.length === 0) return false;
+        return subs.some(s => planCoversSelection(s.plan || "", selectedClass.name, sub.name));
+      });
 
-      const hasAccess = subs.some((sub) =>
-        planCoversSelection(sub.plan || "", selectedClass.name, selectedSubject.name)
-      );
-
-      setHasSubscription(hasAccess);
+      setHasSubscription(allHaveAccess);
     };
 
     checkAccess();
@@ -400,7 +417,7 @@ export default function QuestionCreate() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, form.classId, form.subjectId, classes, subjects, unlimitedAccess]);
+  }, [user?.id, effectiveClassId, selectedSubjectIds.join(","), classes, subjects, unlimitedAccess]);
 
   // Load topics when chapters selected
   useEffect(() => {
@@ -422,14 +439,17 @@ export default function QuestionCreate() {
     });
   };
 
-  const fetchQuestionRows = async (f: { classId: string; subjectId: string; chapterIds: string[] }) => {
+  const fetchQuestionRows = async (f: { classId: string; subjectId: string; subjectIds?: string[]; chapterIds: string[] }) => {
     // Always fetch ALL question types; client-side sidebar filter handles type filtering.
     // Paginate via .range() to avoid the default 1000-row cap and ensure NO question is missed.
+    const sIds = (f.subjectIds && f.subjectIds.length > 0)
+      ? f.subjectIds
+      : (f.subjectId ? f.subjectId.split(",").map(s => s.trim()).filter(Boolean) : []);
     const PAGE_SIZE = 1000;
     const buildQuery = (from: number, to: number) => {
       let q = supabase.from("questions").select("*, chapters!inner(is_active)")
         .eq("class_id", Number(f.classId))
-        .eq("subject_id", Number(f.subjectId))
+        .in("subject_id", sIds.map(Number))
         .eq("chapters.is_active", true);
       if (f.chapterIds.length > 0) {
         q = q.in("chapter_id", f.chapterIds.map(Number));
@@ -453,13 +473,16 @@ export default function QuestionCreate() {
   };
 
   const handleCreateQuestionSet = async () => {
-    if (!form.classId || !form.subjectId) {
+    if (!form.classId || selectedSubjectIds.length === 0) {
       toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
       return;
     }
     setLoading(true);
     try {
-      const allRows = await fetchQuestionRows(form);
+      const allRows = await fetchQuestionRows({
+        ...form,
+        subjectIds: selectedSubjectIds,
+      });
 
 
       // Filter out questions already in the paper
@@ -524,9 +547,8 @@ export default function QuestionCreate() {
   };
 
   const className = classes.find(c => String(c.id) === form.classId)?.name || "";
-  const selectedSubject = subjects.find(s => String(s.id) === form.subjectId);
-  const subjectName = selectedSubject?.name || "";
-  const subjectCode = (selectedSubject as any)?.subject_code || "";
+  const subjectName = selectedSubjects.map(s => s.name).join(", ");
+  const subjectCode = selectedSubjects.map(s => s.subject_code).filter(Boolean).join(", ");
   const selectedChapterNames = chapters
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
@@ -622,7 +644,7 @@ export default function QuestionCreate() {
     const selected = questions.filter(q => selectedIds.has(q.id));
     // Store in sessionStorage for the view page
     sessionStorage.setItem("viewPaperQuestions", JSON.stringify(selected));
-    sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(form.classId), subjectId: String(form.subjectId), chapterIds: (form.chapterIds || []).map(String) }));
+    sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(effectiveClassId), subjectId: selectedSubjectIds.join(","), chapterIds: (form.chapterIds || []).map(String) }));
     // Build topic names map for selected questions
     const selectedTopicIds = new Set(selected.map(q => q.topic_id).filter(Boolean));
     const topicNamesForPaper = topics.filter(t => selectedTopicIds.has(t.id)).map(t => t.name);
@@ -1506,7 +1528,13 @@ export default function QuestionCreate() {
               <Input placeholder="প্রোগ্রাম/পরীক্ষার নাম" value={form.programName} onChange={(e) => setForm({ ...form, programName: e.target.value })} />
             </div>
             <div>
-              <Select value={form.classId} onValueChange={(v) => setForm({ ...form, classId: v, subjectId: "", chapterIds: [] })}>
+              <Select
+                value={form.classId}
+                onValueChange={(v) => {
+                  setSubjectVersion(isEnglishVersionClass(classes.find((c) => String(c.id) === v)?.name || "") ? "english" : "bangla");
+                  setForm({ ...form, classId: v, subjectId: "", subjectIds: [], chapterIds: [] });
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="শ্রেণী সিলেক্ট করুন" /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
@@ -1514,23 +1542,33 @@ export default function QuestionCreate() {
               </Select>
             </div>
             <div onClick={!form.classId ? () => setWarningDialog("subject") : undefined}>
-              <Select value={form.subjectId} onValueChange={(v) => setForm({ ...form, subjectId: v, chapterIds: [] })} disabled={!form.classId}>
-                <SelectTrigger><SelectValue placeholder="বিষয় সিলেক্ট করুন" /></SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SubjectPicker
+                value={form.subjectId}
+                values={form.subjectIds}
+                subjects={filteredSubjects}
+                classes={classes}
+                version={subjectVersion}
+                disabled={!form.classId}
+                placeholder="বিষয় সিলেক্ট করুন"
+                onVersionChange={(version) => {
+                  setSubjectVersion(version);
+                  setForm({ ...form, subjectId: "", subjectIds: [], chapterIds: [] });
+                }}
+                onChange={(nextSubjectId, nextSubjectIds) => {
+                  setForm({ ...form, subjectId: nextSubjectIds.join(", "), subjectIds: nextSubjectIds, chapterIds: [] });
+                }}
+              />
             </div>
 
             {/* Multi-select chapter list */}
-            <div onClick={!form.subjectId ? () => setWarningDialog("chapter") : undefined}>
+            <div onClick={selectedSubjectIds.length === 0 ? () => setWarningDialog("chapter") : undefined}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium">অধ্যায় সিলেক্ট করুন</span>
                 {form.chapterIds.length > 0 && (
                   <span className="text-xs text-muted-foreground">{form.chapterIds.length}টি সিলেক্টেড</span>
                 )}
               </div>
-              {!form.subjectId ? (
+              {selectedSubjectIds.length === 0 ? (
                 <div className="border border-input rounded-md p-3 text-sm text-muted-foreground bg-muted/30 cursor-not-allowed">
                   আগে বিষয় সিলেক্ট করুন
                 </div>

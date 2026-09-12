@@ -72,11 +72,6 @@ const toBanglaNum = (n: number): string => {
   return String(n).split("").map(d => digits[parseInt(d)] ?? d).join("");
 };
 
-const padBangla = (n: number): string => {
-  const s = toBanglaNum(n);
-  return s.length < 2 ? "০" + s : s;
-};
-
 /* Strip wrapping <p> tags from option values, preserving line breaks */
 const stripPTags = (html: string): string => {
   // Convert </p><p> boundaries to <br> to preserve line breaks
@@ -131,9 +126,9 @@ const AnswerContent = ({ text, className = "" }: { text: string; className?: str
 );
 
 // Renders the explanation (ব্যাখ্যা) of an MCQ inside the answer sheet
-const McqExplanation = ({ text }: { text: string }) => (
+const McqExplanation = ({ text, isEnglishVersion = false }: { text: string; isEnglishVersion?: boolean }) => (
   <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,87,0.06)", fontSize: "0.88em", borderRadius: "0 4px 4px 0", breakInside: "avoid" }}>
-    <span style={{ fontWeight: 700, color: "#047857", marginRight: "4px" }}>ব্যাখ্যা:</span>
+    <span style={{ fontWeight: 700, color: "#047857", marginRight: "4px" }}>{isEnglishVersion ? "Explanation:" : "ব্যাখ্যা:"}</span>
     <AnswerContent text={text} className="answer-content--inline-start" />
   </div>
 );
@@ -467,14 +462,53 @@ export default function QuestionPaperView() {
   const shortQuestions = sortedQuestions.filter(q => q.type === "short");
   const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
 
+  const isEnglishVersion = Boolean(meta && /english|eglish|ইংলিশ/i.test(meta.className || ""));
+  const paperNumber = (n: number): string => isEnglishVersion ? String(n) : toBanglaNum(n);
+  const padPaperNumber = (n: number): string => {
+    const value = paperNumber(n);
+    return value.length < 2 ? `${isEnglishVersion ? "0" : "০"}${value}` : value;
+  };
+  const optionLabels = isEnglishVersion ? ["a", "b", "c", "d"] : ["ক", "খ", "গ", "ঘ"];
+
+  const formatEnglishClassName = (name: string): string => {
+    const numberWords: Record<string, string> = {
+      "3": "Three", "4": "Four", "5": "Five", "6": "Six", "7": "Seven",
+      "8": "Eight", "9": "Nine", "10": "Ten", "11": "Eleven", "12": "Twelve",
+    };
+    const levels = name.match(/\d+/g) || [];
+    if (levels.length > 0) {
+      return levels.slice(0, 2).map(level => numberWords[level] || level).join("/");
+    }
+    return name
+      .replace(/\(?\s*e(?:n)?glish\s+version\s*\)?/ig, "")
+      .replace(/^class\s*:?[\s-]*/i, "")
+      .trim();
+  };
+
+  const formatEnglishSubjectName = (name: string): string =>
+    /^mathemathis$/i.test(name.trim()) ? "Mathematics" : name;
+
+  const formatEnglishChapterName = (name: string, index: number): string => {
+    if (/^chapter\s*\d+/i.test(name)) return name;
+    const normalized = /^real number$/i.test(name.trim()) ? "Real Numbers" : name;
+    return `Chapter ${index + 1} - ${normalized}`;
+  };
+
   const cqToAnswerForTotal = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
   const shortToAnswerForTotal = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
   const descToAnswerForTotal = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
   const totalMarks = mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
 
   // Calculate total time: MCQ=1min, CQ=10min, Short=2min, Descriptive=10min
-  const totalTimeMinutes = mcqQuestions.length * 1 + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
+  const totalTimeMinutes = (isEnglishVersion ? Math.ceil(mcqQuestions.length * 1.5) : mcqQuestions.length) + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
   const formatTime = (mins: number): string => {
+    if (isEnglishVersion) {
+      const hours = Math.floor(mins / 60);
+      const rem = mins % 60;
+      if (hours === 0) return `Time— ${rem} min`;
+      if (rem === 0) return `Time— ${hours} ${hours === 1 ? "hour" : "hours"}`;
+      return `Time— ${hours} ${hours === 1 ? "hour" : "hours"} ${rem} min`;
+    }
     if (mins === 0) return "সময়— ০ মিনিট";
     const hours = Math.floor(mins / 60);
     const rem = mins % 60;
@@ -647,14 +681,14 @@ export default function QuestionPaperView() {
   const cqToAnswer = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
   const cqTotalMarks = cqToAnswer * 10;
   const cqMarksLine = cqQuestions.length > 0
-    ? `${toBanglaNum(10)} × ${toBanglaNum(cqToAnswer)} = ${toBanglaNum(cqTotalMarks)}`
+    ? `${paperNumber(10)} × ${paperNumber(cqToAnswer)} = ${paperNumber(cqTotalMarks)}`
     : "";
 
   /* CQ dynamic instruction */
   const cqInstruction = cqQuestions.length > 0
     ? (cqQuestions.length === cqToAnswer
-      ? "সবগুলো প্রশ্নের উত্তর দাও :"
-      : `যেকোনো ${toBanglaNum(cqToAnswer)}টি প্রশ্নের উত্তর দাও :`)
+      ? (isEnglishVersion ? "Answer all questions:" : "সবগুলো প্রশ্নের উত্তর দাও :")
+      : (isEnglishVersion ? `Answer any ${cqToAnswer} questions:` : `যেকোনো ${toBanglaNum(cqToAnswer)}টি প্রশ্নের উত্তর দাও :`))
     : "";
 
   /* Detect if subject is Math/Higher Math for CQ marks distribution */
@@ -1257,9 +1291,10 @@ export default function QuestionPaperView() {
           maxWidth: paperPreviewWidths[settings.paperSize],
         }}>
         <div
-          className="font-paper"
+          className={`font-paper${isEnglishVersion ? " paper-english-version" : ""}`}
           ref={paperRef}
           data-print-paper
+          data-paper-version={isEnglishVersion ? "english" : "bangla"}
           data-content-align={settings.textAlign}
           style={{
             "--paper-question-gap": `${settings.questionGap}px`,
@@ -1268,7 +1303,7 @@ export default function QuestionPaperView() {
             // Screen-only magnification: default 14px looks like the former
             // 16px preview, while print/PDF restores the real selected size.
             fontSize: `${settings.fontSize * PREVIEW_FONT_SCALE}px`,
-            lineHeight: 1.45,
+            lineHeight: isEnglishVersion ? 1.25 : 1.45,
             userSelect: "none",
             WebkitUserSelect: "none",
             paddingTop: `${(isMobile ? 12 : 38) + settings.pageMarginTop}px`,
@@ -1279,7 +1314,9 @@ export default function QuestionPaperView() {
             background: "#fff",
             border: "1px solid #e0e4e9",
             boxShadow: "0 4px 18px rgba(30, 41, 59, 0.07)",
-            fontFamily: settings.fontLang === "solaimanlipi"
+            fontFamily: isEnglishVersion && settings.fontLang === "bangla"
+              ? "'Times New Roman', Times, serif"
+              : settings.fontLang === "solaimanlipi"
               ? "'SolaimanLipi', 'Arial', sans-serif"
               : settings.fontLang === "omicronbangla"
               ? "'OmicronBangla', 'SolaimanLipi', 'Arial', sans-serif"
@@ -1451,17 +1488,19 @@ export default function QuestionPaperView() {
                 )}
                 {settings.showClassName && (
                   <p className={`${editableClass} paper-header-class`} data-editable="class" onClick={handleEditableClick} suppressContentEditableWarning>
-                    {meta.className}
+                    {isEnglishVersion ? `Class : ${formatEnglishClassName(meta.className)}` : meta.className}
                   </p>
                 )}
                 {settings.showSubjectName && (
                   <p className={`${editableClass} paper-header-subject`} data-editable="subject" onClick={handleEditableClick} suppressContentEditableWarning>
-                    {meta.subjectName}
+                    {isEnglishVersion ? formatEnglishSubjectName(meta.subjectName) : meta.subjectName}
                   </p>
                 )}
                 {settings.showChapterName && meta.chapterNames.length > 0 && (
                   <p className={`${editableClass} paper-header-chapter`} data-editable="chapters" onClick={handleEditableClick} suppressContentEditableWarning>
-                    {meta.chapterNames.join(", ")}
+                    {isEnglishVersion
+                      ? meta.chapterNames.map(formatEnglishChapterName).join(", ")
+                      : meta.chapterNames.join(", ")}
                   </p>
                 )}
 
@@ -1494,7 +1533,7 @@ export default function QuestionPaperView() {
                     <svg className="paper-header-marks-label-fill" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                       <rect width="100" height="100" fill="#000" />
                     </svg>
-                    <span>প্রাপ্ত নম্বর</span>
+                    <span>{isEnglishVersion ? "Obtained Marks" : "প্রাপ্ত নম্বর"}</span>
                   </span>
                   <span aria-hidden="true">&nbsp;</span>
                 </div>
@@ -1502,7 +1541,7 @@ export default function QuestionPaperView() {
 
               {settings.showSubjectCode && (
                 <div className={`${editableClass} paper-header-subject-code`} onClick={handleEditableClick} suppressContentEditableWarning>
-                  <span>বিষয় কোড :</span>
+                  <span>{isEnglishVersion ? "Subject Code :" : "বিষয় কোড :"}</span>
                   <span className="paper-header-code-cells">
                     {(meta.subjectCode || "১৭৮").split("").map((digit, index) => (
                       <span key={`${digit}-${index}`}>{digit}</span>
@@ -1513,8 +1552,8 @@ export default function QuestionPaperView() {
 
               {settings.showSetCode && (
                 <div className={`${editableClass} paper-header-set-code`} data-editable="setCode" onClick={handleEditableClick} suppressContentEditableWarning>
-                  <span>সেট কোড:</span>
-                  <span>ক</span>
+                  <span>{isEnglishVersion ? "Set Code:" : "সেট কোড:"}</span>
+                  <span>{isEnglishVersion ? "A" : "ক"}</span>
                 </div>
               )}
 
@@ -1538,7 +1577,7 @@ export default function QuestionPaperView() {
                   {formatTime(totalTimeMinutes)}
                 </span>
                 <span className={editableClass} data-editable="marks" onClick={handleEditableClick} suppressContentEditableWarning>
-                  পূর্ণমান— {toBanglaNum(totalMarks)}
+                  {isEnglishVersion ? `Marks— ${totalMarks}` : `পূর্ণমান— ${toBanglaNum(totalMarks)}`}
                 </span>
               </div>
             </div>
@@ -1546,15 +1585,15 @@ export default function QuestionPaperView() {
             {settings.showStudentInfo && (
               <div className="paper-header-student-info paper-header-divider">
                 <div className={`${editableClass} paper-header-student-field paper-header-student-name`} onClick={handleEditableClick} suppressContentEditableWarning>
-                  <span>শিক্ষার্থীর নাম:</span>
+                  <span>{isEnglishVersion ? "Student Name:" : "শিক্ষার্থীর নাম:"}</span>
                   <span className="paper-header-student-line" aria-hidden="true" />
                 </div>
                 <div className={`${editableClass} paper-header-student-field paper-header-student-branch`} onClick={handleEditableClick} suppressContentEditableWarning>
-                  <span>শাখা:</span>
+                  <span>{isEnglishVersion ? "Section:" : "শাখা:"}</span>
                   <span className="paper-header-student-line" aria-hidden="true" />
                 </div>
                 <div className={`${editableClass} paper-header-student-field paper-header-student-roll`} onClick={handleEditableClick} suppressContentEditableWarning>
-                  <span>রোল:</span>
+                  <span>{isEnglishVersion ? "Roll:" : "রোল:"}</span>
                   <span className="paper-header-student-line" aria-hidden="true" />
                 </div>
               </div>
@@ -1564,16 +1603,24 @@ export default function QuestionPaperView() {
               <div className="paper-header-instructions">
                 {mcqQuestions.length > 0 && (
                   <p className={editableClass} data-editable="instruction" onClick={handleEditableClick} suppressContentEditableWarning>
-                    <i><strong>দ্রষ্টব্য:</strong> সরবরাহকৃত বহুনির্বাচনি অভীক্ষার উত্তরপত্রে প্রশ্নের ক্রমিক নম্বরের বিপরীতে প্রদত্ত বর্ণসম্বলিত বৃত্তসমূহ হতে সঠিক উত্তরের বৃত্তটি</i>{" "}
+                    <i><strong>{isEnglishVersion ? "Note:" : "দ্রষ্টব্য:"}</strong>{" "}{isEnglishVersion
+                      ? "In the provided MCQ answer sheet, fill the circle corresponding to the correct answer for each question"
+                      : "সরবরাহকৃত বহুনির্বাচনি অভীক্ষার উত্তরপত্রে প্রশ্নের ক্রমিক নম্বরের বিপরীতে প্রদত্ত বর্ণসম্বলিত বৃত্তসমূহ হতে সঠিক উত্তরের বৃত্তটি"}</i>{" "}
                     <span className="paper-instruction-answer-marker" aria-label="ভরাট বৃত্ত">
                       <span aria-hidden="true">(</span>
                       <span className="paper-instruction-filled-circle" aria-hidden="true" />
                       <span aria-hidden="true">)</span>
                     </span>{" "}
-                    <i>বল পয়েন্ট কলম দ্বারা সম্পূর্ণ ভরাট করো। প্রতিটি প্রশ্নের মান ১।</i>
+                    <i>{isEnglishVersion
+                      ? "completely using a ballpoint pen. Each question carries 1 mark."
+                      : "বল পয়েন্ট কলম দ্বারা সম্পূর্ণ ভরাট করো। প্রতিটি প্রশ্নের মান ১।"}</i>
                   </p>
                 )}
-                <p className="paper-header-no-mark">প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবে না।</p>
+                <p className="paper-header-no-mark">
+                  {isEnglishVersion
+                    ? "No marks, signs, or symbols are allowed on the question paper."
+                    : "প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবে না।"}
+                </p>
               </div>
             )}
           </header>
@@ -1649,12 +1696,12 @@ export default function QuestionPaperView() {
                         <div key={q.id} className={`${editableClass} mcq-print-item`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                           {showStimulus && (
                             <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              {groupKey && <div style={{ fontWeight: 500 }}>নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:</div>}
+                              {groupKey && <div style={{ fontWeight: 500 }}>{isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}</div>}
                               <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
+                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padPaperNumber(idx)}{isEnglishVersion ? "." : "।"}</span>
                             <div style={{ flex: 1 }}>
                               <div className="mc-block-question" style={{ display: "block" }}>
                                 <LatexRenderer inline text={q.question} />
@@ -1665,12 +1712,12 @@ export default function QuestionPaperView() {
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
-                                  const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                  const label = optionLabels[oi];
                                   const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                   return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
-                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                             </div>
                           </div>
                         </div>
@@ -1690,12 +1737,12 @@ export default function QuestionPaperView() {
                         <div key={`print-${q.id}`} className="mcq-print-item" style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }}>
                           {showStimulus && (
                             <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              {groupKey && <div style={{ fontWeight: 500 }}>নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:</div>}
+                              {groupKey && <div style={{ fontWeight: 500 }}>{isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}</div>}
                               <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
                           <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
+                            <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padPaperNumber(idx)}{isEnglishVersion ? "." : "।"}</span>
                             <div style={{ flex: 1 }}>
                               <div className="mc-block-question" style={{ display: "block" }}>
                                 <LatexRenderer inline text={q.question} />
@@ -1706,12 +1753,12 @@ export default function QuestionPaperView() {
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
-                                  const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                  const label = optionLabels[oi];
                                   const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                   return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                 })}
                               </div>
-                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
+                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                             </div>
                           </div>
                         </div>
@@ -1749,7 +1796,7 @@ export default function QuestionPaperView() {
                 return (
                   <div key={groupId} style={{ marginTop: "8px" }}>
                     <p className={editableClass} style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }} onClick={handleEditableClick} suppressContentEditableWarning>
-                      নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:
+                      {isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}
                     </p>
                     {stimulusHtml && (
                       <div style={{ marginBottom: "6px", padding: "4px 8px", borderLeft: "2px solid #000" }}>
@@ -1782,19 +1829,19 @@ export default function QuestionPaperView() {
                             return (
                               <div key={`${q.id}-${rowIdx}`} className={`${editableClass} mcq-print-item`} style={{ marginBottom: `${settings.questionGap}px` }} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                                 <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padPaperNumber(idx)}{isEnglishVersion ? "." : "।"}</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
                                     <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
-                                        const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const label = optionLabels[oi];
                                         const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                         return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
-                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                                   </div>
                                 </div>
                               </div>
@@ -1829,19 +1876,19 @@ export default function QuestionPaperView() {
                             return (
                               <div key={`print-${q.id}-${rowIdx}`} className="mcq-print-item" style={{ marginBottom: `${settings.questionGap}px` }}>
                                 <div style={{ display: "flex", alignItems: "baseline", gap: "0" }}>
-                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padBangla(idx)}।</span>
+                                  <span style={{ width: "1.8rem", flexShrink: 0, fontWeight: 400 }}>{padPaperNumber(idx)}{isEnglishVersion ? "." : "।"}</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={q.question} /></div>
                                     <div style={{ display: "grid", gridTemplateColumns: shouldStackOptions(q) ? "1fr" : "1fr 1fr", gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0" }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
-                                        const label = ["ক", "খ", "গ", "ঘ"][oi];
+                                        const label = optionLabels[oi];
                                         const isCorrect = settings.showAnswerSheet && isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                                         return (<span key={key} className="mcq-option-choice" style={{ ...(isCorrect ? { fontWeight: 700, color: "#047857" } : {}) }}><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} />{isCorrect && <span style={{ marginLeft: "1px", fontWeight: 900 }}>✔</span>}</span>);
                                       })}
                                     </div>
-                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} />)}
+                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                                   </div>
                                 </div>
                               </div>
@@ -1861,10 +1908,10 @@ export default function QuestionPaperView() {
           {shortQuestions.length > 0 && (() => {
             const shortToAnswer = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
             const shortTotalMarks = shortToAnswer * 2;
-            const shortMarksLine = `${toBanglaNum(shortToAnswer)} × ${toBanglaNum(2)} = ${toBanglaNum(shortTotalMarks)}`;
+            const shortMarksLine = `${paperNumber(shortToAnswer)} × ${paperNumber(2)} = ${paperNumber(shortTotalMarks)}`;
             const shortInstruction = shortQuestions.length === shortToAnswer
               ? ""
-              : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`;
+              : (isEnglishVersion ? `Answer any ${shortToAnswer} questions:` : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`);
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
@@ -1874,7 +1921,7 @@ export default function QuestionPaperView() {
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)
+                  {isEnglishVersion ? "Short-answer Questions (2 marks each)" : "সংক্ষিপ্ত উত্তর প্রশ্ন (প্রতি প্রশ্নের মান ২)"}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "3px" }}>
@@ -1896,13 +1943,13 @@ export default function QuestionPaperView() {
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "block" }}>
-                        <LatexRenderer inline text={`${padBangla(num)}। ${q.question}`} />
+                        <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
                         {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                       </div>
 
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
-                          <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>উত্তর:</span>
+                          <span style={{ fontWeight: 600, color: "#047857", marginRight: "4px" }}>{isEnglishVersion ? "Answer:" : "উত্তর:"}</span>
                           <AnswerContent text={q.correct_answer || q.explanation || ""} className="answer-content--inline-start" />
                         </div>
                       )}
@@ -1924,7 +1971,7 @@ export default function QuestionPaperView() {
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০)
+                  {isEnglishVersion ? "Creative Questions (10 marks each)" : "সৃজনশীল প্রশ্ন (প্রতিটি প্রশ্নের মান ১০)"}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "6px" }}>
@@ -1938,13 +1985,15 @@ export default function QuestionPaperView() {
                   const cData = q.creative_data;
                   const subQuestions = cData?.sub_questions || [];
                   const usesMathMarks = isMathSubject || cData?.is_math === true;
-                  const subLabels = usesMathMarks ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
+                  const subLabels = isEnglishVersion
+                    ? (usesMathMarks ? ["a", "b", "c"] : ["a", "b", "c", "d"])
+                    : (usesMathMarks ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"]);
                   const subMarksMap = usesMathMarks ? [2, 4, 4] : [1, 2, 3, 4];
                   const isDuplicate = duplicateIds.has(q.id);
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`cq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
-                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padBangla(num)}।</span>
+                        <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>{padPaperNumber(num)}{isEnglishVersion ? "." : "।"}</span>
                         <div style={{ flex: 1 }}>
                           {(() => {
                             const stemText = cData?.stem || q.stimulus_text || q.question;
@@ -1967,7 +2016,7 @@ export default function QuestionPaperView() {
                                       <span style={{ flexShrink: 0 }}>({label})</span>
                                       <span style={{ flex: 1 }}><LatexRenderer text={sq.question || sq.text || ""} /></span>
                                     </div>
-                                    <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(Number(marks))}</span>
+                                    <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{paperNumber(Number(marks))}</span>
                                   </div>
                                 );
                               })}
@@ -1994,7 +2043,7 @@ export default function QuestionPaperView() {
                                         <span style={{ flexShrink: 0 }}>({subLabels[si]})</span>
                                         <span style={{ flex: 1 }}><LatexRenderer text={text} /></span>
                                       </div>
-                                      <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{toBanglaNum(subMarksMap[si])}</span>
+                                      <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{paperNumber(subMarksMap[si])}</span>
                                     </div>
                                   );
                                 })}
@@ -2007,14 +2056,16 @@ export default function QuestionPaperView() {
                             if (!cData2) return null;
                             const usesMath2 = isMathSubject || cData2.is_math === true;
                             const ansKeys = usesMath2 ? ["ans_ka", "ans_kha", "ans_ga"] : ["ans_ka", "ans_kha", "ans_ga", "ans_gha"];
-                            const ansLabels = usesMath2 ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"];
+                            const ansLabels = isEnglishVersion
+                              ? (usesMath2 ? ["a", "b", "c"] : ["a", "b", "c", "d"])
+                              : (usesMath2 ? ["ক", "খ", "গ"] : ["ক", "খ", "গ", "ঘ"]);
                             // Also check sub_questions for answers
                             const subQs = cData2.sub_questions || [];
                             const hasAnyAnswer = ansKeys.some(k => cData2[k]) || subQs.some((sq: any) => sq.answer);
                             if (!hasAnyAnswer) return null;
                             return (
                               <div style={{ marginTop: "6px", padding: "6px 8px", borderLeft: "3px solid #047857", backgroundColor: "rgba(4,120,55,0.05)" }}>
-                                <span style={{ fontWeight: 700, color: "#047857", display: "block", marginBottom: "4px" }}>উত্তর:</span>
+                                <span style={{ fontWeight: 700, color: "#047857", display: "block", marginBottom: "4px" }}>{isEnglishVersion ? "Answer:" : "উত্তর:"}</span>
                                 {ansKeys.map((key, ai) => {
                                   const ansText = cData2[key] || (subQs[ai] && subQs[ai].answer) || "";
                                   if (!ansText) return null;
@@ -2041,10 +2092,10 @@ export default function QuestionPaperView() {
           {descriptiveQuestions.length > 0 && (() => {
             const descToAnswer = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
             const descTotalMarks = descToAnswer * 10;
-            const descMarksLine = `${toBanglaNum(10)} × ${toBanglaNum(descToAnswer)} = ${toBanglaNum(descTotalMarks)}`;
+            const descMarksLine = `${paperNumber(10)} × ${paperNumber(descToAnswer)} = ${paperNumber(descTotalMarks)}`;
             const descInstruction = descriptiveQuestions.length === descToAnswer
               ? ""
-              : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`;
+              : (isEnglishVersion ? `Answer any ${descToAnswer} questions:` : `যেকোনো ${toBanglaNum(descToAnswer)}টি প্রশ্নের উত্তর দাও :`);
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
@@ -2054,7 +2105,7 @@ export default function QuestionPaperView() {
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)
+                  {isEnglishVersion ? "Descriptive Questions (10 marks each)" : "বর্ণনামূলক প্রশ্ন (প্রতি প্রশ্নের মান ১০)"}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "4px" }}>
@@ -2085,7 +2136,7 @@ export default function QuestionPaperView() {
                     >
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>
-                          {padBangla(num)}।
+                          {padPaperNumber(num)}{isEnglishVersion ? "." : "।"}
                         </span>
                         <div style={{ flex: 1 }}>
                         {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
@@ -2094,19 +2145,19 @@ export default function QuestionPaperView() {
                           {dData.desc_q_ka && (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4, marginBottom: "2px" }}>
                               <div style={{ display: "flex", gap: "4px", flex: 1 }}>
-                                <span style={{ flexShrink: 0 }}>(ক)</span>
+                                <span style={{ flexShrink: 0 }}>({isEnglishVersion ? "a" : "ক"})</span>
                                 <span style={{ flex: 1 }}><LatexRenderer text={dData.desc_q_ka} /></span>
                               </div>
-                              <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৩</span>
+                              <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{paperNumber(3)}</span>
                             </div>
                           )}
                           {dData.desc_q_kha && (
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", lineHeight: 1.4 }}>
                               <div style={{ display: "flex", gap: "4px", flex: 1 }}>
-                                <span style={{ flexShrink: 0 }}>(খ)</span>
+                                <span style={{ flexShrink: 0 }}>({isEnglishVersion ? "b" : "খ"})</span>
                                 <span style={{ flex: 1 }}><LatexRenderer text={dData.desc_q_kha} /></span>
                               </div>
-                              <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>৭</span>
+                              <span style={{ flexShrink: 0, marginLeft: "12px", fontWeight: 500 }}>{paperNumber(7)}</span>
                             </div>
                           )}
                         </div>
@@ -2127,13 +2178,13 @@ export default function QuestionPaperView() {
                                 <span style={{ fontWeight: 700, color: "#047857", display: "block", marginBottom: "4px" }}>উত্তর:</span>
                                 {dd?.desc_ans_ka && (
                                   <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
-                                    <span style={{ fontWeight: 600 }}>(ক) </span>
+                                    <span style={{ fontWeight: 600 }}>({isEnglishVersion ? "a" : "ক"}) </span>
                                     <AnswerContent text={dd.desc_ans_ka} className="answer-content--inline-start" />
                                   </div>
                                 )}
                                 {dd?.desc_ans_kha && (
                                   <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
-                                    <span style={{ fontWeight: 600 }}>(খ) </span>
+                                    <span style={{ fontWeight: 600 }}>({isEnglishVersion ? "b" : "খ"}) </span>
                                     <AnswerContent text={dd.desc_ans_kha} className="answer-content--inline-start" />
                                   </div>
                                 )}

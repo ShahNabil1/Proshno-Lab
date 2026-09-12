@@ -15,6 +15,13 @@ import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
+import SubjectPicker from "@/components/dashboard/SubjectPicker";
+import {
+  filterSubjectsByVersion,
+  getRelatedVersionClassIds,
+  isEnglishVersionClass,
+  type SubjectVersion,
+} from "@/lib/subjectVersion";
 
 type QType = "mcq" | "cq" | "short" | "descriptive";
 const TYPE_LABELS: Record<QType, string> = {
@@ -27,8 +34,8 @@ const TYPE_MARKS: Record<QType, number> = { mcq: 1, short: 2, cq: 10, descriptiv
 const toBanglaNum = (n: number) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 
 interface ClassRow { id: number; name: string }
-interface SubjectRow { id: number; name: string; subject_code?: string | null }
-interface ChapterRow { id: number; name: string }
+interface SubjectRow { id: number; class_id: number; name: string; subject_code?: string | null }
+interface ChapterRow { id: number; name: string; subject_id?: number }
 
 const STEPS = [
   { id: 1, label: "বিষয়", icon: BookOpen },
@@ -48,7 +55,9 @@ export default function AutoQuestionCreate() {
 
   const [classId, setClassId] = useState("");
   const [subjectId, setSubjectId] = useState("");
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [chapterIds, setChapterIds] = useState<string[]>([]);
+  const [subjectVersion, setSubjectVersion] = useState<SubjectVersion>("bangla");
 
   const [enabledTypes, setEnabledTypes] = useState<Record<QType, boolean>>({
     mcq: true, cq: false, short: false, descriptive: false,
@@ -71,38 +80,53 @@ export default function AutoQuestionCreate() {
 
   // Load subjects
   useEffect(() => {
-    if (!classId) { setSubjects([]); setSubjectId(""); return; }
-    supabase.from("subjects").select("id, name, subject_code").eq("class_id", Number(classId)).order("name")
+    if (!classId) { setSubjects([]); setSubjectId(""); setSubjectIds([]); return; }
+    const relatedClassIds = getRelatedVersionClassIds(classId, classes);
+    supabase.from("subjects").select("id, class_id, name, subject_code").in("class_id", relatedClassIds).order("name")
       .then(({ data }) => setSubjects((data as any) || []));
-  }, [classId]);
+  }, [classId, classes]);
 
-  // Load chapters
+  // Load chapters for all selected subjects
   useEffect(() => {
-    if (!subjectId) { setChapters([]); setChapterIds([]); return; }
-    supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
+    if (subjectIds.length === 0) { setChapters([]); setChapterIds([]); return; }
+    supabase.from("chapters").select("id, name, subject_id").in("subject_id", subjectIds.map(Number)).eq("is_active", true).order("name")
       .then(({ data }) => setChapters(sortChapters((data as any) || [])));
     setChapterIds([]);
-  }, [subjectId]);
+  }, [subjectIds.join(",")]);
 
   // Access check
+  const selectedSubjects = useMemo(() => {
+    return subjects.filter((s) => subjectIds.includes(String(s.id)));
+  }, [subjectIds, subjects]);
+
+  const effectiveClassId = selectedSubjects[0]?.class_id || Number(classId || 0);
+  const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
+
   useEffect(() => {
     if (unlimitedAccess) { setHasAccess(true); return; }
-    if (!user?.id || !classId || !subjectId) { setHasAccess(null); return; }
+    if (!user?.id || !effectiveClassId || subjectIds.length === 0) { setHasAccess(null); return; }
     let cancel = false;
     (async () => {
       const [{ data: perm }, { data: subs }] = await Promise.all([
-        supabase.from("user_permissions").select("id").eq("user_id", user.id).eq("class_id", Number(classId)).eq("subject_id", Number(subjectId)).limit(1),
+        supabase.from("user_permissions").select("id, subject_id").eq("user_id", user.id).eq("class_id", effectiveClassId).in("subject_id", subjectIds.map(Number)),
         supabase.from("subscriptions").select("plan").eq("teacher_id", user.id).eq("status", "active"),
       ]);
       if (cancel) return;
-      if (perm && perm.length > 0) { setHasAccess(true); return; }
-      const cls = classes.find(c => String(c.id) === classId);
-      const sub = subjects.find(s => String(s.id) === subjectId);
-      if (!cls || !sub || !subs) { setHasAccess(false); return; }
-      setHasAccess(subs.some(s => planCoversSelection(s.plan || "", cls.name, sub.name)));
+      const permSubIds = new Set((perm || []).map((p: any) => String(p.subject_id)));
+      const cls = classes.find(c => c.id === effectiveClassId);
+      if (!cls || !subs) { setHasAccess(false); return; }
+
+      const allAccess = subjectIds.every(subId => {
+        if (permSubIds.has(subId)) return true;
+        const sub = subjects.find(s => String(s.id) === subId);
+        if (!sub) return false;
+        return subs.some(s => planCoversSelection(s.plan || "", cls.name, sub.name));
+      });
+
+      setHasAccess(allAccess);
     })();
     return () => { cancel = true; };
-  }, [user?.id, classId, subjectId, classes, subjects, unlimitedAccess]);
+  }, [user?.id, effectiveClassId, subjectIds.join(","), classes, subjects, unlimitedAccess]);
 
   // Live counts per type based on selected chapters
   useEffect(() => {
@@ -161,13 +185,12 @@ export default function AutoQuestionCreate() {
     return all;
   };
 
-
-  const className = classes.find(c => String(c.id) === classId)?.name || "";
-  const subjectName = subjects.find(s => String(s.id) === subjectId)?.name || "";
-  const subjectCode = subjects.find(s => String(s.id) === subjectId)?.subject_code || "";
+  const className = classes.find(c => c.id === effectiveClassId)?.name || "";
+  const subjectName = selectedSubjects.map(s => s.name).join(", ");
+  const subjectCode = selectedSubjects.map(s => s.subject_code).filter(Boolean).join(", ");
   const selectedChapters = chapters.filter(c => chapterIds.includes(String(c.id)));
 
-  const step1Valid = classId && subjectId && chapterIds.length > 0 && hasAccess !== false;
+  const step1Valid = classId && subjectIds.length > 0 && chapterIds.length > 0 && hasAccess !== false;
   const activeTypes = (Object.keys(enabledTypes) as QType[]).filter(t => enabledTypes[t] && counts[t] > 0);
   const step2Valid = activeTypes.length > 0;
   const totalMarks = useMemo(() => activeTypes.reduce((s, t) => s + counts[t] * TYPE_MARKS[t], 0), [activeTypes, counts]);
@@ -190,7 +213,7 @@ export default function AutoQuestionCreate() {
       const { data: liveChapters } = await supabase
         .from("chapters")
         .select("id")
-        .eq("subject_id", Number(subjectId))
+        .in("subject_id", subjectIds.map(Number))
         .eq("is_active", true)
         .in("id", chapterIds.map(Number));
       const ids = ((liveChapters as any[]) || []).map(c => Number(c.id));
@@ -227,7 +250,7 @@ export default function AutoQuestionCreate() {
 
       const selectedChapterNames = selectedChapters.map(c => c.name);
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(picked));
-      sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(classId), subjectId: String(subjectId), chapterIds: ids.map(String) }));
+      sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(effectiveClassId), subjectId: subjectIds.join(","), chapterIds: ids.map(String) }));
       sessionStorage.setItem("viewPaperMeta", JSON.stringify({
         instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
         instituteUpazila: institute?.upazila || "",
@@ -288,7 +311,13 @@ export default function AutoQuestionCreate() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
                 <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
                   <Label className="mb-2 block font-semibold">শ্রেণি</Label>
-                  <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterIds([]); }}>
+                  <Select value={classId} onValueChange={(v) => {
+                    setClassId(v);
+                    setSubjectVersion(isEnglishVersionClass(classes.find(c => String(c.id) === v)?.name || "") ? "english" : "bangla");
+                    setSubjectId("");
+                    setSubjectIds([]);
+                    setChapterIds([]);
+                  }}>
                     <SelectTrigger><SelectValue placeholder="-- শ্রেণি সিলেক্ট --" /></SelectTrigger>
                     <SelectContent>
                       {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
@@ -297,13 +326,27 @@ export default function AutoQuestionCreate() {
                 </div>
 
                 <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
-                  <Label className="mb-2 block font-semibold">বিষয়</Label>
-                  <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterIds([]); }} disabled={!classId}>
-                    <SelectTrigger><SelectValue placeholder="-- বিষয় সিলেক্ট --" /></SelectTrigger>
-                    <SelectContent>
-                      {subjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Label className="mb-2 block font-semibold">বিষয় (একাধিক)</Label>
+                  <SubjectPicker
+                    value={subjectId}
+                    values={subjectIds}
+                    subjects={filteredSubjects}
+                    classes={classes}
+                    version={subjectVersion}
+                    disabled={!classId}
+                    placeholder="-- বিষয় সিলেক্ট --"
+                    onVersionChange={(version) => {
+                      setSubjectVersion(version);
+                      setSubjectId("");
+                      setSubjectIds([]);
+                      setChapterIds([]);
+                    }}
+                    onChange={(nextSubjectId, nextSubjectIds) => {
+                      setSubjectId(nextSubjectIds.join(", "));
+                      setSubjectIds(nextSubjectIds);
+                      setChapterIds([]);
+                    }}
+                  />
                 </div>
 
                 <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
@@ -316,8 +359,8 @@ export default function AutoQuestionCreate() {
                       </button>
                     )}
                   </Label>
-                  {!subjectId && <p className="text-xs text-muted-foreground">আগে বিষয় সিলেক্ট করুন</p>}
-                  {subjectId && chapters.length === 0 && <p className="text-xs text-muted-foreground">কোনো সক্রিয় অধ্যায় নেই</p>}
+                  {subjectIds.length === 0 && <p className="text-xs text-muted-foreground">আগে বিষয় সিলেক্ট করুন</p>}
+                  {subjectIds.length > 0 && chapters.length === 0 && <p className="text-xs text-muted-foreground">কোনো সক্রিয় অধ্যায় নেই</p>}
                   <div className="space-y-2 flex-1 max-h-40 overflow-y-auto">
 
                     {chapters.map(c => (
@@ -335,7 +378,7 @@ export default function AutoQuestionCreate() {
                 </div>
               </div>
 
-              {classId && subjectId && hasAccess === false && (
+              {classId && subjectIds.length > 0 && hasAccess === false && (
                 <div className="mt-4 flex items-start gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm">
                   <Lock className="w-4 h-4 text-destructive mt-0.5" />
                   <span>এই শ্রেণি/বিষয়ের জন্য কোনো সক্রিয় সাবস্ক্রিপশন নেই। <a href="/dashboard/subscription" className="text-primary underline">সাবস্ক্রাইব করুন</a></span>

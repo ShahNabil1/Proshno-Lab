@@ -442,9 +442,17 @@ export default function AdminQuestionsBulk() {
                         ডুপ্লিকেট ({q.duplicate === "db" ? "আগে থেকেই ডাটাবেসে আছে" : "লিস্টে দুইবার"}) — স্কিপ হবে
                       </Badge>
                     )}
-                    {q.stimulus && <div className="text-xs text-muted-foreground mb-1 whitespace-pre-line break-words"><span className="font-semibold">উদ্দীপক:</span> <LatexRenderer inline text={q.stimulus.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")} /></div>}
+                    {q.stimulus && (
+                      <div className="text-xs text-muted-foreground mb-2 break-words">
+                        <div className="font-semibold mb-1">উদ্দীপক:</div>
+                        <LatexRenderer
+                          text={q.stimulus}
+                          className="[&_img]:block [&_img]:mt-1 [&_img]:max-h-40 [&_img]:max-w-full [&_img]:w-auto [&_img]:object-contain"
+                        />
+                      </div>
+                    )}
                     {!(q.type === "cq" || q.type === "descriptive") && (
-                      <div className="font-medium text-sm line-clamp-2"><LatexRenderer inline text={q.question || "(no question)"} /></div>
+                      <div className="font-medium text-sm break-words"><LatexRenderer text={q.question || "(no question)"} /></div>
                     )}
 
                     {q.type === "mcq" && (
