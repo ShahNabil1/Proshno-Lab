@@ -271,9 +271,16 @@ function SuggestionPreview({ questions }: { questions: Question[] }) {
             {shorts.map(q => {
               serial++;
               return (
-                <div key={q.id} className="flex gap-2">
-                  <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
-                  <div className="flex-1"><LatexRenderer text={q.question} /></div>
+                <div key={q.id} className="flex flex-col gap-1">
+                  {q.stimulus_text && (
+                    <div className="text-sm italic pl-[2.2rem]">
+                      <LatexRenderer text={q.stimulus_text} />
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <span className="font-bold shrink-0 w-[2.2rem] text-right">{toBanglaNum(serial)}.</span>
+                    <div className="flex-1"><LatexRenderer text={q.question} /></div>
+                  </div>
                 </div>
               );
             })}

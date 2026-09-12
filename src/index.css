@@ -1187,6 +1187,24 @@
   object-position: left center;
 }
 
+/* Short, Descriptive, and CQ diagrams: render clearly within print column */
+[data-print-paper] .short-stimulus .latex-renderer img:not([data-watermark-img]),
+[data-print-paper] .desc-stimulus .latex-renderer img:not([data-watermark-img]),
+[data-print-paper] [data-editable^="short-"] .mc-block-question .latex-renderer img:not([data-watermark-img]),
+[data-print-paper] [data-editable^="desc-"] .mc-block-question .latex-renderer img:not([data-watermark-img]),
+[data-print-paper] [data-editable^="cq-"] .mc-block-question .latex-renderer img:not([data-watermark-img]) {
+  display: block !important;
+  box-sizing: border-box;
+  max-width: min(100%, 280px) !important;
+  max-height: 200px !important;
+  height: auto !important;
+  width: auto !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  object-fit: contain !important;
+  object-position: left center;
+}
+
 /* Question-paper settings: clearly separated, low-glare control groups. */
 .paper-builder-shell {
   --primary: 160 94% 30%;

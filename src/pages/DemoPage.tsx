@@ -493,6 +493,11 @@ export default function DemoPage() {
                             </div>
                             {shortQuestions.map((q, idx) => (
                               <div key={q.id} className="mb-1 demo-short-item">
+                                {q.stimulus_text && (
+                                  <div className="text-[11px] italic mb-0.5">
+                                    <LatexRenderer text={q.stimulus_text} />
+                                  </div>
+                                )}
                                 <span className="font-semibold demo-q-num">{padBangla(idx + 1)}।</span>{" "}
                                 <LatexRenderer text={q.question} className="text-[11px]" />
                               </div>

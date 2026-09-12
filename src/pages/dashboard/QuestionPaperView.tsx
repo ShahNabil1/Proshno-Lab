@@ -1912,6 +1912,18 @@ export default function QuestionPaperView() {
             const shortInstruction = shortQuestions.length === shortToAnswer
               ? ""
               : (isEnglishVersion ? `Answer any ${shortToAnswer} questions:` : `যেকোনো ${toBanglaNum(shortToAnswer)}টি প্রশ্নের উত্তর দাও :`);
+
+            const repeatedShortStimuli = findRepeatedStimuli(shortQuestions, q => q.stimulus_text);
+            const shortStimulusGroupKey = (q: QuestionRow): string | null => {
+              const normalizedStimulus = normalizeStimulusKey(q.stimulus_text);
+              return q.stimulus_group_id
+                ? `id:${q.stimulus_group_id}`
+                : repeatedShortStimuli.has(normalizedStimulus)
+                  ? `stimulus:${normalizedStimulus}`
+                  : null;
+            };
+            const shownShortStimuli = new Set<string>();
+
             return (
             <div style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div data-section-header style={{ textAlign: "center", fontWeight: 700, fontSize: "0.95em", marginBottom: "2px", textDecoration: "underline" }}>
@@ -1940,10 +1952,28 @@ export default function QuestionPaperView() {
                   const num = idx + 1;
                   const refStr = formatRefs(q);
                   const isDuplicate = duplicateIds.has(q.id);
+                  const groupKey = shortStimulusGroupKey(q);
+                  const showStimulus = hasRenderableStimulus(q.stimulus_text) && (!groupKey || !shownShortStimuli.has(groupKey));
+                  if (groupKey && showStimulus) shownShortStimuli.add(groupKey);
+
                   return (
                     <div key={q.id} className={editableClass} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined }} data-editable={`short-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
+                      {showStimulus && (
+                        <div className="short-stimulus" style={{ marginBottom: "4px", padding: "2px 0" }}>
+                          {groupKey && (
+                            <div style={{ fontWeight: 500, fontStyle: "italic", marginBottom: "2px" }}>
+                              {isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}
+                            </div>
+                          )}
+                          <div className="mc-block-question">
+                            <LatexRenderer text={q.stimulus_text || ""} />
+                          </div>
+                        </div>
+                      )}
                       <div style={{ display: "block" }}>
-                        <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
+                        <span className="mc-block-question">
+                          <LatexRenderer inline text={`${padPaperNumber(num)}${isEnglishVersion ? "." : "।"} ${q.question}`} />
+                        </span>
                         {settings.showQuestionInfo && refStr && <span className="paper-question-info"><mark>{refStr}</mark></span>}
                       </div>
 
@@ -2134,6 +2164,13 @@ export default function QuestionPaperView() {
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
                     >
+                      {hasRenderableStimulus(q.stimulus_text) && (
+                        <div className="desc-stimulus" style={{ marginBottom: "4px", padding: "2px 0" }}>
+                          <div className="mc-block-question">
+                            <LatexRenderer text={q.stimulus_text || ""} />
+                          </div>
+                        </div>
+                      )}
                       <div style={{ display: "flex", alignItems: "flex-start", gap: "0", marginBottom: "2px" }}>
                         <span style={{ width: "2.2rem", flexShrink: 0, fontWeight: 600 }}>
                           {padPaperNumber(num)}{isEnglishVersion ? "." : "।"}
