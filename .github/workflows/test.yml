@@ -15,17 +15,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 20
+          cache: "npm"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Run subscriptionMatcher tests
-        run: bun run test -- src/lib/subscriptionMatcher.test.ts
+        run: npm test -- src/lib/subscriptionMatcher.test.ts
 
       - name: Run full test suite
         if: success()
-        run: bun run test
+        run: npm test
