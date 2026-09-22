@@ -34,9 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLocalMockAdminEnabled()) {
-      setSession(null);
-      setUser(createLocalMockAdmin());
-      setLoading(false);
+      // Prefer a real Supabase session when one exists. The local UI mock only
+      // bypasses route guards and cannot read RLS-protected admin data.
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? createLocalMockAdmin());
+        setLoading(false);
+      });
       return;
     }
 

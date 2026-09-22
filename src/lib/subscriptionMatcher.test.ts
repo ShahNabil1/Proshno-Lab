@@ -5,7 +5,88 @@ import {
   planCoversSelection,
   hasActiveAccess,
   isPackagePurchased,
+  isSubscriptionActive,
+  activePlanNames,
+  resolvePlanClasses,
 } from "./subscriptionMatcher";
+
+describe("resolvePlanClasses", () => {
+  const classes = [
+    { id: 1, name: "ষষ্ঠ শ্রেণি" },
+    { id: 2, name: "সপ্তম শ্রেণি" },
+    { id: 3, name: "নবম শ্রেণি" },
+    { id: 4, name: "দশম শ্রেণি" },
+    { id: 5, name: "দ্বাদশ শ্রেণি" },
+  ];
+
+  it("resolves an exact single class", () => {
+    expect(resolvePlanClasses("দ্বাদশ শ্রেণি", classes)).toEqual([{ id: 5, name: "দ্বাদশ শ্রেণি" }]);
+  });
+
+  it("resolves a range bundle to every class inside it", () => {
+    expect(resolvePlanClasses("ষষ্ঠ - দশম", classes).map(c => c.id)).toEqual([1, 2, 3, 4]);
+  });
+
+  it("resolves the spelling variant used by pricing packages", () => {
+    expect(resolvePlanClasses("নবম-দশম শ্রেনি", classes).map(c => c.id)).toEqual([3, 4]);
+  });
+
+  it("returns an empty list when nothing matches", () => {
+    expect(resolvePlanClasses("কেজি", classes)).toEqual([]);
+    expect(resolvePlanClasses("", classes)).toEqual([]);
+  });
+});
+
+const NOW = new Date("2026-09-18T12:00:00.000Z");
+
+describe("isSubscriptionActive", () => {
+  it("accepts an active subscription inside its window", () => {
+    expect(isSubscriptionActive(
+      { status: "active", starts_at: "2026-01-01T00:00:00.000Z", ends_at: "2027-01-01T00:00:00.000Z" },
+      NOW,
+    )).toBe(true);
+  });
+
+  it("rejects rows that are not active", () => {
+    expect(isSubscriptionActive({ status: "inactive", starts_at: null, ends_at: null }, NOW)).toBe(false);
+    expect(isSubscriptionActive({ status: "pending" }, NOW)).toBe(false);
+    expect(isSubscriptionActive(null, NOW)).toBe(false);
+    expect(isSubscriptionActive(undefined, NOW)).toBe(false);
+  });
+
+  it("rejects before starts_at and at or after ends_at", () => {
+    expect(isSubscriptionActive({ status: "active", starts_at: "2026-10-01T00:00:00.000Z" }, NOW)).toBe(false);
+    expect(isSubscriptionActive({ status: "active", ends_at: "2026-09-18T12:00:00.000Z" }, NOW)).toBe(false);
+    expect(isSubscriptionActive({ status: "active", ends_at: "2026-09-18T11:59:59.000Z" }, NOW)).toBe(false);
+  });
+
+  it("treats missing start or end as open ended", () => {
+    expect(isSubscriptionActive({ status: "active", starts_at: null, ends_at: null }, NOW)).toBe(true);
+    expect(isSubscriptionActive({ status: "active" }, NOW)).toBe(true);
+  });
+
+  it("ignores unparseable dates instead of blocking access", () => {
+    expect(isSubscriptionActive({ status: "active", ends_at: "not-a-date" }, NOW)).toBe(true);
+  });
+});
+
+describe("activePlanNames", () => {
+  it("keeps only currently usable plans", () => {
+    const subs = [
+      { plan: "Class 12 - All Subjects", status: "active", starts_at: "2026-01-01T00:00:00.000Z", ends_at: "2027-01-01T00:00:00.000Z" },
+      { plan: "Expired Plan", status: "active", starts_at: "2024-01-01T00:00:00.000Z", ends_at: "2025-01-01T00:00:00.000Z" },
+      { plan: "Inactive Plan", status: "inactive", starts_at: null, ends_at: null },
+      { plan: "Queued Plan", status: "active", starts_at: "2027-01-01T00:00:00.000Z" },
+    ];
+    expect(activePlanNames(subs, NOW)).toEqual(["Class 12 - All Subjects"]);
+  });
+
+  it("handles null input and drops blank plans", () => {
+    expect(activePlanNames(null, NOW)).toEqual([]);
+    expect(activePlanNames(undefined, NOW)).toEqual([]);
+    expect(activePlanNames([{ plan: "   ", status: "active" }], NOW)).toEqual([]);
+  });
+});
 
 describe("normalizeSubscriptionText", () => {
   it("trims and removes 'শ্রেণি'", () => {
@@ -99,6 +180,13 @@ describe("planCoversSelection — range bundle plans", () => {
 });
 
 describe("planCoversSelection — mismatched / edge cases", () => {
+  it("covers every subject listed in a multi-subject custom plan", () => {
+    const plan = "দ্বাদশ শ্রেণি - বাংলা, ইংরেজি";
+    expect(planCoversSelection(plan, "দ্বাদশ শ্রেণি", "বাংলা")).toBe(true);
+    expect(planCoversSelection(plan, "দ্বাদশ শ্রেণি", "ইংরেজি")).toBe(true);
+    expect(planCoversSelection(plan, "দ্বাদশ শ্রেণি", "গণিত")).toBe(false);
+  });
+
   it("returns false for empty plan", () => {
     expect(planCoversSelection("", "ষষ্ঠ শ্রেণি", "বিজ্ঞান")).toBe(false);
   });

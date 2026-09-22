@@ -10,12 +10,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, Wand2, Lock, Minus, Plus } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, FileText, Lock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
 import SubjectPicker from "@/components/dashboard/SubjectPicker";
+import ClassPicker from "@/components/dashboard/ClassPicker";
 import {
   filterSubjectsByVersion,
   getRelatedVersionClassIds,
@@ -25,8 +26,8 @@ import {
 
 type QType = "mcq" | "cq" | "short" | "descriptive";
 const TYPE_LABELS: Record<QType, string> = {
-  mcq: "MCQ",
-  cq: "সৃজনশীল (CQ)",
+  mcq: "বহুনির্বাচনী",
+  cq: "সৃজনশীল",
   short: "সংক্ষিপ্ত",
   descriptive: "বর্ণনামূলক",
 };
@@ -40,7 +41,7 @@ interface ChapterRow { id: number; name: string; subject_id?: number }
 const STEPS = [
   { id: 1, label: "বিষয়", icon: BookOpen },
   { id: 2, label: "কনফিগ", icon: ListChecks },
-  { id: 3, label: "জেনারেট", icon: Wand2 },
+  { id: 3, label: "প্রশ্ন তৈরি", icon: FileText },
 ];
 
 export default function AutoQuestionCreate() {
@@ -202,6 +203,10 @@ export default function AutoQuestionCreate() {
       setStep(2);
     } else if (step === 2) {
       if (!step2Valid) { toast.error("অন্তত একটি টাইপ ও সংখ্যা সিলেক্ট করুন"); return; }
+      if (totalQuestions > 200) {
+        toast.warning(`একবারে সর্বোচ্চ ২০০টি প্রশ্ন তৈরি করা যাবে (বর্তমানে ${toBanglaNum(totalQuestions)}টি সিলেক্ট করা হয়েছে)`);
+        return;
+      }
       setStep(3);
     }
   };
@@ -276,9 +281,9 @@ export default function AutoQuestionCreate() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-4">
       {/* Stepper */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
         {STEPS.map(s => {
           const active = step === s.id;
           const done = step > s.id;
@@ -288,45 +293,46 @@ export default function AutoQuestionCreate() {
               key={s.id}
               onClick={() => { if (done) setStep(s.id); }}
               className={cn(
-                "flex items-center justify-center gap-2 py-3 px-2 rounded-lg border text-sm font-semibold transition-all",
-                active && "bg-primary text-primary-foreground border-primary shadow",
-                done && !active && "bg-primary/10 text-primary border-primary/30 hover:bg-primary/15",
-                !active && !done && "bg-muted/40 text-muted-foreground border-border cursor-not-allowed"
+                "flex items-center justify-center gap-2 py-3 px-3 rounded-[1px] border text-base font-semibold transition-all select-none",
+                active && "bg-[#0A1E38] text-white border-[#0A1E38] shadow-xs",
+                done && !active && "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200/70 cursor-pointer",
+                !active && !done && "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">{toBanglaNum(s.id)}.</span> {s.label}
             </button>
           );
         })}
       </div>
 
-      <Card className="border-2">
+      <Card className="border border-slate-300 rounded-[1px] bg-white shadow-xs">
         <CardContent className="p-6 md:p-8">
           {step === 1 && (
             <div>
-              <h2 className="font-heading text-xl font-bold mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
-              <p className="text-sm text-muted-foreground mb-6">প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।</p>
+              <h2 className="font-heading text-xl md:text-2xl font-bold text-slate-800 mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
+              <p className="text-base text-slate-600 mb-6 font-normal">প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-                <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
-                  <Label className="mb-2 block font-semibold">শ্রেণি</Label>
-                  <Select value={classId} onValueChange={(v) => {
-                    setClassId(v);
-                    setSubjectVersion(isEnglishVersionClass(classes.find(c => String(c.id) === v)?.name || "") ? "english" : "bangla");
-                    setSubjectId("");
-                    setSubjectIds([]);
-                    setChapterIds([]);
-                  }}>
-                    <SelectTrigger><SelectValue placeholder="-- শ্রেণি সিলেক্ট --" /></SelectTrigger>
-                    <SelectContent>
-                      {classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                  <Label className="mb-2.5 block font-bold text-base text-slate-800">শ্রেণি</Label>
+                  <ClassPicker
+                    value={classId}
+                    classes={classes}
+                    placeholder="-- শ্রেণি সিলেক্ট --"
+                    triggerClassName="h-12 rounded-[1px] border-slate-300 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
+                    onChange={(v) => {
+                      setClassId(v);
+                      setSubjectVersion(isEnglishVersionClass(classes.find(c => String(c.id) === v)?.name || "") ? "english" : "bangla");
+                      setSubjectId("");
+                      setSubjectIds([]);
+                      setChapterIds([]);
+                    }}
+                  />
                 </div>
 
-                <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
-                  <Label className="mb-2 block font-semibold">বিষয় (একাধিক)</Label>
+                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                  <Label className="mb-2.5 block font-bold text-base text-slate-800">বিষয় (একাধিক)</Label>
                   <SubjectPicker
                     value={subjectId}
                     values={subjectIds}
@@ -335,6 +341,8 @@ export default function AutoQuestionCreate() {
                     version={subjectVersion}
                     disabled={!classId}
                     placeholder="-- বিষয় সিলেক্ট --"
+                    triggerIcon="scan"
+                    triggerClassName="h-12 rounded-[1px] border-slate-300 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
                     onVersionChange={(version) => {
                       setSubjectVersion(version);
                       setSubjectId("");
@@ -349,93 +357,119 @@ export default function AutoQuestionCreate() {
                   />
                 </div>
 
-                <div className="border rounded-lg p-4 flex flex-col min-h-[180px]">
-                  <Label className="mb-2 flex items-center justify-between font-semibold min-h-[24px]">
-                    <span>অধ্যায় (একাধিক)</span>
+                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                  <div className="mb-2 flex items-center justify-between min-h-[28px]">
+                    <Label className="font-bold text-base text-slate-800">অধ্যায় (একাধিক)</Label>
                     {chapters.length > 0 && (
-                      <button className="text-xs text-primary hover:underline"
-                        onClick={() => setChapterIds(chapterIds.length === chapters.length ? [] : chapters.map(c => String(c.id)))}>
+                      <button
+                        type="button"
+                        className="text-sm font-semibold text-[#0A1E38] hover:underline cursor-pointer"
+                        onClick={() => setChapterIds(chapterIds.length === chapters.length ? [] : chapters.map(c => String(c.id)))}
+                      >
                         {chapterIds.length === chapters.length ? "আনসিলেক্ট" : "সব সিলেক্ট"}
                       </button>
                     )}
-                  </Label>
-                  {subjectIds.length === 0 && <p className="text-xs text-muted-foreground">আগে বিষয় সিলেক্ট করুন</p>}
-                  {subjectIds.length > 0 && chapters.length === 0 && <p className="text-xs text-muted-foreground">কোনো সক্রিয় অধ্যায় নেই</p>}
-                  <div className="space-y-2 flex-1 max-h-40 overflow-y-auto">
-
-                    {chapters.map(c => (
-                      <label key={c.id} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 p-1.5 rounded">
-                        <Checkbox
-                          checked={chapterIds.includes(String(c.id))}
-                          onCheckedChange={(chk) => {
-                            setChapterIds(prev => chk ? [...prev, String(c.id)] : prev.filter(x => x !== String(c.id)));
-                          }}
-                        />
-                        <span>{c.name}</span>
-                      </label>
-                    ))}
+                  </div>
+                  {subjectIds.length === 0 && <p className="text-sm text-slate-500 py-3">আগে বিষয় সিলেক্ট করুন</p>}
+                  {subjectIds.length > 0 && chapters.length === 0 && <p className="text-sm text-slate-500 py-3">কোনো সক্রিয় অধ্যায় নেই</p>}
+                  <div className="space-y-1 flex-1 max-h-48 overflow-y-auto pr-1">
+                    {chapters.map(c => {
+                      const isChecked = chapterIds.includes(String(c.id));
+                      return (
+                        <label
+                          key={c.id}
+                          className={`flex items-center gap-2.5 cursor-pointer text-base p-2 rounded-[1px] transition-colors select-none ${
+                            isChecked ? "bg-slate-100 text-slate-900 font-medium" : "hover:bg-slate-50 text-slate-800"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(chk) => {
+                              setChapterIds(prev => chk ? [...prev, String(c.id)] : prev.filter(x => x !== String(c.id)));
+                            }}
+                            className="h-4 w-4 rounded-[1px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
+                          />
+                          <span className="truncate">{c.name}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
               {classId && subjectIds.length > 0 && hasAccess === false && (
-                <div className="mt-4 flex items-start gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm">
-                  <Lock className="w-4 h-4 text-destructive mt-0.5" />
-                  <span>এই শ্রেণি/বিষয়ের জন্য কোনো সক্রিয় সাবস্ক্রিপশন নেই। <a href="/dashboard/subscription" className="text-primary underline">সাবস্ক্রাইব করুন</a></span>
+                <div className="mt-4 flex items-start gap-2.5 p-3.5 rounded-[1px] border border-amber-300 bg-amber-50 text-amber-900 text-base">
+                  <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <span>এই শ্রেণি/বিষয়ের জন্য কোনো সক্রিয় সাবস্ক্রিপশন নেই। <a href="/dashboard/subscription" className="text-[#0A1E38] font-bold underline">সাবস্ক্রাইব করুন</a></span>
                 </div>
               )}
 
-              <div className="flex justify-end mt-6">
-                <Button onClick={goNext} disabled={!step1Valid} className="gap-2">পরবর্তী ধাপ <ChevronRight className="w-4 h-4" /></Button>
+              <div className="flex justify-end mt-8">
+                <Button
+                  onClick={goNext}
+                  disabled={!step1Valid}
+                  className="h-12 px-7 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                >
+                  <span>পরবর্তী ধাপ</span>
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
               </div>
             </div>
           )}
 
           {step === 2 && (
             <div>
-              <h2 className="font-heading text-xl font-bold mb-1">ধাপ ২: প্রশ্নের ধরন ও সংখ্যা নির্বাচন করুন</h2>
-              <p className="text-sm text-muted-foreground mb-6">সিস্টেম স্বয়ংক্রিয়ভাবে প্রশ্ন জেনারেট করার জন্য প্রতিটি ধরন থেকে কতটি প্রশ্ন চান তা নির্দিষ্ট করুন।</p>
+              <h2 className="font-heading text-xl md:text-2xl font-bold text-slate-800 mb-1">ধাপ ২: প্রশ্নের ধরন ও সংখ্যা নির্বাচন করুন</h2>
+              <p className="text-base text-slate-600 mb-6 font-normal">সিস্টেম স্বয়ংক্রিয়ভাবে প্রশ্ন জেনারেট করার জন্য প্রতিটি ধরন থেকে কতটি প্রশ্ন চান তা নির্দিষ্ট করুন।</p>
 
               <div className="space-y-3">
                 {(Object.keys(TYPE_LABELS) as QType[]).map(t => {
                   const on = enabledTypes[t];
                   const max = available[t];
+                  const sliderMax = Math.min(200, max);
                   return (
-                    <div key={t} className={cn("border rounded-lg p-4 transition-colors", on && "border-primary/40 bg-primary/5")}>
+                    <div
+                      key={t}
+                      className={cn(
+                        "border border-slate-300 rounded-[1px] p-4 sm:p-5 transition-colors bg-white",
+                        on && "border-[#0A1E38] bg-slate-50"
+                      )}
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <label className="flex items-center gap-2 cursor-pointer font-semibold">
+                        <label className="flex items-center gap-2.5 cursor-pointer font-bold text-base text-slate-800 select-none">
                           <Checkbox
                             checked={on}
                             disabled={max === 0}
                             onCheckedChange={(chk) => setEnabledTypes(p => ({ ...p, [t]: !!chk }))}
+                            className="h-4 w-4 rounded-[1px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
                           <span>{TYPE_LABELS[t]} প্রশ্নের সংখ্যা</span>
                         </label>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-sm font-medium border-slate-300 bg-slate-100 text-slate-700 rounded-[1px] px-2.5 py-0.5">
                           {countsLoading ? "..." : `উপলব্ধ ${toBanglaNum(max)}`}
                         </Badge>
                       </div>
                       {on && max > 0 && (
-                        <div className="pl-6 pt-1">
+                        <div className="pl-7 pt-2">
                           <div className="flex items-center gap-3">
                             <Button
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-8 w-8 shrink-0 rounded-full"
-                              onClick={() => setCounts(p => ({ ...p, [t]: Math.max(1, Math.min(p[t], max) - 1) }))}
-                              disabled={Math.min(counts[t], max) <= 1}
+                              className="h-9 w-9 shrink-0 rounded-[1px] border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                              onClick={() => setCounts(p => ({ ...p, [t]: Math.max(1, Math.min(p[t], sliderMax) - 1) }))}
+                              disabled={Math.min(counts[t], sliderMax) <= 1}
                               aria-label="কমান"
                             >
                               <Minus className="w-4 h-4" />
                             </Button>
 
                             <Slider
-                              value={[Math.min(counts[t], max)]}
+                              value={[Math.min(counts[t], sliderMax)]}
                               min={1}
-                              max={max}
+                              max={sliderMax}
                               step={1}
-                              onValueChange={([v]) => setCounts(p => ({ ...p, [t]: v }))}
+                              onValueChange={([v]) => setCounts(p => ({ ...p, [t]: Math.min(sliderMax, v) }))}
                               className="flex-1"
                             />
 
@@ -443,64 +477,93 @@ export default function AutoQuestionCreate() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-8 w-8 shrink-0 rounded-full"
-                              onClick={() => setCounts(p => ({ ...p, [t]: Math.min(max, Math.min(p[t], max) + 1) }))}
-                              disabled={Math.min(counts[t], max) >= max}
+                              className="h-9 w-9 shrink-0 rounded-[1px] border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                              onClick={() => setCounts(p => ({ ...p, [t]: Math.min(sliderMax, Math.min(p[t], sliderMax) + 1) }))}
+                              disabled={Math.min(counts[t], sliderMax) >= sliderMax}
                               aria-label="বাড়ান"
                             >
                               <Plus className="w-4 h-4" />
                             </Button>
 
-                            <span className="min-w-[3.25rem] rounded-full bg-primary px-3 py-1 text-center text-base font-bold text-primary-foreground shadow-sm transition-all">
-                              {toBanglaNum(Math.min(counts[t], max))}
+                            <span className="min-w-[3.5rem] rounded-[1px] bg-slate-800 px-3.5 py-1.5 text-center text-base font-bold text-white shadow-xs transition-all">
+                              {toBanglaNum(Math.min(counts[t], sliderMax))}
                             </span>
                           </div>
-                          <div className="mt-1.5 flex justify-between pr-[4.5rem] text-[11px] text-muted-foreground">
+                          <div className="mt-1.5 flex justify-between pr-[4.5rem] text-xs text-slate-500 font-medium">
                             <span>{toBanglaNum(1)}</span>
-                            <span>{toBanglaNum(max)}</span>
+                            <span>{toBanglaNum(sliderMax)}</span>
                           </div>
                         </div>
                       )}
 
-                      {on && max === 0 && <p className="text-xs text-muted-foreground pl-6">এই ধরনের কোনো প্রশ্ন নেই</p>}
+                      {on && max === 0 && <p className="text-sm text-slate-500 pl-7 pt-1">এই ধরনের কোনো প্রশ্ন নেই</p>}
                     </div>
                   );
                 })}
               </div>
 
-              <div className="flex justify-between mt-6">
-                <Button variant="outline" onClick={() => setStep(1)} className="gap-2"><ChevronLeft className="w-4 h-4" /> আগের ধাপে যান</Button>
-                <Button onClick={goNext} disabled={!step2Valid} className="gap-2">পরবর্তী ধাপ <ChevronRight className="w-4 h-4" /></Button>
+              <div className="flex justify-between mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="h-12 px-6 rounded-[1px] border-slate-300 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
+                >
+                  <ChevronLeft className="w-5 h-5" /> আগের ধাপে যান
+                </Button>
+                <Button
+                  onClick={goNext}
+                  disabled={!step2Valid}
+                  className="h-12 px-7 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                >
+                  <span>পরবর্তী ধাপ</span>
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
               </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="text-center">
-              <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" strokeWidth={2} />
-              <h2 className="font-heading text-2xl font-bold mb-6">আপনার প্রশ্নপত্র প্রস্তুত!</h2>
+            <div className="text-center py-4">
+              <CheckCircle2 className="w-16 h-16 text-[#0A1E38] mx-auto mb-4" strokeWidth={2} />
+              <h2 className="font-heading text-2xl font-bold text-slate-800 mb-6">আপনার প্রশ্নপত্র প্রস্তুত!</h2>
 
-              <div className="max-w-md mx-auto bg-muted/40 rounded-lg p-5 text-left border">
-                <h3 className="font-bold mb-3 border-b pb-2">সারাংশ:</h3>
-                <dl className="space-y-1.5 text-sm">
-                  <div className="flex gap-2"><dt className="font-semibold w-24">শ্রেণি:</dt><dd>{className}</dd></div>
-                  <div className="flex gap-2"><dt className="font-semibold w-24">বিষয়:</dt><dd>{subjectName || "-"}</dd></div>
-                  <div className="flex gap-2"><dt className="font-semibold w-24">অধ্যায়:</dt><dd className="flex-1">{selectedChapters.map(c => c.name).join(", ") || "-"}</dd></div>
+              <div className="max-w-lg mx-auto bg-slate-50 border border-slate-300 rounded-[1px] p-6 text-left shadow-xs">
+                <h3 className="font-bold text-base text-slate-800 mb-4 border-b border-slate-200 pb-2.5">সারাংশ:</h3>
+                <dl className="space-y-2 text-base">
+                  <div className="flex gap-3"><dt className="font-bold text-slate-700 w-28 shrink-0">শ্রেণি:</dt><dd className="text-slate-900 font-medium">{className}</dd></div>
+                  <div className="flex gap-3"><dt className="font-bold text-slate-700 w-28 shrink-0">বিষয়:</dt><dd className="text-slate-900 font-medium">{subjectName || "-"}</dd></div>
+                  <div className="flex gap-3"><dt className="font-bold text-slate-700 w-28 shrink-0">অধ্যায়:</dt><dd className="flex-1 text-slate-900 font-medium">{selectedChapters.map(c => c.name).join(", ") || "-"}</dd></div>
                   {activeTypes.map(t => (
-                    <div key={t} className="flex gap-2">
-                      <dt className="font-semibold w-24">{TYPE_LABELS[t]}:</dt>
-                      <dd>{toBanglaNum(counts[t])} টি</dd>
+                    <div key={t} className="flex gap-3">
+                      <dt className="font-bold text-slate-700 w-28 shrink-0">{TYPE_LABELS[t]}:</dt>
+                      <dd className="text-slate-900 font-semibold">{toBanglaNum(counts[t])} টি</dd>
                     </div>
                   ))}
-                  <div className="flex gap-2 pt-2 border-t"><dt className="font-semibold w-24">মোট প্রশ্ন:</dt><dd>{toBanglaNum(totalQuestions)} টি</dd></div>
-                  <div className="flex gap-2"><dt className="font-semibold w-24">মোট মূল্য:</dt><dd>{toBanglaNum(totalMarks)}</dd></div>
+                  <div className="flex gap-3 pt-3 border-t border-slate-200">
+                    <dt className="font-bold text-slate-800 w-28 shrink-0">মোট প্রশ্ন:</dt>
+                    <dd className="font-bold text-[#0A1E38] text-lg">{toBanglaNum(totalQuestions)} টি</dd>
+                  </div>
+                  <div className="flex gap-3">
+                    <dt className="font-bold text-slate-800 w-28 shrink-0">মোট মূল্য:</dt>
+                    <dd className="font-bold text-[#0A1E38] text-lg">{toBanglaNum(totalMarks)}</dd>
+                  </div>
                 </dl>
               </div>
 
-              <div className="flex justify-center gap-3 mt-6">
-                <Button variant="outline" onClick={() => setStep(2)} className="gap-2"><ChevronLeft className="w-4 h-4" /> আগের ধাপে যান</Button>
-                <Button onClick={generate} disabled={generating} className="gap-2">
-                  <FilePlus2 className="w-4 h-4" /> {generating ? "জেনারেট হচ্ছে..." : "প্রশ্ন তৈরি করুন"}
+              <div className="flex justify-center gap-3 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="h-12 px-6 rounded-[1px] border-slate-300 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
+                >
+                  <ChevronLeft className="w-5 h-5" /> আগের ধাপে যান
+                </Button>
+                <Button
+                  onClick={generate}
+                  disabled={generating}
+                  className="h-12 px-8 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-sm gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                >
+                  <FilePlus2 className="w-5 h-5" /> {generating ? "জেনারেট হচ্ছে..." : "প্রশ্ন তৈরি করুন"}
                 </Button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import {
   Tv, GraduationCap, PlayCircle, Grid, KeyRound, CheckCircle2,
-  Sparkles, ArrowRight, Phone, MessageSquare, PlusCircle, Layers, ShieldCheck, Gift
+  Clock, ArrowRight, Phone, MessageSquare, PlusCircle, Layers, ShieldCheck, Gift
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -93,7 +93,7 @@ const FEATURE_CONFIG: Record<string, FeatureInfo> = {
     englishTitle: "Automated OMR Sheet Evaluation",
     icon: CheckCircle2,
     tagline: "ক্যামেরা স্ক্যানিংয়ের মাধ্যমে চোখের পলকে শত শত খাতা মূল্যায়ন",
-    description: "প্রশ্নল্যাব এআই এবং ইমেজ প্রসেসিং প্রযুক্তির মাধ্যমে উত্তরপত্র স্ক্যান করে সেকেন্ডে ফলাফল ও মেরিট লিস্ট তৈরি করার যুগান্তকারী ফিচার।",
+    description: "প্রশ্নল্যাব আধুনিক অপটিক্যাল রিডিং ও ইমেজ প্রসেসিং প্রযুক্তির মাধ্যমে উত্তরপত্র স্ক্যান করে সেকেন্ডে ফলাফল ও মেরিট লিস্ট তৈরি করার যুগান্তকারী ফিচার।",
     highlights: [
       "সাধারণ মোবাইল ক্যামেরা বা ফ্ল্যাটবেড স্ক্যানারে দ্রুত স্ক্যান",
       "৯৯.৯% নির্ভুল বাবল রিডিং ও তাৎক্ষণিক ভুল নির্ণয়",
@@ -123,7 +123,7 @@ export default function FeatureComingSoon() {
   const currentConfig = FEATURE_CONFIG[location.pathname] || {
     title: "নতুন ফিচার প্রস্তুত হচ্ছে",
     englishTitle: "Feature In Development",
-    icon: Sparkles,
+    icon: Clock,
     tagline: "আমরা এই ফিচারটিকে আরও উন্নত ও শিক্ষার্থীবান্ধব করতে কাজ করছি",
     description: "শীঘ্রই এই সেকশনটি আপনার ড্যাশবোর্ডে যুক্ত হবে। যেকোনো মতামত বা পরামর্শ থাকলে আমাদের জানাতে পারেন।",
     highlights: [

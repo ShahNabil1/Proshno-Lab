@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Star } from "lucide-react";
+import { ChevronDown, Lock, Unlock, Scan } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sortSubjects } from "@/lib/classOrder";
 import SubjectVersionTabs from "@/components/dashboard/SubjectVersionTabs";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { hasActiveAccess } from "@/lib/subscriptionMatcher";
+import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 import type {
   SubjectVersion,
   VersionedClass,
@@ -16,6 +21,8 @@ interface SubjectPickerProps<T extends VersionedSubject> {
   version: SubjectVersion;
   disabled?: boolean;
   placeholder?: string;
+  triggerClassName?: string;
+  triggerIcon?: "scan" | "chevron";
   onChange: (subjectId: string, subjectIds: string[]) => void;
   onVersionChange: (version: SubjectVersion) => void;
 }
@@ -28,10 +35,74 @@ export default function SubjectPicker<T extends VersionedSubject>({
   version,
   disabled,
   placeholder = "বিষয় সিলেক্ট করুন",
+  triggerClassName,
+  triggerIcon = "scan",
   onChange,
   onVersionChange,
 }: SubjectPickerProps<T>) {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const [unlockedSubjectIds, setUnlockedSubjectIds] = useState<Set<string>>(new Set());
+  const [hasFullAccess, setHasFullAccess] = useState(false);
+
+  const orderedSubjects = useMemo(() => sortSubjects(subjects), [subjects]);
+
+  // Check which subjects are unlocked/purchased by this teacher
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const checkSubjectAccess = async () => {
+      if (isLocalMockAdminEnabled()) {
+        if (!cancelled) setHasFullAccess(true);
+        return;
+      }
+
+      try {
+        const [{ data: subs }, { data: perms }] = await Promise.all([
+          supabase
+            .from("subscriptions")
+            .select("plan, status")
+            .eq("teacher_id", user.id)
+            .eq("status", "active"),
+          supabase
+            .from("user_permissions")
+            .select("class_id, subject_id")
+            .eq("user_id", user.id),
+        ]);
+
+        if (cancelled) return;
+
+        const activePlans = (subs || []).map((s) => s.plan).filter(Boolean) as string[];
+        const permSet = new Set((perms || []).map((p: any) => `${p.class_id}-${p.subject_id}`));
+
+        const unlocked = new Set<string>();
+        orderedSubjects.forEach((sub) => {
+          const subId = String(sub.id);
+          if (permSet.has(`${sub.class_id}-${sub.id}`)) {
+            unlocked.add(subId);
+            return;
+          }
+          const cls = classes.find((c) => c.id === sub.class_id);
+          if (cls && activePlans.length > 0) {
+            if (hasActiveAccess(activePlans, cls.name, sub.name)) {
+              unlocked.add(subId);
+            }
+          }
+        });
+
+        setUnlockedSubjectIds(unlocked);
+      } catch {
+        // fail-safe
+      }
+    };
+
+    checkSubjectAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, orderedSubjects, classes]);
 
   // Normalize selected IDs from props
   const selectedIds = useMemo(() => {
@@ -55,9 +126,9 @@ export default function SubjectPicker<T extends VersionedSubject>({
   // Names of selected subjects for display in the trigger
   const selectedSubjectNames = useMemo(() => {
     return selectedIds
-      .map((id) => subjects.find((s) => String(s.id) === id)?.name)
+      .map((id) => orderedSubjects.find((s) => String(s.id) === id)?.name)
       .filter(Boolean) as string[];
-  }, [selectedIds, subjects]);
+  }, [selectedIds, orderedSubjects]);
 
   const handleToggle = (id: string) => {
     const nextIds = selectedIds.includes(id)
@@ -73,23 +144,28 @@ export default function SubjectPicker<T extends VersionedSubject>({
         tabIndex={0}
         onClick={() => !disabled && setOpen(true)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-[#1E3577] focus:ring-offset-2 hover:border-[#1E3577]/50",
-          disabled && "cursor-not-allowed opacity-50 pointer-events-none",
-          selectedSubjectNames.length === 0 && "text-muted-foreground",
+          "flex h-12 w-full items-center justify-between rounded-[1px] border border-slate-300 bg-white px-3.5 py-1 text-base cursor-pointer transition-colors text-slate-800",
+          "focus:outline-none focus:ring-1 focus:ring-[#0A1E38] hover:border-slate-400",
+          disabled && "cursor-not-allowed opacity-50 pointer-events-none bg-slate-50",
+          selectedSubjectNames.length === 0 && "text-slate-500",
+          triggerClassName
         )}
         title={selectedSubjectNames.length > 0 ? selectedSubjectNames.join(", ") : placeholder}
       >
-        <span className="truncate font-medium">
+        <span className="truncate font-medium flex-1 min-w-0 py-1 px-0.5 leading-normal">
           {selectedSubjectNames.length > 0 ? (
-            <span className="text-foreground">
+            <span className="text-slate-800 font-semibold">
               {selectedSubjectNames.join(", ")}
             </span>
           ) : (
             placeholder
           )}
         </span>
-        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        {triggerIcon === "scan" ? (
+          <Scan className="h-4 w-4 shrink-0 text-slate-500 ml-2" />
+        ) : (
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
+        )}
       </div>
 
       {open && (
@@ -99,24 +175,20 @@ export default function SubjectPicker<T extends VersionedSubject>({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative bg-white text-gray-900 rounded-xl shadow-2xl overflow-hidden w-full max-w-xl flex flex-col border border-slate-200 animate-in zoom-in-95 duration-200"
+            className="relative bg-white text-gray-900 rounded-[1px] shadow-2xl overflow-hidden w-full max-w-xl flex flex-col border border-slate-300 animate-in zoom-in-95 duration-200"
           >
-            {/* macOS Window Header Bar styled with brand logo identity */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/90 border-b border-slate-200">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="h-3.5 w-3.5 rounded-full bg-[#ff5f56] hover:brightness-90 transition-colors cursor-pointer"
-                  title="Close"
-                  aria-label="Close"
-                />
-                <span className="h-3.5 w-3.5 rounded-full bg-[#ffbd2e] cursor-default" title="Minimize" />
-                <span className="h-3.5 w-3.5 rounded-full bg-[#27c93f] cursor-default" title="Maximize" />
+            {/* Header Bar */}
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-200">
+              <div className="text-base font-bold text-slate-800 font-bangla">
+                বিষয় নির্বাচন করুন
               </div>
-              <div className="text-sm font-semibold text-[#1E3577] font-bangla">
-                বিষয় সিলেক্ট করুন
-              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xs px-2.5 py-1 rounded-[1px] bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors cursor-pointer"
+              >
+                ✕ বন্ধ
+              </button>
             </div>
 
             {/* Modal Body */}
@@ -125,23 +197,25 @@ export default function SubjectPicker<T extends VersionedSubject>({
               <SubjectVersionTabs value={version} onChange={onVersionChange} />
 
               {/* Subjects List */}
-              <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-lg bg-white">
-                {subjects.length === 0 ? (
+              <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100 border border-slate-300 rounded-[1px] bg-white">
+                {orderedSubjects.length === 0 ? (
                   <p className="p-6 text-center text-sm text-slate-500 font-bangla">
                     এই ভার্সনে কোনো বিষয় যোগ করা হয়নি
                   </p>
                 ) : (
-                  subjects.map((subject) => {
+                  orderedSubjects.map((subject) => {
                     const subjectId = String(subject.id);
                     const isChecked = selectedIds.includes(subjectId);
+                    const isUnlocked = hasFullAccess || unlockedSubjectIds.has(subjectId);
+
                     return (
                       <div
                         key={subject.id}
                         onClick={() => handleToggle(subjectId)}
                         className={cn(
-                          "flex items-center px-3 py-1.5 transition-colors cursor-pointer select-none",
+                          "flex items-center px-3.5 py-2.5 transition-colors cursor-pointer select-none",
                           isChecked
-                            ? "bg-[#1E3577]/[0.05] hover:bg-[#1E3577]/[0.08]"
+                            ? "bg-[#0A1E38]/5 hover:bg-[#0A1E38]/10"
                             : "hover:bg-slate-50"
                         )}
                       >
@@ -153,21 +227,34 @@ export default function SubjectPicker<T extends VersionedSubject>({
                             e.stopPropagation();
                             handleToggle(subjectId);
                           }}
-                          className="h-4 w-4 rounded border-slate-300 text-[#1E3577] focus:ring-[#1E3577] cursor-pointer accent-[#1E3577]"
+                          className="h-4 w-4 rounded-[1px] border-slate-300 text-[#0A1E38] focus:ring-[#0A1E38] cursor-pointer accent-[#0A1E38]"
                         />
                         <label
                           htmlFor={`subject-checkbox-${subject.id}`}
-                          className="pl-3 w-full py-1 cursor-pointer text-sm text-slate-800 flex items-center justify-between select-none pointer-events-none"
+                          className="pl-3 w-full py-1 cursor-pointer text-base text-slate-800 flex items-center justify-between select-none pointer-events-none"
                         >
-                          <span className={cn(isChecked ? "font-bold text-[#1E3577]" : "font-normal text-slate-800")}>
+                          <span className={cn(isChecked ? "font-bold text-[#0A1E38]" : "font-normal text-slate-800")}>
                             {subject.name}
                           </span>
-                          <Star
-                            className={cn(
-                              "h-4 w-4 shrink-0 ml-2 fill-[#F4C053] text-[#F4C053] transition-transform",
-                              isChecked && "scale-110 drop-shadow-sm"
-                            )}
-                          />
+
+                          {/* Minimal Unlock/Lock indicator */}
+                          {isUnlocked ? (
+                            <span
+                              title="আনলক করা বিষয়"
+                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[1px] bg-slate-100 text-slate-700 border border-slate-300 font-medium select-none shrink-0"
+                            >
+                              <Unlock className="h-3 w-3 text-emerald-600" />
+                              <span>আনলক</span>
+                            </span>
+                          ) : (
+                            <span
+                              title="লক করা বিষয় — সাবস্ক্রাইব করুন"
+                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[1px] bg-amber-50 text-amber-900 border border-amber-300 font-medium select-none shrink-0"
+                            >
+                              <Lock className="h-3 w-3 text-amber-700" />
+                              <span>লকড</span>
+                            </span>
+                          )}
                         </label>
                       </div>
                     );
@@ -175,19 +262,19 @@ export default function SubjectPicker<T extends VersionedSubject>({
                 )}
               </div>
 
-              {/* Footer Buttons with Brand Colors */}
+              {/* Footer Buttons */}
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-[#1E3577] hover:bg-[#162758] text-white font-semibold py-2 px-4 rounded-md text-sm transition-all text-center shadow-sm hover:shadow active:scale-[0.99] cursor-pointer"
+                  className="flex-1 bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold py-2.5 px-4 rounded-[1px] text-base transition-colors text-center shadow-xs cursor-pointer border border-[#0A1E38]"
                 >
                   সিলেক্ট করুন
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-md text-sm transition-colors text-center border border-slate-200 cursor-pointer"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-[1px] text-base transition-colors text-center border border-slate-300 cursor-pointer"
                 >
                   বন্ধ করুন
                 </button>

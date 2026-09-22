@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, PlusSquare, Tv, PlaySquare, Database,
+  LayoutDashboard, PlusSquare, Tv, Database,
   FileText, GraduationCap, Building2, CreditCard,
   PlayCircle, Grid, KeyRound, CheckCircle2,
-  PhoneCall, MessageSquare, Menu, LogOut, User, Shield, Home, Sparkles, X
+  PhoneCall, MessageSquare, Menu, LogOut, User, Shield, Home, Award, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,9 +29,8 @@ const baseSidebarGroups = [
     label: "সার্বিক চিত্র",
     items: [
       { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-      { path: "/dashboard/create", label: "১ ক্লিকে প্রশ্ন তৈরি", icon: PlusSquare },
+      { path: "/dashboard/create", label: "প্রশ্ন তৈরি", icon: PlusSquare },
       { path: "/dashboard/smartboard", label: "স্মার্টবোর্ড", icon: Tv },
-      { path: "/demo", label: "টিউটোরিয়াল", icon: PlaySquare },
       { path: "/dashboard/packages", label: "প্রশ্নব্যাংক", icon: Database },
     ],
   },
@@ -104,25 +103,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [hasInstitute, setHasInstitute] = useState<boolean | null>(localMockAdmin ? true : null);
   const [isBanned, setIsBanned] = useState(false);
   const location = useLocation();
-  const isQuestionPaperView = location.pathname === "/dashboard/view-paper";
   const navigate = useNavigate();
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
 
-  // Keep the main navigation visible when entering the paper builder.
-  // Teachers can still collapse it manually from the header control.
   useEffect(() => {
     if (location.pathname.startsWith("/dashboard/view-paper")) {
       setDesktopCollapsed(false);
     }
   }, [location.pathname]);
-
-  const goHome = () => {
-    if (needsLeaveConfirm) setConfirmLeave(true);
-    else navigate("/");
-  };
 
   // Filter sidebar based on cloud backup setting AND hidden pages
   const sidebarGroups = baseSidebarGroups
@@ -181,13 +172,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex bg-background font-body relative">
+      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ProshnoLab Left Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none",
+        "fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none shrink-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         desktopCollapsed
           ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
@@ -273,7 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {/* Affiliate Program Button (Screenshot Inspired) */}
+        {/* Affiliate Program Button */}
         <div className="p-2.5 pt-1.5 shrink-0 border-t border-white/10 bg-[#07162b]/80 space-y-1.5">
           <Link
             to="/dashboard/affiliate"
@@ -285,7 +277,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 : "bg-[#0f2c54] hover:bg-[#153e77] text-white border-[#1e467d] hover:border-amber-400/60"
             )}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#F4C053] shrink-0 animate-pulse" />
+            <Award className="w-3.5 h-3.5 text-[#F4C053] shrink-0" />
             <span className="truncate">প্রশ্নল্যাব এফিলিয়েট প্রোগ্রাম</span>
           </Link>
 
@@ -303,16 +295,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
-          {/* Mobile-only menu toggle (hidden on desktop) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-            title="মেন্যু"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Mobile-only menu toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+              title="মেন্যু"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            {/* Desktop collapse toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex text-muted-foreground hover:text-foreground"
+              onClick={() => setDesktopCollapsed(v => !v)}
+              title={desktopCollapsed ? "সাইডবার খুলুন" : "সাইডবার বন্ধ করুন"}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
             <Link to="/dashboard/institute" className="flex items-center gap-2">
@@ -332,7 +336,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <AnnouncementBar />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:overflow-visible">{children}</main>
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:overflow-visible">
+          {children}
+        </main>
       </div>
 
       <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>

@@ -28,25 +28,39 @@ export default function AdminHome() {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+    // A large unfiltered exact count can time out once the questions table grows.
+    // Use PostgreSQL's fast estimate for the overview total; filtered activity
+    // counts remain exact because their date range keeps those queries small.
+    const countQuestions = async (createdSince?: string) => {
+      let query = supabase.from("questions").select("id", { count: createdSince ? "exact" : "estimated", head: true });
+      if (createdSince) query = query.gte("created_at", createdSince);
+      const { count, error } = await query;
+      if (error) {
+        console.error("Question count failed", { code: error.code, message: error.message });
+        return 0;
+      }
+      return count || 0;
+    };
+
     Promise.all([
       supabase.from("teachers").select("id", { count: "exact", head: true }),
-      supabase.from("questions").select("id", { count: "exact", head: true }),
+      countQuestions(),
       supabase.from("classes").select("id", { count: "exact", head: true }),
       supabase.from("subjects").select("id", { count: "exact", head: true }),
       supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("questions").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+      countQuestions(todayStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-      supabase.from("questions").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
+      countQuestions(monthStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
       supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").gte("created_at", monthStart),
     ]).then(([t, q, c, s, as, tq, tt, mq, mt, mp]) => {
       setStats({
-        teachers: t.count || 0, questions: q.count || 0, classes: c.count || 0, subjects: s.count || 0,
+        teachers: t.count || 0, questions: q, classes: c.count || 0, subjects: s.count || 0,
         activeSubscriptions: as.count || 0,
-        todayQuestions: tq.count || 0, todayTeachers: tt.count || 0,
-        monthQuestions: mq.count || 0, monthTeachers: mt.count || 0, monthPurchases: mp.count || 0,
+        todayQuestions: tq, todayTeachers: tt.count || 0,
+        monthQuestions: mq, monthTeachers: mt.count || 0, monthPurchases: mp.count || 0,
       });
-    });
+    }).catch((error) => console.error("Admin dashboard statistics failed to load", error));
   }, []);
 
   const overviewCards = [

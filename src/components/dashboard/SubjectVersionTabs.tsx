@@ -17,7 +17,7 @@ export default function SubjectVersionTabs({ value, onChange, disabled }: Subjec
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100/80 p-1.5",
+        "flex flex-wrap items-center justify-center gap-1.5 rounded-[1px] border border-slate-300 bg-slate-100 p-1",
         disabled && "pointer-events-none opacity-50",
       )}
       role="tablist"
@@ -32,10 +32,10 @@ export default function SubjectVersionTabs({ value, onChange, disabled }: Subjec
             role="tab"
             aria-selected={isActive}
             className={cn(
-              "rounded-full border px-4 py-1 text-sm font-medium transition-all duration-150 cursor-pointer select-none",
+              "rounded-[1px] border px-4 py-1.5 text-sm transition-all duration-150 cursor-pointer select-none",
               isActive
-                ? "border-[#1E3577] bg-[#1E3577] text-white shadow-sm shadow-[#1E3577]/25 font-semibold"
-                : "border-slate-200 bg-white text-slate-700 hover:border-[#1E3577]/40 hover:text-[#1E3577] hover:bg-slate-50",
+                ? "border-[#0A1E38] bg-[#0A1E38] text-white shadow-xs font-bold"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-medium",
             )}
             onClick={() => onChange(option.value)}
           >

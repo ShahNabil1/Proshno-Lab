@@ -1,0 +1,1670 @@
+{
+  "source": "generated from omr/layout.py + recognizer._marker_bar_positions",
+  "cases": [
+    {
+      "columns": 2,
+      "questions": 10,
+      "boxWidth": 328,
+      "boxHeight": 191,
+      "aspect": 0.582317073171,
+      "rowsPerColumn": 5,
+      "questionGroups": 1,
+      "markerGroups": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        63.0,
+        309
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 10,
+          "option": 0,
+          "x": 217.8,
+          "y": 172.0
+        },
+        {
+          "number": 10,
+          "option": 1,
+          "x": 246.6,
+          "y": 172.0
+        },
+        {
+          "number": 10,
+          "option": 2,
+          "x": 275.4,
+          "y": 172.0
+        },
+        {
+          "number": 10,
+          "option": 3,
+          "x": 304.2,
+          "y": 172.0
+        }
+      ],
+      "slotCount": 40
+    },
+    {
+      "columns": 2,
+      "questions": 20,
+      "boxWidth": 328,
+      "boxHeight": 351,
+      "aspect": 1.07012195122,
+      "rowsPerColumn": 10,
+      "questionGroups": 2,
+      "markerGroups": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        63.0,
+        293,
+        309
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 20,
+          "option": 0,
+          "x": 217.8,
+          "y": 332.0
+        },
+        {
+          "number": 20,
+          "option": 1,
+          "x": 246.6,
+          "y": 332.0
+        },
+        {
+          "number": 20,
+          "option": 2,
+          "x": 275.4,
+          "y": 332.0
+        },
+        {
+          "number": 20,
+          "option": 3,
+          "x": 304.2,
+          "y": 332.0
+        }
+      ],
+      "slotCount": 80
+    },
+    {
+      "columns": 2,
+      "questions": 60,
+      "boxWidth": 328,
+      "boxHeight": 991,
+      "aspect": 3.021341463415,
+      "rowsPerColumn": 30,
+      "questionGroups": 6,
+      "markerGroups": [
+        1,
+        2,
+        1,
+        6
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        63.0,
+        229,
+        245,
+        261,
+        277,
+        293,
+        309
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 60,
+          "option": 0,
+          "x": 217.8,
+          "y": 972.0
+        },
+        {
+          "number": 60,
+          "option": 1,
+          "x": 246.6,
+          "y": 972.0
+        },
+        {
+          "number": 60,
+          "option": 2,
+          "x": 275.4,
+          "y": 972.0
+        },
+        {
+          "number": 60,
+          "option": 3,
+          "x": 304.2,
+          "y": 972.0
+        }
+      ],
+      "slotCount": 240
+    },
+    {
+      "columns": 2,
+      "questions": 100,
+      "boxWidth": 328,
+      "boxHeight": 1631,
+      "aspect": 4.97256097561,
+      "rowsPerColumn": 50,
+      "questionGroups": 10,
+      "markerGroups": [
+        1,
+        2,
+        1,
+        10
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        63.0,
+        165,
+        181,
+        197,
+        213,
+        229,
+        245,
+        261,
+        277,
+        293,
+        309
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 100,
+          "option": 0,
+          "x": 217.8,
+          "y": 1612.0
+        },
+        {
+          "number": 100,
+          "option": 1,
+          "x": 246.6,
+          "y": 1612.0
+        },
+        {
+          "number": 100,
+          "option": 2,
+          "x": 275.4,
+          "y": 1612.0
+        },
+        {
+          "number": 100,
+          "option": 3,
+          "x": 304.2,
+          "y": 1612.0
+        }
+      ],
+      "slotCount": 400
+    },
+    {
+      "columns": 3,
+      "questions": 10,
+      "boxWidth": 497,
+      "boxHeight": 159,
+      "aspect": 0.319919517103,
+      "rowsPerColumn": 4,
+      "questionGroups": 1,
+      "markerGroups": [
+        1,
+        3,
+        1,
+        1
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        79.0,
+        478
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 10,
+          "option": 0,
+          "x": 386.8,
+          "y": 76.0
+        },
+        {
+          "number": 10,
+          "option": 1,
+          "x": 415.6,
+          "y": 76.0
+        },
+        {
+          "number": 10,
+          "option": 2,
+          "x": 444.4,
+          "y": 76.0
+        },
+        {
+          "number": 10,
+          "option": 3,
+          "x": 473.2,
+          "y": 76.0
+        }
+      ],
+      "slotCount": 40
+    },
+    {
+      "columns": 3,
+      "questions": 20,
+      "boxWidth": 497,
+      "boxHeight": 255,
+      "aspect": 0.513078470825,
+      "rowsPerColumn": 7,
+      "questionGroups": 2,
+      "markerGroups": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        79.0,
+        462,
+        478
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 20,
+          "option": 0,
+          "x": 386.8,
+          "y": 204.0
+        },
+        {
+          "number": 20,
+          "option": 1,
+          "x": 415.6,
+          "y": 204.0
+        },
+        {
+          "number": 20,
+          "option": 2,
+          "x": 444.4,
+          "y": 204.0
+        },
+        {
+          "number": 20,
+          "option": 3,
+          "x": 473.2,
+          "y": 204.0
+        }
+      ],
+      "slotCount": 80
+    },
+    {
+      "columns": 3,
+      "questions": 60,
+      "boxWidth": 497,
+      "boxHeight": 671,
+      "aspect": 1.350100603622,
+      "rowsPerColumn": 20,
+      "questionGroups": 6,
+      "markerGroups": [
+        1,
+        3,
+        1,
+        6
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        79.0,
+        398,
+        414,
+        430,
+        446,
+        462,
+        478
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 60,
+          "option": 0,
+          "x": 386.8,
+          "y": 652.0
+        },
+        {
+          "number": 60,
+          "option": 1,
+          "x": 415.6,
+          "y": 652.0
+        },
+        {
+          "number": 60,
+          "option": 2,
+          "x": 444.4,
+          "y": 652.0
+        },
+        {
+          "number": 60,
+          "option": 3,
+          "x": 473.2,
+          "y": 652.0
+        }
+      ],
+      "slotCount": 240
+    },
+    {
+      "columns": 3,
+      "questions": 100,
+      "boxWidth": 497,
+      "boxHeight": 1119,
+      "aspect": 2.251509054326,
+      "rowsPerColumn": 34,
+      "questionGroups": 10,
+      "markerGroups": [
+        1,
+        3,
+        1,
+        10
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        79.0,
+        334,
+        350,
+        366,
+        382,
+        398,
+        414,
+        430,
+        446,
+        462,
+        478
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 100,
+          "option": 0,
+          "x": 386.8,
+          "y": 1036.0
+        },
+        {
+          "number": 100,
+          "option": 1,
+          "x": 415.6,
+          "y": 1036.0
+        },
+        {
+          "number": 100,
+          "option": 2,
+          "x": 444.4,
+          "y": 1036.0
+        },
+        {
+          "number": 100,
+          "option": 3,
+          "x": 473.2,
+          "y": 1036.0
+        }
+      ],
+      "slotCount": 400
+    },
+    {
+      "columns": 4,
+      "questions": 10,
+      "boxWidth": 666,
+      "boxHeight": 127,
+      "aspect": 0.190690690691,
+      "rowsPerColumn": 3,
+      "questionGroups": 1,
+      "markerGroups": [
+        1,
+        4,
+        1,
+        1
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        75.0,
+        95.0,
+        647
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345,
+        514
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 10,
+          "option": 0,
+          "x": 555.8,
+          "y": 44.0
+        },
+        {
+          "number": 10,
+          "option": 1,
+          "x": 584.6,
+          "y": 44.0
+        },
+        {
+          "number": 10,
+          "option": 2,
+          "x": 613.4,
+          "y": 44.0
+        },
+        {
+          "number": 10,
+          "option": 3,
+          "x": 642.2,
+          "y": 44.0
+        }
+      ],
+      "slotCount": 40
+    },
+    {
+      "columns": 4,
+      "questions": 20,
+      "boxWidth": 666,
+      "boxHeight": 191,
+      "aspect": 0.286786786787,
+      "rowsPerColumn": 5,
+      "questionGroups": 2,
+      "markerGroups": [
+        1,
+        4,
+        1,
+        2
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        75.0,
+        95.0,
+        631,
+        647
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345,
+        514
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 20,
+          "option": 0,
+          "x": 555.8,
+          "y": 172.0
+        },
+        {
+          "number": 20,
+          "option": 1,
+          "x": 584.6,
+          "y": 172.0
+        },
+        {
+          "number": 20,
+          "option": 2,
+          "x": 613.4,
+          "y": 172.0
+        },
+        {
+          "number": 20,
+          "option": 3,
+          "x": 642.2,
+          "y": 172.0
+        }
+      ],
+      "slotCount": 80
+    },
+    {
+      "columns": 4,
+      "questions": 60,
+      "boxWidth": 666,
+      "boxHeight": 511,
+      "aspect": 0.767267267267,
+      "rowsPerColumn": 15,
+      "questionGroups": 6,
+      "markerGroups": [
+        1,
+        4,
+        1,
+        6
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        75.0,
+        95.0,
+        567,
+        583,
+        599,
+        615,
+        631,
+        647
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345,
+        514
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 60,
+          "option": 0,
+          "x": 555.8,
+          "y": 492.0
+        },
+        {
+          "number": 60,
+          "option": 1,
+          "x": 584.6,
+          "y": 492.0
+        },
+        {
+          "number": 60,
+          "option": 2,
+          "x": 613.4,
+          "y": 492.0
+        },
+        {
+          "number": 60,
+          "option": 3,
+          "x": 642.2,
+          "y": 492.0
+        }
+      ],
+      "slotCount": 240
+    },
+    {
+      "columns": 4,
+      "questions": 100,
+      "boxWidth": 666,
+      "boxHeight": 831,
+      "aspect": 1.247747747748,
+      "rowsPerColumn": 25,
+      "questionGroups": 10,
+      "markerGroups": [
+        1,
+        4,
+        1,
+        10
+      ],
+      "markerBarPositions": [
+        7.0,
+        27.0,
+        43.0,
+        59.0,
+        75.0,
+        95.0,
+        503,
+        519,
+        535,
+        551,
+        567,
+        583,
+        599,
+        615,
+        631,
+        647
+      ],
+      "bubbleCentersInColumn": [
+        41.8,
+        70.6,
+        99.4,
+        128.2
+      ],
+      "columnLefts": [
+        7,
+        176,
+        345,
+        514
+      ],
+      "firstRowCenterY": 44.0,
+      "rowPitch": 32,
+      "slotSamples": [
+        {
+          "number": 1,
+          "option": 0,
+          "x": 48.8,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 1,
+          "x": 77.6,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 2,
+          "x": 106.4,
+          "y": 44.0
+        },
+        {
+          "number": 1,
+          "option": 3,
+          "x": 135.2,
+          "y": 44.0
+        },
+        {
+          "number": 2,
+          "option": 0,
+          "x": 48.8,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 1,
+          "x": 77.6,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 2,
+          "x": 106.4,
+          "y": 76.0
+        },
+        {
+          "number": 2,
+          "option": 3,
+          "x": 135.2,
+          "y": 76.0
+        },
+        {
+          "number": 3,
+          "option": 0,
+          "x": 48.8,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 1,
+          "x": 77.6,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 2,
+          "x": 106.4,
+          "y": 108.0
+        },
+        {
+          "number": 3,
+          "option": 3,
+          "x": 135.2,
+          "y": 108.0
+        },
+        {
+          "number": 100,
+          "option": 0,
+          "x": 555.8,
+          "y": 812.0
+        },
+        {
+          "number": 100,
+          "option": 1,
+          "x": 584.6,
+          "y": 812.0
+        },
+        {
+          "number": 100,
+          "option": 2,
+          "x": 613.4,
+          "y": 812.0
+        },
+        {
+          "number": 100,
+          "option": 3,
+          "x": 642.2,
+          "y": 812.0
+        }
+      ],
+      "slotCount": 400
+    }
+  ]
+}

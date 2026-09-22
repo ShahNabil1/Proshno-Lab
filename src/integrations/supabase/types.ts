@@ -362,6 +362,107 @@ export type Database = {
           },
         ]
       }
+      omr_evaluations: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          image_name: string
+          per_question: Json
+          processing_time: number
+          result: Json
+          teacher_id: string
+          token_id: string
+        }
+        Insert: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          image_name?: string
+          per_question?: Json
+          processing_time?: number
+          result?: Json
+          teacher_id: string
+          token_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          image_name?: string
+          per_question?: Json
+          processing_time?: number
+          result?: Json
+          teacher_id?: string
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omr_evaluations_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "omr_evaluations_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "omr_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      omr_tokens: {
+        Row: {
+          answer_script: Json
+          columns: number
+          created_at: string
+          id: string
+          negative_marking: number
+          number_of_question: number
+          omr_code: string | null
+          teacher_id: string
+          template: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          answer_script?: Json
+          columns?: number
+          created_at?: string
+          id?: string
+          negative_marking?: number
+          number_of_question?: number
+          omr_code?: string | null
+          teacher_id: string
+          template?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          answer_script?: Json
+          columns?: number
+          created_at?: string
+          id?: string
+          negative_marking?: number
+          number_of_question?: number
+          omr_code?: string | null
+          teacher_id?: string
+          template?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omr_tokens_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_packages: {
         Row: {
           class_name: string
@@ -779,31 +880,40 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          amount: number | null
           bkash_payment_id: number | null
           created_at: string
           ends_at: string | null
           id: number
+          note: string | null
           plan: string
+          source: string
           starts_at: string | null
           status: string
           teacher_id: string
         }
         Insert: {
+          amount?: number | null
           bkash_payment_id?: number | null
           created_at?: string
           ends_at?: string | null
           id?: number
+          note?: string | null
           plan?: string
+          source?: string
           starts_at?: string | null
           status?: string
           teacher_id: string
         }
         Update: {
+          amount?: number | null
           bkash_payment_id?: number | null
           created_at?: string
           ends_at?: string | null
           id?: number
+          note?: string | null
           plan?: string
+          source?: string
           starts_at?: string | null
           status?: string
           teacher_id?: string

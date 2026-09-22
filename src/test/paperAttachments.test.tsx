@@ -23,14 +23,15 @@ describe("InPaperOmrBox component", () => {
       />
     );
 
-    expect(screen.getByText(/OMR উত্তরপত্র/i)).toBeInTheDocument();
-    expect(screen.getByText(/MV Academy/i)).toBeInTheDocument();
-    expect(screen.getByText(/সেট কোড:/i)).toBeInTheDocument();
-    expect(screen.getByText(/রোল নং:/i)).toBeInTheDocument();
-    // Check Bangla numerals for 1st question "০১"
-    expect(screen.getByText("০১")).toBeInTheDocument();
+    expect(screen.getByText("OMR Area")).toBeInTheDocument();
+    expect(screen.getByText(/নাম:/i)).toBeInTheDocument();
+    expect(screen.getByText(/রোল :/i)).toBeInTheDocument();
+    // Check Bangla numerals for 1st question "১"
+    expect(screen.getByText("১")).toBeInTheDocument();
     // Check bubbles "ক", "খ", "গ", "ঘ"
+    expect(screen.getAllByText("ক").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".in-paper-omr-container").length).toBe(1);
+    expect(screen.getByText(/This OMR is scanable/i)).toBeInTheDocument();
   });
 
   it("renders OMR in English when isEnglishVersion is true", () => {
@@ -43,9 +44,11 @@ describe("InPaperOmrBox component", () => {
       />
     );
 
-    expect(screen.getByText(/OMR ANSWER SHEET/i)).toBeInTheDocument();
-    expect(screen.getByText(/Set Code:/i)).toBeInTheDocument();
-    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("OMR Area")).toBeInTheDocument();
+    expect(screen.getByText(/Name:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Roll:/i)).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getAllByText("A").length).toBeGreaterThan(0);
   });
 });
 
@@ -79,8 +82,8 @@ describe("ChirkutAnswerSheet component", () => {
     },
   ];
 
-  it("renders scissor cut-line and correct answers in compact format", () => {
-    render(
+  it("renders answers in compact format", () => {
+    const { container } = render(
       <ChirkutAnswerSheet
         questions={sampleQuestions}
         instituteName="আইডিয়াল স্কুল"
@@ -91,19 +94,16 @@ describe("ChirkutAnswerSheet component", () => {
       />
     );
 
-    expect(screen.getByText(/কেটে আলাদা করুন — চিরকুট উত্তরমালা/i)).toBeInTheDocument();
-    expect(screen.getByText(/আইডিয়াল স্কুল/i)).toBeInTheDocument();
-    expect(screen.getByText(/নবম শ্রেণি/i)).toBeInTheDocument();
-    // Question 1 correct answer 'a' -> Bangla 'ক'
+    expect(screen.getByText("উত্তর")).toBeInTheDocument();
+    expect(screen.getByText("১")).toBeInTheDocument();
     expect(screen.getByText("ক")).toBeInTheDocument();
-    // Question 2 correct answer 'b' -> Bangla 'খ'
+    expect(screen.getByText("২")).toBeInTheDocument();
     expect(screen.getByText("খ")).toBeInTheDocument();
-    // Short question answer
-    expect(screen.getByText("πr²")).toBeInTheDocument();
+    expect(container.querySelector(".chirkut-answer-table")).toBeInTheDocument();
   });
 
   it("renders English version for English papers", () => {
-    render(
+    const { container } = render(
       <ChirkutAnswerSheet
         questions={sampleQuestions}
         isEnglishVersion={true}
@@ -111,9 +111,11 @@ describe("ChirkutAnswerSheet component", () => {
       />
     );
 
-    expect(screen.getByText(/CUT HERE — CHIRKUT ANSWER KEY/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/ANSWER KEY/i).length).toBeGreaterThan(0);
+    expect(screen.getByText("ANSWER")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("A")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("B")).toBeInTheDocument();
+    expect(container.querySelector(".chirkut-answer-table")).toBeInTheDocument();
   });
 });

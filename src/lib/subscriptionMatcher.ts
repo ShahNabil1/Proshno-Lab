@@ -94,3 +94,76 @@ export const isPackagePurchased = (
   pkg: { class_name: string; subject_name: string },
   activePlans: string[],
 ): boolean => hasActiveAccess(activePlans, pkg.class_name, pkg.subject_name);
+
+/** Minimal shape of a subscription row needed to decide whether it is usable right now. */
+export interface SubscriptionWindow {
+  plan?: string | null;
+  status?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
+/**
+ * Is a subscription usable right now?
+ * A row only counts when it is marked active AND today falls inside its
+ * starts_at / ends_at window, so manually granted access expires on its own.
+ */
+export const isSubscriptionActive = (
+  sub: SubscriptionWindow | null | undefined,
+  now: Date = new Date(),
+): boolean => {
+  if (!sub || sub.status !== "active") return false;
+  const time = now.getTime();
+  if (sub.starts_at) {
+    const start = new Date(sub.starts_at).getTime();
+    if (!Number.isNaN(start) && start > time) return false;
+  }
+  if (sub.ends_at) {
+    const end = new Date(sub.ends_at).getTime();
+    if (!Number.isNaN(end) && end <= time) return false;
+  }
+  return true;
+};
+
+/**
+ * Plan names of the subscriptions that are usable right now.
+ * Use this instead of filtering on status alone, otherwise expired
+ * subscriptions keep granting access.
+ */
+export const activePlanNames = (
+  subs: SubscriptionWindow[] | null | undefined,
+  now: Date = new Date(),
+): string[] =>
+  (subs || [])
+    .filter((sub) => isSubscriptionActive(sub, now))
+    .map((sub) => sub.plan || "")
+    .filter((plan) => plan.trim().length > 0);
+
+/**
+ * Resolve the class part of a plan to concrete class rows.
+ * Handles single classes ("দ্বাদশ শ্রেণি"), range bundles ("ষষ্ঠ - দ্বাদশ"),
+ * and the spelling variants used across pricing packages.
+ */
+export const resolvePlanClasses = <T extends { name: string }>(
+  className: string,
+  classes: T[],
+): T[] => {
+  const normalized = normalizeSubscriptionText(className);
+  if (!normalized) return [];
+
+  const exact = classes.filter((c) => normalizeSubscriptionText(c.name) === normalized);
+  if (exact.length > 0) return exact;
+
+  const levels = extractClassLevels(className);
+  if (levels.length > 0) {
+    const ranged = classes.filter((c) =>
+      extractClassLevels(c.name).some((level) => levels.includes(level)),
+    );
+    if (ranged.length > 0) return ranged;
+  }
+
+  return classes.filter((c) => {
+    const name = normalizeSubscriptionText(c.name);
+    return name.includes(normalized) || normalized.includes(name);
+  });
+};

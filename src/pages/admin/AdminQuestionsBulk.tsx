@@ -59,6 +59,7 @@ export default function AdminQuestionsBulk() {
   // Progress detail + cancellation
   const [chunkProg, setChunkProg] = useState({ done: 0, total: 0, rowsDone: 0, rowsTotal: 0 });
   const cancelRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [cancelled, setCancelled] = useState(false);
 
   // Persist context
@@ -272,7 +273,12 @@ export default function AdminQuestionsBulk() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/questions")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="প্রশ্ন তালিকায় ফিরে যান"
+          onClick={() => navigate("/admin/questions")}
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -330,6 +336,11 @@ export default function AdminQuestionsBulk() {
               </Select>
             </div>
           </div>
+          {subjectId && chapters.length === 0 && (
+            <p className="text-sm text-amber-700" role="status">
+              এই বিষয়ের কোনো অধ্যায় পাওয়া যায়নি। প্রশ্ন আপলোডের আগে অধ্যায় ম্যানেজমেন্ট থেকে অন্তত একটি অধ্যায় যোগ করুন।
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -352,13 +363,23 @@ export default function AdminQuestionsBulk() {
                 <Button variant="outline" onClick={() => downloadTemplate(type, isMathSubject)} className="gap-2">
                   <Download className="w-4 h-4" /> {TYPE_LABELS[type]} টেমপ্লেট ডাউনলোড
                 </Button>
-                <label className="inline-flex">
-                  <input
-                    type="file" accept=".xlsx,.xls,.csv" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcel(f); e.target.value = ""; }}
-                  />
-                  <Button asChild className="gap-2 bg-emerald-600 hover:bg-emerald-700"><span><Upload className="w-4 h-4" /> ফাইল আপলোড</span></Button>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  id="bulk-question-file"
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="sr-only"
+                  aria-label="প্রশ্নের Excel বা CSV ফাইল বাছাই করুন"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcel(f); e.target.value = ""; }}
+                />
+                <Button
+                  type="button"
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-4 h-4" /> ফাইল আপলোড
+                </Button>
+                <label htmlFor="bulk-question-file" className="sr-only">প্রশ্নের Excel বা CSV ফাইল বাছাই করুন</label>
               </div>
               <p className="text-xs text-muted-foreground">
                 টেমপ্লেট ডাউনলোড করে ভরে আপলোড করুন। HTML/LaTeX/Cloudinary ছবি URL cell-এ ব্যবহার করা যাবে।
@@ -483,7 +504,12 @@ export default function AdminQuestionsBulk() {
                   </div>
                   <div className="flex items-center gap-1">
                     {q.errors.length === 0 && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                    <Button variant="ghost" size="icon" onClick={() => removeRow(q.tempId)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`প্রশ্ন ${i + 1} মুছুন`}
+                      onClick={() => removeRow(q.tempId)}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>

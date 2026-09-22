@@ -21,7 +21,7 @@ export default function AnnouncementBar() {
   // Build the marquee text by joining all announcements
   const marqueeText = useMemo(() => {
     if (!announcements.length) return "";
-    return announcements.map(a => a.text).join("   ✦   ");
+    return announcements.map(a => a.text).join("   •   ");
   }, [announcements]);
 
   if (!announcements.length || dismissed) return null;
@@ -43,8 +43,6 @@ export default function AnnouncementBar() {
           </div>
         </div>
 
-        {/* Sparkle separator */}
-
         {/* Infinite marquee */}
         <div className="flex-1 overflow-hidden relative mask-marquee">
           <div className="flex whitespace-nowrap marquee-track">
@@ -56,8 +54,6 @@ export default function AnnouncementBar() {
             </span>
           </div>
         </div>
-
-        {/* Sparkle separator */}
 
         {/* Close button */}
         <button

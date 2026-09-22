@@ -37,6 +37,36 @@ export function sortClasses<T extends { name?: string | null; id?: number }>(lis
   });
 }
 
+// ---- Subject ordering ----------------------------------------------------
+// Keep the question-builder's subject picker in the familiar NCTB-style
+// sequence instead of the database's alphabetical order.  Names that do not
+// appear in this list still remain available and are sorted alphabetically.
+const SUBJECT_ORDER = [
+  "বাংলা", "বাংলা ১ম পত্র", "বাংলা ২য় পত্র", "বাংলা ২য় পত্র",
+  "English", "English First Paper", "English Second Paper", "ইংরেজি ১ম পত্র", "ইংরেজি ২য় পত্র", "ইংরেজি ২য় পত্র",
+  "গণিত", "সাধারণ গণিত", "সাধারন গণিত", "উচ্চতর গণিত",
+  "বিজ্ঞান", "তথ্য ও যোগাযোগ প্রযুক্তি", "Information and Communication Technology",
+  "বাংলাদেশ ও বিশ্বপরিচয়", "বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা", "সামাজিক বিজ্ঞান", "ভূগোল ও পরিবেশ", "পৌরনীতি ও নাগরিকতা", "অর্থনীতি",
+  "পদার্থবিজ্ঞান", "রসায়ন", "জীববিজ্ঞান",
+  "হিসাববিজ্ঞান", "ফিন্যান্স ও ব্যাংকিং", "ব্যবসায় উদ্যোগ",
+  "কৃষিশিক্ষা", "গার্হস্থ্য বিজ্ঞান", "ইসলাম ও নৈতিক শিক্ষা", "হিন্দু ধর্ম ও নৈতিক শিক্ষা",
+];
+
+const normalizeSubjectName = (name?: string | null) =>
+  (name || "").normalize("NFC").replace(/য়/g, "য়").replace(/\s+/g, " ").trim().toLowerCase();
+
+const SUBJECT_RANK = new Map(SUBJECT_ORDER.map((name, index) => [normalizeSubjectName(name), index]));
+
+/** Sorts subjects in the standard question-paper sequence, then by Bangla name. */
+export function sortSubjects<T extends { name?: string | null; id?: number }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const ar = SUBJECT_RANK.get(normalizeSubjectName(a.name)) ?? Number.POSITIVE_INFINITY;
+    const br = SUBJECT_RANK.get(normalizeSubjectName(b.name)) ?? Number.POSITIVE_INFINITY;
+    if (ar !== br) return ar - br;
+    return (a.name || "").localeCompare(b.name || "", "bn");
+  });
+}
+
 // ---- Chapter ordering ----------------------------------------------------
 const BN_DIGITS: Record<string, string> = { "০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9" };
 

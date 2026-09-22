@@ -111,7 +111,7 @@ export default function PricingPage() {
               ৬–১২ শ্রেণির প্যাকেজ তালিকা
             </h1>
             <p className="text-white/70 text-lg max-w-xl mx-auto">ঝামেলাহীনভাবে ৩৬৫ দিন Unlimited প্রশ্ন তৈরি করুন</p>
-            <p className="text-white/50 text-sm mt-2">✨ এক ক্লিকে প্যাকেজ কিনুন, সারা বছর নিশ্চিন্ত থাকুন</p>
+            <p className="text-white/50 text-sm mt-2">এক ক্লিকে প্যাকেজ কিনুন, সারা বছর নিশ্চিন্ত থাকুন</p>
           </motion.div>
         </div>
       </section>

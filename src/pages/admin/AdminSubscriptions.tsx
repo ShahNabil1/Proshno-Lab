@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Eye, Search, Package, User, Mail, Phone, CreditCard, Calendar, Hash, CheckCircle2, RefreshCw, Loader2 } from "lucide-react";
+import { Eye, Search, Package, User, Mail, Phone, CreditCard, Calendar, Hash, CheckCircle2, RefreshCw, Loader2, CalendarPlus, Banknote } from "lucide-react";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
+import AdminGrantAccessDialog from "@/components/admin/AdminGrantAccessDialog";
 
 interface PricingPackageRow { id: number; class_name: string; subject_name: string; is_active: boolean; }
 interface TeacherRow { id: string; full_name: string; email: string; }
@@ -16,6 +17,12 @@ interface SubscriptionRow {
   id: number; teacher_id: string; plan: string; status: string;
   starts_at: string | null; ends_at: string | null; created_at: string;
   bkash_payment_id: number | null;
+  source: string | null; amount: number | null; note: string | null;
+}
+
+/** Rows granted from the admin panel — nothing behind them in bKash. */
+function isManualSub(sub: SubscriptionRow): boolean {
+  return sub.source === "manual" || !sub.bkash_payment_id;
 }
 interface BkashPaymentRow {
   id: number; user_id: string; payment_id: string | null; merchant_invoice_number: string;
@@ -32,6 +39,8 @@ interface GroupedUser {
   latestPhone: string;
   totalPaid: number;
   activeCount: number;
+  manualSubs: SubscriptionRow[];
+  manualAmount: number;
 }
 
 function getSubStatus(sub: SubscriptionRow): "active" | "expired" | "queued" | "inactive" {
@@ -145,6 +154,7 @@ export default function AdminSubscriptions() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<GroupedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [grantOpen, setGrantOpen] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -183,7 +193,9 @@ export default function AdminSubscriptions() {
       const latestPhone = userPayments[0]?.payer_reference || "—";
       const totalPaid = userPayments.filter(p => p.status === "completed").reduce((s, p) => s + Number(p.amount), 0);
       const activeCount = userSubs.filter(s => getSubStatus(s) === "active").length;
-      return { teacher, subscriptions: userSubs, payments: userPayments, latestPhone, totalPaid, activeCount };
+      const manualSubs = userSubs.filter(isManualSub);
+      const manualAmount = manualSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+      return { teacher, subscriptions: userSubs, payments: userPayments, latestPhone, totalPaid, activeCount, manualSubs, manualAmount };
     }).sort((a, b) => (b.payments[0]?.created_at || "").localeCompare(a.payments[0]?.created_at || ""));
   }, [teachers, subscriptions, payments]);
 
@@ -198,11 +210,17 @@ export default function AdminSubscriptions() {
     );
   }, [grouped, debouncedSearch]);
 
+  const manualSubs = useMemo(() => subscriptions.filter(isManualSub), [subscriptions]);
+  const manualTotal = useMemo(() => manualSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0), [manualSubs]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="font-heading text-2xl font-bold">সাবস্ক্রিপশন ও বিকাশ পেমেন্ট</h1>
         <div className="flex items-center gap-2">
+          <Button size="sm" className="gradient-green text-white border-0" onClick={() => setGrantOpen(true)}>
+            <CalendarPlus className="w-4 h-4 mr-1.5" /> ম্যানুয়াল প্যাকেজ
+          </Button>
           <ReconcilePendingButton payments={payments} onDone={fetchAll} />
           <Button variant="outline" size="sm" onClick={fetchAll}><RefreshCw className="w-4 h-4 mr-1.5" /> রিফ্রেশ</Button>
         </div>
@@ -221,6 +239,25 @@ export default function AdminSubscriptions() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-lg border bg-card p-3">
+          <p className="text-xs text-muted-foreground">গ্রাহক</p>
+          <p className="text-xl font-heading font-bold text-foreground mt-0.5">{grouped.length}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3">
+          <p className="text-xs text-muted-foreground">মোট সাবস্ক্রিপশন</p>
+          <p className="text-xl font-heading font-bold text-foreground mt-0.5">{subscriptions.length}</p>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <p className="text-xs text-amber-700">ম্যানুয়াল প্যাকেজ</p>
+          <p className="text-xl font-heading font-bold text-amber-700 mt-0.5">{manualSubs.length}</p>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <p className="text-xs text-amber-700">ম্যানুয়াল আদায়</p>
+          <p className="text-xl font-heading font-bold text-amber-700 mt-0.5">৳{manualTotal.toLocaleString("bn-BD")}</p>
+        </div>
+      </div>
 
       <Card>
         <CardContent className="p-0">
@@ -254,6 +291,11 @@ export default function AdminSubscriptions() {
                         {g.activeCount} সক্রিয়
                       </Badge>
                       <span className="ml-1.5 text-xs text-muted-foreground">/ {g.subscriptions.length} মোট</span>
+                      {g.manualSubs.length > 0 && (
+                        <Badge variant="outline" className="ml-1.5 bg-amber-50 text-amber-700 border-amber-300">
+                          ম্যানুয়াল {g.manualSubs.length}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {lastPay ? (
@@ -276,11 +318,52 @@ export default function AdminSubscriptions() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-heading font-semibold text-sm flex items-center gap-2 flex-wrap">
+            <Banknote className="w-4 h-4 text-amber-600" /> ম্যানুয়াল প্যাকেজ (bKash-এর বাইরে) — {manualSubs.length}টি · মোট ৳{manualTotal.toLocaleString("bn-BD")}
+          </h3>
+          {manualSubs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">এখনো কোনো ম্যানুয়াল প্যাকেজ দেওয়া হয়নি</p>
+          ) : (
+            <div className="space-y-2">
+              {manualSubs.slice(0, 20).map(sub => {
+                const teacher = teachers.find(t => t.id === sub.teacher_id);
+                const cfg = subStatusConfig[getSubStatus(sub)];
+                return (
+                  <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border p-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {teacher?.full_name || "—"} <span className="text-xs text-muted-foreground font-normal">{teacher?.email}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {sub.plan}{sub.note ? ` · ${sub.note}` : ""}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                        ৳{Number(sub.amount || 0).toLocaleString("bn-BD")}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {sub.ends_at ? new Date(sub.ends_at).toLocaleDateString("bn-BD") : "—"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Dialog open={!!selectedUser} onOpenChange={open => !open && setSelectedUser(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           {selectedUser && <DetailsModal data={selectedUser} packages={packages} onRefresh={fetchAll} />}
         </DialogContent>
       </Dialog>
+
+      <AdminGrantAccessDialog open={grantOpen} onOpenChange={setGrantOpen} onGranted={fetchAll} />
     </div>
   );
 }
@@ -344,6 +427,12 @@ function DetailsModal({ data, packages, onRefresh }: { data: GroupedUser; packag
                         <span className="font-medium text-sm">{sub.plan}</span>
                         <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
                         {sub.bkash_payment_id && <Badge variant="outline" className="text-[10px]">bKash #{sub.bkash_payment_id}</Badge>}
+                        {isManualSub(sub) && (
+                          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-300">
+                            ম্যানুয়াল{sub.amount ? ` · ৳${Number(sub.amount).toLocaleString("bn-BD")}` : ""}
+                          </Badge>
+                        )}
+                        {sub.note && <Badge variant="outline" className="text-[10px]">{sub.note}</Badge>}
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> শুরু: {sub.starts_at ? new Date(sub.starts_at).toLocaleDateString("bn-BD") : "—"}</span>

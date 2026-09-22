@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   BookOpen, PenTool, FileText, ArrowRight,
   CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap, Clock, Play, FilePlus2
+  Zap, Shield, BarChart3, GraduationCap, Clock, Play, FilePlus2, MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +40,7 @@ export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [videoId, setVideoId] = useState<string | null>(null);
 
   const fetchReviews = () => {
@@ -48,7 +49,13 @@ export default function Index() {
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(6)
-      .then(({ data }) => { if (data) setReviews(data as any); });
+      .then(({ data }) => {
+        if (data) setReviews(data as any);
+        setReviewsLoading(false);
+      })
+      .catch(() => {
+        setReviewsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -121,16 +128,6 @@ export default function Index() {
                       className="w-5 h-5 object-contain"
                     />
                     সম্পূর্ণ ফ্রিতে শুরু করুন
-                  </Button>
-                </Link>
-                <Link to="/demo">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-12 px-6 rounded-lg font-heading font-semibold text-[15px] bg-white/5 border-white/25 text-white hover:bg-white hover:text-navy hover:border-white gap-2 transition-all duration-300"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    কীভাবে কাজ করে দেখুন
                   </Button>
                 </Link>
               </div>
@@ -219,33 +216,53 @@ export default function Index() {
             <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">সম্মানিত শিক্ষকরা যা বলছেন !</h2>
             <p className="text-muted-foreground text-base md:text-lg">সরাসরি ব্যবহারকারীদের অভিজ্ঞতা</p>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {reviews.map((t, i) =>
-            <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                <div className="bg-card rounded-2xl p-6 shadow-premium hover-lift h-full flex flex-col border border-border/60">
-                  <div className="flex items-center gap-0.5 mb-3">
-                    {Array.from({ length: 5 }).map((_, j) =>
-                  <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
-                  )}
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">"{t.text}"</p>
-                  <div className="flex items-center gap-3 pt-3 border-t border-border">
-                    {t.image_url ?
-                  <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" /> :
-
-                  <div className="w-10 h-10 rounded-full gradient-navy flex items-center justify-center text-white font-heading font-bold text-sm">
-                        {t.name.charAt(0)}
+          {reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+              {reviews.map((t, i) =>
+                <motion.div key={t.id} custom={i + 1} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <div className="bg-card rounded-2xl p-6 shadow-premium hover-lift h-full flex flex-col border border-border/60">
+                    <div className="flex items-center gap-0.5 mb-3">
+                      {Array.from({ length: 5 }).map((_, j) =>
+                        <Star key={j} className={`w-4 h-4 ${j < t.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/20"}`} />
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">"{t.text}"</p>
+                    <div className="flex items-center gap-3 pt-3 border-t border-border">
+                      {t.image_url ?
+                        <img src={t.image_url} alt="" className="w-10 h-10 rounded-full object-cover" /> :
+                        <div className="w-10 h-10 rounded-full gradient-navy flex items-center justify-center text-white font-heading font-bold text-sm">
+                          {t.name.charAt(0)}
+                        </div>
+                      }
+                      <div>
+                        <p className="font-heading font-semibold text-sm text-foreground">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.designation}{t.institution ? `, ${t.institution}` : ""}</p>
                       </div>
-                  }
-                    <div>
-                      <p className="font-heading font-semibold text-sm text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.designation}{t.institution ? `, ${t.institution}` : ""}</p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
+                </motion.div>
+              )}
+            </div>
+          ) : !reviewsLoading ? (
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              custom={1}
+              className="max-w-md mx-auto text-center py-8 px-6 rounded-2xl border border-dashed border-border/80 bg-card/40"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <p className="text-foreground font-heading font-semibold text-sm mb-1">
+                এখনও কোনো রিভিউ যুক্ত হয়নি
+              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                প্রশ্নল্যাব সম্পর্কে আপনার মূল্যবান অভিজ্ঞতা সবার সাথে ভাগ করে নিতে নিচে ক্লিক করুন।
+              </p>
+            </motion.div>
+          ) : null}
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={4} className="text-center mt-8">
             <ReviewModal onSuccess={fetchReviews} />
           </motion.div>

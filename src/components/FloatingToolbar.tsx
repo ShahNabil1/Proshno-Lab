@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
-  Minus, Plus, Trash2, RefreshCw, Palette
+  Minus, Plus, Trash2, RefreshCw, Palette, Type
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface FloatingToolbarProps {
   targetEl: HTMLElement | null;
+  optionLayout?: "4x1" | "2x2" | "1x4";
+  onOptionLayoutChange?: () => void;
   onDelete?: () => void;
   onExchange?: () => void;
   onClose: () => void;
@@ -24,13 +26,22 @@ const COLORS = [
   "#d946ef", "#ec4899", "#f43f5e", "#78350f",
 ];
 
+const FONT_FAMILIES = [
+  { label: "সোলাইমান লিপি", value: "SolaimanLipi, sans-serif" },
+  { label: "Noto Serif Bangla", value: "'Noto Serif Bengali', serif" },
+  { label: "Arial", value: "Arial, sans-serif" },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Times New Roman", value: "'Times New Roman', serif" },
+];
 
-export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClose }: FloatingToolbarProps) {
+
+export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayoutChange, onDelete, onExchange, onClose }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [fontSize, setFontSize] = useState(14);
   const [currentColor, setCurrentColor] = useState("#000000");
+  const [fontFamily, setFontFamily] = useState(FONT_FAMILIES[0].value);
 
 
   // Position toolbar above the target element
@@ -50,6 +61,7 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
     // Read current font size + colour
     const computed = window.getComputedStyle(targetEl);
     setFontSize(Math.round(parseFloat(computed.fontSize)));
+    setFontFamily(computed.fontFamily || FONT_FAMILIES[0].value);
     const rgb = computed.color.match(/\d+/g);
     if (rgb && rgb.length >= 3) {
       setCurrentColor(
@@ -140,51 +152,97 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
     }
   };
 
+  const setFont = (family: string) => {
+    if (!targetEl) return;
+    setFontFamily(family);
+    const sel = window.getSelection();
+    const range = savedRange.current;
+    const hasTextSelection = range && !range.collapsed && targetEl.contains(range.commonAncestorContainer);
+
+    if (hasTextSelection && sel) {
+      targetEl.focus();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("fontName", false, family);
+    } else {
+      targetEl.style.fontFamily = family;
+    }
+  };
+
 
   if (!targetEl) return null;
 
   return (
     <div
       ref={toolbarRef}
-      className="fixed z-[100] flex items-center gap-0.5 rounded-lg border border-emerald-300 bg-white dark:bg-card shadow-xl px-1.5 py-1 font-paper"
+      className="fixed z-[100] flex items-center gap-0.5 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/[0.10] via-white to-accent/25 px-1.5 py-1.5 font-paper shadow-[0_14px_34px_rgba(30,58,138,0.20)] backdrop-blur-sm dark:from-primary/25 dark:via-card dark:to-accent/15"
       style={{ top: pos.top, left: pos.left }}
     >
       {/* Font size */}
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeFontSize(-1)}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => changeFontSize(-1)}>
         <Minus className="h-3 w-3" />
       </Button>
-      <span className="text-xs font-medium w-6 text-center select-none">{fontSize}</span>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeFontSize(1)}>
+      <span className="w-6 select-none text-center text-xs font-semibold text-primary">{fontSize}</span>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => changeFontSize(1)}>
         <Plus className="h-3 w-3" />
       </Button>
 
-      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+      <div className="mx-0.5 h-5 w-px bg-primary/20" />
 
       {/* Formatting */}
-      <Button variant="ghost" size="icon" className="h-7 w-7 font-bold" onClick={() => exec("bold")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg font-bold hover:bg-primary/10 hover:text-primary" onClick={() => exec("bold")}>
         <Bold className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => exec("italic")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => exec("italic")}>
         <Italic className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => exec("underline")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => exec("underline")}>
         <Underline className="h-3.5 w-3.5" />
       </Button>
 
-      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+      <div className="mx-0.5 h-5 w-px bg-primary/20" />
 
       {/* Alignment */}
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("left")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => setAlign("left")}>
         <AlignLeft className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("center")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => setAlign("center")}>
         <AlignCenter className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setAlign("right")}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => setAlign("right")}>
         <AlignRight className="h-3.5 w-3.5" />
       </Button>
 
-      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+      <div className="mx-0.5 h-5 w-px bg-primary/20" />
+
+      {/* Font family */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary"
+            onMouseDown={e => e.preventDefault()}
+            title="ফন্ট পরিবর্তন"
+          >
+            <Type className="h-3.5 w-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-48 p-1.5" side="bottom" align="center" onOpenAutoFocus={e => e.preventDefault()}>
+          {FONT_FAMILIES.map(font => (
+            <button
+              key={font.value}
+              type="button"
+              className={`w-full rounded-md px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-primary/10 ${fontFamily === font.value ? "bg-primary/10 text-primary" : ""}`}
+              style={{ fontFamily: font.value }}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => setFont(font.value)}
+            >
+              {font.label}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
 
       {/* Color */}
       <Popover>
@@ -192,7 +250,7 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 relative"
+            className="relative h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary"
             onMouseDown={e => e.preventDefault()}
             title="লেখার রং"
           >
@@ -248,17 +306,28 @@ export default function FloatingToolbar({ targetEl, onDelete, onExchange, onClos
       </Popover>
 
 
-      <div className="w-px h-5 bg-emerald-200 mx-0.5" />
+      <div className="mx-0.5 h-5 w-px bg-primary/20" />
 
       {/* Exchange & Delete */}
-      {onExchange && (
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:text-emerald-700" onClick={onExchange} title="বদলান">
-          <RefreshCw className="h-3.5 w-3.5" />
+      {optionLayout && onOptionLayoutChange && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 px-2 text-xs font-medium text-slate-800"
+          onClick={onOptionLayoutChange}
+          title="Change option layout"
+        >
+          {optionLayout}
         </Button>
       )}
       {onDelete && (
         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete} title="মুছুন">
           <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      {onExchange && (
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs text-emerald-700 hover:text-emerald-800" onClick={onExchange} title="প্রশ্ন বদলান">
+          <RefreshCw className="h-3.5 w-3.5" /> Exchange
         </Button>
       )}
     </div>

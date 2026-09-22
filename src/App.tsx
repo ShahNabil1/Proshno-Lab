@@ -38,7 +38,12 @@ import Subscription from "./pages/dashboard/Subscription";
 import Contact from "./pages/dashboard/Contact";
 import Feedback from "./pages/dashboard/Feedback";
 import QuestionPaperView from "./pages/dashboard/QuestionPaperView";
+import SmartBoard from "./pages/dashboard/SmartBoard";
 import FeatureComingSoon from "./pages/dashboard/FeatureComingSoon";
+import OmrTutorial from "./pages/dashboard/omr/OmrTutorial";
+import OmrCreate from "./pages/dashboard/omr/OmrCreate";
+import OmrTokens from "./pages/dashboard/omr/OmrTokens";
+import OmrEvaluation from "./pages/dashboard/omr/OmrEvaluation";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -106,12 +111,12 @@ const App = () => (
             <Route path="/dashboard/contact" element={<DashboardLayout><Contact /></DashboardLayout>} />
             <Route path="/dashboard/feedback" element={<DashboardLayout><Feedback /></DashboardLayout>} />
             <Route path="/dashboard/view-paper" element={<DashboardLayout><QuestionPaperView /></DashboardLayout>} />
-            <Route path="/dashboard/smartboard" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
+            <Route path="/dashboard/smartboard" element={<DashboardLayout><SmartBoard /></DashboardLayout>} />
             <Route path="/dashboard/students" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
-            <Route path="/dashboard/omr-tutorial" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
-            <Route path="/dashboard/omr-create" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
-            <Route path="/dashboard/omr-tokens" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
-            <Route path="/dashboard/omr-evaluation" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
+            <Route path="/dashboard/omr-tutorial" element={<DashboardLayout><OmrTutorial /></DashboardLayout>} />
+            <Route path="/dashboard/omr-create" element={<DashboardLayout><OmrCreate /></DashboardLayout>} />
+            <Route path="/dashboard/omr-tokens" element={<DashboardLayout><OmrTokens /></DashboardLayout>} />
+            <Route path="/dashboard/omr-evaluation" element={<DashboardLayout><OmrEvaluation /></DashboardLayout>} />
             <Route path="/dashboard/affiliate" element={<DashboardLayout><FeatureComingSoon /></DashboardLayout>} />
 
             {/* Admin */}

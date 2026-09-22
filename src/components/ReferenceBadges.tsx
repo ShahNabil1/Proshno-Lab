@@ -12,14 +12,20 @@ export default function ReferenceBadges({ boardRefs, uniRefs }: ReferenceBadgesP
   if (boards.length === 0 && unis.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="reference-badges flex flex-wrap justify-end gap-1.5">
       {boards.map((r, i) => (
-        <Badge key={`b-${i}`} className="bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-700 text-[11px] font-medium">
-          {r.board} '{r.year}
+        <Badge
+          key={`b-${i}`}
+          title={`${r.board}${r.year ? ` • ${r.year}` : ""}`}
+          className={`reference-badge ${/বোর্ড|বো\.?/i.test(r.board) ? "reference-badge--board" : "reference-badge--school"}`}
+        >
+          <span aria-hidden className="reference-badge__dot" />
+          {r.board}{r.year ? ` '${r.year}` : ""}
         </Badge>
       ))}
       {unis.map((r, i) => (
-        <Badge key={`u-${i}`} className="bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100 dark:border-amber-700 text-[11px] font-medium">
+        <Badge key={`u-${i}`} title={`${r.name} • ${r.year}`} className="reference-badge reference-badge--school">
+          <span aria-hidden className="reference-badge__dot" />
           {r.name} '{r.year}
         </Badge>
       ))}
