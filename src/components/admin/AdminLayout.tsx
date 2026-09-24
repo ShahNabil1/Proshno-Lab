@@ -132,7 +132,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const fullName = user.user_metadata?.full_name || "Admin";
 
   return (
-    <div className="min-h-screen flex bg-background font-body">
+    <div className="h-screen overflow-hidden flex bg-background font-body">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -218,7 +218,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {localMockAdmin && (
           <div className="bg-amber-100 text-amber-900 border-b border-amber-300 px-4 py-2 text-center text-sm font-semibold">
             লোকাল টেস্ট Admin — আসল admin session নয়; protected পরিবর্তন সংরক্ষণ হবে না
@@ -242,7 +242,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

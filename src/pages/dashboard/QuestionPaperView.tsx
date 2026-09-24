@@ -225,7 +225,7 @@ const AnswerContent = ({ text, className = "" }: { text: string; className?: str
 // Print-friendly MCQ explanation, following the familiar answer-sheet layout:
 // a standalone heading followed by the worked explanation.
 const McqExplanation = ({ text, isEnglishVersion = false }: { text: string; isEnglishVersion?: boolean }) => (
-  <div style={{ position: "relative", marginTop: "9px", padding: "20px 8px 6px", border: "1px solid #777", borderRadius: "4px", fontSize: "0.9em", lineHeight: 1.5, breakInside: "avoid" }}>
+  <div className="mcq-explanation" style={{ position: "relative", marginTop: "9px", padding: "20px 8px 6px", border: "1px solid #777", borderRadius: "4px", fontSize: "0.9em", lineHeight: 1.5, breakInside: "avoid" }}>
     <div style={{ position: "absolute", top: "-1px", left: "-1px", padding: "1px 6px 2px", borderRadius: "3px 0 3px 0", background: "#050505", color: "#fff", fontWeight: 700, lineHeight: 1.25 }}>
       {isEnglishVersion ? "Explanation" : "ব্যাখ্যা"}
     </div>
@@ -274,6 +274,7 @@ export default function QuestionPaperView() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [pageNumberOpen, setPageNumberOpen] = useState(false);
+  const [paginationRevision, setPaginationRevision] = useState(0);
   const [docxExporting, setDocxExporting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(isLocalMockAdminEnabled());
 
@@ -763,10 +764,14 @@ export default function QuestionPaperView() {
     );
 
     Promise.all(imagePromises).then(() => {
-      // Small delay for KaTeX rendering
+      // Images can change the natural height of their question after the
+      // initial render. Rebuild the page ranges with their final dimensions
+      // before opening the print dialog.
+      setPaginationRevision(revision => revision + 1);
+      // Allow React pagination and KaTeX layout to settle.
       setTimeout(() => {
         window.print();
-      }, 300);
+      }, 500);
     });
   };
 
@@ -1123,7 +1128,6 @@ export default function QuestionPaperView() {
   // between them. Unlike clipping one tall document, this never slices text
   // through the middle of a question at a page boundary.
   useEffect(() => {
-    if (settings.previewLayoutMode !== "print") return;
     const frame = window.requestAnimationFrame(() => {
       const paper = paperRef.current;
       if (!paper) return;
@@ -1143,9 +1147,18 @@ export default function QuestionPaperView() {
       const columnCount = Math.max(1, Number(settings.columns) || 1);
       const firstUsableHeight = Math.max(240, previewPageHeight - (flow.getBoundingClientRect().top - paperRect.top) - 34);
       const laterUsableHeight = Math.max(240, previewPageHeight - 76);
+      // The continuous screen preview is intentionally magnified, while PDF
+      // restores the selected font size. Convert measured screen heights back
+      // to print-scale heights or every generated sheet is under-filled.
+      const screenToPrintScale = 1 / PREVIEW_FONT_SCALE;
       const itemHeights = sourceItems.map((item) => {
         const style = window.getComputedStyle(item);
-        const measured = item.getBoundingClientRect().height + parseFloat(style.marginBottom || "0");
+        // getBoundingClientRect() returns the union of every CSS-column
+        // fragment. For an item crossing a column it can therefore look
+        // almost page-high. scrollHeight is its actual intrinsic content
+        // height and remains stable for text, math and loaded images.
+        const intrinsicHeight = item.scrollHeight || item.getBoundingClientRect().height;
+        const measured = (intrinsicHeight + parseFloat(style.marginBottom || "0")) * screenToPrintScale;
         // An element fragmented at a CSS-column boundary can report the
         // bounding box of both fragments (almost the full section height).
         // Its real question height is small, so use a conservative estimate.
@@ -1195,7 +1208,7 @@ export default function QuestionPaperView() {
       setPagedPreviewPages(pages);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [settings, questions, meta, isEnglishVersion, previewPageHeight]);
+  }, [settings, questions, meta, isEnglishVersion, previewPageHeight, paginationRevision]);
 
   /* Detect duplicate questions */
   const duplicateIds = new Set<number>();
@@ -2166,8 +2179,8 @@ export default function QuestionPaperView() {
           width: '100%',
           maxWidth: previewPaperWidth,
         }}>
-        {settings.previewLayoutMode === "print" && pagedPreviewPages.length > 0 && (
-          <div className="paper-paged-preview" aria-label="Print layout preview">
+        {pagedPreviewPages.length > 0 && (
+          <div className={`paper-paged-preview paper-paged-print-source${settings.previewLayoutMode === "print" ? " paper-paged-preview--visible" : ""}`} aria-label="Print layout preview">
             {pagedPreviewPages.map((pageHtml, pageIndex) => (
               <div
                 className="paper-paged-preview-sheet"
@@ -2183,7 +2196,7 @@ export default function QuestionPaperView() {
           </div>
         )}
         <div
-          className={settings.previewLayoutMode === "print" ? "paper-live-preview-source" : undefined}
+          className={`paper-live-print-source${settings.previewLayoutMode === "print" ? " paper-live-preview-source" : ""}`}
           style={settings.previewLayoutMode === "print" ? { width: `min(100vw, ${previewPaperWidth})` } : undefined}
         >
         <div
@@ -3313,7 +3326,7 @@ export default function QuestionPaperView() {
                     {docxExporting ? "তৈরি হচ্ছে..." : "Word"}
                   </Button>
                 )}
-                {cloudBackupEnabled && (
+                {(
                   <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
                     <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
                   </Button>
@@ -3344,7 +3357,7 @@ export default function QuestionPaperView() {
                   {docxExporting ? "তৈরি হচ্ছে..." : "Word"}
                 </Button>
               )}
-              {cloudBackupEnabled && (
+              {(
                 <Button variant="outline" className="font-heading font-semibold" onClick={() => { handleSavePaper(); }} disabled={saving}>
                   <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
                 </Button>

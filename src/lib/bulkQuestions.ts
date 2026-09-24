@@ -15,6 +15,7 @@ export type RefItem = { board?: string; name?: string; year: string };
 export type ParsedQuestion = {
   tempId: string;
   type: QType;
+  topicName?: string;
   stimulus?: string;
   question: string;
   option_a?: string;
@@ -106,6 +107,12 @@ export function downloadTemplate(type: QType, isMath = false) {
       break;
   }
 
+  // Keep the topic column at the end so files made from older templates remain
+  // position-compatible. The parser also accepts this column in any position.
+  rows[0].push("টপিক (ঐচ্ছিক — না থাকলে অটো তৈরি হবে)");
+  sample.push("উদাহরণ টপিক");
+  notes.unshift("টপিক: প্রতিটি প্রশ্নের টপিক লিখুন। নির্বাচিত অধ্যায়ে না থাকলে আপলোডের সময় অটো তৈরি হবে।");
+
   const data = [...rows, sample, Array(rows[0].length).fill("")];
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws["!cols"] = rows[0].map(() => ({ wch: 25 }));
@@ -130,12 +137,19 @@ export async function parseExcelFile(file: File, type: QType, isMath = false): P
   if (rows.length < 2) return [];
   const header = (rows[0] || []).map(s);
   const headerText = header.join("|");
+  const topicColumn = header.findIndex((value) => /(?:^|\s)(?:topic|টপিক)(?:\s|$|\()/i.test(value));
   // Header wins when recognizable (old/new templates both work), else fall back to subject
   const mathSheet = type === "cq"
     ? (/প্রশ্ন ঘ/.test(headerText) ? false : /জ্ঞান, ২|প্রশ্ন গ/.test(headerText) ? true : isMath)
     : false;
   const body = rows.slice(1).filter((r) => r.some((c) => s(c)));
-  return body.map((r) => rowToQuestion(r, type, mathSheet));
+  return body.map((r) => {
+    const cells = [...r];
+    const topicName = topicColumn >= 0 ? s(cells.splice(topicColumn, 1)[0]) : "";
+    const question = rowToQuestion(cells, type, mathSheet);
+    if (topicName) question.topicName = topicName;
+    return question;
+  });
 }
 
 function wrapImg(url: string) {

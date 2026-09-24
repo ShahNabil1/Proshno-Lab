@@ -37,7 +37,7 @@ const baseSidebarGroups = [
   {
     label: "ব্যবস্থাপনা",
     items: [
-      { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText, requiresCloudBackup: true },
+      { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText },
       { path: "/dashboard/students", label: "শিক্ষার্থী", icon: GraduationCap },
     ],
   },

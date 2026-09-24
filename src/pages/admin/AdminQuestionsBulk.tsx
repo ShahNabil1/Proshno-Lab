@@ -28,6 +28,7 @@ const CTX_KEY = "adminBulkContext.v1";
 const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
 
 const CHUNK = 50;
+const topicKey = (name: string) => name.trim().replace(/\s+/g, " ").toLocaleLowerCase("bn-BD");
 
 export default function AdminQuestionsBulk() {
   const navigate = useNavigate();
@@ -96,21 +97,21 @@ export default function AdminQuestionsBulk() {
     return { total: parsed.length, valid, invalid, dup };
   }, [parsed]);
 
-  /** Marks in-batch duplicates + duplicates saved anywhere in the question database. */
+  /** Marks in-batch duplicates + duplicates already saved in the selected chapter. */
   const applyDedupe = async (items: ParsedQuestion[]) => {
     const marked = markBatchDuplicates(items);
     try {
       const sigs = new Set<string>();
       const PAGE = 1000;
-      for (let from = 0; ; from += PAGE) {
+      for (let from = 0; from < 20000; from += PAGE) {
         const { data, error } = await supabase
           .from("questions")
           .select("id, type, question, option_a, option_b, option_c, option_d, creative_data")
+          .eq("chapter_id", Number(chapterId))
           .eq("type", type)
           .order("id")
           .range(from, from + PAGE - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
+        if (error || !data || data.length === 0) break;
         data.forEach((r: any) => sigs.add(questionSignature(r)));
         if (data.length < PAGE) break;
       }
@@ -189,6 +190,47 @@ export default function AdminQuestionsBulk() {
     cancelRef.current = false;
     setCancelled(false);
     setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
+
+    // Resolve every Excel topic once. Existing topics are reused; missing ones
+    // are created in one batch under the currently selected chapter.
+    const topicIds = new Map<string, number>();
+    try {
+      const { data: currentTopics, error: topicsError } = await supabase
+        .from("topics")
+        .select("id, name")
+        .eq("chapter_id", Number(chapterId));
+      if (topicsError) throw topicsError;
+
+      (currentTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
+      const missingByKey = new Map<string, string>();
+      valid.forEach((question) => {
+        if (!question.topicName) return;
+        const key = topicKey(question.topicName);
+        if (key && !topicIds.has(key) && !missingByKey.has(key)) {
+          missingByKey.set(key, question.topicName.trim().replace(/\s+/g, " "));
+        }
+      });
+
+      if (missingByKey.size > 0) {
+        const { data: createdTopics, error: createError } = await supabase
+          .from("topics")
+          .insert([...missingByKey.values()].map((name) => ({ name, chapter_id: Number(chapterId) })))
+          .select("id, name");
+        if (createError) throw createError;
+        (createdTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
+        setTopics((previous) => [...previous, ...(createdTopics || [])]);
+      }
+
+      const unresolvedTopic = valid.find((question) => question.topicName && !topicIds.has(topicKey(question.topicName)));
+      if (unresolvedTopic?.topicName) {
+        throw new Error(`"${unresolvedTopic.topicName}" টপিকটি তৈরি করা যায়নি`);
+      }
+    } catch (error: any) {
+      setSaving(false);
+      toast.error(`টপিক তৈরি/খোঁজা যায়নি: ${error?.message || "অজানা ত্রুটি"}`);
+      return;
+    }
+
     const repeatedStimuli = type === "mcq"
       ? findRepeatedStimuli(valid, q => q.stimulus)
       : new Set<string>();
@@ -211,7 +253,9 @@ export default function AdminQuestionsBulk() {
             class_id: Number(classId),
             subject_id: Number(subjectId),
             chapter_id: Number(chapterId),
-            topic_id: topicId && topicId !== "__none__" ? Number(topicId) : null,
+            topic_id: q.topicName
+              ? (topicIds.get(topicKey(q.topicName)) || null)
+              : (topicId && topicId !== "__none__" ? Number(topicId) : null),
             teacher_id: user.id,
             stimulus_group_id: stimulusGroups.get(stimulusKey) || null,
           });
@@ -453,11 +497,19 @@ export default function AdminQuestionsBulk() {
             </div>
 
 
-            <div className="border rounded-lg divide-y max-h-[500px] overflow-y-auto">
+            <div
+              className="border rounded-lg divide-y max-h-[500px] overflow-y-auto overscroll-contain"
+              style={parsed.length > 6 ? { height: "min(500px, 60vh)" } : undefined}
+            >
               {parsed.map((q, i) => (
                 <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : q.duplicate ? "bg-amber-50/60" : ""}`}>
                   <div className="text-xs text-muted-foreground w-8">#{i + 1}</div>
                   <div className="flex-1 min-w-0">
+                    {q.topicName && (
+                      <Badge variant="outline" className="mb-1 mr-1 text-[10px] border-sky-300 text-sky-800">
+                        টপিক: {q.topicName}
+                      </Badge>
+                    )}
                     {q.duplicate && (
                       <Badge className="mb-1 bg-amber-100 text-amber-900 hover:bg-amber-100 text-[10px]">
                         ডুপ্লিকেট ({q.duplicate === "db" ? "আগে থেকেই ডাটাবেসে আছে" : "লিস্টে দুইবার"}) — স্কিপ হবে

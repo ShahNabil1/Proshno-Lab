@@ -700,6 +700,17 @@
     padding: 0 !important;
   }
 
+  /* The screen preview is a viewport-height scroll box. If that fixed height
+     survives printing, Chrome paginates the scroll box itself and appends a
+     trailing blank page. Print must use the document's natural height. */
+  .paper-preview-scroll,
+  .paper-live-preview-source {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   /* Hidden preview controls must not reserve printable space. */
   .paper-quick-settings {
     display: none !important;
@@ -738,10 +749,13 @@
     max-width: none !important;
   }
 
+  [data-print-paper] .combined-question-flow,
   [data-print-paper] .mcq-print-columns {
-    /* Match the on-screen preview: distribute content across the configured
-       columns instead of leaving a nearly empty printable page fragment. */
+    /* Balance the final print fragment like Word columns. With every MCQ and
+       explanation allowed to fragment below, Chrome no longer inserts an
+       empty intermediate page or leaves the final right column mostly blank. */
     column-fill: balance !important;
+    overflow: visible !important;
   }
 
   [data-print-paper] .mcq-print-item {
@@ -749,15 +763,29 @@
     width: 100% !important;
     vertical-align: top;
     margin-bottom: var(--paper-question-gap, 6px) !important;
+    /* Keep Word-like continuous flow: a long question/answer may continue in
+       the next column or page instead of leaving a large empty rectangle. */
     break-inside: auto !important;
     page-break-inside: auto !important;
     -webkit-column-break-inside: auto !important;
+    overflow: visible !important;
   }
 
   [data-print-paper] .mcq-print-item > * {
     break-inside: auto !important;
     page-break-inside: auto !important;
     -webkit-column-break-inside: auto !important;
+  }
+
+  /* The screen card stays together for readability, but in PDF it must be
+     allowed to continue in the next column/page. An inline `break-inside:
+     avoid` here was the remaining source of clipped answer lines. */
+  [data-print-paper] .mcq-explanation,
+  [data-print-paper] .mcq-explanation * {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    -webkit-column-break-inside: auto !important;
+    overflow: visible !important;
   }
 
   /* Hide everything except the paper */
@@ -819,12 +847,13 @@
     break-inside: avoid;
   }
 
-  /* MCQ columns intentionally use continuous flow in print. This overrides
-     the generic keep-together rule above so no column ends with a large gap. */
+  /* The parent column stream uses column-fill:auto, so MCQs can safely
+     continue across a print fragment without balanced-column clipping. */
   [data-print-paper] [data-editable^="mcq-"] {
     page-break-inside: auto !important;
     break-inside: auto !important;
     -webkit-column-break-inside: auto !important;
+    overflow: visible !important;
   }
 
   /* Allow large blocks (CQ, Descriptive) to split across pages */
@@ -2000,6 +2029,12 @@
   background: #e5e7eb;
 }
 
+/* The paginated copy is always prepared for PDF generation, but continuous
+   screen preview keeps showing the editable live paper. */
+.paper-paged-print-source:not(.paper-paged-preview--visible) {
+  display: none;
+}
+
 .paper-paged-preview-sheet {
   position: relative;
   width: 100%;
@@ -2034,7 +2069,38 @@
     box-shadow: none !important;
   }
 
-  .paper-paged-preview {
+  /* Print the pre-paginated sheets instead of asking Chromium to fragment one
+     multi-column element across pages (which clips text and can add a blank
+     page). Each sheet is one explicit printed page. */
+  .paper-paged-preview.paper-paged-print-source {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  .paper-paged-preview-sheet {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .paper-paged-preview-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .paper-paged-snapshot-source {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .paper-live-print-source {
     display: none !important;
   }
 
