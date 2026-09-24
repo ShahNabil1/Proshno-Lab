@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,22 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   const districts = form.division ? getDistricts(form.division) : [];
   const upazilas = form.division && form.district ? getUpazilas(form.division, form.district) : [];
 
+  // A user may already have an institute (including legacy duplicate rows).
+  // In that case onboarding is complete and the form must not be shown again.
+  useEffect(() => {
+    if (!open || !user?.id) return;
+    supabase
+      .from("institutes")
+      .select("id")
+      .eq("owner_id", user.id)
+      .order("id", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data) onComplete();
+      });
+  }, [open, user?.id]);
+
   const handleDivisionChange = (val: string) => {
     setForm(prev => ({ ...prev, division: val, district: "", upazila: "" }));
   };
@@ -53,6 +69,26 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
     if (!isValidBdPhone(form.phone)) { toast.error(BD_PHONE_ERROR); return; }
 
     setLoading(true);
+    const { data: existingInstitute, error: lookupError } = await supabase
+      .from("institutes")
+      .select("id")
+      .eq("owner_id", user.id)
+      .order("id", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (lookupError) {
+      toast.error(`প্রতিষ্ঠানের তথ্য যাচাই করা যায়নি: ${lookupError.message}`);
+      setLoading(false);
+      return;
+    }
+    if (existingInstitute) {
+      toast.info("প্রতিষ্ঠানের তথ্য আগে থেকেই সংরক্ষিত আছে");
+      setLoading(false);
+      onComplete();
+      return;
+    }
+
     const { error } = await supabase.from("institutes").insert({
       name: form.name.trim(),
       division: form.division,

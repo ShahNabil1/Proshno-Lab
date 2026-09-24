@@ -75,7 +75,7 @@ export default function AutoQuestionCreate() {
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name").then(({ data }) => setClasses(sortClasses(data || [])));
     if (user?.id) {
-      supabase.from("institutes").select("*").eq("owner_id", user.id).maybeSingle().then(({ data }) => setInstitute(data));
+      supabase.from("institutes").select("*").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle().then(({ data }) => setInstitute(data));
     }
   }, [user?.id]);
 

@@ -53,7 +53,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
     const meta = user.user_metadata;
     setName(meta?.full_name || meta?.name || "");
     setEmail(user.email || "");
-    supabase.from("institutes").select("name, phone").eq("owner_id", user.id).maybeSingle().then(({ data }) => {
+    supabase.from("institutes").select("name, phone").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle().then(({ data }) => {
       if (data) {
         setInstitute(data.name || "");
         setPhone(data.phone || "");

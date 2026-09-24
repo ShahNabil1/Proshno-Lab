@@ -96,21 +96,21 @@ export default function AdminQuestionsBulk() {
     return { total: parsed.length, valid, invalid, dup };
   }, [parsed]);
 
-  /** Marks in-batch duplicates + duplicates already saved in this chapter (chunked DB read). */
+  /** Marks in-batch duplicates + duplicates saved anywhere in the question database. */
   const applyDedupe = async (items: ParsedQuestion[]) => {
     const marked = markBatchDuplicates(items);
     try {
       const sigs = new Set<string>();
       const PAGE = 1000;
-      for (let from = 0; from < 20000; from += PAGE) {
+      for (let from = 0; ; from += PAGE) {
         const { data, error } = await supabase
           .from("questions")
           .select("id, type, question, option_a, option_b, option_c, option_d, creative_data")
-          .eq("chapter_id", Number(chapterId))
           .eq("type", type)
           .order("id")
           .range(from, from + PAGE - 1);
-        if (error || !data || data.length === 0) break;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
         data.forEach((r: any) => sigs.add(questionSignature(r)));
         if (data.length < PAGE) break;
       }

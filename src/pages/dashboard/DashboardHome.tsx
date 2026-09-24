@@ -147,8 +147,16 @@ export default function DashboardHome() {
       .from("institutes")
       .select("*")
       .eq("owner_id", user.id)
+      .order("id", { ascending: true })
+      .limit(1)
       .maybeSingle()
-      .then(({ data }) => setInstitute(data));
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Institute lookup failed:", error);
+          return;
+        }
+        setInstitute(data);
+      });
 
     // Subscription from Supabase
     supabase

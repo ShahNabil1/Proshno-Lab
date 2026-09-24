@@ -23,6 +23,7 @@ import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
+import AdminQuestionDuplicates from "@/pages/admin/AdminQuestionDuplicates";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
 const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
@@ -37,6 +38,7 @@ export default function AdminQuestions() {
   const [topics, setTopics] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [duplicateModeOpen, setDuplicateModeOpen] = useState(false);
   const [fullPageCreate, setFullPageCreate] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [loadingTopics, setLoadingTopics] = useState(false);
@@ -622,6 +624,9 @@ export default function AdminQuestions() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading text-2xl font-bold">প্রশ্ন ম্যানেজমেন্ট</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setDuplicateModeOpen(true)} className="gap-2 border-amber-300 text-amber-800 hover:bg-amber-50">
+            <Trash2 className="w-4 h-4" /> Duplicate Cleanup
+          </Button>
           <Button variant="outline" onClick={() => window.location.assign("/admin/questions/bulk")} className="gap-2">
             <Plus className="w-4 h-4" /> বাল্ক আপলোড
           </Button>
@@ -863,6 +868,12 @@ export default function AdminQuestions() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={duplicateModeOpen} onOpenChange={setDuplicateModeOpen}>
+        <DialogContent className="max-w-[96vw] w-[1500px] h-[94vh] overflow-y-auto p-5">
+          <AdminQuestionDuplicates embedded onClose={() => setDuplicateModeOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

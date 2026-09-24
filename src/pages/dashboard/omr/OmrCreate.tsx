@@ -64,6 +64,8 @@ export default function OmrCreate() {
       .from("institutes")
       .select("*")
       .eq("owner_id", user.id)
+      .order("id", { ascending: true })
+      .limit(1)
       .maybeSingle()
       .then(({ data }) => {
         if (!data) return;

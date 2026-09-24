@@ -72,7 +72,7 @@ type ColumnCount = 1 | 2 | 3;
 type TextAlign = "left" | "center" | "right" | "justify";
 type McqOptionLayout = "4x1" | "2x2" | "1x4";
 type QuestionNumberStyle = "bn-padded-danda" | "bn-padded-dot" | "bn-dot" | "en-padded-dot";
-type CqNumberStyle = "box" | "pointer";
+type CqNumberStyle = QuestionNumberStyle | "box" | "pointer";
 type SectionBorderStyle = "none" | "solid" | "double";
 type QuestionReferenceStyle = "filled" | "black" | "outline" | "bracket" | "underline";
 
@@ -140,6 +140,19 @@ function duplicateTextSimilarity(left: string, right: string): number {
     }
   }
   return (2 * overlap) / (left.length + right.length - 2);
+}
+
+function removeNearDuplicateQuestions(rows: QuestionRow[]): QuestionRow[] {
+  const kept: Array<{ question: QuestionRow; type: string; text: string }> = [];
+  for (const question of rows) {
+    const [type, text] = getQuestionDuplicateSignature(question).split("::", 2);
+    const isDuplicate = text && kept.some((candidate) =>
+      candidate.type === type
+      && (candidate.text === text || duplicateTextSimilarity(candidate.text, text) >= 0.94)
+    );
+    if (!isDuplicate) kept.push({ question, type, text });
+  }
+  return kept.map(({ question }) => question);
 }
 
 // Match eproshnobank's subtle, print-friendly question-column separator.
@@ -242,7 +255,7 @@ interface CqSubQuestionRowProps {
 const CqSubQuestionRow = ({ label, text, marks }: CqSubQuestionRowProps) => (
   <div className="cq-sub-question-row">
     <span className="cq-sub-question-label">{label}</span>
-    <LatexRenderer text={text} className="cq-sub-question-text" />
+    <LatexRenderer text={trimLeadingRichTextWhitespace(text)} className="cq-sub-question-text" />
     <span className="cq-sub-question-marks">{marks}</span>
   </div>
 );
@@ -425,7 +438,7 @@ export default function QuestionPaperView() {
       // Prioritize sessionStorage (fresh generation or returning from "add more")
       const parsedQuestions = JSON.parse(qData);
       const parsedMeta = JSON.parse(mData);
-      setQuestions(parsedQuestions);
+      setQuestions(removeNearDuplicateQuestions(parsedQuestions));
       setMeta(parsedMeta);
 
       // A draft/session can contain an older lightweight question shape. Hydrate it
@@ -435,14 +448,28 @@ export default function QuestionPaperView() {
         .filter((id: unknown): id is number => typeof id === "number");
       if (questionIds.length > 0) {
         supabase.from("questions").select("*").in("id", questionIds).then(({ data, error }) => {
-          if (error || !data?.length) return;
+          if (error) return;
           const fullRows = new Map(data.map((question) => [question.id, question as QuestionRow]));
-          const hydratedQuestions = parsedQuestions.map((question: QuestionRow) => ({
-            ...question,
-            ...(fullRows.get(question.id) || {}),
+          const seenIds = new Set<number>();
+          const hydratedQuestions = removeNearDuplicateQuestions(parsedQuestions.flatMap((question: QuestionRow) => {
+            const sourceQuestion = fullRows.get(question.id);
+            // Duplicate cleanup can delete an ID while this paper is still open.
+            // Drop deleted cached rows and collapse repeated canonical IDs.
+            if (!sourceQuestion || seenIds.has(sourceQuestion.id)) return [];
+            seenIds.add(sourceQuestion.id);
+            return [{ ...question, ...sourceQuestion }];
           }));
           setQuestions(hydratedQuestions);
           sessionStorage.setItem("viewPaperQuestions", JSON.stringify(hydratedQuestions));
+
+          if (paperId && cloudBackupEnabled) {
+            supabase.from("saved_papers").update({
+              question_ids: hydratedQuestions.map((question) => question.id),
+              meta: parsedMeta as any,
+            } as any).eq("id", paperId).then(() => {});
+          } else if (cloudBackupEnabled && hydratedQuestions.length > 0) {
+            autoSavePaper(parsedMeta, hydratedQuestions, settings);
+          }
         });
       }
       if (savedSettings) {
@@ -450,17 +477,9 @@ export default function QuestionPaperView() {
         sessionStorage.removeItem("viewPaperSettings");
       }
 
-      if (paperId && cloudBackupEnabled) {
+      if (paperId) {
         // Returning to existing paper with new questions — update it
         setCurrentPaperId(paperId);
-        const paperData = {
-          question_ids: parsedQuestions.map((q: any) => q.id),
-          meta: parsedMeta as any,
-        };
-        supabase.from("saved_papers").update(paperData as any).eq("id", paperId).then(() => {});
-      } else if (cloudBackupEnabled) {
-        // Auto-save new paper
-        autoSavePaper(parsedMeta, parsedQuestions, settings);
       }
       // Don't remove sessionStorage here — keep for page refresh
       // It will be cleared on unmount (navigation away)
@@ -478,7 +497,7 @@ export default function QuestionPaperView() {
               .then(({ data: qData }) => {
                 if (qData) {
                   const qMap = new Map(qData.map(q => [q.id, q]));
-                  setQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]);
+                  setQuestions(removeNearDuplicateQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]));
                 }
               });
           }
@@ -962,8 +981,8 @@ export default function QuestionPaperView() {
     //    OR 2+ options are individually long (would overflow the half-column)
     return maxLen > maxThreshold || totalLen > totalThreshold || longCount >= 2;
   };
-  const formatQuestionNumber = (n: number): string => {
-    switch (settings.questionNumberStyle) {
+  const formatQuestionNumberByStyle = (n: number, style: QuestionNumberStyle): string => {
+    switch (style) {
       case "bn-padded-dot":
         return `${String(n).padStart(2, "0").replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[Number(d)])}.`;
       case "bn-dot":
@@ -976,6 +995,9 @@ export default function QuestionPaperView() {
     }
   };
 
+  const formatQuestionNumber = (n: number): string =>
+    formatQuestionNumberByStyle(n, settings.questionNumberStyle);
+
   const renderCqQuestionNumber = (n: number) => {
     const number = isEnglishVersion ? String(n) : toBanglaNum(n);
     const padded = isEnglishVersion
@@ -985,7 +1007,10 @@ export default function QuestionPaperView() {
     if (settings.cqNumberStyle === "pointer") {
       return <span className="cq-number-badge cq-number-badge--pointer"><span>{number}</span><span aria-hidden="true">▶</span></span>;
     }
-    return <span className="cq-number-badge cq-number-badge--box">{padded}</span>;
+    if (settings.cqNumberStyle === "box") {
+      return <span className="cq-number-badge cq-number-badge--box">{padded}</span>;
+    }
+    return <span>{formatQuestionNumberByStyle(n, settings.cqNumberStyle)}</span>;
   };
 
   const getMcqOptionLayout = (q: QuestionRow): McqOptionLayout =>
@@ -1569,20 +1594,27 @@ export default function QuestionPaperView() {
           {cqQuestions.length > 0 && (
             <div className="mt-2">
               <Label className="text-xs text-muted-foreground">CQ নম্বর স্টাইল</Label>
-              <div className="mt-1 grid grid-cols-2 gap-1.5">
-                {(["box", "pointer"] as CqNumberStyle[]).map((style) => (
+              <div className="mt-1 grid grid-cols-3 gap-1.5">
+                {([
+                  { value: "bn-padded-danda", label: "০১।", name: "বাংলা দুই অঙ্ক ও দাঁড়ি" },
+                  { value: "bn-padded-dot", label: "০২.", name: "বাংলা দুই অঙ্ক ও ডট" },
+                  { value: "bn-dot", label: "১.", name: "বাংলা সংখ্যা ও ডট" },
+                  { value: "en-padded-dot", label: "01.", name: "ইংরেজি দুই অঙ্ক ও ডট" },
+                  { value: "box", label: "০১", name: "কালো বক্স" },
+                  { value: "pointer", label: "১ ▶", name: "সংখ্যা ও তীর" },
+                ] as { value: CqNumberStyle; label: string; name: string }[]).map((style) => (
                   <Button
-                    key={style}
+                    key={style.value}
                     type="button"
                     size="sm"
-                    variant={(settings.cqNumberStyle === "pointer" ? "pointer" : "box") === style ? "default" : "outline"}
+                    variant={settings.cqNumberStyle === style.value ? "default" : "outline"}
                     className="h-9 px-1"
-                    aria-label={`CQ নম্বর স্টাইল ${style}`}
-                    title={style === "box" ? "কালো বক্স" : "সংখ্যা ও তীর"}
-                    onClick={() => updateSetting("cqNumberStyle", style)}
+                    aria-label={`CQ নম্বর স্টাইল ${style.name}`}
+                    title={style.name}
+                    onClick={() => updateSetting("cqNumberStyle", style.value)}
                   >
-                    <span className={`cq-number-control-preview cq-number-control-preview--${style}`}>
-                      {style === "box" ? "০১" : "১ ▶"}
+                    <span className={`cq-number-control-preview ${style.value === "box" || style.value === "pointer" ? `cq-number-control-preview--${style.value}` : ""}`}>
+                      {style.label}
                     </span>
                   </Button>
                 ))}
@@ -2926,9 +2958,13 @@ export default function QuestionPaperView() {
                       </div>
 
                       {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
-                        <div className="paper-answer-block" style={{ marginTop: "4px", padding: "4px 8px", borderLeft: "3px solid #1E3577", backgroundColor: "rgba(30,53,119,0.05)" }}>
-                          <span style={{ fontWeight: 600, color: "#1E3577", marginRight: "4px" }}>{isEnglishVersion ? "Answer:" : "উত্তর:"}</span>
-                          <AnswerContent text={q.correct_answer || q.explanation || ""} className="answer-content--inline-start" />
+                        <div className="paper-answer-block cq-reference-answer-sheet">
+                          <div className="cq-reference-answer-title">
+                            {isEnglishVersion ? `Answer to question ${num}` : `${paperNumber(num)} নং প্রশ্নের উত্তর`}
+                          </div>
+                          <div className="cq-reference-answer-row">
+                            <AnswerContent text={q.correct_answer || q.explanation || ""} />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2984,14 +3020,14 @@ export default function QuestionPaperView() {
                       onClick={(e) => handleEditableClick(e, q.id)}
                       suppressContentEditableWarning
                     >
-                      <div className={`cq-main-layout cq-number-style-${settings.cqNumberStyle === "pointer" ? "pointer" : "box"}`}>
+                      <div className={`cq-main-layout cq-number-style-${settings.cqNumberStyle}`}>
                         <span className="cq-main-number paper-question-number">{renderCqQuestionNumber(num)}</span>
                         <div className="cq-main-content">
                           {(() => {
                             const stemText = cData?.stem || q.stimulus_text || q.question;
                             return (
                               <div className="cq-stem-row">
-                                <div className="mc-block-question cq-stem-text"><LatexRenderer text={stemText} /></div>
+                                <div className="mc-block-question cq-stem-text"><LatexRenderer text={trimLeadingRichTextWhitespace(stemText)} /></div>
                                 {settings.showQuestionInfo && refStr && (
                                   <>{renderQuestionReference(refStr, true)}</>
                                 )}
@@ -3186,21 +3222,27 @@ export default function QuestionPaperView() {
                             const hasExpl = q.explanation;
                             if (!hasDescAns && !hasExpl) return null;
                             return (
-                              <div className="paper-answer-block" style={{ marginTop: "6px", padding: "6px 8px", borderLeft: "3px solid #1E3577", backgroundColor: "rgba(30,53,119,0.05)" }}>
-                                <span style={{ fontWeight: 700, color: "#1E3577", display: "block", marginBottom: "4px" }}>উত্তর:</span>
+                              <div className="paper-answer-block cq-reference-answer-sheet">
+                                <div className="cq-reference-answer-title">
+                                  {isEnglishVersion ? `Answer to question ${num}` : `${paperNumber(num)} নং প্রশ্নের উত্তর`}
+                                </div>
                                 {dd?.desc_ans_ka && (
-                                  <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
-                                     <span style={{ fontWeight: 600 }}>{getOptionLabel(isEnglishVersion ? "a" : "ক", settings.sqOptionStyle)} </span>
-                                    <AnswerContent text={dd.desc_ans_ka} className="answer-content--inline-start" />
+                                  <div className="cq-reference-answer-row">
+                                    <span className="cq-reference-answer-label">{isEnglishVersion ? "a" : "ক"}</span>
+                                    <AnswerContent text={dd.desc_ans_ka} />
                                   </div>
                                 )}
                                 {dd?.desc_ans_kha && (
-                                  <div style={{ marginBottom: "4px", lineHeight: 1.5 }}>
-                                     <span style={{ fontWeight: 600 }}>{getOptionLabel(isEnglishVersion ? "b" : "খ", settings.sqOptionStyle)} </span>
-                                    <AnswerContent text={dd.desc_ans_kha} className="answer-content--inline-start" />
+                                  <div className="cq-reference-answer-row">
+                                    <span className="cq-reference-answer-label">{isEnglishVersion ? "b" : "খ"}</span>
+                                    <AnswerContent text={dd.desc_ans_kha} />
                                   </div>
                                 )}
-                                {!hasDescAns && hasExpl && <AnswerContent text={q.explanation!} />}
+                                {!hasDescAns && hasExpl && (
+                                  <div className="cq-reference-answer-row">
+                                    <AnswerContent text={q.explanation!} />
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}

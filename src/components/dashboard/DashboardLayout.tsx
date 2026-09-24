@@ -139,8 +139,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
     
-    supabase.from("institutes").select("id").eq("owner_id", user.id).maybeSingle()
-      .then(({ data }) => setHasInstitute(!!data));
+    supabase.from("institutes").select("id").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Institute lookup failed:", error);
+          return;
+        }
+        setHasInstitute(!!data);
+      });
     
     supabase.from("teachers").select("is_banned").eq("id", user.id).maybeSingle()
       .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));

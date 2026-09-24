@@ -52,6 +52,7 @@ import AdminCrudPage from "./pages/admin/AdminCrudPage";
 import AdminTeachers from "./pages/admin/AdminTeachers";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminQuestionsBulk from "./pages/admin/AdminQuestionsBulk";
+import AdminQuestionDuplicates from "./pages/admin/AdminQuestionDuplicates";
 import AdminInstitutes from "./pages/admin/AdminInstitutes";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminFeedback from "./pages/admin/AdminFeedback";
@@ -127,6 +128,7 @@ const App = () => (
             
             <Route path="/admin/questions" element={<AdminLayout><AdminQuestions /></AdminLayout>} />
             <Route path="/admin/questions/bulk" element={<AdminLayout><AdminQuestionsBulk /></AdminLayout>} />
+            <Route path="/admin/questions/duplicates" element={<AdminLayout><AdminQuestionDuplicates /></AdminLayout>} />
             <Route path="/admin/teachers" element={<AdminLayout><AdminTeachers /></AdminLayout>} />
             <Route path="/admin/institutes" element={<AdminLayout><AdminInstitutes /></AdminLayout>} />
             <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />

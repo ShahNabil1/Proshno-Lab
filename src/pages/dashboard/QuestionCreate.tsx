@@ -395,7 +395,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   // Fetch institute
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from("institutes").select("name, upazila, district, division").eq("owner_id", user.id).maybeSingle()
+    supabase.from("institutes").select("name, upazila, district, division").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle()
       .then(({ data }) => { if (data) setInstitute(data); });
   }, [user?.id]);
 

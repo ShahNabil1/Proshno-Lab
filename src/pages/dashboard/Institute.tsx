@@ -24,8 +24,12 @@ export default function Institute() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("institutes").select("*").eq("owner_id", user.id).maybeSingle()
-      .then(({ data }) => {
+    supabase.from("institutes").select("*").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Institute lookup failed:", error);
+          return;
+        }
         if (data) {
           setInstitute(data);
           setForm({
