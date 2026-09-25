@@ -20,7 +20,6 @@ import ClassPicker from "@/components/dashboard/ClassPicker";
 import {
   filterSubjectsByVersion,
   getRelatedVersionClassIds,
-  isEnglishVersionClass,
   type SubjectVersion,
 } from "@/lib/subjectVersion";
 
@@ -101,6 +100,10 @@ export default function AutoQuestionCreate() {
   }, [subjectIds, subjects]);
 
   const effectiveClassId = selectedSubjects[0]?.class_id || Number(classId || 0);
+  const selectableClasses = useMemo(
+    () => classes.filter((item) => !/english|eglish|version|ইংলিশ/i.test(item.name || "")),
+    [classes],
+  );
   const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
   useEffect(() => {
@@ -318,12 +321,12 @@ export default function AutoQuestionCreate() {
                   <Label className="mb-2.5 block font-bold text-base text-slate-800">শ্রেণি</Label>
                   <ClassPicker
                     value={classId}
-                    classes={classes}
+                    classes={selectableClasses}
                     placeholder="-- শ্রেণি সিলেক্ট --"
                     triggerClassName="h-12 rounded-[1px] border-slate-300 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
                     onChange={(v) => {
                       setClassId(v);
-                      setSubjectVersion(isEnglishVersionClass(classes.find(c => String(c.id) === v)?.name || "") ? "english" : "bangla");
+                      setSubjectVersion("bangla");
                       setSubjectId("");
                       setSubjectIds([]);
                       setChapterIds([]);

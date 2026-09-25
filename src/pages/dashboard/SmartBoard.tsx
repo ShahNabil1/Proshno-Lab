@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowUpRight,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +17,7 @@ import {
   Maximize2,
   Minimize2,
   Minus,
+  Move,
   MousePointer2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -76,6 +80,8 @@ const stripHtml = (value: string): string =>
     .replace(/\s+/g, " ")
     .trim();
 
+type QuestionPositionMode = "left" | "center" | "right" | "manual";
+
 const TOOLS: Array<{ id: ToolId; label: string; hint: string; Icon: typeof Pen }> = [
   { id: "select", label: "সিলেক্ট", hint: "V", Icon: MousePointer2 },
   { id: "pen", label: "কলম", hint: "P", Icon: Pen },
@@ -126,10 +132,12 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export default function SmartBoard() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const paperIdFromUrl = searchParams.get("paper_id");
 
   const frameRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const directImportHandledRef = useRef(false);
 
   const [questions, setQuestions] = useState<SmartBoardQuestion[]>([]);
   const [meta, setMeta] = useState<SmartBoardPaperMeta | null>(null);
@@ -144,12 +152,36 @@ export default function SmartBoard() {
   const [zoom, setZoom] = useState(1);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [questionPositionMode, setQuestionPositionMode] = useState<QuestionPositionMode>("center");
+  const [manualQuestionPosition, setManualQuestionPosition] = useState({ x: 50, y: 50 });
+  const questionDragRef = useRef<{ clientX: number; clientY: number; x: number; y: number } | null>(null);
 
   const [board, dispatch] = useReducer(boardReducer, undefined, () => createBoardState(BLANK_BOARD_KEY));
 
   const currentQuestion = questions[currentIndex] ?? null;
   const boardKey = currentQuestion ? `q-${currentQuestion.id}` : BLANK_BOARD_KEY;
   const background = useMemo(() => getBackground(backgroundId), [backgroundId]);
+
+  // A freshly created preview can be opened on the board without first saving
+  // the paper to the database.
+  useEffect(() => {
+    if (directImportHandledRef.current) return;
+    const imported = (location.state as {
+      smartBoardImport?: {
+        questions: SmartBoardQuestion[];
+        meta: SmartBoardPaperMeta;
+        title?: string;
+      };
+    } | null)?.smartBoardImport;
+    if (!imported || imported.questions.length === 0) return;
+    directImportHandledRef.current = true;
+    setQuestions(imported.questions);
+    setMeta(imported.meta);
+    setPaperTitle(imported.title || "বর্তমান প্রশ্নপত্র");
+    setCurrentIndex(0);
+    setShowAnswer(false);
+    toast.success(`${toBanglaNum(imported.questions.length)}টি প্রশ্ন Smart Board-এ ইমপোর্ট হয়েছে`);
+  }, [location.state]);
 
   // Load paper automatically if paper_id is provided in URL params
   useEffect(() => {
@@ -220,6 +252,41 @@ export default function SmartBoard() {
   const boardHeight = viewport.height > 0 ? Math.max(BOARD_HEIGHT, (viewport.height - 2) / scale) : BOARD_HEIGHT;
   const pageLeft = Math.max(0, (boardWidth - BOARD_WIDTH) / 2);
   const pageTop = Math.max(0, (boardHeight - BOARD_HEIGHT) / 2);
+  const questionPanelWidth = BOARD_WIDTH * 0.72;
+  const questionPanelHeight = BOARD_HEIGHT * 0.86;
+  const questionTravelX = BOARD_WIDTH - questionPanelWidth;
+  const questionTravelY = BOARD_HEIGHT - questionPanelHeight;
+  const questionPanelLeft = pageLeft + (
+    questionPositionMode === "left" ? 0
+      : questionPositionMode === "right" ? questionTravelX
+      : questionPositionMode === "manual" ? questionTravelX * (manualQuestionPosition.x / 100)
+      : questionTravelX / 2
+  );
+  const questionPanelTop = pageTop + (
+    questionPositionMode === "manual"
+      ? questionTravelY * (manualQuestionPosition.y / 100)
+      : questionTravelY / 2
+  );
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const drag = questionDragRef.current;
+      if (!drag || questionPositionMode !== "manual") return;
+      const x = drag.x + ((event.clientX - drag.clientX) / Math.max(1, questionTravelX * scale)) * 100;
+      const y = drag.y + ((event.clientY - drag.clientY) / Math.max(1, questionTravelY * scale)) * 100;
+      setManualQuestionPosition({
+        x: Math.max(0, Math.min(100, x)),
+        y: Math.max(0, Math.min(100, y)),
+      });
+    };
+    const handlePointerUp = () => { questionDragRef.current = null; };
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [questionPositionMode, questionTravelX, questionTravelY, scale]);
 
   const commitBoard = useCallback(
     (elements: BoardElement[]) => dispatch({ type: "commit", elements }),
@@ -370,6 +437,59 @@ export default function SmartBoard() {
 
           {/* Center section: Question Navigation & Answer Toggle */}
           <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 gap-1.5 text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-[1px]"
+                  disabled={!currentQuestion}
+                  title="প্রশ্নের অবস্থান"
+                >
+                  {questionPositionMode === "left" ? <AlignLeft className="h-4 w-4" />
+                    : questionPositionMode === "right" ? <AlignRight className="h-4 w-4" />
+                    : questionPositionMode === "manual" ? <Move className="h-4 w-4" />
+                    : <AlignCenter className="h-4 w-4" />}
+                  <span className="hidden xl:inline">অবস্থান</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 rounded-[1px] p-3">
+                <div className="mb-2 text-sm font-bold text-slate-800">প্রশ্ন কোথায় দেখাবে?</div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {([
+                    { id: "left", label: "বামে", icon: AlignLeft },
+                    { id: "center", label: "মাঝে", icon: AlignCenter },
+                    { id: "right", label: "ডানে", icon: AlignRight },
+                    { id: "manual", label: "Manual", icon: Move },
+                  ] as const).map(({ id, label, icon: Icon }) => (
+                    <Button
+                      key={id}
+                      type="button"
+                      variant={questionPositionMode === id ? "default" : "outline"}
+                      size="sm"
+                      className="h-auto flex-col gap-1 rounded-[1px] px-1 py-2 text-xs"
+                      onClick={() => setQuestionPositionMode(id)}
+                    >
+                      <Icon className="h-4 w-4" /> {label}
+                    </Button>
+                  ))}
+                </div>
+                {questionPositionMode === "manual" && (
+                  <div className="mt-3 space-y-3 border-t pt-3">
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs text-slate-600"><span>আড়াআড়ি</span><span>{Math.round(manualQuestionPosition.x)}%</span></div>
+                      <Slider value={[manualQuestionPosition.x]} min={0} max={100} step={1} onValueChange={([x]) => setManualQuestionPosition((previous) => ({ ...previous, x }))} />
+                    </div>
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs text-slate-600"><span>উপর–নিচ</span><span>{Math.round(manualQuestionPosition.y)}%</span></div>
+                      <Slider value={[manualQuestionPosition.y]} min={0} max={100} step={1} onValueChange={([y]) => setManualQuestionPosition((previous) => ({ ...previous, y }))} />
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-slate-500">Board-এর প্রশ্নের উপরের “Drag” অংশ ধরেও সরাতে পারবেন।</p>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
             <div className="flex items-center rounded-[1px] bg-white/10 border border-white/20 p-0.5">
               <Button
                 size="icon"
@@ -582,9 +702,33 @@ export default function SmartBoard() {
                 {/* Question Slide Card */}
                 {currentQuestion ? (
                   <div
-                    className="absolute"
-                    style={{ left: pageLeft, top: pageTop, width: BOARD_WIDTH, height: BOARD_HEIGHT }}
+                    className="absolute overflow-hidden rounded-[1px] border border-slate-300/70 shadow-sm"
+                    style={{
+                      left: questionPanelLeft,
+                      top: questionPanelTop,
+                      width: questionPanelWidth,
+                      height: questionPanelHeight,
+                      backgroundColor: background.dark ? "rgba(2, 6, 23, 0.72)" : "rgba(255, 255, 255, 0.86)",
+                    }}
                   >
+                    {questionPositionMode === "manual" && (
+                      <button
+                        type="button"
+                        className="absolute left-1/2 top-1 z-30 flex -translate-x-1/2 cursor-move items-center gap-1 rounded bg-[#0A1E38]/85 px-3 py-1 text-sm font-semibold text-white shadow"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          questionDragRef.current = {
+                            clientX: event.clientX,
+                            clientY: event.clientY,
+                            x: manualQuestionPosition.x,
+                            y: manualQuestionPosition.y,
+                          };
+                        }}
+                        aria-label="প্রশ্ন drag করে সরান"
+                      >
+                        <Move className="h-4 w-4" /> Drag
+                      </button>
+                    )}
                     <QuestionSlide
                       question={currentQuestion}
                       number={currentIndex + 1}

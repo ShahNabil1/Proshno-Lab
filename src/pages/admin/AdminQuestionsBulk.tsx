@@ -28,6 +28,7 @@ const CTX_KEY = "adminBulkContext.v1";
 const readCtx = () => { try { return JSON.parse(localStorage.getItem(CTX_KEY) || "{}"); } catch { return {}; } };
 
 const CHUNK = 50;
+const MAX_EXCEL_FILES = 20;
 const topicKey = (name: string) => name.trim().replace(/\s+/g, " ").toLocaleLowerCase("bn-BD");
 
 export default function AdminQuestionsBulk() {
@@ -128,15 +129,20 @@ export default function AdminQuestionsBulk() {
     toast.success(`${items.length} টি প্রশ্ন ${label}${dups ? ` • ${dups} টি ডুপ্লিকেট (স্কিপ হবে)` : ""}`);
   };
 
-  const handleExcel = async (file: File) => {
+  const handleExcelFiles = async (files: File[]) => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
-    try {
-      const items = await parseExcelFile(file, type, isMathSubject);
-      if (items.length === 0) { toast.error("ফাইলে কোনো row পাওয়া যায়নি"); return; }
-      await loadItems(items, "লোড হয়েছে");
-    } catch (e: any) {
-      toast.error("Parse error: " + e.message);
+    if (files.length > MAX_EXCEL_FILES) {
+      toast.error(`একসাথে সর্বোচ্চ ${MAX_EXCEL_FILES}টি Excel বা CSV ফাইল আপলোড করা যাবে`);
+      return;
     }
+    const results = await Promise.allSettled(files.map((file) => parseExcelFile(file, type, isMathSubject)));
+    const items = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+    const failedFiles = results.flatMap((result, index) => result.status === "rejected" ? [files[index].name] : []);
+    if (failedFiles.length > 0) {
+      toast.error(`${failedFiles.length}টি ফাইল parse করা যায়নি: ${failedFiles.join(", ")}`);
+    }
+    if (items.length === 0) { toast.error("ফাইলগুলোতে কোনো প্রশ্নের row পাওয়া যায়নি"); return; }
+    await loadItems(items, `${files.length - failedFiles.length}টি ফাইল থেকে লোড হয়েছে`);
   };
 
   const handlePaste = async () => {
@@ -412,16 +418,17 @@ export default function AdminQuestionsBulk() {
                   id="bulk-question-file"
                   type="file"
                   accept=".xlsx,.xls,.csv"
+                  multiple
                   className="sr-only"
                   aria-label="প্রশ্নের Excel বা CSV ফাইল বাছাই করুন"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcel(f); e.target.value = ""; }}
+                  onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) void handleExcelFiles(files); e.target.value = ""; }}
                 />
                 <Button
                   type="button"
                   className="gap-2 bg-emerald-600 hover:bg-emerald-700"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="w-4 h-4" /> ফাইল আপলোড
+                  <Upload className="w-4 h-4" /> ফাইল আপলোড (সর্বোচ্চ ২০টি)
                 </Button>
                 <label htmlFor="bulk-question-file" className="sr-only">প্রশ্নের Excel বা CSV ফাইল বাছাই করুন</label>
               </div>

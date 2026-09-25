@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, BookOpen, RotateCcw, Loader2 } from "lucide-react";
@@ -35,6 +37,11 @@ export default function AdminTopics() {
   // Topics
   const [topics, setTopics] = useState<any[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(false);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [selectedTopicIds, setSelectedTopicIds] = useState<Set<number>>(new Set());
+  const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false);
+  const [deletingSelected, setDeletingSelected] = useState(false);
 
   // Dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -87,6 +94,7 @@ export default function AdminTopics() {
 
   // Load topics when chapter is selected
   useEffect(() => {
+    setSelectedTopicIds(new Set());
     if (!filterChapterId) { setTopics([]); return; }
     setLoadingTopics(true);
     supabase.from("topics").select("*").eq("chapter_id", Number(filterChapterId)).order("created_at", { ascending: false })
@@ -181,6 +189,46 @@ export default function AdminTopics() {
     if (error) { toast.error("ডিলিট ব্যর্থ: " + error.message); return; }
     toast.success("মুছে ফেলা হয়েছে");
     setTopics(prev => prev.filter(t => t.id !== id));
+    setSelectedTopicIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+  };
+
+  const toggleTopic = (id: number, checked: boolean) => {
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleAllTopics = (checked: boolean) => {
+    setSelectedTopicIds(checked ? new Set(topics.map(topic => topic.id)) : new Set());
+  };
+
+  const handleDeleteSelected = async () => {
+    const ids = [...selectedTopicIds];
+    if (ids.length === 0) return;
+    setDeletingSelected(true);
+    const { error } = await supabase.from("topics").delete().in("id", ids);
+    setDeletingSelected(false);
+    if (error) { toast.error("নির্বাচিত টপিক ডিলিট ব্যর্থ: " + error.message); return; }
+    setTopics(prev => prev.filter(topic => !selectedTopicIds.has(topic.id)));
+    setSelectedTopicIds(new Set());
+    setDeleteSelectedOpen(false);
+    toast.success(`${ids.length}টি নির্বাচিত টপিক মুছে ফেলা হয়েছে`);
+  };
+
+  const handleDeleteAll = async () => {
+    const chapterId = Number(filterChapterId);
+    if (!chapterId || topics.length === 0) return;
+    setDeletingAll(true);
+    const { error } = await supabase.from("topics").delete().eq("chapter_id", chapterId);
+    setDeletingAll(false);
+    if (error) { toast.error("সব টপিক ডিলিট ব্যর্থ: " + error.message); return; }
+    const deletedCount = topics.length;
+    setTopics([]);
+    setSelectedTopicIds(new Set());
+    setDeleteAllOpen(false);
+    toast.success(`${deletedCount}টি টপিক মুছে ফেলা হয়েছে`);
   };
 
   const chapterName = chapters.find(c => String(c.id) === filterChapterId)?.name || "";
@@ -266,12 +314,33 @@ export default function AdminTopics() {
         </Card>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground mb-2">অধ্যায়: <strong>{chapterName}</strong></p>
+          <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+            <p className="text-sm text-muted-foreground">অধ্যায়: <strong>{chapterName}</strong> · {topics.length}টি টপিক</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectedTopicIds.size > 0 && (
+                <Button variant="destructive" size="sm" className="gap-2" onClick={() => setDeleteSelectedOpen(true)}>
+                  <Trash2 className="w-4 h-4" /> নির্বাচিত {selectedTopicIds.size}টি ডিলিট
+                </Button>
+              )}
+              {topics.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/40" onClick={() => setDeleteAllOpen(true)}>
+                  <Trash2 className="w-4 h-4" /> এই অধ্যায়ের সব টপিক ডিলিট
+                </Button>
+              )}
+            </div>
+          </div>
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        aria-label="সব টপিক নির্বাচন করুন"
+                        checked={topics.length > 0 && selectedTopicIds.size === topics.length ? true : selectedTopicIds.size > 0 ? "indeterminate" : false}
+                        onCheckedChange={(checked) => toggleAllTopics(checked === true)}
+                      />
+                    </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>নাম</TableHead>
                     <TableHead className="text-right">অ্যাকশন</TableHead>
@@ -280,6 +349,13 @@ export default function AdminTopics() {
                 <TableBody>
                   {topics.map((t) => (
                     <TableRow key={t.id}>
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`${t.name} নির্বাচন করুন`}
+                          checked={selectedTopicIds.has(t.id)}
+                          onCheckedChange={(checked) => toggleTopic(t.id, checked === true)}
+                        />
+                      </TableCell>
                       <TableCell>{t.id}</TableCell>
                       <TableCell className="font-medium">{t.name}</TableCell>
                       <TableCell className="text-right space-x-1">
@@ -297,7 +373,7 @@ export default function AdminTopics() {
                     </TableRow>
                   ))}
                   {topics.length === 0 && (
-                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">কোনো টপিক নেই</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">কোনো টপিক নেই</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -376,6 +452,48 @@ export default function AdminTopics() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteAllOpen} onOpenChange={(open) => { if (!deletingAll) setDeleteAllOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>এই অধ্যায়ের সব টপিক ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{chapterName}” অধ্যায়ের {topics.length}টি টপিক স্থায়ীভাবে মুছে যাবে। প্রশ্নগুলো মুছবে না, তবে সেগুলোর টপিক সংযোগ সরিয়ে যাবে। এই কাজ ফিরিয়ে আনা যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAll}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingAll}
+              onClick={(event) => { event.preventDefault(); void handleDeleteAll(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingAll ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> ডিলিট হচ্ছে...</> : `সব ${topics.length}টি ডিলিট করুন`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteSelectedOpen} onOpenChange={(open) => { if (!deletingSelected) setDeleteSelectedOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>নির্বাচিত টপিকগুলো ডিলিট করবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              নির্বাচিত {selectedTopicIds.size}টি টপিক স্থায়ীভাবে মুছে যাবে। প্রশ্নগুলো মুছবে না, তবে সেগুলোর টপিক সংযোগ সরিয়ে যাবে। এই কাজ ফিরিয়ে আনা যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingSelected}>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletingSelected}
+              onClick={(event) => { event.preventDefault(); void handleDeleteSelected(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingSelected ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> ডিলিট হচ্ছে...</> : `নির্বাচিত ${selectedTopicIds.size}টি ডিলিট করুন`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

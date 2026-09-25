@@ -232,6 +232,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   const selectedSubject = selectedSubjects[0];
   const effectiveClassId = selectedSubject?.class_id || Number(form.classId || 0);
+  const selectableClasses = useMemo(
+    () => classes.filter((item) => !/english|eglish|version|ইংলিশ/i.test(item.name || "")),
+    [classes],
+  );
   const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -405,6 +409,21 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       .then(({ data }) => setClasses(sortClasses(data || [])));
   }, []);
 
+  // English-version subjects live under parallel class records in the database,
+  // but users choose the class level only once from the Bangla class list.
+  useEffect(() => {
+    if (!form.classId || classes.length === 0) return;
+    const selectedClass = classes.find((item) => String(item.id) === form.classId);
+    if (!selectedClass || !isEnglishVersionClass(selectedClass.name)) return;
+    const banglaClass = classes.find((item) =>
+      !isEnglishVersionClass(item.name)
+      && getRelatedVersionClassIds(selectedClass.id, classes).includes(item.id),
+    );
+    if (!banglaClass) return;
+    setSubjectVersion("english");
+    setForm((previous) => ({ ...previous, classId: String(banglaClass.id) }));
+  }, [classes, form.classId]);
+
   // Load subjects when class changes
   useEffect(() => {
     if (!form.classId) { setSubjects([]); return; }
@@ -502,8 +521,13 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       : (f.subjectId ? f.subjectId.split(",").map(s => s.trim()).filter(Boolean) : []);
 
     const buildQuery = (from: number, to: number) => {
+      const subjectClassIds = Array.from(new Set(
+        sIds
+          .map((subjectId) => subjects.find((subject) => String(subject.id) === String(subjectId))?.class_id)
+          .filter((classId): classId is number => Boolean(classId)),
+      ));
       let query = supabase.from("questions").select("*, chapters!inner(is_active)")
-        .eq("class_id", Number(f.classId))
+        .in("class_id", subjectClassIds.length > 0 ? subjectClassIds : [Number(f.classId)])
         .in("subject_id", sIds.map(Number))
         .eq("chapters.is_active", true);
 
@@ -1804,11 +1828,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           <div>
             <ClassPicker
               value={form.classId}
-              classes={classes}
+              classes={selectableClasses}
               placeholder="শ্রেণি"
               triggerClassName="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 bg-white"
               onChange={(v) => {
-                setSubjectVersion(isEnglishVersionClass(classes.find((c) => String(c.id) === v)?.name || "") ? "english" : "bangla");
+                setSubjectVersion("bangla");
                 setForm({ ...form, classId: v, subjectId: "", subjectIds: [], chapterIds: [] });
               }}
             />

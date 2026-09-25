@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Download, Settings, Plus, Minus, Save, Pencil, Upload, SlidersHorizontal } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Download, Settings, Plus, Minus, Save, Pencil, Upload, SlidersHorizontal, Tv } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -75,6 +75,9 @@ type QuestionNumberStyle = "bn-padded-danda" | "bn-padded-dot" | "bn-dot" | "en-
 type CqNumberStyle = QuestionNumberStyle | "box" | "pointer";
 type SectionBorderStyle = "none" | "solid" | "double";
 type QuestionReferenceStyle = "filled" | "black" | "outline" | "bracket" | "underline";
+
+const isEnglishPaperMeta = (paperMeta: Pick<PaperMeta, "className" | "subjectName">): boolean =>
+  /english|eglish|ইংলিশ/i.test(`${paperMeta.className || ""} ${paperMeta.subjectName || ""}`);
 
 const DUPLICATE_IGNORED_CREATIVE_KEYS = /^(id|answer|answers|explanation|correct_answer|ans_|desc_ans_|marks?|created_at|updated_at)/i;
 
@@ -473,8 +476,14 @@ export default function QuestionPaperView() {
           }
         });
       }
+      const restoredSettings = savedSettings ? JSON.parse(savedSettings) : {};
+      setSettings(prev => ({
+        ...prev,
+        questionNumberStyle: restoredSettings.questionNumberStyle
+          ?? (isEnglishPaperMeta(parsedMeta) ? "en-padded-dot" : "bn-padded-danda"),
+        ...restoredSettings,
+      }));
       if (savedSettings) {
-        setSettings(prev => ({ ...prev, ...JSON.parse(savedSettings) }));
         sessionStorage.removeItem("viewPaperSettings");
       }
 
@@ -490,8 +499,15 @@ export default function QuestionPaperView() {
       supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
         .then(({ data }) => {
           if (!data) return;
-          setMeta(data.meta as any);
-          if (data.settings) setSettings(prev => ({ ...prev, ...(data.settings as any) }));
+          const loadedMeta = data.meta as PaperMeta;
+          const loadedSettings = (data.settings as any) || {};
+          setMeta(loadedMeta);
+          setSettings(prev => ({
+            ...prev,
+            questionNumberStyle: loadedSettings.questionNumberStyle
+              ?? (isEnglishPaperMeta(loadedMeta) ? "en-padded-dot" : "bn-padded-danda"),
+            ...loadedSettings,
+          }));
           const ids = data.question_ids as number[];
           if (ids.length > 0) {
             supabase.from("questions").select("*").in("id", ids)
@@ -772,6 +788,27 @@ export default function QuestionPaperView() {
       setTimeout(() => {
         window.print();
       }, 500);
+    });
+  };
+
+  const handleOpenSmartBoard = () => {
+    if (!meta || questions.length === 0) {
+      toast.error("Smart Board-এ নেওয়ার মতো কোনো প্রশ্ন নেই");
+      return;
+    }
+    navigate("/dashboard/smartboard", {
+      state: {
+        smartBoardImport: {
+          questions,
+          meta: {
+            instituteName: meta.instituteName,
+            className: meta.className,
+            subjectName: meta.subjectName,
+            chapterNames: meta.chapterNames,
+          },
+          title: meta.programName || "বর্তমান প্রশ্নপত্র",
+        },
+      },
     });
   };
 
@@ -2119,7 +2156,8 @@ export default function QuestionPaperView() {
         {!isMobile && (
           <div className="paper-quick-settings mb-4 mx-auto" style={{ maxWidth: previewPaperWidth }}>
             <div className="paper-quick-settings-title">কুইক সেটিংস</div>
-            <Button className="paper-quick-settings-action flex mx-auto bg-[#082f57] hover:bg-[#062542] text-white shadow-none" size="sm" onClick={() => {
+            <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button className="paper-quick-settings-action flex bg-[#082f57] hover:bg-[#062542] text-white shadow-none" size="sm" onClick={() => {
               sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
               sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
               if (currentPaperId) sessionStorage.setItem("existingPaperId", currentPaperId);
@@ -2139,6 +2177,10 @@ export default function QuestionPaperView() {
             }}>
               <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
+            <Button className="paper-quick-settings-action flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-none" size="sm" onClick={handleOpenSmartBoard}>
+              <Tv className="h-4 w-4 mr-1" /> Smart Board-এ নিন
+            </Button>
+            </div>
           </div>
         )}
         {isMobile && (
@@ -2161,6 +2203,9 @@ export default function QuestionPaperView() {
               navigate("/dashboard/create?add_to_paper=true");
             }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
+            </Button>
+            <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleOpenSmartBoard}>
+              <Tv className="h-3.5 w-3.5 mr-1" /> Smart Board
             </Button>
           </div>
         )}
