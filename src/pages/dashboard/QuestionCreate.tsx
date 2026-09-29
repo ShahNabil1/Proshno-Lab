@@ -555,8 +555,16 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   };
 
   const handleCreateQuestionSet = async () => {
-    if (!form.classId || selectedSubjectIds.length === 0) {
-      toast.error("শ্রেণী ও বিষয় নির্বাচন করুন");
+    if (!form.classId) {
+      toast.error("শ্রেণী নির্বাচন করুন");
+      return;
+    }
+    if (selectedSubjectIds.length === 0) {
+      toast.error("বিষয় নির্বাচন করুন");
+      return;
+    }
+    if (form.chapterIds.length === 0) {
+      toast.error("অন্তত একটি অধ্যায় নির্বাচন করুন");
       return;
     }
     const safeCount = Math.min(200, Math.max(1, parseInt(form.count || "100", 10) || 100));
@@ -1847,7 +1855,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
               classes={classes}
               version={subjectVersion}
               disabled={!form.classId}
-              placeholder="বিষয়"
+              placeholder="বিষয় *"
               triggerIcon="scan"
               triggerClassName="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] text-base text-slate-800 bg-white"
               onVersionChange={(version) => {
@@ -1878,9 +1886,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             >
               <span className="truncate font-medium flex-1 min-w-0 py-1 px-0.5 leading-normal">
                 {selectedSubjectIds.length === 0 ? (
-                  <span className="text-slate-500">অধ্যায়</span>
+                  <span className="text-slate-500">অধ্যায় *</span>
                 ) : form.chapterIds.length === 0 ? (
-                  <span className="text-slate-500">অধ্যায়</span>
+                  <span className="text-slate-500">অধ্যায় *</span>
                 ) : form.chapterIds.length === chapters.length ? (
                   <span className="text-slate-800 font-semibold">সকল অধ্যায় ({toBanglaNum(chapters.length)}টি)</span>
                 ) : (
@@ -1957,7 +1965,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <Button
               className="w-full h-12 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading}
+              disabled={loading || selectedSubjectIds.length === 0 || form.chapterIds.length === 0}
+              title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>
             </Button>

@@ -281,6 +281,7 @@ function normalisePolygon(points: Point[]): Point[] {
 /** Unit polygons for the shape tools, so a new shape only needs an entry here. */
 export const SHAPE_POLYGONS: Partial<Record<ShapeElementKind, Point[]>> = {
   triangle: unitPolygon(3, -Math.PI / 2),
+  rightTriangle: [[0, 0], [0, 1], [1, 1]],
   diamond: [
     [0.5, 0],
     [1, 0.5],

@@ -39,6 +39,9 @@ import {
   FileQuestion,
   RotateCcw,
   Tv,
+  Ruler,
+  Compass,
+  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import BoardCanvas from "@/components/smartboard/BoardCanvas";
+import ScientificCalculator from "@/components/smartboard/ScientificCalculator";
 import LoadPaperDialog, { type LoadedPaper } from "@/components/smartboard/LoadPaperDialog";
 import QuestionSlide, { type SmartBoardPaperMeta, type SmartBoardQuestion } from "@/components/smartboard/QuestionSlide";
 import { BOARD_BACKGROUNDS, DEFAULT_BACKGROUND_ID, getBackground } from "@/components/smartboard/boardBackgrounds";
@@ -63,6 +67,7 @@ import {
 } from "@/components/smartboard/boardTypes";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { PortalContainerProvider } from "@/components/ui/portal-container";
 
 const toBanglaNum = (value: number): string => {
   const digits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
@@ -89,6 +94,10 @@ const TOOLS: Array<{ id: ToolId; label: string; hint: string; Icon: typeof Pen }
   { id: "rect", label: "আয়তক্ষেত্র", hint: "R", Icon: Square },
   { id: "circle", label: "বৃত্ত", hint: "C", Icon: CircleIcon },
   { id: "triangle", label: "ত্রিভুজ", hint: "T", Icon: Triangle },
+  { id: "rightTriangle", label: "সমকোণী ত্রিভুজ", hint: "", Icon: Triangle },
+  { id: "ruler", label: "স্কেল", hint: "", Icon: Ruler },
+  { id: "protractor", label: "চাঁদা", hint: "", Icon: CircleIcon },
+  { id: "compass", label: "কম্পাস", hint: "", Icon: Compass },
   { id: "line", label: "লাইন", hint: "L", Icon: Minus },
   { id: "diamond", label: "রম্বস", hint: "K", Icon: Diamond },
   { id: "pentagon", label: "পঞ্চভুজ", hint: "G", Icon: Pentagon },
@@ -136,6 +145,7 @@ export default function SmartBoard() {
   const paperIdFromUrl = searchParams.get("paper_id");
 
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const directImportHandledRef = useRef(false);
 
@@ -154,7 +164,41 @@ export default function SmartBoard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [questionPositionMode, setQuestionPositionMode] = useState<QuestionPositionMode>("center");
   const [manualQuestionPosition, setManualQuestionPosition] = useState({ x: 50, y: 50 });
+  const [questionFontSize, setQuestionFontSize] = useState(36);
+  const [questionFontFamily, setQuestionFontFamily] = useState("inherit");
+  const [showBoardReferences, setShowBoardReferences] = useState(true);
+  const [showInstitutionReferences, setShowInstitutionReferences] = useState(true);
+  const [headerAccentColor, setHeaderAccentColor] = useState("#ec168c");
+  const [headerInstitutionColor, setHeaderInstitutionColor] = useState("#22c55e");
+  const [headerLogoUrl, setHeaderLogoUrl] = useState("");
+  const [institutionFontFamily, setInstitutionFontFamily] = useState("inherit");
+  const [institutionFontSize, setInstitutionFontSize] = useState(26);
+  const [chapterFontFamily, setChapterFontFamily] = useState("inherit");
+  const [chapterFontSize, setChapterFontSize] = useState(24);
+  const [chapterTextColor, setChapterTextColor] = useState("#ffffff");
+  const [courseFontFamily, setCourseFontFamily] = useState("inherit");
+  const [courseFontSize, setCourseFontSize] = useState(26);
+  const [courseColor, setCourseColor] = useState("#ec168c");
+  const [institutionText, setInstitutionText] = useState("");
+  const [chapterText, setChapterText] = useState("");
+  const [courseText, setCourseText] = useState("");
+  const [referenceStyle, setReferenceStyle] = useState<"filled" | "black" | "outline" | "bracket" | "underline">("outline");
+  const [referenceColor, setReferenceColor] = useState("#64748b");
+  const [referenceTextColor, setReferenceTextColor] = useState("#475569");
+  const [referenceFontFamily, setReferenceFontFamily] = useState("inherit");
+  const [referenceFontSize, setReferenceFontSize] = useState(20);
+  const [referenceBold, setReferenceBold] = useState(true);
+  const [referenceItalic, setReferenceItalic] = useState(false);
+  const [compassRadius, setCompassRadius] = useState(180);
+  const [showCompassCenter, setShowCompassCenter] = useState(true);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [calculatorPosition, setCalculatorPosition] = useState({ x: 40, y: 90 });
+  const calculatorDragRef = useRef<{ clientX: number; clientY: number; x: number; y: number } | null>(null);
   const questionDragRef = useRef<{ clientX: number; clientY: number; x: number; y: number } | null>(null);
+  const setFrameNode = useCallback((node: HTMLDivElement | null) => {
+    frameRef.current = node;
+    setPortalContainer(node);
+  }, []);
 
   const [board, dispatch] = useReducer(boardReducer, undefined, () => createBoardState(BLANK_BOARD_KEY));
 
@@ -212,6 +256,7 @@ export default function SmartBoard() {
             className: paper.class_name || undefined,
             subjectName: paper.subject_name || undefined,
             chapterNames: paper.chapter_names || undefined,
+            programName: paper.exam_name || undefined,
           });
           setPaperTitle(paper.exam_name || "সংরক্ষিত প্রশ্নপত্র");
           setCurrentIndex(0);
@@ -241,6 +286,22 @@ export default function SmartBoard() {
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      const drag = calculatorDragRef.current;
+      const frame = frameRef.current;
+      if (!drag || !frame) return;
+      setCalculatorPosition({
+        x: Math.max(0, Math.min(frame.clientWidth - 336, drag.x + event.clientX - drag.clientX)),
+        y: Math.max(56, Math.min(frame.clientHeight - 570, drag.y + event.clientY - drag.clientY)),
+      });
+    };
+    const stop = () => { calculatorDragRef.current = null; };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", stop); };
+  }, []);
+
   const fitScale = useMemo(() => {
     if (viewport.width === 0 || viewport.height === 0) return 1;
     return Math.min((viewport.width - 40) / BOARD_WIDTH, (viewport.height - 40) / BOARD_HEIGHT);
@@ -250,23 +311,46 @@ export default function SmartBoard() {
 
   const boardWidth = viewport.width > 0 ? Math.max(BOARD_WIDTH, (viewport.width - 2) / scale) : BOARD_WIDTH;
   const boardHeight = viewport.height > 0 ? Math.max(BOARD_HEIGHT, (viewport.height - 2) / scale) : BOARD_HEIGHT;
-  const pageLeft = Math.max(0, (boardWidth - BOARD_WIDTH) / 2);
-  const pageTop = Math.max(0, (boardHeight - BOARD_HEIGHT) / 2);
-  const questionPanelWidth = BOARD_WIDTH * 0.72;
-  const questionPanelHeight = BOARD_HEIGHT * 0.86;
-  const questionTravelX = BOARD_WIDTH - questionPanelWidth;
-  const questionTravelY = BOARD_HEIGHT - questionPanelHeight;
-  const questionPanelLeft = pageLeft + (
+  const questionPanelWidth = boardWidth * 0.94;
+  const questionPanelHeight = boardHeight * 0.86;
+  // Let the question use the complete visible board, including the extra
+  // horizontal/vertical space that appears on wide classroom displays.
+  const questionTravelX = Math.max(0, boardWidth - questionPanelWidth);
+  const questionTravelY = Math.max(0, boardHeight - questionPanelHeight);
+  const questionPanelLeft = (
     questionPositionMode === "left" ? 0
       : questionPositionMode === "right" ? questionTravelX
       : questionPositionMode === "manual" ? questionTravelX * (manualQuestionPosition.x / 100)
       : questionTravelX / 2
   );
-  const questionPanelTop = pageTop + (
+  const questionPanelTop = (
     questionPositionMode === "manual"
       ? questionTravelY * (manualQuestionPosition.y / 100)
       : questionTravelY / 2
   );
+
+  const beginQuestionDrag = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (tool !== "select" || event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startPosition = questionPositionMode === "manual"
+      ? manualQuestionPosition
+      : {
+          x: questionPositionMode === "left" ? 0 : questionPositionMode === "right" ? 100 : 50,
+          y: 50,
+        };
+
+    setQuestionPositionMode("manual");
+    setManualQuestionPosition(startPosition);
+    questionDragRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      x: startPosition.x,
+      y: startPosition.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [manualQuestionPosition, questionPositionMode, tool]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -379,10 +463,11 @@ export default function SmartBoard() {
   };
 
   return (
+    <PortalContainerProvider container={portalContainer}>
     <div className="space-y-3 max-w-full">
       {/* Board Frame Container */}
       <div
-        ref={frameRef}
+        ref={setFrameNode}
         className={cn(
           "relative flex flex-col overflow-hidden bg-white shadow-xs transition-all duration-200",
           isFullscreen
@@ -390,6 +475,22 @@ export default function SmartBoard() {
             : "h-[calc(100vh-140px)] min-h-[620px] rounded-[1px] border border-slate-300"
         )}
       >
+        {calculatorOpen && (
+          <section
+            className="absolute z-[80] w-[390px] origin-top-left scale-[0.86]"
+            style={{ left: calculatorPosition.x, top: calculatorPosition.y }}
+            aria-label="সায়েন্টিফিক ক্যালকুলেটর"
+          >
+            <ScientificCalculator
+              onClose={() => setCalculatorOpen(false)}
+              onDragStart={(event) => {
+                event.preventDefault();
+                calculatorDragRef.current = { clientX: event.clientX, clientY: event.clientY, ...calculatorPosition };
+              }}
+            />
+          </section>
+        )}
+
         {/* ========================================================
             TOP BAR: Minimalist, Eye-Friendly Header
            ======================================================== */}
@@ -484,9 +585,146 @@ export default function SmartBoard() {
                       <div className="mb-1 flex justify-between text-xs text-slate-600"><span>উপর–নিচ</span><span>{Math.round(manualQuestionPosition.y)}%</span></div>
                       <Slider value={[manualQuestionPosition.y]} min={0} max={100} step={1} onValueChange={([y]) => setManualQuestionPosition((previous) => ({ ...previous, y }))} />
                     </div>
-                    <p className="text-[11px] leading-relaxed text-slate-500">Board-এর প্রশ্নের উপরের “Drag” অংশ ধরেও সরাতে পারবেন।</p>
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      “সিলেক্ট” টুল চালু করে প্রশ্নের যেকোনো অংশ ধরে পুরো বোর্ডে সরাতে পারবেন।
+                    </p>
                   </div>
                 )}
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 gap-1.5 text-sm font-semibold bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-[1px]"
+                  disabled={!currentQuestion}
+                  title="প্রশ্নের লেখা ও রেফারেন্স নিয়ন্ত্রণ"
+                >
+                  <Type className="h-4 w-4" />
+                  <span className="hidden xl:inline">প্রশ্ন স্টাইল</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="max-h-[78vh] w-96 overflow-y-auto rounded-[1px] p-4">
+                <div className="mb-3 text-sm font-bold text-slate-800">প্রশ্নের স্টাইল ও তথ্য</div>
+                <label className="block text-xs font-semibold text-slate-600">ফন্ট</label>
+                <select
+                  value={questionFontFamily}
+                  onChange={(event) => setQuestionFontFamily(event.target.value)}
+                  className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm text-slate-800"
+                >
+                  <option value="inherit">ডিফল্ট বাংলা</option>
+                  <option value="'Noto Sans Bengali', sans-serif">Noto Sans Bengali</option>
+                  <option value="'Hind Siliguri', sans-serif">Hind Siliguri</option>
+                  <option value="'SolaimanLipi', serif">SolaimanLipi</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                </select>
+
+                <div className="mt-4">
+                  <div className="mb-1 flex justify-between text-xs font-semibold text-slate-600">
+                    <span>ফন্ট সাইজ</span><span>{questionFontSize}px</span>
+                  </div>
+                  <Slider
+                    value={[questionFontSize]}
+                    min={20}
+                    max={64}
+                    step={1}
+                    onValueChange={([value]) => setQuestionFontSize(value)}
+                  />
+                </div>
+
+                <div className="mt-4 space-y-3 border-t border-slate-200 pt-3">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Header control</div>
+
+                  <div className="rounded border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 text-sm font-bold text-slate-700">প্রতিষ্ঠান ও Logo</div>
+                    <input value={institutionText} onChange={(event) => setInstitutionText(event.target.value)} placeholder={meta?.instituteName || "প্রতিষ্ঠানের নাম"} className="mb-2 h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs" />
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="mb-2 block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-slate-200 file:px-2 file:py-1.5 file:font-semibold"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => setHeaderLogoUrl(String(reader.result || ""));
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <div className="grid grid-cols-[1fr_72px_46px] gap-2">
+                      <select value={institutionFontFamily} onChange={(event) => setInstitutionFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
+                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                      </select>
+                      <input type="number" min={14} max={54} value={institutionFontSize} onChange={(event) => setInstitutionFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="প্রতিষ্ঠানের font size" />
+                      <input type="color" value={headerInstitutionColor} onChange={(event) => setHeaderInstitutionColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="প্রতিষ্ঠানের color" />
+                    </div>
+                  </div>
+
+                  <div className="rounded border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 text-sm font-bold text-slate-700">Chapter</div>
+                    <input value={chapterText} onChange={(event) => setChapterText(event.target.value)} placeholder={meta?.chapterNames?.join(", ") || "Chapter name"} className="mb-2 h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs" />
+                    <div className="grid grid-cols-[1fr_72px_46px_46px] gap-2">
+                      <select value={chapterFontFamily} onChange={(event) => setChapterFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
+                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                      </select>
+                      <input type="number" min={14} max={54} value={chapterFontSize} onChange={(event) => setChapterFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Chapter font size" />
+                      <input type="color" value={headerAccentColor} onChange={(event) => setHeaderAccentColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Chapter background color" />
+                      <input type="color" value={chapterTextColor} onChange={(event) => setChapterTextColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Chapter text color" />
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-500">Font · Size · Background · Text</div>
+                  </div>
+
+                  <div className="rounded border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 text-sm font-bold text-slate-700">Course</div>
+                    <input value={courseText} onChange={(event) => setCourseText(event.target.value)} placeholder={meta?.programName || meta?.subjectName || "Course name"} className="mb-2 h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs" />
+                    <div className="grid grid-cols-[1fr_72px_46px] gap-2">
+                      <select value={courseFontFamily} onChange={(event) => setCourseFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
+                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                      </select>
+                      <input type="number" min={14} max={54} value={courseFontSize} onChange={(event) => setCourseFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Course font size" />
+                      <input type="color" value={courseColor} onChange={(event) => setCourseColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Course color" />
+                    </div>
+                  </div>
+
+                  <div className="rounded border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 text-sm font-bold text-slate-700">বোর্ড/স্কুল Reference style</div>
+                    <select value={referenceStyle} onChange={(event) => setReferenceStyle(event.target.value as typeof referenceStyle)} className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs">
+                      <option value="filled">রঙিন Filled Badge</option><option value="black">Black Badge</option><option value="outline">Outline Badge</option><option value="bracket">[Bracket]</option><option value="underline">Underline</option>
+                    </select>
+                    <div className="mt-2 grid grid-cols-[1fr_68px_46px_46px] gap-2">
+                      <select value={referenceFontFamily} onChange={(event) => setReferenceFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
+                        <option value="inherit">ডিফল্ট</option><option value="SolaimanLipi">SolaimanLipi</option><option value="OmicronBangla">OmicronBangla</option><option value="Kalpurush">Kalpurush</option><option value="Noto Serif Bengali">Noto Serif</option><option value="Arial">Arial</option><option value="Times New Roman">Times</option>
+                      </select>
+                      <input type="number" min={8} max={36} value={referenceFontSize} onChange={(event) => setReferenceFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Reference font size" />
+                      <input type="color" value={referenceColor} onChange={(event) => setReferenceColor(event.target.value)} className="h-8 w-full rounded border border-slate-300 p-1" aria-label="Reference badge color" />
+                      <input type="color" value={referenceTextColor} onChange={(event) => setReferenceTextColor(event.target.value)} className="h-8 w-full rounded border border-slate-300 p-1" aria-label="Reference text color" />
+                    </div>
+                    <div className="mt-2 flex gap-4 text-xs text-slate-700">
+                      <label className="flex items-center gap-1"><input type="checkbox" checked={referenceBold} onChange={(event) => setReferenceBold(event.target.checked)} /> Bold</label>
+                      <label className="flex items-center gap-1"><input type="checkbox" checked={referenceItalic} onChange={(event) => setReferenceItalic(event.target.checked)} /> Italic</label>
+                    </div>
+                  </div>
+
+                  <label className="flex cursor-pointer items-center justify-between gap-3 text-sm text-slate-700">
+                    <span>বোর্ড রেফারেন্স দেখান</span>
+                    <input
+                      type="checkbox"
+                      checked={showBoardReferences}
+                      onChange={(event) => setShowBoardReferences(event.target.checked)}
+                      className="h-4 w-4 accent-emerald-600"
+                    />
+                  </label>
+                  <label className="flex cursor-pointer items-center justify-between gap-3 text-sm text-slate-700">
+                    <span>স্কুল/বিশ্ববিদ্যালয় রেফারেন্স দেখান</span>
+                    <input
+                      type="checkbox"
+                      checked={showInstitutionReferences}
+                      onChange={(event) => setShowInstitutionReferences(event.target.checked)}
+                      className="h-4 w-4 accent-emerald-600"
+                    />
+                  </label>
+                </div>
               </PopoverContent>
             </Popover>
 
@@ -699,42 +937,55 @@ export default function SmartBoard() {
                   ...background.style,
                 }}
               >
-                {/* Question Slide Card */}
+                {/* Question Slide: select tool lets teachers drag it anywhere on the full board. */}
                 {currentQuestion ? (
                   <div
-                    className="absolute overflow-hidden rounded-[1px] border border-slate-300/70 shadow-sm"
+                    className={cn(
+                      "absolute overflow-hidden rounded-[1px]",
+                      tool === "select" ? "z-20 cursor-move touch-none select-none" : "pointer-events-none z-0",
+                    )}
                     style={{
                       left: questionPanelLeft,
                       top: questionPanelTop,
                       width: questionPanelWidth,
                       height: questionPanelHeight,
-                      backgroundColor: background.dark ? "rgba(2, 6, 23, 0.72)" : "rgba(255, 255, 255, 0.86)",
+                      backgroundColor: "transparent",
                     }}
+                    onPointerDown={beginQuestionDrag}
+                    aria-label="প্রশ্ন নির্বাচন করে সরান"
+                    title={tool === "select" ? "প্রশ্নটি ধরে বোর্ডের যেকোনো স্থানে সরান" : undefined}
                   >
-                    {questionPositionMode === "manual" && (
-                      <button
-                        type="button"
-                        className="absolute left-1/2 top-1 z-30 flex -translate-x-1/2 cursor-move items-center gap-1 rounded bg-[#0A1E38]/85 px-3 py-1 text-sm font-semibold text-white shadow"
-                        onPointerDown={(event) => {
-                          event.preventDefault();
-                          questionDragRef.current = {
-                            clientX: event.clientX,
-                            clientY: event.clientY,
-                            x: manualQuestionPosition.x,
-                            y: manualQuestionPosition.y,
-                          };
-                        }}
-                        aria-label="প্রশ্ন drag করে সরান"
-                      >
-                        <Move className="h-4 w-4" /> Drag
-                      </button>
-                    )}
                     <QuestionSlide
                       question={currentQuestion}
                       number={currentIndex + 1}
                       meta={meta}
                       showAnswer={showAnswer}
                       dark={background.dark}
+                      questionFontSize={questionFontSize}
+                      questionFontFamily={questionFontFamily}
+                      showBoardReferences={showBoardReferences}
+                      showInstitutionReferences={showInstitutionReferences}
+                      headerAccentColor={headerAccentColor}
+                      headerInstitutionColor={headerInstitutionColor}
+                      headerLogoUrl={headerLogoUrl}
+                      institutionFontFamily={institutionFontFamily}
+                      institutionFontSize={institutionFontSize}
+                      chapterFontFamily={chapterFontFamily}
+                      chapterFontSize={chapterFontSize}
+                      chapterTextColor={chapterTextColor}
+                      courseFontFamily={courseFontFamily}
+                      courseFontSize={courseFontSize}
+                      courseColor={courseColor}
+                      institutionText={institutionText}
+                      chapterText={chapterText}
+                      courseText={courseText}
+                      referenceStyle={referenceStyle}
+                      referenceColor={referenceColor}
+                      referenceTextColor={referenceTextColor}
+                      referenceFontFamily={referenceFontFamily}
+                      referenceFontSize={referenceFontSize}
+                      referenceBold={referenceBold}
+                      referenceItalic={referenceItalic}
                     />
                   </div>
                 ) : (
@@ -782,6 +1033,9 @@ export default function SmartBoard() {
                   fontSize={style.fontSize}
                   elements={board.elements}
                   onCommit={commitBoard}
+                  compassRadius={compassRadius}
+                  showCompassCenter={showCompassCenter}
+                  onCompassRadiusChange={setCompassRadius}
                 />
               </div>
             </div>
@@ -818,6 +1072,33 @@ export default function SmartBoard() {
 
           {/* Quick Swatches & Settings */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {tool === "compass" && (
+              <div className="flex h-10 items-center gap-2 rounded-[1px] border border-slate-300 bg-white px-2" title="কম্পাসের ব্যাসার্ধ ছোট–বড় করুন">
+                <Compass className="h-4 w-4 text-slate-600" />
+                <span className="hidden 2xl:inline text-xs font-semibold text-slate-700">ব্যাসার্ধ</span>
+                <Slider className="w-24" value={[compassRadius]} min={30} max={520} step={5} onValueChange={([value]) => setCompassRadius(value)} />
+                <span className="min-w-10 text-right text-xs font-bold text-slate-700">{toBanglaNum(compassRadius)}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowCompassCenter((value) => !value)}
+                  className={cn("flex h-7 items-center gap-1 rounded-[1px] border px-2 text-xs font-semibold", showCompassCenter ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-slate-300 text-slate-600")}
+                  title={showCompassCenter ? "কেন্দ্রচিহ্ন বন্ধ করুন" : "কেন্দ্রচিহ্ন দেখান"}
+                >
+                  {showCompassCenter ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  কেন্দ্র
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setCalculatorOpen((value) => !value)}
+              className={cn("flex h-9 md:h-10 items-center gap-1.5 rounded-[1px] border px-3 text-sm font-semibold", calculatorOpen ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-300 text-slate-700 hover:bg-slate-50")}
+              title="সায়েন্টিফিক ক্যালকুলেটর"
+            >
+              <Calculator className="h-4 w-4" />
+              <span className="hidden xl:inline">ক্যালকুলেটর</span>
+            </button>
             {/* Quick 1-click popular color dots */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 rounded-[1px] border border-slate-300">
               {QUICK_COLORS.map((qc) => (
@@ -1006,5 +1287,6 @@ export default function SmartBoard() {
       {/* Load Paper Dialog */}
       <LoadPaperDialog open={loadOpen} onOpenChange={setLoadOpen} onLoad={handleLoadPaper} />
     </div>
+    </PortalContainerProvider>
   );
 }

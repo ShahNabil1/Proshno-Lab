@@ -5,29 +5,76 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, X, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import MathInput from "@/components/MathInput";
 import RichTextEditor from "@/components/RichTextEditor";
-import LatexRenderer from "@/components/LatexRenderer";
+import LatexRenderer, { getLatexIssueReasons } from "@/components/LatexRenderer";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
-import { sortClasses, sortChapters } from "@/lib/classOrder";
+import { sortClasses, sortSubjects, sortChapters } from "@/lib/classOrder";
 import AdminQuestionDuplicates from "@/pages/admin/AdminQuestionDuplicates";
 
 const typeOptions = ["mcq", "short", "cq", "descriptive"];
-const PAGE_SIZE_OPTIONS = [100, 200, 300, 400, 500];
-const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size";
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
+const SPECIAL_FILTER_OPTIONS = [
+  { id: "board", label: "রিপিটেড বোর্ড প্রশ্ন" },
+  { id: "math", label: "গাণিতিক" },
+  { id: "theoretical", label: "তত্ত্বীয়" },
+  { id: "diagram", label: "চিত্রযুক্ত প্রশ্ন" },
+  { id: "multi_completion", label: "বহুপদী সমাপ্তিসূচক" },
+  { id: "assertion", label: "অভিন্ন তথ্যভিত্তিক" },
+  { id: "latex_error", label: "LaTeX সমস্যাযুক্ত" },
+] as const;
+
+const questionLatexIssueDetails = (question: any) => {
+  const creative = question.creative_data || {};
+  const fields: Array<[string, unknown]> = [
+    ["প্রশ্ন", question.question], ["অপশন ক", question.option_a], ["অপশন খ", question.option_b],
+    ["অপশন গ", question.option_c], ["অপশন ঘ", question.option_d], ["উদ্দীপক", question.stimulus_text],
+    ["উত্তর", question.correct_answer], ["ব্যাখ্যা", question.explanation], ["উদ্দীপক", creative.stem],
+    ["প্রশ্ন ক", creative.q_ka], ["প্রশ্ন খ", creative.q_kha], ["প্রশ্ন গ", creative.q_ga], ["প্রশ্ন ঘ", creative.q_gha],
+    ["উত্তর ক", creative.ans_ka], ["উত্তর খ", creative.ans_kha], ["উত্তর গ", creative.ans_ga], ["উত্তর ঘ", creative.ans_gha],
+    ["প্রশ্ন ক", creative.desc_q_ka], ["প্রশ্ন খ", creative.desc_q_kha], ["উত্তর ক", creative.desc_ans_ka], ["উত্তর খ", creative.desc_ans_kha],
+  ];
+  return fields.flatMap(([field, value]) => typeof value === "string"
+    ? getLatexIssueReasons(value).map((reason) => ({ field, reason }))
+    : []);
+};
+
+const questionHasLatexIssues = (question: any) => questionLatexIssueDetails(question).length > 0;
+
+const specialFilterMatches = (question: any, filter: string) => {
+  const text = `${question.question || ""} ${question.option_a || ""} ${question.option_b || ""} ${question.option_c || ""} ${question.option_d || ""} ${question.stimulus_text || ""}`;
+  const mathPattern = /\$.*?\$|\\frac|\\sqrt|\\sum|\\int|\\\[|\\\]|\\\(|\\\)|\\times|\\div|\\pm|\\leq|\\geq|\\neq|\\alpha|\\beta|\\theta|\\pi/i;
+  if (filter === "board") {
+    const refs = Array.isArray(question.board_references) ? question.board_references : [];
+    const boards = new Set(refs.map((ref: any) => String(ref?.board || "").replace(/[০-৯0-9.'’‘"`,\-–—()\s]|বোর্ড|বো/g, "").toLowerCase()).filter(Boolean));
+    return boards.size >= 2;
+  }
+  if (filter === "math") return mathPattern.test(text);
+  if (filter === "theoretical") return !mathPattern.test(text);
+  if (filter === "diagram") return /<img\s/i.test(text) || /cloudinary\.com|res\.cloudinary/i.test(text);
+  if (filter === "multi_completion") {
+    if (question.type !== "mcq") return false;
+    const stripped = String(question.question || "").replace(/<[^>]*>/g, "");
+    return /(?:^|[^a-zA-Z])i[.\s].*(?:^|[^a-zA-Z])ii[.\s].*(?:^|[^a-zA-Z])iii[.\s]/s.test(stripped)
+      || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped);
+  }
+  if (filter === "assertion") return Array.isArray(question.board_references) && question.board_references.length > 0;
+  if (filter === "latex_error") return questionHasLatexIssues(question);
+  return true;
+};
 
 export default function AdminQuestions() {
   const queryClient = useQueryClient();
@@ -48,13 +95,15 @@ export default function AdminQuestions() {
   const [filterChapterId, setFilterChapterId] = useState("");
   const [filterTopicId, setFilterTopicId] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [filterSpecial, setFilterSpecial] = useState("");
+  const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set());
   const [filterChapters, setFilterChapters] = useState<any[]>([]);
   const [filterTopics, setFilterTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(() => {
-    if (typeof window === "undefined") return 100;
+    if (typeof window === "undefined") return 20;
     const stored = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
-    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : 100;
+    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : 20;
   });
   useEffect(() => {
     try { window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize)); } catch {}
@@ -108,7 +157,7 @@ export default function AdminQuestions() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedIds(new Set());
-  }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, pageSize]);
+  }, [searchTerm, filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, filterSpecial, pageSize]);
 
   // ---- React Query: paginated items with server-side filtering + caching ----
   const listQueryKey = [
@@ -116,9 +165,41 @@ export default function AdminQuestions() {
     { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterType, currentPage, pageSize, hasFullAccess },
   ] as const;
 
+  const specialPoolQuery = useQuery({
+    queryKey: ["admin-questions-special-pool", { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId, filterSpecial, hasFullAccess }],
+    enabled: !permLoading && !!filterSpecial,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      const collected: any[] = [];
+      const batchSize = 1000;
+      let offset = 0;
+      let exactCount: number | null = null;
+      do {
+        let query = supabase.from("questions")
+          .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: offset === 0 ? "exact" : undefined })
+          .order("created_at", { ascending: false });
+        if (filterClassId) query = query.eq("class_id", Number(filterClassId));
+        if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
+        if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
+        if (filterTopicId) query = query.eq("topic_id", Number(filterTopicId));
+        if (searchTerm.trim()) query = query.ilike("question", `%${searchTerm.trim()}%`);
+        const { data, count, error } = await query.range(offset, offset + batchSize - 1);
+        if (error) throw error;
+        const batch = data || [];
+        collected.push(...batch);
+        if (offset === 0) exactCount = count ?? batch.length;
+        offset += batch.length;
+        if (batch.length < batchSize) break;
+      } while (exactCount === null || offset < exactCount);
+      const permitted = hasFullAccess ? collected : collected.filter((q: any) => isSubjectAllowed(q.class_id, q.subject_id));
+      return permitted.filter((q: any) => specialFilterMatches(q, filterSpecial));
+    },
+  });
+
   const listQuery = useQuery({
     queryKey: listQueryKey,
-    enabled: !permLoading,
+    enabled: !permLoading && !filterSpecial,
     placeholderData: keepPreviousData,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
@@ -143,15 +224,20 @@ export default function AdminQuestions() {
     },
   });
 
-  const items = listQuery.data?.rows ?? [];
-  const totalCount = listQuery.data?.total ?? 0;
-  const paginatedItems = items;
+  const specialTypeRows = filterSpecial
+    ? (specialPoolQuery.data || []).filter((q: any) => !filterType || q.type === filterType)
+    : [];
+  const items = filterSpecial ? specialTypeRows : (listQuery.data?.rows ?? []);
+  const totalCount = filterSpecial ? specialTypeRows.length : (listQuery.data?.total ?? 0);
+  const paginatedItems = filterSpecial
+    ? items.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : items;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const typeCountsQuery = useQuery({
     queryKey: ["admin-questions-type-counts", { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId }],
-    enabled: !permLoading,
+    enabled: !permLoading && !filterSpecial,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     queryFn: async () => {
@@ -169,7 +255,12 @@ export default function AdminQuestions() {
       return Object.fromEntries(results) as Record<string, number>;
     },
   });
-  const typeCounts = typeCountsQuery.data ?? { mcq: 0, short: 0, cq: 0, descriptive: 0 };
+  const specialTypeCounts = filterSpecial ? (specialPoolQuery.data || []).reduce((counts: Record<string, number>, q: any) => {
+    if (q.type in counts) counts[q.type] += 1;
+    return counts;
+  }, { mcq: 0, short: 0, cq: 0, descriptive: 0 }) : null;
+  const typeCounts = specialTypeCounts ?? typeCountsQuery.data ?? { mcq: 0, short: 0, cq: 0, descriptive: 0 };
+  const questionsLoading = filterSpecial ? specialPoolQuery.isFetching : listQuery.isFetching;
 
   const invalidateQuestions = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
@@ -179,7 +270,7 @@ export default function AdminQuestions() {
 
   useEffect(() => {
     supabase.from("classes").select("id, name").order("name").then(({ data }) => setAllClasses(sortClasses(data || [])));
-    supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(data || []));
+    supabase.from("subjects").select("id, name, class_id").order("name").then(({ data }) => setAllSubjects(sortSubjects(data || [])));
     supabase.from("question_categories").select("id, name").order("name").then(({ data }) => setCategories(data || []));
   }, []);
 
@@ -448,6 +539,97 @@ export default function AdminQuestions() {
     });
   };
 
+  const toggleAnswer = (id: number) => {
+    setExpandedAnswers(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const typeLabel = (type: string) => ({
+    mcq: "MCQ",
+    short: "সংক্ষিপ্ত",
+    cq: "সৃজনশীল",
+    descriptive: "বর্ণনামূলক",
+  }[type] || type.toUpperCase());
+
+  const answerLetter = (answer: string | null | undefined) => ({
+    a: "ক", b: "খ", c: "গ", d: "ঘ",
+  }[normalizeAnswerKey(answer || "")] || answer || "");
+
+  const richBlock = (text: string | null | undefined, className = "") => text ? (
+    <div className={className}><LatexRenderer text={text} /></div>
+  ) : null;
+
+  const renderQuestionBody = (item: any) => {
+    const creative = item.creative_data || {};
+    if (item.type === "cq") {
+      return (
+        <div className="space-y-3">
+          {richBlock(creative.stem || item.question, "rounded-lg bg-muted/40 p-4")}
+          <div className="space-y-2">
+            {creative.q_ka && <div className="flex gap-2"><span className="font-bold shrink-0">ক)</span>{richBlock(creative.q_ka)}</div>}
+            {creative.q_kha && <div className="flex gap-2"><span className="font-bold shrink-0">খ)</span>{richBlock(creative.q_kha)}</div>}
+            {creative.q_ga && <div className="flex gap-2"><span className="font-bold shrink-0">গ)</span>{richBlock(creative.q_ga)}</div>}
+            {creative.q_gha && <div className="flex gap-2"><span className="font-bold shrink-0">ঘ)</span>{richBlock(creative.q_gha)}</div>}
+          </div>
+        </div>
+      );
+    }
+    if (item.type === "descriptive") {
+      return (
+        <div className="space-y-2">
+          {creative.desc_q_ka && <div className="flex gap-2"><span className="font-bold shrink-0">ক)</span>{richBlock(creative.desc_q_ka)}</div>}
+          {creative.desc_q_kha && <div className="flex gap-2"><span className="font-bold shrink-0">খ)</span>{richBlock(creative.desc_q_kha)}</div>}
+          {!creative.desc_q_ka && !creative.desc_q_kha && richBlock(item.question)}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-3">
+        {item.stimulus_text && richBlock(item.stimulus_text, "rounded-lg bg-muted/40 p-4")}
+        {richBlock(item.question, "text-base font-medium")}
+        {item.type === "mcq" && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[["ক", item.option_a], ["খ", item.option_b], ["গ", item.option_c], ["ঘ", item.option_d]].map(([label, value]) => value ? (
+              <div key={label} className="flex gap-2 rounded-md border bg-background px-3 py-2">
+                <span className="font-bold text-primary shrink-0">{label}.</span>
+                {richBlock(value)}
+              </div>
+            ) : null)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderAnswerBody = (item: any) => {
+    const creative = item.creative_data || {};
+    const answers = item.type === "cq"
+      ? [["ক", creative.ans_ka], ["খ", creative.ans_kha], ["গ", creative.ans_ga], ["ঘ", creative.ans_gha]]
+      : item.type === "descriptive"
+      ? [["ক", creative.desc_ans_ka], ["খ", creative.desc_ans_kha]]
+      : [];
+    const hasStructuredAnswer = answers.some(([, value]) => !!value);
+    return (
+      <div className="space-y-3">
+        {item.type === "mcq" && (
+          item.correct_answer
+            ? <p className="font-semibold text-emerald-800">সঠিক উত্তর: {answerLetter(item.correct_answer)}</p>
+            : <p className="text-muted-foreground">সঠিক উত্তর যোগ করা হয়নি।</p>
+        )}
+        {item.type === "short" && (item.correct_answer
+          ? richBlock(item.correct_answer)
+          : <p className="text-muted-foreground">উত্তর যোগ করা হয়নি।</p>)}
+        {(item.type === "cq" || item.type === "descriptive") && (hasStructuredAnswer
+          ? <div className="space-y-2">{answers.map(([label, value]) => value ? <div key={label} className="flex gap-2"><span className="font-bold shrink-0">{label})</span>{richBlock(value)}</div> : null)}</div>
+          : <p className="text-muted-foreground">নমুনা উত্তর যোগ করা হয়নি।</p>)}
+        {item.explanation && <div className="border-t border-emerald-200 pt-3"><p className="mb-1 text-xs font-semibold text-emerald-800">ব্যাখ্যা</p>{richBlock(item.explanation)}</div>}
+      </div>
+    );
+  };
+
 
   // === Full Page Create View ===
   if (fullPageCreate) {
@@ -680,6 +862,49 @@ export default function AdminQuestions() {
             {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
           </SelectContent>
         </Select>
+        {(searchTerm || filterClassId || filterSubjectId || filterChapterId || filterTopicId || filterType || filterSpecial) && (
+          <Button
+            variant="ghost"
+            className="gap-2"
+            onClick={() => {
+              setSearchTerm("");
+              setFilterClassId("");
+              setFilterSubjectId("");
+              setFilterChapterId("");
+              setFilterTopicId("");
+              setFilterType("");
+              setFilterSpecial("");
+            }}
+          >
+            <X className="h-4 w-4" /> ফিল্টার মুছুন
+          </Button>
+        )}
+      </div>
+
+      {/* ProshnoLab special filters */}
+      <div className="mb-4">
+        <div className="rounded-xl border bg-card p-3">
+          <h2 className="mb-3 border-b pb-2 text-sm font-bold text-slate-800">ProshnoLab স্পেশাল ফিল্টার</h2>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {SPECIAL_FILTER_OPTIONS.map((option) => {
+              const active = filterSpecial === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setFilterSpecial(active ? "" : option.id)}
+                  className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${active ? "bg-slate-100 font-semibold text-slate-950" : "text-slate-600 hover:bg-slate-50"}`}
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${active ? "border-slate-900 bg-slate-900" : "border-slate-300"}`}>
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />}
+                  </span>
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Total + Type-wise breakdown badges */}
@@ -739,60 +964,83 @@ export default function AdminQuestions() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[42px]">
+      <div className="mb-3 flex items-center gap-2 rounded-lg border bg-muted/20 px-4 py-3">
+        <Checkbox
+          checked={allOnPageSelected ? true : (someOnPageSelected ? "indeterminate" : false)}
+          onCheckedChange={(c) => toggleSelectAllOnPage(!!c)}
+          aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
+        />
+        <span className="text-sm font-medium">এই পেজের সব প্রশ্ন নির্বাচন</span>
+        <span className="ml-auto text-xs text-muted-foreground">পূর্ণ প্রশ্ন, অপশন ও উদ্দীপক দেখানো হচ্ছে</span>
+      </div>
+
+      <div className="space-y-4">
+        {paginatedItems.map((item) => {
+          const answerOpen = expandedAnswers.has(item.id);
+          const latexIssues = questionLatexIssueDetails(item);
+          return (
+            <Card key={item.id} className={selectedIds.has(item.id) ? "border-primary ring-1 ring-primary/30" : ""}>
+              <CardContent className="p-4 sm:p-5">
+                <div className="mb-4 flex flex-wrap items-start gap-2 border-b pb-3">
                   <Checkbox
-                    checked={allOnPageSelected ? true : (someOnPageSelected ? "indeterminate" : false)}
-                    onCheckedChange={(c) => toggleSelectAllOnPage(!!c)}
-                    aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
+                    className="mt-1"
+                    checked={selectedIds.has(item.id)}
+                    onCheckedChange={(c) => toggleRow(item.id, !!c)}
+                    aria-label={`প্রশ্ন ${item.id} নির্বাচন`}
                   />
-                </TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>প্রশ্ন</TableHead>
-                <TableHead>টাইপ</TableHead>
-                <TableHead>শ্রেণী</TableHead>
-                <TableHead>বিষয়</TableHead>
-                <TableHead>শিক্ষক</TableHead>
-                <TableHead className="text-right">অ্যাকশন</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedItems.map((item) => (
-                <TableRow key={item.id} data-state={selectedIds.has(item.id) ? "selected" : undefined}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedIds.has(item.id)}
-                      onCheckedChange={(c) => toggleRow(item.id, !!c)}
-                      aria-label={`প্রশ্ন ${item.id} নির্বাচন`}
-                    />
-                  </TableCell>
-                  <TableCell>{item.id}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    <LatexRenderer text={item.question} />
-                  </TableCell>
-                  <TableCell className="uppercase">{item.type}</TableCell>
-                  <TableCell>{item.classes?.name}</TableCell>
-                  <TableCell>{item.subjects?.name}</TableCell>
-                  <TableCell>{item.teachers?.full_name || "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {paginatedItems.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  {listQuery.isFetching ? "লোড হচ্ছে..." : "কোনো প্রশ্ন নেই"}
-                </TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">#{item.id}</span>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{typeLabel(item.type)}</span>
+                  {item.classes?.name && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{item.classes.name}</span>}
+                  {item.subjects?.name && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{item.subjects.name}</span>}
+                  {item.chapters?.name && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{item.chapters.name}</span>}
+                  {latexIssues.length > 0 && (
+                    <span className="rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700" title="এই প্রশ্নে সংশোধনযোগ্য LaTeX আছে">
+                      ⚠ {latexIssues.length.toLocaleString("bn-BD")}টি LaTeX সমস্যা
+                    </span>
+                  )}
+                  <span className="ml-auto pt-1 text-xs text-muted-foreground">{item.teachers?.full_name || "শিক্ষক অজানা"}</span>
+                </div>
+
+                {latexIssues.length > 0 && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    <p className="mb-1 font-bold">যেখানে সমস্যা:</p>
+                    <ul className="list-disc space-y-0.5 pl-5">
+                      {latexIssues.map((issue, index) => <li key={`${issue.field}-${issue.reason}-${index}`}><strong>{issue.field}:</strong> {issue.reason}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="text-[15px] leading-7">{renderQuestionBody(item)}</div>
+
+                {answerOpen && (
+                  <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 text-[15px] leading-7" aria-live="polite">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-emerald-800">উত্তর</p>
+                    {renderAnswerBody(item)}
+                  </div>
+                )}
+
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => toggleAnswer(item.id)}>
+                    {answerOpen ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {answerOpen ? "উত্তর লুকান" : "উত্তর দেখুন"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => openEdit(item)}>
+                    <Pencil className="h-4 w-4" /> সম্পাদনা
+                  </Button>
+                  <Button variant="ghost" size="sm" className="ml-auto gap-2 text-destructive hover:text-destructive" onClick={() => handleDelete(item.id)}>
+                    <Trash2 className="h-4 w-4" /> ডিলিট
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+        {paginatedItems.length === 0 && (
+          <Card><CardContent className="py-12 text-center text-muted-foreground">
+            {questionsLoading ? "লোড হচ্ছে..." : "এই ফিল্টারে কোনো প্রশ্ন পাওয়া যায়নি"}
+          </CardContent></Card>
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

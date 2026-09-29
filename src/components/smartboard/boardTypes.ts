@@ -14,6 +14,10 @@ export type ToolId =
   | "rect"
   | "circle"
   | "triangle"
+  | "rightTriangle"
+  | "ruler"
+  | "protractor"
+  | "compass"
   | "diamond"
   | "pentagon"
   | "hexagon"
@@ -28,6 +32,9 @@ interface ElementBase {
   id: string;
   color: string;
   opacity: number;
+  /** Marks a compass construction center so the toolbar can show/hide it. */
+  compassCenter?: boolean;
+  rotation?: number;
 }
 
 export interface PenElement extends ElementBase {
@@ -37,7 +44,7 @@ export interface PenElement extends ElementBase {
 }
 
 /** Every closed shape is stored as a bounding box, so one drag covers them all. */
-export const SHAPE_KINDS = ["rect", "circle", "triangle", "diamond", "pentagon", "hexagon", "star"] as const;
+export const SHAPE_KINDS = ["rect", "circle", "triangle", "rightTriangle", "ruler", "protractor", "compass", "diamond", "pentagon", "hexagon", "star"] as const;
 
 export type ShapeElementKind = (typeof SHAPE_KINDS)[number];
 

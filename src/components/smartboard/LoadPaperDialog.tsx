@@ -130,7 +130,14 @@ export default function LoadPaperDialog({ open, onOpenChange, onLoad }: LoadPape
 
       onLoad({
         questions,
-        meta: (data.meta as SmartBoardPaperMeta) || null,
+        meta: {
+          ...((data.meta as SmartBoardPaperMeta) || {}),
+          instituteName: (data.meta as SmartBoardPaperMeta | null)?.instituteName || data.institution_name || undefined,
+          className: (data.meta as SmartBoardPaperMeta | null)?.className || data.class_name || undefined,
+          subjectName: (data.meta as SmartBoardPaperMeta | null)?.subjectName || data.subject_name || undefined,
+          chapterNames: (data.meta as SmartBoardPaperMeta | null)?.chapterNames || data.chapter_names || undefined,
+          programName: (data.meta as SmartBoardPaperMeta | null)?.programName || data.exam_name || undefined,
+        },
         title: data.exam_name || data.subject_name || "প্রশ্নপত্র",
       });
       onOpenChange(false);
@@ -238,4 +245,3 @@ export default function LoadPaperDialog({ open, onOpenChange, onLoad }: LoadPape
     </Dialog>
   );
 }
-

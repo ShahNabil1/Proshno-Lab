@@ -38,6 +38,9 @@ interface BoardCanvasProps {
   /** Surface size in board units. It can grow past A4 so the board fills the screen. */
   boardWidth?: number;
   boardHeight?: number;
+  compassRadius?: number;
+  showCompassCenter?: boolean;
+  onCompassRadiusChange?: (radius: number) => void;
 }
 
 interface DraftState {
@@ -57,13 +60,26 @@ interface EditingState {
   color: string;
 }
 
-type DragMode = { type: "move" } | { type: "handle"; handle: AnyHandle };
+type DragMode = { type: "move" } | { type: "handle"; handle: AnyHandle } | { type: "rotate" };
 
 interface DragState {
   id: string;
   mode: DragMode;
   start: Point;
   original: BoardElement;
+}
+
+interface CompassArcState {
+  center: Point;
+  radius: number;
+  startAngle: number;
+  currentAngle: number;
+  drawing: boolean;
+  moving: boolean;
+  resizing: boolean;
+  tracePoints?: Point[];
+  moveStart?: Point;
+  originalCenter?: Point;
 }
 
 const TEXT_LINE_HEIGHT = 1.3;
@@ -87,6 +103,9 @@ export default function BoardCanvas({
   onCommit,
   boardWidth = BOARD_WIDTH,
   boardHeight = BOARD_HEIGHT,
+  compassRadius = 180,
+  showCompassCenter = true,
+  onCompassRadiusChange,
   className = "",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -99,10 +118,15 @@ export default function BoardCanvas({
 
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [dragPreview, setDragPreview] = useState<BoardElement | null>(null);
+  const [dragPreviews, setDragPreviews] = useState<BoardElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionBox, setSelectionBox] = useState<{ start: Point; current: Point } | null>(null);
+  const dragGroupRef = useRef<BoardElement[]>([]);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [erasedIds, setErasedIds] = useState<string[]>([]);
   const [editorScale, setEditorScale] = useState(1);
+  const [compassArc, setCompassArc] = useState<CompassArcState | null>(null);
 
   const brushCursorRef = useRef<SVGGElement | null>(null);
   const brushOuterRef = useRef<SVGCircleElement | null>(null);
@@ -114,6 +138,10 @@ export default function BoardCanvas({
   useEffect(() => {
     elementsRef.current = elements;
   }, [elements]);
+
+  useEffect(() => {
+    setCompassArc((current) => current ? { ...current, radius: compassRadius } : current);
+  }, [compassRadius]);
 
   const toBoardPoint = useCallback((clientX: number, clientY: number): Point => {
     const svg = svgRef.current;
@@ -162,16 +190,23 @@ export default function BoardCanvas({
 
   const visibleElements = useMemo(() => {
     const filtered = erasedIds.length > 0 ? elements.filter((el) => !erasedIds.includes(el.id)) : elements;
-    if (!dragPreview) return filtered;
-    return filtered.map((el) => (el.id === dragPreview.id ? dragPreview : el));
-  }, [elements, erasedIds, dragPreview]);
+    const previews = new Map(dragPreviews.map((el) => [el.id, el]));
+    if (dragPreview) previews.set(dragPreview.id, dragPreview);
+    return previews.size === 0 ? filtered : filtered.map((el) => previews.get(el.id) ?? el);
+  }, [elements, erasedIds, dragPreview, dragPreviews]);
 
   useEffect(() => {
     if (tool !== "select") {
       setSelectedId(null);
+      setSelectedIds([]);
       dragRef.current = null;
       setDragPreview(null);
+      setDragPreviews([]);
     }
+  }, [tool]);
+
+  useEffect(() => {
+    if (tool !== "compass") setCompassArc(null);
   }, [tool]);
 
   useEffect(() => {
@@ -216,6 +251,7 @@ export default function BoardCanvas({
       };
       onCommit([...currentElements, element]);
       setSelectedId(element.id);
+      setSelectedIds([element.id]);
     },
     [onCommit, opacity],
   );
@@ -260,11 +296,18 @@ export default function BoardCanvas({
       if (tool !== "select") return;
       event.stopPropagation();
       event.preventDefault();
-      setSelectedId(el.id);
+      const movingSelectedGroup = mode.type === "move" && selectedIds.includes(el.id) && selectedIds.length > 1;
+      if (!movingSelectedGroup) {
+        setSelectedId(el.id);
+        setSelectedIds([el.id]);
+        dragGroupRef.current = [];
+      } else {
+        dragGroupRef.current = elementsRef.current.filter((item) => selectedIds.includes(item.id));
+      }
       dragRef.current = { id: el.id, mode, start: toBoardPoint(event.clientX, event.clientY), original: el };
       svgRef.current?.setPointerCapture(event.pointerId);
     },
-    [toBoardPoint, tool],
+    [selectedIds, toBoardPoint, tool],
   );
 
   const handlePointerDown = useCallback(
@@ -283,6 +326,8 @@ export default function BoardCanvas({
 
       if (tool === "select") {
         setSelectedId(null);
+        setSelectedIds([]);
+        setSelectionBox({ start: point, current: point });
         return;
       }
 
@@ -303,6 +348,61 @@ export default function BoardCanvas({
         return;
       }
 
+      if (tool === "compass" && compassArc) {
+        event.preventDefault();
+        const centerDistance = Math.hypot(point[0] - compassArc.center[0], point[1] - compassArc.center[1]);
+        const pencilPoint: Point = [
+          compassArc.center[0] + Math.cos(compassArc.currentAngle) * compassArc.radius,
+          compassArc.center[1] + Math.sin(compassArc.currentAngle) * compassArc.radius,
+        ];
+        const dx = Math.cos(compassArc.currentAngle);
+        const dy = Math.sin(compassArc.currentAngle);
+        const hingePoint: Point = [
+          compassArc.center[0] + dx * compassArc.radius * 0.48 - dy * compassArc.radius * 0.32,
+          compassArc.center[1] + dy * compassArc.radius * 0.48 + dx * compassArc.radius * 0.32,
+        ];
+        const legX = pencilPoint[0] - hingePoint[0];
+        const legY = pencilPoint[1] - hingePoint[1];
+        const legLengthSquared = legX * legX + legY * legY;
+        const t = Math.max(0, Math.min(1, ((point[0] - hingePoint[0]) * legX + (point[1] - hingePoint[1]) * legY) / Math.max(1, legLengthSquared)));
+        const pencilDistance = Math.hypot(point[0] - (hingePoint[0] + t * legX), point[1] - (hingePoint[1] + t * legY));
+        if (pencilDistance <= 42) {
+          setCompassArc({ ...compassArc, drawing: false, moving: false, resizing: true });
+          return;
+        }
+        if (centerDistance <= Math.max(22, compassArc.radius * 0.16)) {
+          setCompassArc({
+            ...compassArc,
+            drawing: false,
+            moving: true,
+            resizing: false,
+            moveStart: point,
+            originalCenter: compassArc.center,
+          });
+          return;
+        }
+        const rawAngle = Math.atan2(point[1] - compassArc.center[1], point[0] - compassArc.center[0]);
+        setCompassArc({
+          ...compassArc,
+          startAngle: rawAngle,
+          currentAngle: rawAngle,
+          drawing: true,
+          moving: false,
+          resizing: false,
+          tracePoints: [[
+            compassArc.center[0] + Math.cos(rawAngle) * compassArc.radius,
+            compassArc.center[1] + Math.sin(rawAngle) * compassArc.radius,
+          ]],
+        });
+        return;
+      }
+
+      if (tool === "compass") {
+        event.preventDefault();
+        setCompassArc({ center: point, radius: compassRadius, startAngle: 0, currentAngle: 0, drawing: false, moving: false, resizing: false });
+        return;
+      }
+
       if (tool === "pen") {
         setDraft({ kind: "pen", start: point, current: point, points: [point], shapeKind: "rect" });
         return;
@@ -313,7 +413,7 @@ export default function BoardCanvas({
         return;
       }
 
-      if (tool === "line") {
+      if (tool === "line" || tool === "ruler") {
         setDraft({ kind: "line", start: point, current: point, points: [point], shapeKind: "rect" });
         return;
       }
@@ -322,8 +422,16 @@ export default function BoardCanvas({
         setDraft({ kind: "shape", start: point, current: point, points: [point], shapeKind: tool as ShapeElementKind });
       }
     },
-    [eraseAt, finishEditing, moveBrushCursor, openTextEditor, showBrushCursor, toBoardPoint, tool],
+    [compassArc, compassRadius, eraseAt, finishEditing, moveBrushCursor, openTextEditor, showBrushCursor, toBoardPoint, tool],
   );
+
+  const beginCompassResize = useCallback((event: React.PointerEvent<SVGElement>) => {
+    if (!compassArc) return;
+    event.preventDefault();
+    event.stopPropagation();
+    svgRef.current?.setPointerCapture(event.pointerId);
+    setCompassArc({ ...compassArc, drawing: false, moving: false, resizing: true });
+  }, [compassArc]);
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<SVGSVGElement>) => {
@@ -341,6 +449,61 @@ export default function BoardCanvas({
         return;
       }
 
+      if (selectionBox) {
+        setSelectionBox({ ...selectionBox, current: toBoardPoint(event.clientX, event.clientY) });
+        return;
+      }
+
+
+      if (compassArc?.moving && compassArc.moveStart && compassArc.originalCenter) {
+        const point = toBoardPoint(event.clientX, event.clientY);
+        setCompassArc({
+          ...compassArc,
+          center: [
+            compassArc.originalCenter[0] + point[0] - compassArc.moveStart[0],
+            compassArc.originalCenter[1] + point[1] - compassArc.moveStart[1],
+          ],
+        });
+        return;
+      }
+
+      if (compassArc?.resizing) {
+        const point = toBoardPoint(event.clientX, event.clientY);
+        const radius = Math.max(30, Math.min(520, Math.hypot(point[0] - compassArc.center[0], point[1] - compassArc.center[1])));
+        const angle = Math.atan2(point[1] - compassArc.center[1], point[0] - compassArc.center[0]);
+        setCompassArc({ ...compassArc, radius, startAngle: angle, currentAngle: angle });
+        onCompassRadiusChange?.(Math.round(radius));
+        return;
+      }
+
+      if (compassArc?.drawing) {
+        const point = toBoardPoint(event.clientX, event.clientY);
+        const rawAngle = Math.atan2(point[1] - compassArc.center[1], point[0] - compassArc.center[0]);
+        const previousWrapped = Math.atan2(Math.sin(compassArc.currentAngle), Math.cos(compassArc.currentAngle));
+        let delta = rawAngle - previousWrapped;
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        const nextAngle = compassArc.currentAngle + delta;
+        const tracePoints = compassArc.tracePoints ?? [];
+        // Pointer events can be far apart during a fast sweep. Fill that gap
+        // from the compass equation instead of joining the samples with a
+        // chord/smoothed freehand curve, so every saved point has one radius.
+        const interpolationSteps = Math.max(1, Math.ceil(Math.abs(delta) / 0.012));
+        const interpolatedPoints: Point[] = Array.from({ length: interpolationSteps }, (_, index) => {
+          const angle = compassArc.currentAngle + (delta * (index + 1)) / interpolationSteps;
+          return [
+            compassArc.center[0] + Math.cos(angle) * compassArc.radius,
+            compassArc.center[1] + Math.sin(angle) * compassArc.radius,
+          ];
+        });
+        setCompassArc({
+          ...compassArc,
+          currentAngle: nextAngle,
+          tracePoints: [...tracePoints, ...interpolatedPoints],
+        });
+        return;
+      }
+
       if (eraseActiveRef.current) {
         eraseAt(toBoardPoint(event.clientX, event.clientY));
         return;
@@ -351,6 +514,19 @@ export default function BoardCanvas({
         const point = toBoardPoint(event.clientX, event.clientY);
         const dx = point[0] - drag.start[0];
         const dy = point[1] - drag.start[1];
+        if (drag.mode.type === "move" && dragGroupRef.current.length > 1) {
+          setDragPreviews(dragGroupRef.current.map((element) => translateElement(element, dx, dy)));
+          return;
+        }
+        if (drag.mode.type === "rotate") {
+          const bounds = elementBounds(drag.original);
+          const cx = bounds.x + bounds.w / 2;
+          const cy = bounds.y + bounds.h / 2;
+          const startAngle = Math.atan2(drag.start[1] - cy, drag.start[0] - cx);
+          const currentAngle = Math.atan2(point[1] - cy, point[0] - cx);
+          setDragPreview({ ...drag.original, rotation: (drag.original.rotation ?? 0) + ((currentAngle - startAngle) * 180) / Math.PI });
+          return;
+        }
         setDragPreview(
           drag.mode.type === "move"
             ? translateElement(drag.original, dx, dy)
@@ -358,7 +534,7 @@ export default function BoardCanvas({
         );
       }
     },
-    [draft, eraseAt, moveBrushCursor, showBrushCursor, toBoardPoint],
+    [compassArc, draft, eraseAt, moveBrushCursor, onCompassRadiusChange, selectionBox, showBrushCursor, toBoardPoint],
   );
 
   const handlePointerUp = useCallback(
@@ -394,6 +570,12 @@ export default function BoardCanvas({
               draft.kind === "line" ? { ...shared, kind: "line" } : { ...shared, kind: "arrow" },
             ]);
           }
+        } else if (draft.shapeKind === "compass") {
+          const radius = Math.hypot(draft.current[0] - draft.start[0], draft.current[1] - draft.start[1]);
+          if (radius > 6) {
+            const angle = Math.atan2(draft.current[1] - draft.start[1], draft.current[0] - draft.start[0]);
+            setCompassArc({ center: draft.start, radius, startAngle: angle, currentAngle: angle, drawing: false, moving: false, resizing: false });
+          }
         } else {
           const rect = rectFromPoints(draft.start, draft.current);
           if (rect.w > 6 || rect.h > 6) {
@@ -401,7 +583,7 @@ export default function BoardCanvas({
               ...current,
               {
                 id: createElementId(),
-                kind: draft.shapeKind,
+                kind: draft.shapeKind === "compass" ? "circle" : draft.shapeKind,
                 x: rect.x,
                 y: rect.y,
                 w: rect.w,
@@ -417,6 +599,49 @@ export default function BoardCanvas({
         return;
       }
 
+      if (selectionBox) {
+        const box = rectFromPoints(selectionBox.start, selectionBox.current);
+        const ids = elementsRef.current.filter((element) => {
+          const bounds = elementBounds(element);
+          return bounds.x <= box.x + box.w && bounds.x + bounds.w >= box.x && bounds.y <= box.y + box.h && bounds.y + bounds.h >= box.y;
+        }).map((element) => element.id);
+        setSelectedIds(ids);
+        setSelectedId(ids[0] ?? null);
+        setSelectionBox(null);
+        return;
+      }
+
+      if (compassArc?.drawing) {
+        const points = compassArc.tracePoints ?? [];
+        if (points.length > 1) {
+          const committed: BoardElement[] = [...elementsRef.current, {
+            id: createElementId(), kind: "pen", points, color, width: strokeWidth, opacity,
+          }];
+          if (showCompassCenter) {
+            const [cx, cy] = compassArc.center;
+            const markerSize = 12;
+            committed.push(
+              { id: createElementId(), kind: "line", x1: cx - markerSize, y1: cy, x2: cx + markerSize, y2: cy, color: "#ef4444", strokeWidth: 2.5, opacity: 1, compassCenter: true },
+              { id: createElementId(), kind: "line", x1: cx, y1: cy - markerSize, x2: cx, y2: cy + markerSize, color: "#ef4444", strokeWidth: 2.5, opacity: 1, compassCenter: true },
+              { id: createElementId(), kind: "circle", x: cx - 7, y: cy - 7, w: 14, h: 14, color: "#ef4444", strokeWidth: 2, opacity: 1, compassCenter: true },
+            );
+          }
+          onCommit(committed);
+        }
+        setCompassArc({ ...compassArc, startAngle: compassArc.currentAngle, drawing: false, moving: false, resizing: false, tracePoints: [] });
+        return;
+      }
+
+      if (compassArc?.moving) {
+        setCompassArc({ ...compassArc, moving: false, moveStart: undefined, originalCenter: undefined });
+        return;
+      }
+
+      if (compassArc?.resizing) {
+        setCompassArc({ ...compassArc, resizing: false });
+        return;
+      }
+
       if (eraseActiveRef.current) {
         eraseActiveRef.current = false;
         const removed = eraseRef.current;
@@ -429,19 +654,26 @@ export default function BoardCanvas({
       }
 
       const drag = dragRef.current;
-      if (drag && dragPreview) {
+      if (dragPreviews.length > 0) {
+        const previews = new Map(dragPreviews.map((element) => [element.id, element]));
+        onCommit(elementsRef.current.map((element) => previews.get(element.id) ?? element));
+      } else if (drag && dragPreview) {
         onCommit(elementsRef.current.map((el) => (el.id === dragPreview.id ? dragPreview : el)));
       }
       dragRef.current = null;
+      dragGroupRef.current = [];
       setDragPreview(null);
+      setDragPreviews([]);
     },
-    [color, draft, dragPreview, onCommit, opacity, strokeWidth],
+    [color, compassArc, draft, dragPreview, dragPreviews, onCommit, opacity, selectionBox, showCompassCenter, strokeWidth],
   );
 
   const handlePointerCancel = useCallback(() => {
     setDraft(null);
     dragRef.current = null;
     setDragPreview(null);
+    setDragPreviews([]);
+    setSelectionBox(null);
     eraseActiveRef.current = false;
     eraseRef.current = new Set();
     setErasedIds([]);
@@ -452,17 +684,19 @@ export default function BoardCanvas({
       if (isEditableTarget(event.target)) return;
       if (event.key === "Escape") {
         setSelectedId(null);
+        setSelectedIds([]);
         return;
       }
-      if ((event.key === "Delete" || event.key === "Backspace") && selectedId) {
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedIds.length > 0) {
         event.preventDefault();
-        onCommit(elementsRef.current.filter((el) => el.id !== selectedId));
+        onCommit(elementsRef.current.filter((el) => !selectedIds.includes(el.id)));
         setSelectedId(null);
+        setSelectedIds([]);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onCommit, selectedId]);
+  }, [onCommit, selectedIds]);
 
   const draftPreviewNode = useMemo(() => {
     if (!draft) return null;
@@ -504,6 +738,11 @@ export default function BoardCanvas({
         </g>
       );
     }
+    if (draft.shapeKind === "compass") {
+      const radius = Math.hypot(draft.current[0] - draft.start[0], draft.current[1] - draft.start[1]);
+      const angle = Math.atan2(draft.current[1] - draft.start[1], draft.current[0] - draft.start[0]);
+      return <CompassGuide center={draft.start} radius={radius} angle={angle} color={color} strokeWidth={strokeWidth} />;
+    }
     const rect = rectFromPoints(draft.start, draft.current);
     return (
       <ShapeBody
@@ -520,6 +759,15 @@ export default function BoardCanvas({
   }, [color, draft, opacity, strokeWidth]);
 
   const selected = selectedId ? visibleElements.find((el) => el.id === selectedId) ?? null : null;
+  const selectedElements = visibleElements.filter((element) => selectedIds.includes(element.id));
+  const groupBounds = selectedElements.length > 1 ? selectedElements.reduce((combined, element) => {
+    const bounds = elementBounds(element);
+    const right = Math.max(combined.x + combined.w, bounds.x + bounds.w);
+    const bottom = Math.max(combined.y + combined.h, bounds.y + bounds.h);
+    const x = Math.min(combined.x, bounds.x);
+    const y = Math.min(combined.y, bounds.y);
+    return { x, y, w: right - x, h: bottom - y };
+  }, elementBounds(selectedElements[0])) : null;
 
   return (
     <div className={`absolute inset-0 ${className}`}>
@@ -535,7 +783,7 @@ export default function BoardCanvas({
         onPointerCancel={handlePointerCancel}
         onPointerLeave={hideBrushCursor}
       >
-        {visibleElements.map((el) => (
+        {visibleElements.filter((el) => showCompassCenter || !el.compassCenter).map((el) => (
           <ElementNode
             key={el.id}
             element={el}
@@ -547,7 +795,50 @@ export default function BoardCanvas({
 
         {draftPreviewNode}
 
-        {selected && <SelectionOverlay selected={selected} onHandlePointerDown={beginElementInteraction} />}
+        {selectionBox && (() => {
+          const box = rectFromPoints(selectionBox.start, selectionBox.current);
+          return <rect x={box.x} y={box.y} width={box.w} height={box.h} fill="#3b82f6" fillOpacity={0.1} stroke="#2563eb" strokeWidth={2} strokeDasharray="8 5" pointerEvents="none" />;
+        })()}
+
+        {compassArc && (
+          <g>
+            {compassArc.drawing && (
+              <path
+                d={polylinePath(compassArc.tracePoints ?? [])}
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeWidth}
+                opacity={opacity}
+                strokeLinecap="round"
+              />
+            )}
+            <CompassGuide
+              center={compassArc.center}
+              radius={compassArc.radius}
+              angle={compassArc.currentAngle}
+              color={color}
+              strokeWidth={Math.max(2, strokeWidth * 0.65)}
+            />
+            <CompassResizeHitArea
+              center={compassArc.center}
+              radius={compassArc.radius}
+              angle={compassArc.currentAngle}
+              onPointerDown={beginCompassResize}
+            />
+            {showCompassCenter && (
+              <g aria-label="কম্পাসের কেন্দ্র">
+                <circle cx={compassArc.center[0]} cy={compassArc.center[1]} r={17} fill="#ffffff" fillOpacity={0.92} stroke="#ef4444" strokeWidth={3} strokeDasharray="5 3" />
+                <line x1={compassArc.center[0] - 22} y1={compassArc.center[1]} x2={compassArc.center[0] + 22} y2={compassArc.center[1]} stroke="#ef4444" strokeWidth={2.5} />
+                <line x1={compassArc.center[0]} y1={compassArc.center[1] - 22} x2={compassArc.center[0]} y2={compassArc.center[1] + 22} stroke="#ef4444" strokeWidth={2.5} />
+                <circle cx={compassArc.center[0]} cy={compassArc.center[1]} r={4} fill="#ef4444" />
+              </g>
+            )}
+          </g>
+        )}
+
+        {groupBounds ? (
+          <rect x={groupBounds.x - 8} y={groupBounds.y - 8} width={groupBounds.w + 16} height={groupBounds.h + 16} fill="#3b82f6" fillOpacity={0.05} stroke="#2563eb" strokeWidth={3} strokeDasharray="10 6" pointerEvents="none" />
+        ) : selected ? <SelectionOverlay selected={selected} onHandlePointerDown={beginElementInteraction} /> : null}
 
         {showBrushCursor && (
           <g ref={brushCursorRef} opacity={0} pointerEvents="none" data-testid="board-brush-cursor">
@@ -613,6 +904,152 @@ interface ShapeBodyProps {
   opacity: number;
 }
 
+function arcPath(center: Point, radius: number, startAngle: number, endAngle: number): string {
+  const sweep = endAngle - startAngle;
+  const steps = Math.max(2, Math.ceil(Math.abs(sweep) / 0.04));
+  return Array.from({ length: steps + 1 }, (_, index) => {
+    const angle = startAngle + (sweep * index) / steps;
+    const x = center[0] + Math.cos(angle) * radius;
+    const y = center[1] + Math.sin(angle) * radius;
+    return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+  }).join(" ");
+}
+
+function polylinePath(points: Point[]): string {
+  return points.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
+}
+
+function CompassGuide({ center, radius, angle, color, strokeWidth }: {
+  center: Point;
+  radius: number;
+  angle: number;
+  color: string;
+  strokeWidth: number;
+}) {
+  const [cx, cy] = center;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const pencilX = cx + dx * radius;
+  const pencilY = cy + dy * radius;
+  const hingeX = cx + dx * radius * 0.48 - dy * radius * 0.32;
+  const hingeY = cy + dy * radius * 0.48 + dx * radius * 0.32;
+  const needleMidX = (cx + hingeX) / 2;
+  const needleMidY = (cy + hingeY) / 2;
+  const pencilMidX = (pencilX + hingeX) / 2;
+  const pencilMidY = (pencilY + hingeY) / 2;
+  const barMidX = (needleMidX + pencilMidX) / 2;
+  const barMidY = (needleMidY + pencilMidY) / 2;
+  const metalWidth = Math.max(8, strokeWidth * 3.2);
+  const outlineWidth = Math.max(1.5, strokeWidth * 0.55);
+  const px = -dy;
+  const py = dx;
+  const headBackX = hingeX - dx * Math.max(24, radius * 0.11);
+  const headBackY = hingeY - dy * Math.max(24, radius * 0.11);
+  const headFrontX = hingeX + dx * Math.max(15, radius * 0.055);
+  const headFrontY = hingeY + dy * Math.max(15, radius * 0.055);
+  const headHalfWidth = Math.max(15, metalWidth * 1.15);
+  const eraserX = hingeX + (pencilX - hingeX) * 0.23;
+  const eraserY = hingeY + (pencilY - hingeY) * 0.23;
+  const woodX = pencilX - dx * Math.max(18, metalWidth * 1.5);
+  const woodY = pencilY - dy * Math.max(18, metalWidth * 1.5);
+  const common = { fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <g pointerEvents="none">
+      <defs>
+        <linearGradient id="compass-metal" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#64748b" /><stop offset="0.28" stopColor="#f8fafc" />
+          <stop offset="0.62" stopColor="#cbd5e1" /><stop offset="1" stopColor="#475569" />
+        </linearGradient>
+        <linearGradient id="compass-blue" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#6366f1" /><stop offset="0.55" stopColor="#4338ca" /><stop offset="1" stopColor="#312e81" />
+        </linearGradient>
+        <linearGradient id="compass-pencil" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#5b2c1d" /><stop offset="0.38" stopColor="#a05236" /><stop offset="0.7" stopColor="#7c3f2b" /><stop offset="1" stopColor="#3f1d14" />
+        </linearGradient>
+        <filter id="compass-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="3" dy="4" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.3" />
+        </filter>
+      </defs>
+
+      <g filter="url(#compass-shadow)">
+        {/* polished needle leg */}
+        <line x1={cx} y1={cy} x2={hingeX} y2={hingeY} stroke="#334155" strokeWidth={metalWidth + 4} {...common} />
+        <line x1={cx} y1={cy} x2={hingeX} y2={hingeY} stroke="url(#compass-metal)" strokeWidth={metalWidth} {...common} />
+        <line x1={cx + px * 2} y1={cy + py * 2} x2={hingeX + px * 2} y2={hingeY + py * 2} stroke="#ffffff" strokeOpacity={0.65} strokeWidth={2} {...common} />
+
+        {/* wooden pencil leg, metal clamp and eraser */}
+        <line x1={hingeX} y1={hingeY} x2={woodX} y2={woodY} stroke="#3f1d14" strokeWidth={metalWidth + 4} {...common} />
+        <line x1={hingeX} y1={hingeY} x2={woodX} y2={woodY} stroke="url(#compass-pencil)" strokeWidth={metalWidth} {...common} />
+        <line x1={eraserX - dx * 15} y1={eraserY - dy * 15} x2={eraserX + dx * 8} y2={eraserY + dy * 8} stroke="#dc3b2e" strokeWidth={metalWidth * 1.05} {...common} />
+        <line x1={eraserX + dx * 7} y1={eraserY + dy * 7} x2={eraserX + dx * 13} y2={eraserY + dy * 13} stroke="#e5e7eb" strokeWidth={metalWidth * 1.12} {...common} />
+        <line x1={pencilMidX - dx * 13} y1={pencilMidY - dy * 13} x2={pencilMidX + dx * 13} y2={pencilMidY + dy * 13} stroke="url(#compass-metal)" strokeWidth={metalWidth * 1.35} {...common} />
+        <path d={`M ${woodX + px * metalWidth * 0.48} ${woodY + py * metalWidth * 0.48} L ${pencilX} ${pencilY} L ${woodX - px * metalWidth * 0.48} ${woodY - py * metalWidth * 0.48} Z`} fill="#e8c99b" stroke="#713f12" strokeWidth={outlineWidth} />
+        <path d={`M ${pencilX} ${pencilY} L ${pencilX - dx * 8 + px * 3} ${pencilY - dy * 8 + py * 3} L ${pencilX - dx * 8 - px * 3} ${pencilY - dy * 8 - py * 3} Z`} fill={color} />
+      </g>
+
+      {/* adjustment bar and screw */}
+      <line x1={needleMidX} y1={needleMidY} x2={pencilMidX} y2={pencilMidY} stroke="#94a3b8" strokeWidth={Math.max(4, metalWidth * 0.45)} {...common} />
+      <circle cx={barMidX} cy={barMidY} r={Math.max(5, metalWidth * 0.55)} fill="#e2e8f0" stroke="#475569" strokeWidth={outlineWidth} />
+      <line x1={barMidX - 5} y1={barMidY} x2={barMidX + 5} y2={barMidY} stroke="#475569" strokeWidth={outlineWidth} />
+
+      {/* blue head housing and ribbed handle */}
+      <line x1={headBackX} y1={headBackY} x2={headBackX - dx * Math.max(25, radius * 0.1)} y2={headBackY - dy * Math.max(25, radius * 0.1)} stroke="#3730a3" strokeWidth={metalWidth * 0.92} {...common} />
+      {[0, 7, 14, 21].map((offset) => <line key={offset} x1={headBackX - dx * offset - px * metalWidth * 0.48} y1={headBackY - dy * offset - py * metalWidth * 0.48} x2={headBackX - dx * offset + px * metalWidth * 0.48} y2={headBackY - dy * offset + py * metalWidth * 0.48} stroke="#6366f1" strokeWidth={2} />)}
+      <polygon points={`${headBackX + px * headHalfWidth},${headBackY + py * headHalfWidth} ${headFrontX + px * headHalfWidth * 0.72},${headFrontY + py * headHalfWidth * 0.72} ${headFrontX - px * headHalfWidth * 0.72},${headFrontY - py * headHalfWidth * 0.72} ${headBackX - px * headHalfWidth},${headBackY - py * headHalfWidth}`} fill="url(#compass-blue)" stroke="#312e81" strokeWidth={3} strokeLinejoin="round" filter="url(#compass-shadow)" />
+      <circle cx={hingeX} cy={hingeY} r={Math.max(9, metalWidth * 0.82)} fill="url(#compass-metal)" stroke="#e2e8f0" strokeWidth={2.5} />
+      <circle cx={hingeX - dx * 2 - px * 2} cy={hingeY - dy * 2 - py * 2} r={Math.max(4, metalWidth * 0.35)} fill="#f8fafc" opacity={0.8} />
+
+      {/* fixed needle and pencil tip */}
+      <path d={`M ${cx - dx * 9} ${cy - dy * 9} L ${cx} ${cy}`} stroke="#111827" strokeWidth={Math.max(2, outlineWidth)} {...common} />
+      <circle cx={cx} cy={cy} r={Math.max(5, strokeWidth * 1.15)} fill="#ffffff" stroke={color} strokeWidth={Math.max(2, outlineWidth)} />
+      <circle cx={cx} cy={cy} r={Math.max(2.5, strokeWidth * 0.55)} fill={color} />
+      <path d={`M ${pencilX - dx * 10} ${pencilY - dy * 10} L ${pencilX} ${pencilY}`} stroke={color} strokeWidth={Math.max(3, strokeWidth)} {...common} />
+      <circle cx={pencilX} cy={pencilY} r={15} fill="#ffffff" fillOpacity={0.9} stroke="#2563eb" strokeWidth={3} strokeDasharray="4 3" />
+      <circle cx={pencilX} cy={pencilY} r={5} fill="#2563eb" />
+    </g>
+  );
+}
+
+function CompassResizeHitArea({ center, radius, angle, onPointerDown }: {
+  center: Point;
+  radius: number;
+  angle: number;
+  onPointerDown: (event: React.PointerEvent<SVGElement>) => void;
+}) {
+  const [cx, cy] = center;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const pencilX = cx + dx * radius;
+  const pencilY = cy + dy * radius;
+  const hingeX = cx + dx * radius * 0.48 - dy * radius * 0.32;
+  const hingeY = cy + dy * radius * 0.48 + dx * radius * 0.32;
+  return (
+    <g aria-label="পেন্সিল ধরে ব্যাসার্ধ পরিবর্তন করুন">
+      <line
+        x1={hingeX}
+        y1={hingeY}
+        x2={pencilX}
+        y2={pencilY}
+        stroke="transparent"
+        strokeWidth={64}
+        strokeLinecap="round"
+        pointerEvents="stroke"
+        style={{ cursor: "nwse-resize" }}
+        onPointerDown={onPointerDown}
+      />
+      <circle
+        cx={pencilX}
+        cy={pencilY}
+        r={25}
+        fill="transparent"
+        pointerEvents="all"
+        style={{ cursor: "nwse-resize" }}
+        onPointerDown={onPointerDown}
+      />
+    </g>
+  );
+}
+
 function ShapeBody({ kind, x, y, w, h, color, strokeWidth, opacity }: ShapeBodyProps) {
   const common = {
     fill: "none",
@@ -623,6 +1060,25 @@ function ShapeBody({ kind, x, y, w, h, color, strokeWidth, opacity }: ShapeBodyP
   };
   if (kind === "circle") {
     return <ellipse cx={x + w / 2} cy={y + h / 2} rx={Math.abs(w / 2)} ry={Math.abs(h / 2)} {...common} />;
+  }
+  if (kind === "ruler") {
+    const ticks = Array.from({ length: 11 }, (_, index) => {
+      const tx = x + (Math.abs(w) * index) / 10;
+      const tickHeight = index % 5 === 0 ? Math.abs(h) * 0.45 : Math.abs(h) * 0.25;
+      return <line key={index} x1={tx} y1={y} x2={tx} y2={y + tickHeight} {...common} />;
+    });
+    return <g><rect x={x} y={y} width={Math.abs(w)} height={Math.abs(h)} rx={2} {...common} />{ticks}</g>;
+  }
+  if (kind === "protractor") {
+    const width = Math.abs(w);
+    const height = Math.abs(h);
+    const path = `M ${x} ${y + height} A ${width / 2} ${height} 0 0 1 ${x + width} ${y + height} L ${x} ${y + height}`;
+    return <g><path d={path} {...common} /><line x1={x + width / 2} y1={y + height} x2={x + width / 2} y2={y + height * 0.25} {...common} /></g>;
+  }
+  if (kind === "compass") {
+    const width = Math.abs(w);
+    const height = Math.abs(h);
+    return <g><circle cx={x + width / 2} cy={y + height * 0.12} r={Math.max(4, width * 0.06)} {...common} /><line x1={x + width / 2} y1={y + height * 0.18} x2={x + width * 0.12} y2={y + height} {...common} /><line x1={x + width / 2} y1={y + height * 0.18} x2={x + width * 0.88} y2={y + height} {...common} /><path d={`M ${x + width * 0.28} ${y + height * 0.64} A ${width * 0.3} ${height * 0.32} 0 0 0 ${x + width * 0.72} ${y + height * 0.64}`} {...common} /></g>;
   }
   const polygon = shapePolygonPoints(kind, { x, y, w: Math.abs(w), h: Math.abs(h) });
   if (polygon) {
@@ -643,10 +1099,14 @@ function ElementNode({ element, interactive, onPointerDown, onRequestEdit }: Ele
     ? (event: React.PointerEvent) => onPointerDown(event, element, { type: "move" })
     : undefined;
   const groupStyle = interactive ? { cursor: "move" as const } : undefined;
+  const bounds = elementBounds(element);
+  const centerX = bounds.x + bounds.w / 2;
+  const centerY = bounds.y + bounds.h / 2;
+  const transform = element.rotation ? `rotate(${element.rotation} ${centerX} ${centerY})` : undefined;
 
   if (element.kind === "pen") {
     return (
-      <g onPointerDown={moveHandler} style={groupStyle}>
+      <g onPointerDown={moveHandler} style={groupStyle} transform={transform}>
         {interactive && (
           <path
             d={penPath(element.points)}
@@ -675,7 +1135,7 @@ function ElementNode({ element, interactive, onPointerDown, onRequestEdit }: Ele
   if (element.kind === "arrow" || element.kind === "line") {
     const head = arrowHead(element);
     return (
-      <g onPointerDown={moveHandler} style={groupStyle}>
+      <g onPointerDown={moveHandler} style={groupStyle} transform={transform}>
         {interactive && (
           <line
             x1={element.x1}
@@ -722,6 +1182,7 @@ function ElementNode({ element, interactive, onPointerDown, onRequestEdit }: Ele
           onRequestEdit([element.x, element.y], element);
         }}
         style={groupStyle}
+        transform={transform}
       >
         {interactive && (
           <rect
@@ -752,7 +1213,7 @@ function ElementNode({ element, interactive, onPointerDown, onRequestEdit }: Ele
   }
 
   return (
-    <g onPointerDown={moveHandler} style={groupStyle}>
+    <g onPointerDown={moveHandler} style={groupStyle} transform={transform}>
       {interactive && (
         <rect
           x={element.x - 6}
@@ -784,8 +1245,12 @@ interface SelectionOverlayProps {
 function SelectionOverlay({ selected, onHandlePointerDown }: SelectionOverlayProps) {
   const bounds = elementBounds(selected);
   const handles = elementHandles(selected);
+  const centerX = bounds.x + bounds.w / 2;
+  const centerY = bounds.y + bounds.h / 2;
+  const rotation = selected.rotation ?? 0;
+  const rotateHandleY = bounds.y - 42;
   return (
-    <g>
+    <g transform={rotation ? `rotate(${rotation} ${centerX} ${centerY})` : undefined}>
       <rect
         x={bounds.x - 6}
         y={bounds.y - 6}
@@ -814,6 +1279,27 @@ function SelectionOverlay({ selected, onHandlePointerDown }: SelectionOverlayPro
           onPointerDown={(event) => onHandlePointerDown(event, selected, { type: "handle", handle: handle.handle })}
         />
       ))}
+      <line
+        x1={centerX}
+        y1={bounds.y - 6}
+        x2={centerX}
+        y2={rotateHandleY}
+        stroke="#3b82f6"
+        strokeWidth={2}
+        pointerEvents="none"
+      />
+      <circle
+        cx={centerX}
+        cy={rotateHandleY}
+        r={11}
+        fill="#ffffff"
+        stroke="#3b82f6"
+        strokeWidth={3}
+        pointerEvents="all"
+        style={{ cursor: "grab" }}
+        aria-label="ঘোরান"
+        onPointerDown={(event) => onHandlePointerDown(event, selected, { type: "rotate" })}
+      />
     </g>
   );
 }

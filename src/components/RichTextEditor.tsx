@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import MathSymbolsModal from "./MathSymbolsModal";
 import LatexRenderer from "./LatexRenderer";
-import katex from "katex";
 import { toast } from "sonner";
 
 const TEXT_COLORS = [
@@ -340,27 +339,9 @@ export default function RichTextEditor({
 
       {/* Preview */}
       {showPreview && value && (
-        <div
+        <LatexRenderer
+          text={editor.getHTML()}
           className="border-t border-border bg-muted/30 p-3 text-sm prose prose-sm max-w-none font-body"
-          style={{ fontFamily: "'SolaimanLipi', sans-serif" }}
-          dangerouslySetInnerHTML={{
-            __html: editor.getHTML().replace(
-              /\$\$([\s\S]*?)\$\$|\$([\s\S]*?)\$/g,
-              (match, display, inline) => {
-                const expr = display ?? inline;
-                const isDisplay = display !== undefined;
-                try {
-                  return katex.renderToString(expr, {
-                    displayMode: isDisplay,
-                    throwOnError: false,
-                    trust: true,
-                  });
-                } catch {
-                  return match;
-                }
-              }
-            ),
-          }}
         />
       )}
 

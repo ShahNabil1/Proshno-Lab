@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import BoardCanvas from "./BoardCanvas";
 import type { ToolId } from "./boardTypes";
@@ -23,6 +23,30 @@ const boardSvg = (container: HTMLElement): SVGSVGElement => {
 };
 
 describe("BoardCanvas pointer", () => {
+  it("resizes the compass from its pencil drag target", () => {
+    const onCompassRadiusChange = vi.fn();
+    const { container } = render(
+      <BoardCanvas tool="compass" color="#ef4444" strokeWidth={6} opacity={1} fontSize={34}
+        elements={[]} onCommit={vi.fn()} compassRadius={180} onCompassRadiusChange={onCompassRadiusChange} />,
+    );
+    const svg = boardSvg(container);
+    Object.defineProperty(svg, "setPointerCapture", { value: vi.fn() });
+    vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 1000, bottom: 1414, width: 1000, height: 1414, toJSON: () => ({}) });
+    const pointer = (type: string, clientX: number, clientY: number, pointerId: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        button: { value: 0 }, clientX: { value: clientX }, clientY: { value: clientY }, pointerId: { value: pointerId },
+      });
+      return event;
+    };
+    fireEvent(svg, pointer("pointerdown", 300, 300, 1));
+    const resizeLine = container.querySelector('[aria-label="পেন্সিল ধরে ব্যাসার্ধ পরিবর্তন করুন"] line');
+    expect(resizeLine).not.toBeNull();
+    fireEvent(resizeLine!, pointer("pointerdown", 480, 300, 2));
+    fireEvent(svg, pointer("pointermove", 600, 300, 2));
+    expect(onCompassRadiusChange).toHaveBeenCalledWith(300);
+  });
+
   it("draws with a high contrast pen cursor instead of the faint crosshair", () => {
     const { container } = renderBoard("pen");
     const { cursor } = boardSvg(container).style;

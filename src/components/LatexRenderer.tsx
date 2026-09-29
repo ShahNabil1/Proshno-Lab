@@ -11,7 +11,69 @@ interface LatexRendererProps {
 // Module-level cache so repeated renders (screen + print copies, settings toggles,
 // remounts) never re-run KaTeX for the same source string.
 const renderCache = new Map<string, string>();
+const issueCache = new Map<string, string[]>();
 const MAX_CACHE = 5000;
+
+const escapeHtml = (value: string) => value
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+const repairCommonLatexErrors = (value: string) => {
+  let repaired = value;
+  const leftCount = (repaired.match(/\\left\b/g) || []).length;
+  const rightCount = (repaired.match(/\\right\b/g) || []).length;
+  if (rightCount > leftCount) repaired = repaired.replace(/\\right(?=\\?[()[\]{}|.])/g, "");
+  if (leftCount > rightCount) repaired = repaired.replace(/\\left(?=\\?[()[\]{}|.])/g, "");
+  return repaired;
+};
+
+const applyLatexCompatibilityRepairs = (value: string) => repairCommonLatexErrors(
+  value.replace(/\\([A-Z])(?=\s|[=)\]}?,;+*/-]|$)/g, "\\setminus $1"),
+);
+
+const prepareLatexExpression = (rawExpr: string) => rawExpr
+  .replace(/<br\s*\/?>/gi, "\n")
+  .replace(/<\/?(?:p|div)[^>]*>/gi, "\n")
+  .replace(/<[^>]+>/g, "")
+  .replace(/&nbsp;|&#160;/gi, " ")
+  .replace(/&amp;/gi, "&")
+  .replace(/&lt;/gi, "<")
+  .replace(/&gt;/gi, ">")
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;|&apos;/gi, "'");
+
+/** Returns concise reasons when stored LaTeX needs compatibility repair. */
+export function getLatexIssueReasons(text: string | null | undefined): string[] {
+  if (!text) return [];
+  const cached = issueCache.get(text);
+  if (cached !== undefined) return cached;
+  const pattern = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\$([\s\S]*?)\$|\\\(([\s\S]*?)\\\)/g;
+  const reasons = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const rawExpr = match[1] ?? match[2] ?? match[3] ?? match[4] ?? "";
+    const expr = applyLatexCompatibilityRepairs(prepareLatexExpression(rawExpr));
+    try {
+      katex.renderToString(expr, { throwOnError: true, trust: true });
+    } catch {
+      const invalidCommands = Array.from(expr.matchAll(/\\([A-Z])(?=\s|[=)\]}?,;+*/-]|$)/g)).map((item) => `\\${item[1]}`);
+      invalidCommands.forEach((command) => reasons.add(`অবৈধ কমান্ড ${command}`));
+      const leftCount = (expr.match(/\\left\b/g) || []).length;
+      const rightCount = (expr.match(/\\right\b/g) || []).length;
+      if (leftCount !== rightCount) reasons.add("অসম্পূর্ণ \\left/\\right জোড়া");
+      if (invalidCommands.length === 0 && leftCount === rightCount) reasons.add("Auto-repair-এর পরও LaTeX গঠনে ভুল");
+    }
+  }
+  if (issueCache.size > MAX_CACHE) issueCache.clear();
+  const result = Array.from(reasons);
+  issueCache.set(text, result);
+  return result;
+}
+
+export const hasLatexIssues = (text: string | null | undefined): boolean => getLatexIssueReasons(text).length > 0;
 
 function renderLatex(text: string): string {
   if (!text) return "";
@@ -29,24 +91,25 @@ function renderLatex(text: string): string {
     // delimiter pair. KaTeX otherwise interprets strings such as </p><p> as
     // mathematical symbols, producing duplicate/overlapping rows and stray
     // equals signs in detailed answer sheets.
-    const expr = rawExpr
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/?(?:p|div)[^>]*>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;|&#160;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/&lt;/gi, "<")
-      .replace(/&gt;/gi, ">")
-      .replace(/&quot;/gi, '"')
-      .replace(/&#39;|&apos;/gi, "'");
+    // Older imported questions contain recoverable shortcuts such as A\B and
+    // unmatched \left/\right. Repair them only for display; stored data stays intact.
+    const expr = applyLatexCompatibilityRepairs(prepareLatexExpression(rawExpr));
     try {
-      return katex.renderToString(expr, {
+      const render = (source: string) => katex.renderToString(source, {
         displayMode: isDisplay,
         throwOnError: false,
         trust: true,
       });
+      let rendered = render(expr);
+      if (rendered.includes("katex-error")) {
+        const repaired = repairCommonLatexErrors(expr);
+        if (repaired !== expr) rendered = render(repaired);
+      }
+      return rendered.includes("katex-error")
+        ? `<span class="latex-fallback text-foreground">${escapeHtml(rawExpr)}</span>`
+        : rendered;
     } catch {
-      return `<span class="text-destructive">${match}</span>`;
+      return `<span class="latex-fallback text-foreground">${escapeHtml(rawExpr)}</span>`;
     }
   });
 

@@ -1,5 +1,6 @@
 import LatexRenderer from "@/components/LatexRenderer";
 import { answerLabelBangla, isCorrectOption } from "@/lib/answerKey";
+import logoImg from "@/assets/logo.png";
 
 export interface SmartBoardQuestion {
   id: number;
@@ -24,6 +25,7 @@ export interface SmartBoardPaperMeta {
   programName?: string;
   chapterNames?: string[];
   teacherName?: string;
+  instituteLogoUrl?: string;
 }
 
 interface QuestionSlideProps {
@@ -32,6 +34,31 @@ interface QuestionSlideProps {
   meta: SmartBoardPaperMeta | null;
   showAnswer: boolean;
   dark: boolean;
+  questionFontSize?: number;
+  questionFontFamily?: string;
+  showBoardReferences?: boolean;
+  showInstitutionReferences?: boolean;
+  headerAccentColor?: string;
+  headerInstitutionColor?: string;
+  headerLogoUrl?: string;
+  institutionFontFamily?: string;
+  institutionFontSize?: number;
+  chapterFontFamily?: string;
+  chapterFontSize?: number;
+  chapterTextColor?: string;
+  courseFontFamily?: string;
+  courseFontSize?: number;
+  courseColor?: string;
+  institutionText?: string;
+  chapterText?: string;
+  courseText?: string;
+  referenceStyle?: "filled" | "black" | "outline" | "bracket" | "underline";
+  referenceColor?: string;
+  referenceTextColor?: string;
+  referenceFontFamily?: string;
+  referenceFontSize?: number;
+  referenceBold?: boolean;
+  referenceItalic?: boolean;
 }
 
 const STEP_MARKERS = /(?:বা,|অর্থাৎ,|সুতরাং,|অতএব,|এখানে,|আবার,|∴|⇒)/;
@@ -80,7 +107,49 @@ function hasAnswer(question: SmartBoardQuestion): boolean {
   );
 }
 
-export default function QuestionSlide({ question, number, meta, showAnswer, dark }: QuestionSlideProps) {
+function formatReferenceList(references: any[] | null | undefined, kind: "board" | "institution"): string[] {
+  if (!Array.isArray(references)) return [];
+  return references.map((reference) => {
+    const name = kind === "board"
+      ? reference?.board || reference?.name
+      : reference?.name || reference?.university || reference?.school;
+    if (!name) return "";
+    return reference?.year ? `${name} '${reference.year}` : String(name);
+  }).filter(Boolean);
+}
+
+export default function QuestionSlide({
+  question,
+  number,
+  meta,
+  showAnswer,
+  dark,
+  questionFontSize = 36,
+  questionFontFamily = "inherit",
+  showBoardReferences = true,
+  showInstitutionReferences = true,
+  headerAccentColor = "#ec168c",
+  headerInstitutionColor = "#22c55e",
+  headerLogoUrl,
+  institutionFontFamily = "inherit",
+  institutionFontSize = 26,
+  chapterFontFamily = "inherit",
+  chapterFontSize = 24,
+  chapterTextColor = "#ffffff",
+  courseFontFamily = "inherit",
+  courseFontSize = 26,
+  courseColor = "#ec168c",
+  institutionText,
+  chapterText,
+  courseText,
+  referenceStyle = "outline",
+  referenceColor = "#64748b",
+  referenceTextColor = "#475569",
+  referenceFontFamily = "inherit",
+  referenceFontSize = 20,
+  referenceBold = true,
+  referenceItalic = false,
+}: QuestionSlideProps) {
   const muted = dark ? "text-slate-300" : "text-slate-500";
   const strong = dark ? "text-white" : "text-slate-900";
   const optionLabels = question.type === "mcq" ? BANGLA_OPTION_LABELS : [];
@@ -88,16 +157,52 @@ export default function QuestionSlide({ question, number, meta, showAnswer, dark
   const typeLabel = TYPE_LABELS[question.type] || question.type;
   const creative = question.creative_data || null;
   const answerAvailable = hasAnswer(question);
+  const boardReferences = showBoardReferences ? formatReferenceList(question.board_references, "board") : [];
+  const institutionReferences = showInstitutionReferences
+    ? formatReferenceList(question.university_references, "institution")
+    : [];
+  const references = [...boardReferences, ...institutionReferences];
 
   return (
     <div className="flex h-full w-full flex-col px-[70px] py-[46px]">
-      <div className={`flex items-center justify-between border-b pb-3 ${dark ? "border-white/20" : "border-slate-200"}`}>
-        <div className={`font-semibold ${muted}`} style={{ fontSize: 26 }}>
-          {meta?.instituteName || "প্রশ্নল্যাব"}
+      <div
+        className="grid grid-cols-[1fr_1.25fr_1fr] items-center gap-8 border-b-2 pb-4"
+        style={{ borderBottomColor: headerAccentColor }}
+      >
+        <div
+          className="flex min-w-0 items-center gap-3 font-bold"
+          style={{ fontSize: institutionFontSize, color: headerInstitutionColor, fontFamily: institutionFontFamily }}
+        >
+          <img
+            src={headerLogoUrl || meta?.instituteLogoUrl || logoImg}
+            alt="প্রতিষ্ঠানের লোগো"
+            className="h-12 w-12 shrink-0 object-contain"
+          />
+          <span className="truncate">{institutionText || meta?.instituteName || "প্রশ্নল্যাব"}</span>
         </div>
-        <div className={`flex items-center gap-3 font-medium ${muted}`} style={{ fontSize: 26 }}>
-          {meta?.className ? <span>{meta.className}</span> : null}
-          {meta?.subjectName ? <span>{meta.subjectName}</span> : null}
+        <div
+          className="truncate rounded-lg px-5 py-2 text-center font-bold text-white"
+          style={{
+            fontSize: chapterFontSize,
+            backgroundColor: headerAccentColor,
+            color: chapterTextColor,
+            fontFamily: chapterFontFamily,
+          }}
+        >
+          {chapterText || meta?.chapterNames?.join(", ") || "অধ্যায়"}
+        </div>
+        <div
+          className="flex min-w-0 items-center justify-end gap-2 truncate text-right font-bold"
+          style={{ fontSize: courseFontSize, color: courseColor, fontFamily: courseFontFamily }}
+        >
+          {courseText ? <span className="truncate">{courseText}</span> : meta?.programName ? <span className="truncate">{meta.programName}</span> : (
+            <>
+              {meta?.className ? <span>{meta.className}</span> : null}
+              {meta?.className && meta?.subjectName ? <span aria-hidden="true">•</span> : null}
+              {meta?.subjectName ? <span>{meta.subjectName}</span> : null}
+              {!meta?.className && !meta?.subjectName ? <span>কোর্স</span> : null}
+            </>
+          )}
         </div>
       </div>
 
@@ -116,10 +221,9 @@ export default function QuestionSlide({ question, number, meta, showAnswer, dark
           {number}
         </span>
         <span
-          className="rounded-[1px] border px-4 py-1 font-semibold"
+          className="rounded-[1px] bg-slate-100/70 px-4 py-1 font-semibold dark:bg-slate-800/70"
           style={{
             fontSize: 22,
-            borderColor: dark ? "rgba(255,255,255,0.35)" : "#cbd5e1",
             color: dark ? "#e2e8f0" : "#334155",
           }}
         >
@@ -132,7 +236,7 @@ export default function QuestionSlide({ question, number, meta, showAnswer, dark
         ) : null}
       </div>
 
-      <div className={`mt-7 flex-1 overflow-hidden ${strong}`}>
+      <div className={`relative mt-7 flex-1 overflow-hidden ${strong}`}>
         {question.stimulus_text ? (
           <div
             className="mb-5 rounded-[1px] border-l-4 px-5 py-4"
@@ -147,11 +251,35 @@ export default function QuestionSlide({ question, number, meta, showAnswer, dark
         ) : null}
 
         {question.type === "mcq" ? (
-          <div>
-            <div style={{ fontSize: 36, lineHeight: 1.5 }}>
-              <LatexRenderer text={question.question || ""} />
+          <div className="absolute inset-0">
+            <div
+              className="absolute left-0 top-0 flex w-full items-start gap-3 overflow-hidden whitespace-nowrap"
+              style={{ fontSize: questionFontSize, lineHeight: 1.5, fontFamily: questionFontFamily }}
+            >
+              <div className="min-w-0 shrink overflow-hidden whitespace-nowrap">
+                <LatexRenderer text={question.question || ""} />
+              </div>
+              {references.length > 0 ? (
+                <span
+                  className="shrink-0"
+                  style={{
+                    padding: referenceStyle === "bracket" || referenceStyle === "underline" ? "0 2px" : "2px 8px",
+                    border: referenceStyle === "outline" ? `1px solid ${referenceColor}` : undefined,
+                    borderBottom: referenceStyle === "underline" ? `2px solid ${referenceColor}` : undefined,
+                    borderRadius: ["filled", "black", "outline"].includes(referenceStyle) ? 3 : undefined,
+                    background: referenceStyle === "filled" ? referenceColor : referenceStyle === "black" ? "#000000" : "transparent",
+                    color: referenceStyle === "black" ? "#ffffff" : referenceTextColor,
+                    fontFamily: referenceFontFamily,
+                    fontSize: referenceFontSize,
+                    fontWeight: referenceBold ? 700 : 400,
+                    fontStyle: referenceItalic ? "italic" : "normal",
+                  }}
+                >
+                  {referenceStyle === "bracket" ? `[${references.join(" • ")}]` : references.join(" • ")}
+                </span>
+              ) : null}
             </div>
-            <div className="mt-7 space-y-5">
+            <div className="absolute right-0 top-[22%] w-[39%] space-y-5">
               {options.map((option, index) => {
                 const correct = showAnswer && isCorrectOption(question.correct_answer, index, options);
                 return (
