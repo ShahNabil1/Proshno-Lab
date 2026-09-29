@@ -2497,3 +2497,15 @@
     column-rule: none !important;
   }
 }
+/* Smartboard question media follows the question font-size control. */
+.smartboard-scalable-media img {
+  zoom: var(--smartboard-media-scale, 1);
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}

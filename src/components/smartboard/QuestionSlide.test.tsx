@@ -53,6 +53,17 @@ describe("QuestionSlide", () => {
     expect(screen.getByText("ঢাকা বাংলাদেশের রাজধানী ও সর্ববৃহৎ শহর।")).toBeInTheDocument();
   });
 
+  it("renders an embedded MCQ image without hiding it in a one-line question row", () => {
+    const imageQuestion = {
+      ...mcqQuestion,
+      question: '<p>চিত্রটি দেখে উত্তর দাও</p><img src="https://example.com/diagram.png" alt="প্রশ্নের চিত্র" />',
+    };
+
+    render(<QuestionSlide question={imageQuestion} number={1} meta={null} showAnswer={false} dark={false} />);
+
+    expect(screen.getByRole("img", { name: "প্রশ্নের চিত্র" })).toHaveAttribute("src", "https://example.com/diagram.png");
+  });
+
   it("renders the paper meta header when provided", () => {
     render(
       <QuestionSlide

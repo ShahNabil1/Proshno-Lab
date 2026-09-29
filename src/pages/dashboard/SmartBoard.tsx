@@ -154,6 +154,7 @@ export default function SmartBoard() {
   const [paperTitle, setPaperTitle] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadOpen, setLoadOpen] = useState(false);
+  const [questionStyleOpen, setQuestionStyleOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [tool, setTool] = useState<ToolId>("pen");
@@ -166,6 +167,12 @@ export default function SmartBoard() {
   const [manualQuestionPosition, setManualQuestionPosition] = useState({ x: 50, y: 50 });
   const [questionFontSize, setQuestionFontSize] = useState(36);
   const [questionFontFamily, setQuestionFontFamily] = useState("inherit");
+  const [mcqOptionBorderColor, setMcqOptionBorderColor] = useState("#cbd5e1");
+  const [mcqOptionTextColor, setMcqOptionTextColor] = useState("#334155");
+  const [mcqCorrectColor, setMcqCorrectColor] = useState("#059669");
+  const [mcqAnswerBackgroundColor, setMcqAnswerBackgroundColor] = useState("#ffffff");
+  const [mcqAnswerBorderColor, setMcqAnswerBorderColor] = useState("#777777");
+  const [mcqAnswerBorderStyle, setMcqAnswerBorderStyle] = useState<"solid" | "dashed" | "double" | "none">("solid");
   const [showBoardReferences, setShowBoardReferences] = useState(true);
   const [showInstitutionReferences, setShowInstitutionReferences] = useState(true);
   const [headerAccentColor, setHeaderAccentColor] = useState("#ec168c");
@@ -538,7 +545,7 @@ export default function SmartBoard() {
 
           {/* Center section: Question Navigation & Answer Toggle */}
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={questionStyleOpen} onOpenChange={setQuestionStyleOpen}>
               <PopoverTrigger asChild>
                 <Button
                   size="sm"
@@ -607,7 +614,12 @@ export default function SmartBoard() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end" className="max-h-[78vh] w-96 overflow-y-auto rounded-[1px] p-4">
-                <div className="mb-3 text-sm font-bold text-slate-800">প্রশ্নের স্টাইল ও তথ্য</div>
+                <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
+                  <div className="text-sm font-bold text-slate-800">প্রশ্নের স্টাইল ও তথ্য</div>
+                  <button type="button" onClick={() => setQuestionStyleOpen(false)} className="inline-flex h-8 items-center gap-1 rounded-[1px] border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                    <ChevronLeft className="h-3.5 w-3.5" /> ফিরে যান
+                  </button>
+                </div>
                 <label className="block text-xs font-semibold text-slate-600">ফন্ট</label>
                 <select
                   value={questionFontFamily}
@@ -633,6 +645,20 @@ export default function SmartBoard() {
                     onValueChange={([value]) => setQuestionFontSize(value)}
                   />
                 </div>
+
+                {currentQuestion?.type === "mcq" && (
+                  <div className="mt-4 space-y-3 border-t border-slate-200 pt-3">
+                    <div className="text-xs font-bold uppercase tracking-wide text-slate-500">MCQ রং ও Answer border</div>
+                    <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold text-slate-600">
+                      <label>Option border<input type="color" value={mcqOptionBorderColor} onChange={(event) => setMcqOptionBorderColor(event.target.value)} className="mt-1 h-9 w-full rounded border p-1" /></label>
+                      <label>Option text<input type="color" value={mcqOptionTextColor} onChange={(event) => setMcqOptionTextColor(event.target.value)} className="mt-1 h-9 w-full rounded border p-1" /></label>
+                      <label>Correct<input type="color" value={mcqCorrectColor} onChange={(event) => setMcqCorrectColor(event.target.value)} className="mt-1 h-9 w-full rounded border p-1" /></label>
+                      <label>Answer bg<input type="color" value={mcqAnswerBackgroundColor} onChange={(event) => setMcqAnswerBackgroundColor(event.target.value)} className="mt-1 h-9 w-full rounded border p-1" /></label>
+                      <label>Answer border<input type="color" value={mcqAnswerBorderColor} onChange={(event) => setMcqAnswerBorderColor(event.target.value)} className="mt-1 h-9 w-full rounded border p-1" /></label>
+                      <label>Border style<select value={mcqAnswerBorderStyle} onChange={(event) => setMcqAnswerBorderStyle(event.target.value as typeof mcqAnswerBorderStyle)} className="mt-1 h-9 w-full rounded border border-slate-300 bg-white px-1"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="double">Double</option><option value="none">None</option></select></label>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 space-y-3 border-t border-slate-200 pt-3">
                   <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Header control</div>
@@ -963,6 +989,12 @@ export default function SmartBoard() {
                       dark={background.dark}
                       questionFontSize={questionFontSize}
                       questionFontFamily={questionFontFamily}
+                      mcqOptionBorderColor={mcqOptionBorderColor}
+                      mcqOptionTextColor={mcqOptionTextColor}
+                      mcqCorrectColor={mcqCorrectColor}
+                      mcqAnswerBackgroundColor={mcqAnswerBackgroundColor}
+                      mcqAnswerBorderColor={mcqAnswerBorderColor}
+                      mcqAnswerBorderStyle={mcqAnswerBorderStyle}
                       showBoardReferences={showBoardReferences}
                       showInstitutionReferences={showInstitutionReferences}
                       headerAccentColor={headerAccentColor}

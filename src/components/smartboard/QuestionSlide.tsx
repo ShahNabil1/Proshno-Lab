@@ -1,6 +1,7 @@
 import LatexRenderer from "@/components/LatexRenderer";
 import { answerLabelBangla, isCorrectOption } from "@/lib/answerKey";
 import logoImg from "@/assets/logo.png";
+import type { CSSProperties } from "react";
 
 export interface SmartBoardQuestion {
   id: number;
@@ -59,6 +60,12 @@ interface QuestionSlideProps {
   referenceFontSize?: number;
   referenceBold?: boolean;
   referenceItalic?: boolean;
+  mcqOptionBorderColor?: string;
+  mcqOptionTextColor?: string;
+  mcqCorrectColor?: string;
+  mcqAnswerBackgroundColor?: string;
+  mcqAnswerBorderColor?: string;
+  mcqAnswerBorderStyle?: "solid" | "dashed" | "double" | "none";
 }
 
 const STEP_MARKERS = /(?:বা,|অর্থাৎ,|সুতরাং,|অতএব,|এখানে,|আবার,|∴|⇒)/;
@@ -149,6 +156,12 @@ export default function QuestionSlide({
   referenceFontSize = 20,
   referenceBold = true,
   referenceItalic = false,
+  mcqOptionBorderColor = "#cbd5e1",
+  mcqOptionTextColor = "#334155",
+  mcqCorrectColor = "#059669",
+  mcqAnswerBackgroundColor = "#ffffff",
+  mcqAnswerBorderColor = "#777777",
+  mcqAnswerBorderStyle = "solid",
 }: QuestionSlideProps) {
   const muted = dark ? "text-slate-300" : "text-slate-500";
   const strong = dark ? "text-white" : "text-slate-900";
@@ -168,6 +181,14 @@ export default function QuestionSlide({
   const answerFontSize = Math.max(16, Math.round(questionFontSize * 0.88));
   const references = [...boardReferences, ...institutionReferences];
   const stackCqAnswer = showAnswer && question.type === "cq";
+  const mcqHasImage = /<img\s/i.test(`${question.question || ""} ${question.stimulus_text || ""} ${options.join(" ")}`);
+  const mcqUsesLeftColumn = mcqHasImage || Boolean(question.stimulus_text?.trim());
+  const mediaScaleStyle = { "--smartboard-media-scale": Math.max(0.55, questionFontSize / 36) } as CSSProperties;
+  const mcqOptionCount = options.filter(Boolean).length;
+  const mcqContentHeight = Math.max(
+    mcqUsesLeftColumn ? 500 * Math.max(0.75, questionFontSize / 36) : 300,
+    mcqOptionCount * (optionFontSize * 1.35 + 34) + Math.max(0, mcqOptionCount - 1) * 20 + 24,
+  );
 
   return (
     <div className={`flex h-full w-full flex-col px-[70px] py-[46px] ${stackCqAnswer ? "overflow-y-auto overscroll-contain" : ""}`}>
@@ -244,10 +265,10 @@ export default function QuestionSlide({
 
       <div
         data-testid="smartboard-question-panel"
-        className={`relative mt-7 ${stackCqAnswer ? "flex-none overflow-visible" : `min-h-0 flex-1 ${showAnswer ? "max-h-[55%] overflow-y-auto pr-2" : "overflow-hidden"}`} ${strong}`}
+        className={`relative mt-7 ${stackCqAnswer ? "flex-none overflow-visible" : `min-h-0 flex-1 ${question.type === "mcq" || showAnswer ? "overflow-y-auto pr-2" : "overflow-hidden"} ${showAnswer ? "max-h-[55%]" : ""}`} ${strong}`}
         onPointerDown={showAnswer && !stackCqAnswer ? (event) => event.stopPropagation() : undefined}
       >
-        {question.stimulus_text && question.type !== "cq" ? (
+        {question.stimulus_text && question.type !== "cq" && question.type !== "mcq" ? (
           <div
             className="mb-5 rounded-[1px] border-l-4 px-5 py-4"
             style={{
@@ -262,12 +283,20 @@ export default function QuestionSlide({
         ) : null}
 
         {question.type === "mcq" ? (
-          <div className="absolute inset-0">
+          <div className="relative w-full" style={{ minHeight: mcqContentHeight }}>
             <div
-              className="absolute left-0 top-0 flex w-full items-start gap-3 overflow-hidden whitespace-nowrap"
+              className={`absolute left-1 top-0 flex items-start gap-3 ${mcqUsesLeftColumn ? "h-full w-[57%] overflow-y-auto whitespace-normal pr-4" : "w-[calc(100%_-_8px)] overflow-hidden whitespace-nowrap"}`}
               style={{ fontSize: questionFontSize, lineHeight: 1.5, fontFamily: questionFontFamily }}
             >
-              <div className="min-w-0 shrink overflow-hidden whitespace-nowrap">
+              <div className={`smartboard-scalable-media min-w-0 shrink [&_img]:mx-auto [&_img]:my-4 [&_img]:max-h-[420px] [&_img]:max-w-full [&_img]:object-contain ${mcqUsesLeftColumn ? "whitespace-normal" : "overflow-hidden whitespace-nowrap"}`} style={mediaScaleStyle}>
+                {question.stimulus_text ? (
+                  <div
+                    className="smartboard-scalable-media mb-4 bg-transparent p-0 shadow-none"
+                    style={mediaScaleStyle}
+                  >
+                    <LatexRenderer text={question.stimulus_text} />
+                  </div>
+                ) : null}
                 <LatexRenderer text={question.question || ""} />
               </div>
               {references.length > 0 ? (
@@ -290,39 +319,32 @@ export default function QuestionSlide({
                 </span>
               ) : null}
             </div>
-            <div className="absolute right-1 top-[22%] w-[calc(39%_-_4px)] space-y-5">
+            <div className="absolute right-2 top-[22%] w-[calc(39%_-_8px)] space-y-5 pl-px">
               {options.map((option, index) => {
+                if (!option) return null;
                 const correct = showAnswer && isCorrectOption(question.correct_answer, index, options);
                 return (
                   <div
                     key={index}
-                    className="flex items-start gap-4 rounded-[1px] border px-5 py-4"
+                    className="box-border flex items-start gap-4 rounded-[1px] border px-5 py-4"
                     style={{
                       fontSize: optionFontSize,
                       fontFamily: questionFontFamily,
                       lineHeight: 1.35,
-                      borderColor: correct ? "#059669" : dark ? "rgba(255,255,255,0.18)" : "#cbd5e1",
-                      backgroundColor: correct
-                        ? dark
-                          ? "rgba(5,150,105,0.25)"
-                          : "rgba(5,150,105,0.10)"
-                        : "transparent",
+                      color: correct ? mcqCorrectColor : dark ? "#cbd5e1" : mcqOptionTextColor,
+                      borderColor: correct ? mcqCorrectColor : dark ? "rgba(255,255,255,0.18)" : mcqOptionBorderColor,
+                      borderStyle: "solid",
+                      borderWidth: 1,
+                      backgroundColor: correct ? `${mcqCorrectColor}1a` : "transparent",
                     }}
                   >
-                    <span
-                      className="shrink-0 font-semibold"
-                      style={{ color: correct ? "#16a34a" : dark ? "#cbd5e1" : "#334155" }}
-                    >
+                    <span className="shrink-0 font-semibold">
                       {optionLabels[index]}.
                     </span>
-                    <div className="min-w-0 flex-1">
+                    <div className="smartboard-scalable-media min-w-0 flex-1" style={mediaScaleStyle}>
                       <LatexRenderer text={option || ""} />
                     </div>
-                    {correct ? (
-                      <span className="shrink-0 font-semibold" style={{ color: "#16a34a", fontSize: supportingFontSize }}>
-                        ✓
-                      </span>
-                    ) : null}
+                    {correct ? <span className="shrink-0 font-semibold" style={{ color: mcqCorrectColor, fontSize: supportingFontSize }}>✓</span> : null}
                   </div>
                 );
               })}
@@ -404,31 +426,44 @@ export default function QuestionSlide({
       {showAnswer ? (
         <div
           data-testid="smartboard-answer-panel"
-          className={`mx-1 mt-5 box-border rounded-[1px] ${question.type === "cq" ? "border-0 p-0" : "border px-5 py-4"} ${stackCqAnswer ? "flex-none overflow-visible" : "min-h-0 flex-1 overflow-y-auto overscroll-contain"}`}
+          className={`mx-2 ${question.type === "mcq" ? "mt-10" : "mt-5"} box-border rounded-[1px] ${question.type === "cq" || question.type === "mcq" ? "border-0 p-0" : "border px-5 py-4"} ${stackCqAnswer ? "flex-none overflow-visible" : question.type === "mcq" ? "max-h-[45%] flex-none overflow-y-auto overscroll-contain" : "min-h-0 flex-1 overflow-y-auto overscroll-contain"}`}
           style={{
-            borderColor: question.type === "cq" ? "transparent" : "#059669",
-            backgroundColor: question.type === "cq" ? "transparent" : dark ? "rgba(5,150,105,0.20)" : "rgba(5,150,105,0.08)",
+            borderColor: question.type === "cq" || question.type === "mcq" ? "transparent" : "#059669",
+            backgroundColor: question.type === "cq" || question.type === "mcq" ? "transparent" : dark ? "rgba(5,150,105,0.20)" : "rgba(5,150,105,0.08)",
           }}
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div
-            className={question.type === "cq" ? "mb-4 w-full px-4 py-2 font-bold text-white" : "mb-4 border-b border-emerald-500/40 pb-2 font-bold"}
+            className={question.type === "cq" || question.type === "mcq" ? "mb-0 w-full px-4 py-2 font-bold text-white" : "mb-4 border-b border-emerald-500/40 pb-2 font-bold"}
             style={{
-              color: question.type === "cq" ? "#ffffff" : "#047857",
-              backgroundColor: question.type === "cq" ? "#050505" : "transparent",
+              color: question.type === "cq" || question.type === "mcq" ? "#ffffff" : mcqCorrectColor,
+              backgroundColor: question.type === "cq" || question.type === "mcq" ? "#050505" : "transparent",
               fontSize: answerFontSize,
               fontFamily: questionFontFamily,
             }}
           >
             উত্তর
           </div>
-          <div style={{ fontSize: answerFontSize, lineHeight: 1.45, fontFamily: questionFontFamily }} className={dark ? "text-white" : "text-slate-900"}>
+          <div
+            style={{
+              fontSize: answerFontSize,
+              lineHeight: 1.45,
+              fontFamily: questionFontFamily,
+              ...(question.type === "mcq" ? {
+                borderColor: mcqAnswerBorderColor,
+                borderStyle: mcqAnswerBorderStyle,
+                borderWidth: mcqAnswerBorderStyle === "none" ? 0 : mcqAnswerBorderStyle === "double" ? 3 : 1,
+                backgroundColor: mcqAnswerBackgroundColor,
+              } : {}),
+            }}
+            className={`${dark ? "text-white" : "text-slate-900"} ${question.type === "mcq" ? "box-border px-5 py-4" : ""}`}
+          >
             {question.type === "mcq" ? (
               answerAvailable ? (
                 <div>
                   <div className="mb-2">
                     <span className="font-semibold">সঠিক উত্তর: </span>
-                    <span className="font-semibold" style={{ color: "#15803d" }}>
+                    <span className="font-semibold" style={{ color: mcqCorrectColor }}>
                       ({answerLabelBangla(question.correct_answer, options)})
                     </span>{" "}
                     <LatexRenderer
