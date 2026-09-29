@@ -1036,6 +1036,7 @@ export default function SmartBoard() {
                   compassRadius={compassRadius}
                   showCompassCenter={showCompassCenter}
                   onCompassRadiusChange={setCompassRadius}
+                  onCompassClose={() => setTool("select")}
                 />
               </div>
             </div>

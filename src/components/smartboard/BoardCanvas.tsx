@@ -41,6 +41,7 @@ interface BoardCanvasProps {
   compassRadius?: number;
   showCompassCenter?: boolean;
   onCompassRadiusChange?: (radius: number) => void;
+  onCompassClose?: () => void;
 }
 
 interface DraftState {
@@ -106,6 +107,7 @@ export default function BoardCanvas({
   compassRadius = 180,
   showCompassCenter = true,
   onCompassRadiusChange,
+  onCompassClose,
   className = "",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -825,6 +827,14 @@ export default function BoardCanvas({
               angle={compassArc.currentAngle}
               onPointerDown={beginCompassResize}
             />
+            {onCompassClose && (
+              <CompassCloseButton
+                center={compassArc.center}
+                radius={compassArc.radius}
+                angle={compassArc.currentAngle}
+                onClose={onCompassClose}
+              />
+            )}
             {showCompassCenter && (
               <g aria-label="কম্পাসের কেন্দ্র">
                 <circle cx={compassArc.center[0]} cy={compassArc.center[1]} r={17} fill="#ffffff" fillOpacity={0.92} stroke="#ef4444" strokeWidth={3} strokeDasharray="5 3" />
@@ -1046,6 +1056,41 @@ function CompassResizeHitArea({ center, radius, angle, onPointerDown }: {
         style={{ cursor: "nwse-resize" }}
         onPointerDown={onPointerDown}
       />
+    </g>
+  );
+}
+
+function CompassCloseButton({ center, radius, angle, onClose }: {
+  center: Point;
+  radius: number;
+  angle: number;
+  onClose: () => void;
+}) {
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const px = -dy;
+  const py = dx;
+  const x = center[0] + dx * radius * 0.42 - px * Math.max(42, radius * 0.23);
+  const y = center[1] + dy * radius * 0.42 - py * Math.max(42, radius * 0.23);
+
+  return (
+    <g
+      role="button"
+      aria-label="কম্পাস বন্ধ করুন"
+      className="cursor-pointer"
+      onPointerDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClose();
+      }}
+    >
+      <circle cx={x} cy={y} r={22} fill="#ffffff" stroke="#ef4444" strokeWidth={3} />
+      <line x1={x - 8} y1={y - 8} x2={x + 8} y2={y + 8} stroke="#dc2626" strokeWidth={3.5} strokeLinecap="round" />
+      <line x1={x + 8} y1={y - 8} x2={x - 8} y2={y + 8} stroke="#dc2626" strokeWidth={3.5} strokeLinecap="round" />
+      <circle cx={x} cy={y} r={28} fill="transparent" pointerEvents="all" />
     </g>
   );
 }

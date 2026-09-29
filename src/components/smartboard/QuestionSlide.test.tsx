@@ -85,6 +85,19 @@ describe("QuestionSlide", () => {
     expect(screen.getByText("২ সেকেন্ড")).toBeInTheDocument();
   });
 
+  it("renders a CQ stimulus only once when it is stored in both fields", () => {
+    const duplicatedStimulus = "একই উদ্দীপক";
+    const question = {
+      ...cqQuestion,
+      stimulus_text: duplicatedStimulus,
+      creative_data: { ...cqQuestion.creative_data, stem: duplicatedStimulus },
+    };
+
+    render(<QuestionSlide question={question} number={1} meta={null} showAnswer={false} dark={false} />);
+
+    expect(screen.getAllByText(duplicatedStimulus)).toHaveLength(1);
+  });
+
   it("falls back to the explanation for short questions", () => {
     render(<QuestionSlide question={shortQuestion} number={2} meta={null} showAnswer dark />);
 
@@ -93,4 +106,3 @@ describe("QuestionSlide", () => {
     ).toBeInTheDocument();
   });
 });
-
