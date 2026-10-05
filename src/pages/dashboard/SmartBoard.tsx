@@ -521,10 +521,10 @@ export default function SmartBoard() {
               onClick={() => setSidebarOpen((open) => !open)}
               title={sidebarOpen ? "প্রশ্ন তালিকা লুকান" : "প্রশ্ন তালিকা দেখান"}
             >
-              {sidebarOpen ? <PanelLeftClose className="h-4 w-4 text-[#F4C053]" /> : <PanelLeftOpen className="h-4 w-4 text-[#F4C053]" />}
+              {sidebarOpen ? <PanelLeftClose className="h-4 w-4 text-[#00B4BC]" /> : <PanelLeftOpen className="h-4 w-4 text-[#00B4BC]" />}
               <span className="hidden sm:inline">প্রশ্ন তালিকা</span>
               {questions.length > 0 && (
-                <Badge className="h-5 px-1.5 bg-[#F4C053] text-[#0A1E38] text-xs font-bold border-0 rounded-[1px]">
+                <Badge className="h-5 px-1.5 bg-[#00B4BC] text-[#0A1E38] text-xs font-bold border-0 rounded-[1px]">
                   {toBanglaNum(questions.length)}
                 </Badge>
               )}
@@ -532,7 +532,7 @@ export default function SmartBoard() {
 
             <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-white/15">
               <h1 className="truncate font-heading text-sm font-bold text-white flex items-center gap-1.5">
-                <Tv className="w-4 h-4 text-[#F4C053]" />
+                <Tv className="w-4 h-4 text-[#00B4BC]" />
                 ইন্টারেক্টিভ স্মার্টবোর্ড
               </h1>
               {paperTitle && (
@@ -1024,7 +1024,7 @@ export default function SmartBoard() {
                   board.elements.length === 0 && (
                     <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-8 text-center">
                       <div className="w-16 h-16 rounded-[1px] bg-slate-100 border border-slate-300 text-slate-700 flex items-center justify-center shadow-xs">
-                        <Tv className="w-8 h-8 text-[#F4C053]" />
+                        <Tv className="w-8 h-8 text-[#00B4BC]" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-heading font-bold text-slate-800">

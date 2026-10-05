@@ -75,7 +75,7 @@ export default function ClassPicker({
         tabIndex={0}
         onClick={() => !disabled && setOpen(true)}
         className={cn(
-          "flex h-12 w-full items-center justify-between rounded-[1px] border border-slate-300 bg-white px-3.5 py-1 text-base cursor-pointer transition-colors text-slate-800",
+          "flex h-12 w-full items-center justify-between rounded-[4px] border border-slate-300 bg-white px-3.5 py-1 text-base cursor-pointer transition-colors text-slate-800",
           "focus:outline-none focus:ring-1 focus:ring-[#0A1E38] hover:border-slate-400",
           disabled && "cursor-not-allowed opacity-50 pointer-events-none bg-slate-50",
           !selectedClass && "text-slate-500",
@@ -104,7 +104,7 @@ export default function ClassPicker({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative bg-white text-gray-900 rounded-[1px] shadow-2xl overflow-hidden w-full max-w-lg flex flex-col border border-slate-300 animate-in zoom-in-95 duration-200"
+            className="relative bg-white text-gray-900 rounded-[6px] shadow-2xl overflow-hidden w-full max-w-lg flex flex-col border border-slate-300 animate-in zoom-in-95 duration-200"
           >
             {/* Header Bar */}
             <div className="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-200">
@@ -114,7 +114,7 @@ export default function ClassPicker({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-xs px-2.5 py-1 rounded-[1px] bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors cursor-pointer"
+                className="text-xs px-2.5 py-1 rounded-[4px] bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors cursor-pointer"
               >
                 ✕ বন্ধ
               </button>
@@ -122,7 +122,7 @@ export default function ClassPicker({
 
             {/* Modal Body */}
             <div className="p-4 space-y-3">
-              <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 border border-slate-300 rounded-[1px] bg-white">
+              <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 border border-slate-300 rounded-[4px] bg-white">
                 {orderedClasses.length === 0 ? (
                   <p className="p-6 text-center text-sm text-slate-500 font-bangla">
                     কোনো শ্রেণি পাওয়া যায়নি
@@ -177,14 +177,14 @@ export default function ClassPicker({
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  className="flex-1 bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold py-2.5 px-4 rounded-[1px] text-base transition-colors text-center shadow-xs cursor-pointer border border-[#0A1E38]"
+                  className="flex-1 bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold py-2.5 px-4 rounded-[4px] text-base transition-colors text-center shadow-xs cursor-pointer border border-[#0A1E38]"
                 >
                   সিলেক্ট করুন
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-[1px] text-base transition-colors text-center border border-slate-300 cursor-pointer"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-[4px] text-base transition-colors text-center border border-slate-300 cursor-pointer"
                 >
                   বন্ধ করুন
                 </button>

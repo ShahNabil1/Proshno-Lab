@@ -5,6 +5,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Info, Copy, ClipboardPaste, Check } from "lucide-react";
 import { toast } from "sonner";
 import { QType, TYPE_LABELS } from "@/lib/bulkQuestions";
+import { languagePasteVariants, LANGUAGE_PASTE_RULES, withPasteReferences } from "@/lib/languagePasteGuides";
+import { ENGLISH_FIRST_MCQ } from "@/lib/englishFirstTemplates";
+import { isLanguageType } from "@/lib/languageQuestionTypes";
 
 export type Variant = { id: string; label: string; desc: string; sample: string };
 
@@ -198,13 +201,17 @@ const RULES = [
   "একই প্রশ্ন আগে থেকেই থাকলে বা লিস্টে দুইবার থাকলে সেটি ডুপ্লিকেট হিসেবে মার্ক হয়ে স্কিপ হবে।",
 ];
 
-export default function PasteGuide({ type, isMath = false, onInsert }: { type: QType; isMath?: boolean; onInsert?: (sample: string) => void }) {
+export default function PasteGuide({ type, isMath = false, englishFirst = false, onInsert }: { type: QType; isMath?: boolean; englishFirst?: boolean; onInsert?: (sample: string) => void }) {
   const variants = useMemo(() => {
-    const list = PASTE_VARIANTS[type];
+    const list = (type==='mcq' && englishFirst ? [{id:'seen-mcq',label:'Seen Passage MCQ',desc:'উদ্দীপকে সংশ্লিষ্ট Seen Passage দিন। প্রতিটি MCQ-এর চারটি অপশন ও সঠিক উত্তর দিন।',sample:withPasteReferences(ENGLISH_FIRST_MCQ)}] : undefined) || languagePasteVariants(type,englishFirst)?.map(v=>({...v,sample:withPasteReferences(v.sample)})) || PASTE_VARIANTS[type] || [{
+      id: "question-set", label: TYPE_LABELS[type] || "প্রশ্নসেট",
+      desc: "উপপ্রশ্নসহ সম্পূর্ণ প্রশ্নসেট একসঙ্গে লিখুন। টেবিল HTML হিসেবে দেওয়া যাবে। আলাদা প্রশ্নসেটের মাঝে --- দিন।",
+      sample: `১. Complete the following question set.\n(a) First question or blank ...\n(b) Second question or blank ...\nউত্তর: (a) First answer; (b) Second answer\n\n---\n\n২. Complete the next question set.\n(a) First question or blank ...\n(b) Second question or blank ...`,
+    }];
     if (type !== "cq") return list;
     // গণিত/উচ্চতর গণিতে শুধু ৩ প্রশ্নের (ক/খ/গ) ভ্যারিয়েন্টগুলোই দেখানো হয়
     return isMath ? list.filter((v) => v.id.startsWith("math")) : list.filter((v) => !v.id.startsWith("math"));
-  }, [type, isMath]);
+  }, [type, isMath, englishFirst]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(variants[0].id);
   const current = useMemo(() => variants.find((v) => v.id === active) || variants[0], [variants, active]);
@@ -237,7 +244,7 @@ export default function PasteGuide({ type, isMath = false, onInsert }: { type: Q
             {TYPE_LABELS[type]} — কীভাবে পেস্ট করবেন?
           </DialogTitle>
           <DialogDescription>
-            নিচের যেকোনো ধরন বেছে নিন — হুবহু ঐ ফরম্যাটে পেস্ট করলে ১০০% সঠিকভাবে parse হবে।
+            নমুনা বেছে নিয়ে প্রশ্ন ও উত্তর বসান। Parse করার পরে Preview মিলিয়ে নিন।
           </DialogDescription>
         </DialogHeader>
 
@@ -279,8 +286,9 @@ export default function PasteGuide({ type, isMath = false, onInsert }: { type: Q
             সাধারণ নিয়ম <Badge variant="outline" className="text-[10px]">সব ধরনের জন্য</Badge>
           </div>
           <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-5">
-            {RULES.map((r, i) => <li key={i}>{r}</li>)}
+            {(isLanguageType(type) ? LANGUAGE_PASTE_RULES : RULES).map((r, i) => <li key={i}>{r}</li>)}
           </ul>
+
         </div>
       </DialogContent>
     </Dialog>

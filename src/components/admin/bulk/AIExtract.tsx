@@ -1,3 +1,4 @@
+import { isLanguageType, questionTypeLabel } from "@/lib/languageQuestionTypes";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +28,9 @@ export default function AIExtract({ type, onExtracted }: { type: QType; onExtrac
     if (!text.trim() && !file) { toast.error("text বা file দিন"); return; }
     setLoading(true);
     try {
-      const payload: any = { type };
+      const payload: any = { type: isLanguageType(type) ? "short" : type };
       if (text.trim()) payload.text = text.trim();
+      if (isLanguageType(type)) payload.text = `Extract ${questionTypeLabel(type)}. Keep each passage, table, word box and all its subquestions together as a complete question set. Preserve HTML tables. ${payload.text || ""}`;
       if (file) {
         const b64 = await fileToBase64(file);
         if (file.type === "application/pdf") payload.pdfBase64 = b64;
@@ -94,8 +96,9 @@ function aiToParsed(it: any, type: QType): ParsedQuestion {
     };
     if (!it.stimulus) errors.push("উদ্দীপক missing");
     if (!it.q_ka || !it.q_kha || !it.q_ga) errors.push("ক/খ/গ missing");
-  } else if (type === "short") {
+  } else if ((type === "short" || isLanguageType(type))) {
     q.question = it.question || "";
+    q.stimulus = it.stimulus || undefined;
     q.explanation = it.explanation;
     if (!q.question) errors.push("প্রশ্ন খালি");
   } else {

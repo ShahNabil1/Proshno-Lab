@@ -1,3 +1,6 @@
+import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from './englishPaperSections';
+import { languageSubject, patternGrade } from './languageQuestionTypes';
+import { isLanguageType, questionMarks, questionTypeLabel } from "@/lib/languageQuestionTypes";
 import {
   AlignmentType,
   BorderStyle,
@@ -503,7 +506,8 @@ function parseHtmlTableToDocxTable(
   });
 
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: options.indent?.left ? 95 : 100, type: WidthType.PERCENTAGE },
+    indent: options.indent?.left ? { size: options.indent.left, type: WidthType.DXA } : undefined,
     borders: allThinTableBorders,
     rows: tableRows,
   });
@@ -724,7 +728,7 @@ export async function exportPaperToDocx({
   settings?: PaperSettings;
 }): Promise<void> {
   const exportImages = await preloadExportImages(questions);
-  const paperColumnCount = Math.max(1, Number(settings.columns) || 2);
+  const paperColumnCount = languageSubject(meta.subjectName || "") === "english1" && patternGrade(meta.className || "") === 8 ? 1 : Math.max(1, Number(settings.columns) || 2);
   const imageWidthLimit = paperColumnCount > 1 ? 280 : 560;
   const renderHtmlToBlocks = (
     source?: string | null,
@@ -736,7 +740,7 @@ export async function exportPaperToDocx({
       images: exportImages,
       maxImageWidth: options.maxImageWidth || imageWidthLimit,
     });
-  const isEnglish = /english|eglish|ইংলিশ/i.test(
+  const isEnglish = languageSubject(meta.subjectName || "") === "english1" || /english|eglish|ইংলিশ/i.test(
     String(meta.className || "")
   );
   const font =
@@ -783,10 +787,14 @@ export async function exportPaperToDocx({
   const sorted = [...questions].sort(
     (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
   );
+  const isEnglishPaper = !questions.every(q=>q.type === 'mcq') && languageSubject(meta.subjectName || '') === 'english1' && patternGrade(meta.className || '') === 8;
+  const englishPaper = englishPaperSections(sorted);
   const mcqs = sorted.filter((q) => q.type === "mcq");
   const shorts = sorted.filter((q) => q.type === "short");
   const cqs = sorted.filter((q) => q.type === "cq");
   const descriptives = sorted.filter((q) => q.type === "descriptive");
+  const languageQuestions = sorted.filter(q=>isLanguageType(q.type));
+  const languageMarks = isEnglishPaper ? englishPaper.sections.filter(s=>s.type !== "mcq").reduce((sum,s)=>sum+s.marks,0) : languageQuestions.reduce((sum,q)=>sum+questionMarks(q),0);
 
   const cqToAnswer =
     settings.cqToAnswer && settings.cqToAnswer > 0
@@ -802,8 +810,8 @@ export async function exportPaperToDocx({
       : descriptives.length;
 
   const totalMarks =
-    mcqs.length + shortToAnswer * 2 + cqToAnswer * 10 + descToAnswer * 10;
-  const totalMinutes =
+    languageMarks + mcqs.length + shortToAnswer * 2 + cqToAnswer * 10 + descToAnswer * 10;
+  const totalMinutes = isEnglishPaper && totalMarks === 100 && englishPaper.sections.length === 13 ? 180 : languageMarks +
     (isEnglish ? Math.ceil(mcqs.length * 1.5) : mcqs.length) +
     shortToAnswer * 2 +
     cqToAnswer * 10 +
@@ -950,7 +958,7 @@ export async function exportPaperToDocx({
   }
 
   if (
-    settings.showChapterName !== false &&
+    !isEnglishPaper && settings.showChapterName !== false &&
     Array.isArray(meta.chapterNames) &&
     meta.chapterNames.length > 0
   ) {
@@ -1152,7 +1160,7 @@ export async function exportPaperToDocx({
       ? "No marks, signs, or symbols are allowed on the question paper."
       : "প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেয়া যাবে না।";
 
-    headerChildren.push(
+    if (!isEnglishPaper) headerChildren.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
@@ -1202,7 +1210,7 @@ export async function exportPaperToDocx({
   // ==========================================
   const questionChildren: Array<Paragraph | Table> = [];
 
-  const columnsCount = Number(settings.columns) || 2;
+  const columnsCount = isEnglishPaper ? 1 : Number(settings.columns) || 2;
   const columnGapTwips =
     Math.round((Number(settings.columnGap) || 20) * 15) || 567;
   const hasColumnDivider = settings.columnDivider !== false;
@@ -1266,7 +1274,7 @@ export async function exportPaperToDocx({
   };
 
   // 1. MCQ QUESTIONS
-  if (mcqs.length > 0) {
+  if (!isEnglishPaper && mcqs.length > 0) {
     if (shorts.length > 0 || cqs.length > 0 || descriptives.length > 0) {
       addSectionHeading(
         isEnglish ? "Multiple Choice Questions" : "বহুনির্বাচনি প্রশ্ন",
@@ -1462,6 +1470,34 @@ export async function exportPaperToDocx({
     }
   }
 
+  for (let i=0;!isEnglishPaper && i<languageQuestions.length;i++) {
+    const q=languageQuestions[i];
+    addSectionHeading(questionTypeLabel(q.type),questionMarks(q)>0?String(questionMarks(q)):"","");
+    if(q.stimulus_text) questionChildren.push(...renderHtmlToBlocks(q.stimulus_text,font,{size:fontSize,spacing:{after:25}}));
+    questionChildren.push(...renderHtmlToBlocks(q.question,font,{prefixRuns:[new TextRun({text:`${i+1}. `,bold:true,font,size:fontSize})],size:fontSize,spacing:{after:40}}));
+    if(settings.showAnswerSheet && (q.correct_answer || q.explanation)) questionChildren.push(...renderHtmlToBlocks([q.correct_answer,q.explanation].filter(Boolean).join('<br/>'),font,{size:fontSize-2,color:"1E3577",spacing:{after:30}}));
+  }
+  if (isEnglishPaper) {
+    for (const [si, section] of englishPaper.sections.entries()) {
+      if(si === 0 || englishPaper.sections[si-1].part !== section.part) addSectionHeading(`Part ${section.part === 'reading' ? 'A - Reading' : 'B - Writing'} [Marks - ${englishPaper.sections.filter(s=>s.part === section.part).reduce((sum,s)=>sum+s.marks,0)}]`,'','');
+      if (section.passage && (si === 0 || englishPaper.sections[si-1].passage?.question !== section.passage.question)) {
+        questionChildren.push(...renderHtmlToBlocks(englishPassageInstruction(englishPaper.sections,si),font,{size:fontSize}));
+        questionChildren.push(...renderHtmlToBlocks(section.passage.question,font,{size:fontSize,spacing:{after:40}}));
+      }
+      questionChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:noBorders,rows:[new TableRow({children:[
+        new TableCell({width:{size:5,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({children:[new TextRun({text:`${section.number}.`,bold:true,font,size:fontSize})]})]}),
+        new TableCell({width:{size:78,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({children:[new TextRun({text:`${section.instruction || questionTypeLabel(section.type)}${section.type === 'poem_questions' && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ''}`,bold:true,font,size:fontSize})]})]}),
+        new TableCell({width:{size:17,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:section.marks > 0 ? section.marksLine : '',font,size:fontSize})]})]})
+      ]})]}));
+      for (const [index,q] of section.items.entries()) {
+        if (q.stimulus_text && !section.passage && (index === 0 || q.stimulus_text !== section.items[index-1].stimulus_text)) questionChildren.push(...renderHtmlToBlocks(q.stimulus_text,font,{size:fontSize}));
+        const label=englishItemLabel(section.type,index,section.items.length)+' ';
+        questionChildren.push(...renderHtmlToBlocks(q.question,font,{prefixRuns:[new TextRun({text:label,font,size:fontSize})],size:fontSize,indent:{left:450},spacing:{after:30}}));
+        if(section.type === 'mcq') questionChildren.push(...renderHtmlToBlocks(['option_a','option_b','option_c','option_d'].map((key,oi)=>`(${['i','ii','iii','iv'][oi]}) ${q[key] || ''}`).join(' &nbsp;&nbsp;&nbsp; '),font,{size:fontSize,indent:{left:900}}));
+        if(settings.showAnswerSheet && (q.correct_answer || q.explanation)) questionChildren.push(...renderHtmlToBlocks([q.correct_answer,q.explanation].filter(Boolean).join('<br/>'),font,{size:fontSize-2,color:'1E3577'}));
+      }
+    }
+  }
   // 2. SHORT QUESTIONS
   if (shorts.length > 0) {
     addSectionHeading(

@@ -1,3 +1,4 @@
+import { ALL_TYPES, LANGUAGE_TYPE_LABELS, allowedQuestionTypes, isLanguageType } from "@/lib/languageQuestionTypes";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,8 +25,8 @@ import {
   type SubjectVersion,
 } from "@/lib/subjectVersion";
 
-type QType = "mcq" | "cq" | "short" | "descriptive";
-const TYPE_LABELS: Record<QType, string> = {
+type QType = string;
+const TYPE_LABELS: Record<QType, string> = { ...LANGUAGE_TYPE_LABELS,
   mcq: "বহুনির্বাচনী",
   cq: "সৃজনশীল",
   short: "সংক্ষিপ্ত",
@@ -68,6 +70,20 @@ export default function AutoQuestionCreate() {
 
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [paygPhone, setPaygPhone] = useState("");
+
+  useEffect(() => {
+    const paymentID = new URLSearchParams(window.location.search).get("paygPayment");
+    if (!paymentID || !user) return;
+    setGenerating(true);
+    supabase.functions.invoke("payg-paper", { body: { paymentID } }).then(({ data, error }) => {
+      if (error || data?.error) { toast.error(data?.error || "পেমেন্টের প্রশ্নপত্র লোড করা যায়নি"); return; }
+      sessionStorage.setItem("viewPaperQuestions", JSON.stringify(data.questions));
+      sessionStorage.setItem("viewPaperContext", JSON.stringify(data.context));
+      sessionStorage.setItem("viewPaperMeta", JSON.stringify(data.meta));
+      navigate("/dashboard/view-paper");
+    }).finally(() => setGenerating(false));
+  }, [user?.id, navigate]);
   const [institute, setInstitute] = useState<any>(null);
 
   // Load classes & institute
@@ -99,6 +115,15 @@ export default function AutoQuestionCreate() {
     return subjects.filter((s) => subjectIds.includes(String(s.id)));
   }, [subjectIds, subjects]);
 
+  const scopedTypes = [...new Set(selectedSubjects.flatMap(sub=> {
+    const cls=classes.find(c=>c.id===sub.class_id)?.name || "";
+    const chosen=chapters.filter(c=>chapterIds.includes(String(c.id)) && c.subject_id===sub.id);
+    return chosen.length ? chosen.flatMap(c=>allowedQuestionTypes(cls,sub.name,c.name)) : allowedQuestionTypes(cls,sub.name);
+  }))];
+  useEffect(()=>{
+    setEnabledTypes(prev=>Object.fromEntries(ALL_TYPES.map(t=>[t,scopedTypes.includes(t) && Boolean(prev[t])])));
+    setCounts(prev=>Object.fromEntries(ALL_TYPES.map(t=>[t,prev[t] ?? 1])));
+  },[scopedTypes.join(",")]);
   const effectiveClassId = selectedSubjects[0]?.class_id || Number(classId || 0);
   const selectableClasses = useMemo(
     () => classes.filter((item) => !/english|eglish|version|ইংলিশ/i.test(item.name || "")),
@@ -138,7 +163,7 @@ export default function AutoQuestionCreate() {
     setCountsLoading(true);
     const ids = chapterIds.map(Number);
     (async () => {
-      const types: QType[] = ["mcq", "cq", "short", "descriptive"];
+      const types: QType[] = scopedTypes;
       const results = await Promise.all(types.map(async (t) => {
         const { count } = await supabase
           .from("questions")
@@ -158,7 +183,7 @@ export default function AutoQuestionCreate() {
         return clamped;
       });
     })();
-  }, [chapterIds]);
+  }, [chapterIds,scopedTypes.join(",")]);
 
   // Fisher-Yates shuffle (unbiased)
   const shuffle = <T,>(arr: T[]): T[] => {
@@ -194,11 +219,25 @@ export default function AutoQuestionCreate() {
   const subjectCode = selectedSubjects.map(s => s.subject_code).filter(Boolean).join(", ");
   const selectedChapters = chapters.filter(c => chapterIds.includes(String(c.id)));
 
-  const step1Valid = classId && subjectIds.length > 0 && chapterIds.length > 0 && hasAccess !== false;
-  const activeTypes = (Object.keys(enabledTypes) as QType[]).filter(t => enabledTypes[t] && counts[t] > 0);
+  const step1Valid = classId && subjectIds.length > 0 && chapterIds.length > 0 && hasAccess !== null;
+  const activeTypes = scopedTypes.filter(t => enabledTypes[t] && counts[t] > 0);
   const step2Valid = activeTypes.length > 0;
-  const totalMarks = useMemo(() => activeTypes.reduce((s, t) => s + counts[t] * TYPE_MARKS[t], 0), [activeTypes, counts]);
+  const totalMarks = useMemo(() => activeTypes.reduce((s, t) => s + counts[t] * (TYPE_MARKS[t] || 0), 0), [activeTypes, counts]);
   const totalQuestions = useMemo(() => activeTypes.reduce((s, t) => s + counts[t], 0), [activeTypes, counts]);
+  const paygTotal = activeTypes.reduce((sum, t) => sum + counts[t] * (t === "cq" ? 100 : 25), 0) / 100;
+  const paygRequired = hasAccess === false;
+  const startPayg = async () => {
+    if (!/^01[3-9]\d{8}$/.test(paygPhone.trim())) { toast.error("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন"); return; }
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bkash-create-payment", { body: {
+        payg: { chapter_ids: chapterIds.map(Number), counts: Object.fromEntries(activeTypes.map(t => [t, counts[t]])) },
+        phone: paygPhone.trim(), teacher_name: user?.user_metadata?.full_name, institute_name: institute?.name, callback_origin: window.location.origin,
+      } });
+      if (error || data?.error || !data?.bkashURL) throw new Error(data?.error || error?.message || "পেমেন্ট শুরু করা যায়নি");
+      window.location.href = data.bkashURL;
+    } catch (e: any) { toast.error(e.message); setGenerating(false); }
+  };
 
   const goNext = () => {
     if (step === 1) {
@@ -215,6 +254,7 @@ export default function AutoQuestionCreate() {
   };
 
   const generate = async () => {
+    if (hasAccess !== true) { toast.error("আগে পেমেন্ট সম্পন্ন করুন"); return; }
     setGenerating(true);
     try {
       // Re-verify chapters are still active at generation time (admin may have disabled one)
@@ -284,9 +324,9 @@ export default function AutoQuestionCreate() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="auto-create-workspace max-w-5xl mx-auto space-y-5">
       {/* Stepper */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+      <div className="auto-stepper grid grid-cols-3 gap-2 sm:gap-3 mb-4">
         {STEPS.map(s => {
           const active = step === s.id;
           const done = step > s.id;
@@ -294,36 +334,38 @@ export default function AutoQuestionCreate() {
           return (
             <button
               key={s.id}
+              aria-current={active ? "step" : undefined}
+              disabled={!active && !done}
               onClick={() => { if (done) setStep(s.id); }}
               className={cn(
-                "flex items-center justify-center gap-2 py-3 px-3 rounded-[1px] border text-base font-semibold transition-all select-none",
-                active && "bg-[#0A1E38] text-white border-[#0A1E38] shadow-xs",
-                done && !active && "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200/70 cursor-pointer",
+                "flex items-center justify-start gap-3 py-3 px-3 sm:px-4 rounded-xl border text-base font-semibold transition-all select-none",
+                active && "bg-white text-[#0A1E38] border-[#00B4BC]/40 shadow-none",
+                done && !active && "bg-[#00B4BC]/5 text-[#006A70] border-[#00B4BC]/30 hover:bg-[#00B4BC]/10 cursor-pointer",
                 !active && !done && "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">{toBanglaNum(s.id)}.</span> {s.label}
+              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm", active ? "bg-[#0A1E38] text-white" : done ? "bg-[#00B4BC]/10 text-[#006A70]" : "bg-slate-100 text-slate-400")}>{done ? <CheckCircle2 className="h-4 w-4" /> : toBanglaNum(s.id)}</span>
+              <span>{s.label}</span>
             </button>
           );
         })}
       </div>
 
-      <Card className="border border-slate-300 rounded-[1px] bg-white shadow-xs">
-        <CardContent className="p-6 md:p-8">
+      <Card className="border border-slate-200 rounded-2xl bg-white shadow-[0_4px_24px_-12px_#0a1e3820]">
+        <CardContent className="p-5 sm:p-7 md:p-8">
           {step === 1 && (
             <div>
               <h2 className="font-heading text-xl md:text-2xl font-bold text-slate-800 mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
               <p className="text-base text-slate-600 mb-6 font-normal">প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
                   <Label className="mb-2.5 block font-bold text-base text-slate-800">শ্রেণি</Label>
                   <ClassPicker
                     value={classId}
                     classes={selectableClasses}
                     placeholder="-- শ্রেণি সিলেক্ট --"
-                    triggerClassName="h-12 rounded-[1px] border-slate-300 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
+                    triggerClassName="h-12 rounded-xl border-slate-200 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
                     onChange={(v) => {
                       setClassId(v);
                       setSubjectVersion("bangla");
@@ -334,7 +376,7 @@ export default function AutoQuestionCreate() {
                   />
                 </div>
 
-                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
                   <Label className="mb-2.5 block font-bold text-base text-slate-800">বিষয় (একাধিক)</Label>
                   <SubjectPicker
                     value={subjectId}
@@ -345,7 +387,7 @@ export default function AutoQuestionCreate() {
                     disabled={!classId}
                     placeholder="-- বিষয় সিলেক্ট --"
                     triggerIcon="scan"
-                    triggerClassName="h-12 rounded-[1px] border-slate-300 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
+                    triggerClassName="h-12 rounded-xl border-slate-200 text-base text-slate-800 bg-white focus:border-[#0A1E38]"
                     onVersionChange={(version) => {
                       setSubjectVersion(version);
                       setSubjectId("");
@@ -360,7 +402,7 @@ export default function AutoQuestionCreate() {
                   />
                 </div>
 
-                <div className="border border-slate-300 rounded-[1px] p-4 flex flex-col min-h-[200px] bg-white">
+                <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
                   <div className="mb-2 flex items-center justify-between min-h-[28px]">
                     <Label className="font-bold text-base text-slate-800">অধ্যায় (একাধিক)</Label>
                     {chapters.length > 0 && (
@@ -381,7 +423,7 @@ export default function AutoQuestionCreate() {
                       return (
                         <label
                           key={c.id}
-                          className={`flex items-center gap-2.5 cursor-pointer text-base p-2 rounded-[1px] transition-colors select-none ${
+                          className={`flex items-center gap-2.5 cursor-pointer text-base p-2 rounded-xl transition-colors select-none ${
                             isChecked ? "bg-slate-100 text-slate-900 font-medium" : "hover:bg-slate-50 text-slate-800"
                           }`}
                         >
@@ -390,7 +432,7 @@ export default function AutoQuestionCreate() {
                             onCheckedChange={(chk) => {
                               setChapterIds(prev => chk ? [...prev, String(c.id)] : prev.filter(x => x !== String(c.id)));
                             }}
-                            className="h-4 w-4 rounded-[1px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
+                            className="h-4 w-4 rounded-xl border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
                           <span className="truncate">{c.name}</span>
                         </label>
@@ -401,9 +443,9 @@ export default function AutoQuestionCreate() {
               </div>
 
               {classId && subjectIds.length > 0 && hasAccess === false && (
-                <div className="mt-4 flex items-start gap-2.5 p-3.5 rounded-[1px] border border-amber-300 bg-amber-50 text-amber-900 text-base">
+                <div className="mt-4 flex items-start gap-2.5 p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-base">
                   <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <span>এই শ্রেণি/বিষয়ের জন্য কোনো সক্রিয় সাবস্ক্রিপশন নেই। <a href="/dashboard/subscription" className="text-[#0A1E38] font-bold underline">সাবস্ক্রাইব করুন</a></span>
+                  <span>প্যাকেজ ছাড়াও প্রশ্ন তৈরি করুন। MCQ, সংক্ষিপ্ত ও অন্যান্য প্রশ্ন ৳০.২৫; সৃজনশীল প্রশ্ন ৳১। <a href="/dashboard/subscription" className="text-[#0A1E38] font-bold underline">প্যাকেজ দেখুন</a></span>
                 </div>
               )}
 
@@ -411,7 +453,7 @@ export default function AutoQuestionCreate() {
                 <Button
                   onClick={goNext}
                   disabled={!step1Valid}
-                  className="h-12 px-7 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                  className="h-12 px-7 rounded-xl bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
                 >
                   <span>পরবর্তী ধাপ</span>
                   <ChevronRight className="w-5 h-5" />
@@ -426,7 +468,7 @@ export default function AutoQuestionCreate() {
               <p className="text-base text-slate-600 mb-6 font-normal">সিস্টেম স্বয়ংক্রিয়ভাবে প্রশ্ন জেনারেট করার জন্য প্রতিটি ধরন থেকে কতটি প্রশ্ন চান তা নির্দিষ্ট করুন।</p>
 
               <div className="space-y-3">
-                {(Object.keys(TYPE_LABELS) as QType[]).map(t => {
+                {scopedTypes.map(t => {
                   const on = enabledTypes[t];
                   const max = available[t];
                   const sliderMax = Math.min(200, max);
@@ -434,8 +476,8 @@ export default function AutoQuestionCreate() {
                     <div
                       key={t}
                       className={cn(
-                        "border border-slate-300 rounded-[1px] p-4 sm:p-5 transition-colors bg-white",
-                        on && "border-[#0A1E38] bg-slate-50"
+                        "border border-slate-200 rounded-xl p-4 sm:p-5 transition-colors bg-white",
+                        on && "border-[#00B4BC] bg-[#00B4BC]/5"
                       )}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -444,11 +486,11 @@ export default function AutoQuestionCreate() {
                             checked={on}
                             disabled={max === 0}
                             onCheckedChange={(chk) => setEnabledTypes(p => ({ ...p, [t]: !!chk }))}
-                            className="h-4 w-4 rounded-[1px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
+                            className="h-4 w-4 rounded-xl border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
                           <span>{TYPE_LABELS[t]} প্রশ্নের সংখ্যা</span>
                         </label>
-                        <Badge variant="outline" className="text-sm font-medium border-slate-300 bg-slate-100 text-slate-700 rounded-[1px] px-2.5 py-0.5">
+                        <Badge variant="outline" className="text-sm font-medium border-slate-200 bg-slate-100 text-slate-700 rounded-xl px-2.5 py-0.5">
                           {countsLoading ? "..." : `উপলব্ধ ${toBanglaNum(max)}`}
                         </Badge>
                       </div>
@@ -459,7 +501,7 @@ export default function AutoQuestionCreate() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 shrink-0 rounded-[1px] border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                              className="h-9 w-9 shrink-0 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
                               onClick={() => setCounts(p => ({ ...p, [t]: Math.max(1, Math.min(p[t], sliderMax) - 1) }))}
                               disabled={Math.min(counts[t], sliderMax) <= 1}
                               aria-label="কমান"
@@ -480,7 +522,7 @@ export default function AutoQuestionCreate() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-9 w-9 shrink-0 rounded-[1px] border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                              className="h-9 w-9 shrink-0 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
                               onClick={() => setCounts(p => ({ ...p, [t]: Math.min(sliderMax, Math.min(p[t], sliderMax) + 1) }))}
                               disabled={Math.min(counts[t], sliderMax) >= sliderMax}
                               aria-label="বাড়ান"
@@ -488,9 +530,27 @@ export default function AutoQuestionCreate() {
                               <Plus className="w-4 h-4" />
                             </Button>
 
-                            <span className="min-w-[3.5rem] rounded-[1px] bg-slate-800 px-3.5 py-1.5 text-center text-base font-bold text-white shadow-xs transition-all">
-                              {toBanglaNum(Math.min(counts[t], sliderMax))}
-                            </span>
+                            <input
+                              key={`${t}:${counts[t]}:${sliderMax}`}
+                              type="text"
+                              inputMode="numeric"
+                              aria-label={`${TYPE_LABELS[t]} প্রশ্নের সংখ্যা লিখুন`}
+                              defaultValue={toBanglaNum(Math.min(counts[t], sliderMax))}
+                              onBlur={(e) => {
+                                const raw = e.currentTarget.value.replace(/[০-৯]/g, d => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+                                const parsed = /^\d+$/.test(raw.trim()) ? Number(raw) : counts[t];
+                                const value = Math.max(1, Math.min(sliderMax, parsed));
+                                e.currentTarget.value = toBanglaNum(value);
+                                setCounts(p => ({ ...p, [t]: value }));
+                              }}
+                              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                              className="question-count-input w-16 h-9 shrink-0 rounded border border-[#0A1E38] px-2 text-center text-base font-bold"
+                            />
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-1.5" aria-label={`${TYPE_LABELS[t]} দ্রুত সংখ্যা নির্বাচন`}>
+                            {[10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200].filter(n => n <= sliderMax).map(n => (
+                              <button key={n} type="button" aria-pressed={Math.min(counts[t], sliderMax) === n} onClick={() => setCounts(p => ({ ...p, [t]: n }))} className={cn("h-8 min-w-10 border px-2 text-sm font-semibold", Math.min(counts[t], sliderMax) === n ? "border-[#0A1E38] bg-[#0A1E38] text-white" : "border-slate-300 bg-white text-slate-700 hover:border-[#00858C] hover:text-[#00858C]")}>{toBanglaNum(n)}</button>
+                            ))}
                           </div>
                           <div className="mt-1.5 flex justify-between pr-[4.5rem] text-xs text-slate-500 font-medium">
                             <span>{toBanglaNum(1)}</span>
@@ -509,14 +569,14 @@ export default function AutoQuestionCreate() {
                 <Button
                   variant="outline"
                   onClick={() => setStep(1)}
-                  className="h-12 px-6 rounded-[1px] border-slate-300 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
+                  className="h-12 px-6 rounded-xl border-slate-200 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
                 >
                   <ChevronLeft className="w-5 h-5" /> আগের ধাপে যান
                 </Button>
                 <Button
                   onClick={goNext}
                   disabled={!step2Valid}
-                  className="h-12 px-7 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                  className="h-12 px-7 rounded-xl bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-xs gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
                 >
                   <span>পরবর্তী ধাপ</span>
                   <ChevronRight className="w-5 h-5" />
@@ -530,7 +590,7 @@ export default function AutoQuestionCreate() {
               <CheckCircle2 className="w-16 h-16 text-[#0A1E38] mx-auto mb-4" strokeWidth={2} />
               <h2 className="font-heading text-2xl font-bold text-slate-800 mb-6">আপনার প্রশ্নপত্র প্রস্তুত!</h2>
 
-              <div className="max-w-lg mx-auto bg-slate-50 border border-slate-300 rounded-[1px] p-6 text-left shadow-xs">
+              <div className="max-w-lg mx-auto bg-slate-50 border border-slate-200 rounded-xl p-6 text-left shadow-xs">
                 <h3 className="font-bold text-base text-slate-800 mb-4 border-b border-slate-200 pb-2.5">সারাংশ:</h3>
                 <dl className="space-y-2 text-base">
                   <div className="flex gap-3"><dt className="font-bold text-slate-700 w-28 shrink-0">শ্রেণি:</dt><dd className="text-slate-900 font-medium">{className}</dd></div>
@@ -547,26 +607,33 @@ export default function AutoQuestionCreate() {
                     <dd className="font-bold text-[#0A1E38] text-lg">{toBanglaNum(totalQuestions)} টি</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="font-bold text-slate-800 w-28 shrink-0">মোট মূল্য:</dt>
-                    <dd className="font-bold text-[#0A1E38] text-lg">{toBanglaNum(totalMarks)}</dd>
+                    <dt className="font-bold text-slate-800 w-28 shrink-0">মোট নম্বর:</dt>
+                    <dd className="font-bold text-[#0A1E38] text-lg">{activeTypes.some(isLanguageType) ? "Marks are calculated after question selection" : toBanglaNum(totalMarks)}</dd>
                   </div>
                 </dl>
+                {hasAccess === true && <div className="mt-4 border-t border-slate-300 pt-4 flex items-center justify-between text-sm"><span className="text-slate-600">আপনার প্যাকেজে অন্তর্ভুক্ত</span><span className="font-bold text-[#00858C]">অতিরিক্ত চার্জ ৳০</span></div>}
+                {paygRequired && <div className="mt-5 border-t border-slate-300 pt-4 space-y-3">
+                  <p className="text-sm text-slate-600">প্রতি প্রশ্ন অনুযায়ী চার্জ • MCQ/SQ/অন্যান্য ৳০.২৫, CQ ৳১</p>
+                  <div className="flex items-center justify-between font-bold text-[#0A1E38]"><span>পরিশোধযোগ্য</span><span>৳{paygTotal.toLocaleString("bn-BD", { minimumFractionDigits: 2 })}</span></div>
+                  <Input aria-label="পেমেন্টের মোবাইল নম্বর" inputMode="tel" autoComplete="tel" placeholder="মোবাইল নম্বর (01XXXXXXXXX)" value={paygPhone} onChange={e => setPaygPhone(e.target.value.replace(/[০-৯]/g, d => String("০১২৩৪৫৬৭৮৯".indexOf(d))))} />
+                  <p className="text-xs text-slate-500">পেমেন্ট সফল হলে এই প্রশ্নপত্র খুলবে। প্যাকেজ কেনা হবে না।</p>
+                </div>}
               </div>
 
               <div className="flex justify-center gap-3 mt-8">
                 <Button
                   variant="outline"
                   onClick={() => setStep(2)}
-                  className="h-12 px-6 rounded-[1px] border-slate-300 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
+                  className="h-12 px-6 rounded-xl border-slate-200 text-slate-700 text-base font-semibold hover:bg-slate-100 gap-2 cursor-pointer"
                 >
                   <ChevronLeft className="w-5 h-5" /> আগের ধাপে যান
                 </Button>
                 <Button
-                  onClick={generate}
+                  onClick={paygRequired ? startPayg : generate}
                   disabled={generating}
-                  className="h-12 px-8 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-sm gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
+                  className="h-12 px-8 rounded-xl bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-sm gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
                 >
-                  <FilePlus2 className="w-5 h-5" /> {generating ? "জেনারেট হচ্ছে..." : "প্রশ্ন তৈরি করুন"}
+                  <FilePlus2 className="w-5 h-5" /> {generating ? "অপেক্ষা করুন..." : paygRequired ? "বিকাশে পেমেন্ট করে তৈরি করুন" : "প্রশ্ন তৈরি করুন"}
                 </Button>
               </div>
             </div>

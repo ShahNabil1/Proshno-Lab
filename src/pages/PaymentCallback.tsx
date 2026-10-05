@@ -17,6 +17,8 @@ export default function PaymentCallback() {
   const [retrying, setRetrying] = useState(false);
 
   const paymentID = params.get("paymentID") || params.get("paymentId") || "";
+  const isPayg = params.get("payg") === "1";
+  const returnPath = isPayg ? `/dashboard/create?paygPayment=${encodeURIComponent(paymentID)}` : "/dashboard/subscription";
   const status = (params.get("status") || "").toLowerCase();
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function PaymentCallback() {
         if (data?.status === "completed") {
           setPhase("success");
           setTrxId(data.trxID || "");
-          setTimeout(() => navigate("/dashboard/subscription"), 3000);
+          setTimeout(() => navigate(returnPath), 3000);
         } else {
           setPhase("failed");
           setMessage(data?.error || "পেমেন্ট নিশ্চিত করা যায়নি");
@@ -64,7 +66,7 @@ export default function PaymentCallback() {
         setMessage(e?.message || "সার্ভার এরর");
       }
     })();
-  }, [paymentID, status, navigate]);
+  }, [paymentID, status, navigate, returnPath]);
 
   const handleRetry = async () => {
     if (!paymentID) {
@@ -88,7 +90,8 @@ export default function PaymentCallback() {
 
       const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
         body: {
-          selected_packages: row.selected_packages,
+          selected_packages: isPayg ? undefined : row.selected_packages,
+          payg: isPayg ? { chapter_ids: (row.selected_packages[0] as any).chapter_ids, counts: (row.selected_packages[0] as any).counts } : undefined,
           coupon_code: row.coupon_code || undefined,
           phone: row.payer_reference,
           institute_name: row.institute_name || undefined,
@@ -124,11 +127,11 @@ export default function PaymentCallback() {
               <Check className="w-9 h-9 text-emerald-600" />
             </div>
             <h2 className="font-heading text-2xl font-bold mb-1 text-emerald-700">পেমেন্ট সফল!</h2>
-            <p className="text-sm text-muted-foreground mb-2">আপনার সাবস্ক্রিপশন সক্রিয় করা হয়েছে</p>
+            <p className="text-sm text-muted-foreground mb-2">{isPayg ? "আপনার প্রশ্নপত্রের পেমেন্ট সম্পন্ন হয়েছে" : "আপনার সাবস্ক্রিপশন সক্রিয় করা হয়েছে"}</p>
             {trxId && <p className="text-xs text-muted-foreground mb-4">TrxID: <span className="font-mono">{trxId}</span></p>}
-            <p className="text-xs text-muted-foreground mb-4">৩ সেকেন্ডের মধ্যে সাবস্ক্রিপশন পেইজে রিডাইরেক্ট হবে…</p>
-            <Link to="/dashboard/subscription">
-              <Button className="gradient-green text-white border-0">সাবস্ক্রিপশন দেখুন</Button>
+            <p className="text-xs text-muted-foreground mb-4">{isPayg ? "প্রশ্নপত্র খুলছে…" : "৩ সেকেন্ডের মধ্যে সাবস্ক্রিপশন পেইজে রিডাইরেক্ট হবে…"}</p>
+            <Link to={returnPath}>
+              <Button className="gradient-green text-white border-0">{isPayg ? "প্রশ্নপত্র খুলুন" : "সাবস্ক্রিপশন দেখুন"}</Button>
             </Link>
           </>
         )}

@@ -145,7 +145,7 @@ export default function FeatureComingSoon() {
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
-            <Icon className="w-8 h-8 text-[#F4C053]" />
+            <Icon className="w-8 h-8 text-[#00B4BC]" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -153,7 +153,7 @@ export default function FeatureComingSoon() {
               <h1 className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight">
                 {currentConfig.title}
               </h1>
-              <Badge className="bg-[#F4C053] text-[#0A1E38] hover:bg-[#F4C053] font-semibold text-xs px-2.5 py-0.5">
+              <Badge className="bg-[#00B4BC] text-[#0A1E38] hover:bg-[#00B4BC] font-semibold text-xs px-2.5 py-0.5">
                 {currentConfig.badge}
               </Badge>
             </div>

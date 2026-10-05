@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 interface FloatingToolbarProps {
   targetEl: HTMLElement | null;
-  optionLayout?: "4x1" | "2x2" | "1x4";
+  optionLayout?: "4x1" | "2x2" | "1x4" | "1 column" | "2 columns";
   onOptionLayoutChange?: () => void;
   onDelete?: () => void;
   onExchange?: () => void;

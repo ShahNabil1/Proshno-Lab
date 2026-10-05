@@ -84,10 +84,19 @@ export function getChapterNumber(name?: string | null): number {
   return match ? parseInt(match[0], 10) : Number.POSITIVE_INFINITY;
 }
 
+/** Use one spelling, Bengali serials and separator for numbered chapter labels. */
+export function formatChapterName(name?: string | null): string {
+  const value = (name || "").trim();
+  const match = value.match(/^\s*(?:\u0985\u09a7\u09cd\u09af\u09be[\u09df\u09af](?:\u09bc)?|\u0985\u09a7\u09be[\u09df\u09af](?:\u09bc)?)\s*([0-9\u09e6-\u09ef]+)\s*[.\-:\u2014\u2013]*\s*(.*)$/u);
+  if (!match) return value;
+  const serial = String(parseInt(normalizeDigits(match[1]), 10)).replace(/\d/g, d => String.fromCharCode(0x09e6 + Number(d)));
+  return `\u0985\u09a7\u09cd\u09af\u09be\u09af\u09bc ${serial}${match[2] ? ` - ${match[2]}` : ""}`;
+}
+
 /** Label prefix before the first number, e.g. "কবিতা ২ - ..." -> "কবিতা", "Unit 3" -> "unit". */
 function getChapterLabel(name?: string | null): string {
   if (!name) return "";
-  const normalized = normalizeDigits(name.trim());
+  const normalized = normalizeDigits(formatChapterName(name));
   const idx = normalized.search(/\d/);
   const prefix = idx === -1 ? normalized : normalized.slice(0, idx);
   return prefix.replace(/[\s.\-:—–|)(]+/g, " ").trim().toLowerCase();
@@ -103,4 +112,3 @@ export function sortChapters<T extends { name?: string | null; id?: number }>(li
     return (a.name || "").localeCompare(b.name || "", "bn");
   });
 }
-

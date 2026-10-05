@@ -1,3 +1,4 @@
+import { isLanguageType, LANGUAGE_TYPE_LABELS } from "@/lib/languageQuestionTypes";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -650,7 +651,7 @@ export default function AdminQuestionReports() {
                 )}
 
                 {/* Short */}
-                {form.type === "short" && (
+                {(form.type === "short" || isLanguageType(form.type)) && (
                   <>
                     <div><Label>প্রশ্ন</Label><RichTextEditor value={form.question} onChange={(v) => setForm({ ...form, question: v })} placeholder="সংক্ষিপ্ত প্রশ্ন..." minHeight="140px" /></div>
                     <div><Label>উত্তর (ঐচ্ছিক)</Label><RichTextEditor value={form.correct_answer} onChange={(v) => setForm({ ...form, correct_answer: v })} placeholder="উত্তর..." minHeight="120px" /></div>

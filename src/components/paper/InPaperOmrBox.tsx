@@ -74,7 +74,7 @@ export default function InPaperOmrBox({ totalQuestions, columns = 4, isEnglishVe
       </div>
 
       <div style={{ textAlign: "center", marginTop: "6px", fontSize: "11px", fontStyle: "italic", color: "#6b7280", lineHeight: 1.45 }}>
-        <div><span style={{ color: "#1E3577", fontStyle: "normal", fontWeight: 800 }}>●</span> This OMR is scanable</div>
+        <div><span style={{ color: "#102E56", fontStyle: "normal", fontWeight: 800 }}>●</span> This OMR is scanable</div>
         <div>OMR Code : <strong style={{ color: "#111" }}>{omrCode}</strong></div>
       </div>
     </section>

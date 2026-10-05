@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, PlusSquare, Tv, Database,
@@ -11,9 +11,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 
-import BrandLogo from "@/components/BrandLogo";
-import { brandMarkUrl } from "@/lib/brandAssets";
+import BrandLockup from "@/components/BrandLockup";
+
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import OnboardingModal from "@/components/OnboardingModal";
 import AnnouncementBar from "@/components/dashboard/AnnouncementBar";
 import { useCloudBackup } from "@/hooks/useCloudBackup";
@@ -25,45 +26,29 @@ import {
 const CONFIRM_LEAVE_PATHS = ["/dashboard/view-paper", "/dashboard/create", "/dashboard/auto-create"];
 
 const baseSidebarGroups = [
-  {
-    label: "সার্বিক চিত্র",
-    items: [
-      { path: "/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
-      { path: "/dashboard/create", label: "প্রশ্ন তৈরি", icon: PlusSquare },
-      { path: "/dashboard/smartboard", label: "স্মার্টবোর্ড", icon: Tv },
-      { path: "/dashboard/packages", label: "প্রশ্নব্যাংক", icon: Database },
-    ],
-  },
-  {
-    label: "ব্যবস্থাপনা",
-    items: [
-      { path: "/dashboard/my-questions", label: "আমার তৈরি প্রশ্ন", icon: FileText },
-      { path: "/dashboard/students", label: "শিক্ষার্থী", icon: GraduationCap },
-    ],
-  },
-  {
-    label: "প্রতিষ্ঠান সংক্রান্ত",
-    items: [
-      { path: "/dashboard/institute", label: "আমার প্রতিষ্ঠান", icon: Building2 },
-      { path: "/dashboard/subscription", label: "আমার সাবস্ক্রিপশন", icon: CreditCard },
-    ],
-  },
-  {
-    label: "OMR সংক্রান্ত",
-    items: [
-      { path: "/dashboard/omr-tutorial", label: "OMR টিউটোরিয়াল", icon: PlayCircle },
-      { path: "/dashboard/omr-create", label: "OMR তৈরি", icon: Grid },
-      { path: "/dashboard/omr-tokens", label: "OMR টোকেন", icon: KeyRound },
-      { path: "/dashboard/omr-evaluation", label: "OMR মূল্যায়ন", icon: CheckCircle2 },
-    ],
-  },
-  {
-    label: "হেল্প লাইন",
-    items: [
-      { path: "/dashboard/contact", label: "যোগাযোগ", icon: PhoneCall },
-      { path: "/dashboard/feedback", label: "মতামত", icon: MessageSquare },
-    ],
-  },
+  { label: "", items: [
+    { path: "/dashboard", label: "এক নজরে", icon: LayoutDashboard },
+    { path: "/dashboard/my-questions", label: "আমার প্রশ্নপত্র", icon: FileText },
+    { path: "/dashboard/packages", label: "প্রশ্নভান্ডার", icon: Database },
+    { path: "/dashboard/smartboard", label: "স্মার্টবোর্ড", icon: Tv },
+  ] },
+  { label: "পরীক্ষা ও ফলাফল", items: [
+    { path: "/dashboard/students", label: "শিক্ষার্থী", icon: GraduationCap },
+  ] },
+  { label: "OMR সরঞ্জাম", items: [
+    { path: "/dashboard/omr-create", label: "শিট তৈরি", icon: Grid },
+    { path: "/dashboard/omr-evaluation", label: "মূল্যায়ন", icon: CheckCircle2 },
+    { path: "/dashboard/omr-tokens", label: "টোকেন", icon: KeyRound },
+    { path: "/dashboard/omr-tutorial", label: "ব্যবহার শিখুন", icon: PlayCircle },
+  ] },
+  { label: "প্রতিষ্ঠান ও অ্যাকাউন্ট", items: [
+    { path: "/dashboard/institute", label: "প্রতিষ্ঠান", icon: Building2 },
+    { path: "/dashboard/subscription", label: "সাবস্ক্রিপশন", icon: CreditCard },
+  ] },
+  { label: "সহায়তা", items: [
+    { path: "/dashboard/contact", label: "যোগাযোগ", icon: PhoneCall },
+    { path: "/dashboard/feedback", label: "মতামত", icon: MessageSquare },
+  ] },
 ];
 
 function useDashboardHiddenPages() {
@@ -138,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" })
       .then(({ data }) => setIsAdmin(!!data));
-    
+
     supabase.from("institutes").select("id").eq("owner_id", user.id).order("id", { ascending: true }).limit(1).maybeSingle()
       .then(({ data, error }) => {
         if (error) {
@@ -147,7 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         setHasInstitute(!!data);
       });
-    
+
     supabase.from("teachers").select("is_banned").eq("id", user.id).maybeSingle()
       .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));
   }, [user, localMockAdmin]);
@@ -156,7 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentPath = location.pathname;
   const isPageHidden = hiddenPages.length > 0 && hiddenPages.includes(currentPath);
   const redirectPath = isPageHidden && currentPath === "/dashboard" ? "/login" : "/dashboard";
-  
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (isPageHidden) return <Navigate to={redirectPath} replace />;
@@ -177,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const fullName = user.user_metadata?.full_name || "ব্যবহারকারী";
 
   return (
-    <div className="min-h-screen flex bg-background font-body relative">
+    <div className="min-h-screen flex bg-white font-body relative">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -185,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ProshnoLab Left Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none shrink-0",
+        "brand-sidebar fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none shrink-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         desktopCollapsed
           ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
@@ -202,20 +187,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               }
               setSidebarOpen(false);
             }}
-            className="flex items-center gap-3 min-w-0 group"
+            className="sidebar-brand-link flex items-center gap-3 min-w-0 group"
             title="হোম পেইজে যান"
           >
-            <img
-              src={brandMarkUrl}
-              alt="প্রশ্নল্যাব"
-              className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-amber-400/50 group-hover:ring-[#F4C053] transition-all shadow-md"
-            />
-            <div className="flex flex-col min-w-0 leading-none">
-              <BrandLogo size={40} className="[&_.text-brand-navy]:text-white font-bold drop-shadow-sm tracking-tight" />
-              <span className="text-[13px] text-amber-300 font-semibold tracking-wide mt-1.5 leading-none">
-                স্মার্ট প্রশ্নব্যাংক প্ল্যাটফর্ম
-              </span>
-            </div>
+            <BrandLockup size={48} />
           </Link>
 
           {/* Close button for mobile */}
@@ -228,47 +203,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        {/* Scrollable Navigation Groups */}
-        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-2 text-white custom-sidebar-scrollbar [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
-          {sidebarGroups.map((group, gIdx) => (
-            <div key={group.label || gIdx}>
-              {group.label ? (
-                <p className="text-[13px] font-heading font-bold tracking-wide text-white px-2.5 pt-2 pb-1">
-                  {group.label}
-                </p>
-              ) : null}
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const active = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[15px] font-semibold transition-all duration-150 leading-tight select-none",
-                        active
-                          ? "bg-[#C8D5E5] text-[#0A1E38] shadow-sm font-bold"
-                          : "text-white hover:bg-white/10"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "w-[26px] h-[26px] rounded flex items-center justify-center shrink-0 border transition-colors",
-                          active
-                            ? "border-[#0A1E38]/40 text-[#0A1E38] bg-[#0A1E38]/10"
-                            : "border-white/40 text-white bg-white/5 group-hover:border-white"
-                        )}
-                      >
-                        <item.icon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <nav aria-label="শিক্ষক কর্মক্ষেত্র" className="flex-1 overflow-y-auto px-4 py-4 space-y-5 text-white" style={{ textRendering: "auto", fontFamily: "SolaimanLipi, Arial, sans-serif" }}>
+          {!hiddenPages.includes("/dashboard/create") && <Link to="/dashboard/create" onClick={() => setSidebarOpen(false)} className="sidebar-create-cta flex items-center justify-between rounded-lg bg-[#00B4BC] px-4 py-3 text-lg font-semibold text-[#07162b] transition-colors hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><span>১ ক্লিকে প্রশ্ন তৈরি</span><PlusSquare className="h-5 w-5" /></Link>}
+          {sidebarGroups.map(group => {
+            const links = <div className="space-y-1">{group.items.map(item => {
+              const active = location.pathname === item.path;
+              return <Link key={item.path} to={item.path} aria-current={active ? "page" : undefined} onClick={() => setSidebarOpen(false)} className={cn("sidebar-nav-item flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-[18px] font-semibold leading-7 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00B4BC]", active ? "border-[#00B4BC] bg-white/10 text-white" : "border-transparent text-white hover:bg-white/5")}><item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-[#00B4BC]" : "text-slate-200")} strokeWidth={1.8} /><span>{item.label}</span></Link>;
+            })}</div>;
+            return group.label === "OMR সরঞ্জাম" || group.label === "সহায়তা" ? <details key={group.label} open={group.items.some(item => location.pathname === item.path)} className="sidebar-nav-group group"><summary className="cursor-pointer rounded px-3 py-2 text-[18px] font-semibold leading-7 text-white hover:text-white">{group.label}</summary><div className="mt-1">{links}</div></details> : <section key={group.label}>{group.label && <h2 className="mb-2 px-3 text-sm font-semibold text-slate-200">{group.label}</h2>}{links}</section>;
+          })}
         </nav>
 
         {/* Affiliate Program Button */}
@@ -279,20 +222,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className={cn(
               "flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold text-center transition-all duration-150 shadow-sm border",
               location.pathname === "/dashboard/affiliate"
-                ? "bg-[#C8D5E5] text-[#0A1E38] border-transparent font-bold"
-                : "bg-[#0f2c54] hover:bg-[#153e77] text-white border-[#1e467d] hover:border-amber-400/60"
+                ? "bg-white/10 text-white border-transparent font-bold"
+                : "bg-[#0f2c54] hover:bg-[#153e77] text-white border-[#1e467d] hover:border-[#00B4BC]/60"
             )}
           >
-            <Award className="w-3.5 h-3.5 text-[#F4C053] shrink-0" />
-            <span className="truncate">প্রশ্নল্যাব এফিলিয়েট প্রোগ্রাম</span>
+            <Award className="w-4 h-4 text-[#00B4BC] shrink-0" />
+            <span className="min-w-0 whitespace-nowrap overflow-visible leading-5">প্রশ্নল্যাব এফিলিয়েট প্রোগ্রাম</span>
           </Link>
 
           {isAdmin && (
             <Link
               to="/admin"
-              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-amber-300 hover:bg-amber-400/10 border border-amber-400/20 transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold text-white hover:bg-white/10 border border-white/20 transition-colors"
             >
-              <Shield className="w-3.5 h-3.5" /> এডমিন প্যানেল
+              <Shield className="w-4 h-4" /> এডমিন প্যানেল
             </Link>
           )}
         </div>
@@ -300,7 +243,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
+        <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-2">
             {/* Mobile-only menu toggle */}
             <Button
@@ -325,24 +268,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <Link to="/dashboard/institute" className="flex items-center gap-2">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={fullName} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" />
-              ) : (
-                <div className="w-8 h-8 rounded-full gradient-green flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary-foreground" />
-                </div>
-              )}
-            </Link>
-            <Button variant="ghost" size="icon" onClick={signOut} title="লগআউট">
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" aria-label="প্রোফাইল মেনু" className="relative rounded-full p-1 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#00B4BC] hover:bg-slate-100 transition-colors">
+                  {avatarUrl ? <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-200" /> : <span className="w-9 h-9 rounded-full bg-[#0A1E38] flex items-center justify-center"><User className="w-4 h-4 text-white" /></span>}
+                  <span aria-hidden className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#0A1E38] text-white text-[10px]">?</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={10} className="w-64 rounded-xl border-slate-200 bg-white p-1.5 shadow-xl">
+                <DropdownMenuLabel className="px-3 py-3 font-normal">
+                  <p className="text-base font-semibold text-[#0A1E38]">{fullName}</p>
+                  <p className="mt-1 break-all text-xs text-slate-500">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {[
+                  { path: '/dashboard', label: 'শিক্ষক ড্যাশবোর্ড', icon: LayoutDashboard },
+                  { path: '/dashboard/create', label: '১ ক্লিকে প্রশ্ন তৈরি', icon: PlusSquare },
+                  { path: '/dashboard/my-questions', label: 'আমার তৈরি প্রশ্ন', icon: FileText },
+                  { path: '/dashboard/smartboard', label: 'স্মার্টবোর্ড', icon: Tv },
+                  { path: '/dashboard/omr-evaluation', label: 'OMR মূল্যায়ন', icon: CheckCircle2 },
+                  { path: '/dashboard/subscription', label: 'আমার সাবস্ক্রিপশন', icon: CreditCard },
+                  { path: '/dashboard/institute', label: 'প্রতিষ্ঠান সেটিংস', icon: Building2 },
+                ].filter(item => !hiddenPages.includes(item.path)).map(item => <DropdownMenuItem key={item.path} asChild className="cursor-pointer rounded-lg px-3 py-2 text-base text-[#0A1E38] focus:bg-[#00B4BC]/10"><Link to={item.path} className="flex items-center gap-3"><item.icon className="h-4 w-4 text-[#00858C]" /><span>{item.label}</span></Link></DropdownMenuItem>)}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={signOut} className="cursor-pointer justify-center gap-2 rounded-lg px-3 py-2 text-base text-rose-700 focus:bg-rose-50 focus:text-rose-700"><LogOut className="h-4 w-4" />লগআউট</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
         <AnnouncementBar />
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:overflow-visible">
+        <main className="flex-1 bg-white overflow-y-auto p-3 sm:p-4 md:p-6 lg:overflow-visible">
           {children}
         </main>
       </div>

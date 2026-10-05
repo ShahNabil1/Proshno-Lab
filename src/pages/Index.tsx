@@ -1,20 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
-import BrandLogo from "@/components/BrandLogo";
+import ReferenceHome from "@/components/ReferenceHome";
 import { motion } from "framer-motion";
-import {
-  BookOpen, PenTool, FileText, ArrowRight,
-  CheckCircle2, Users, FileCheck, Star, ChevronDown, ChevronRight,
-  Zap, Shield, BarChart3, GraduationCap, Clock, Play, FilePlus2, MessageSquare
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Users, Star, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ReviewModal from "@/components/ReviewModal";
-import { questionPaperIconUrl } from "@/lib/brandAssets";
 import YouTubePlayer, { extractYouTubeId } from "@/components/YouTubePlayer";
-
-
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i: number) => ({
@@ -23,41 +13,27 @@ const fadeUp = {
   })
 };
 
-const stats = [
-  { value: "৩০,০০০+", label: "শিক্ষা প্রতিষ্ঠান যুক্ত", icon: Users },
-  { value: "২,২০০+", label: "প্রশ্ন তৈরি হচ্ছে প্রতিদিন", icon: FileCheck },
-  { value: "৫ লক্ষ+", label: "মোট প্রশ্ন তৈরি হয়েছে", icon: BarChart3 }
-];
-
-const categories = [
-  { icon: BookOpen, label: "বোর্ড প্রশ্ন" },
-  { icon: FileText, label: "নির্বাচনী পরীক্ষার প্রশ্ন" },
-  { icon: GraduationCap, label: "এডমিশন" },
-  { icon: Shield, label: "মেডিকেল" }
-];
-
 export default function Index() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
+
+
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [videoId, setVideoId] = useState<string | null>(null);
 
-  const fetchReviews = () => {
-    supabase.from("reviews")
-      .select("id, name, designation, institution, image_url, rating, text")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(6)
-      .then(({ data }) => {
-        if (data) setReviews(data as any);
-        setReviewsLoading(false);
-      })
-      .catch(() => {
-        setReviewsLoading(false);
-      });
+  const fetchReviews = async () => {
+    try {
+      const { data } = await supabase.from("reviews")
+        .select("id, name, designation, institution, image_url, rating, text")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (data) setReviews(data);
+    } catch {
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
   };
-
   useEffect(() => {
     fetchReviews();
     supabase.from("app_settings").select("value").eq("key", "homepage_video_url").maybeSingle()
@@ -69,119 +45,10 @@ export default function Index() {
 
   return (
     <div className="overflow-hidden">
-      {/* ══════════ HERO ══════════ */}
-      <section className="gradient-hero relative pt-24 pb-16 md:pt-28 md:pb-24 overflow-hidden">
-        {/* Decorative background — grid + soft orbs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div
-            className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage:
-                "linear-gradient(hsl(0 0% 100% / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(0 0% 100% / 0.4) 1px, transparent 1px)",
-              backgroundSize: "44px 44px",
-              maskImage: "radial-gradient(ellipse 70% 60% at 30% 40%, black 40%, transparent 80%)",
-              WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 30% 40%, black 40%, transparent 80%)",
-            }}
-          />
-          <div className="absolute -top-10 right-[-8%] w-[520px] h-[520px] rounded-full bg-gold/10 blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] left-[-6%] w-[420px] h-[420px] rounded-full bg-indigo/20 blur-[130px]" />
-        </div>
-
-        <div className="container relative z-10">
-          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-10 items-center">
-            {/* Left */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="text-white"
-            >
-              {/* Chip */}
-              <div className="inline-flex items-center gap-2 mb-6">
-                <span className="link-underline-gold font-heading text-[15px] font-semibold text-gold pb-1">
-                  শিক্ষকদের জন্য তৈরি
-                </span>
-              </div>
-
-              <h1 className="font-heading font-bold text-white leading-[1.18] text-3xl sm:text-4xl md:text-5xl lg:text-[3.15rem] mb-6">
-                <span className="block">প্রশ্ন তৈরি করতে এখনও হাজার</span>
-                <span className="block">হাজার টাকা ও ঘণ্টার পর ঘণ্টা</span>
-                <span className="block">সময় নষ্ট হচ্ছে?</span>
-              </h1>
-
-              <p className="font-heading text-white/85 text-base md:text-lg leading-relaxed mb-8 max-w-xl">
-                <BrandLogo size={30} plate={false} className="align-middle text-white [&_.text-brand-navy]:text-white" />
-                <span className="text-white/70">-এ</span> মাত্র কয়েক ক্লিকেই তৈরি করুন ষষ্ঠ থেকে দ্বাদশ শ্রেণির প্রশ্নপত্র{" "}
-                <span className="brand-free">ফ্রী</span>
-
-              </p>
-
-              <div className="flex flex-wrap gap-3">
-                <Link to={user ? "/dashboard/create" : "/login"}>
-                  <Button
-                    size="lg"
-                    className="btn-gold font-heading font-bold text-[15px] h-12 px-6 rounded-lg border-0 gap-2"
-                  >
-                    <img
-                      src={questionPaperIconUrl}
-                      alt="প্রশ্নপত্র আইকন"
-                      className="w-5 h-5 object-contain"
-                    />
-                    সম্পূর্ণ ফ্রিতে শুরু করুন
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Right — decorative desk illustration built in SVG */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="relative hidden lg:block"
-            >
-              <div className="relative animate-float">
-                <svg viewBox="0 0 420 340" className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
-                  {/* desk */}
-                  <rect x="40" y="270" width="340" height="8" rx="3" fill="#f4c053" opacity="0.85" />
-                  <rect x="60" y="278" width="6" height="40" fill="#f4c053" opacity="0.7" />
-                  <rect x="354" y="278" width="6" height="40" fill="#f4c053" opacity="0.7" />
-                  {/* book stack */}
-                  <rect x="70" y="240" width="120" height="14" rx="2" fill="#25397c" />
-                  <rect x="80" y="226" width="105" height="14" rx="2" fill="#f4c053" opacity="0.9" />
-                  <rect x="75" y="212" width="115" height="14" rx="2" fill="#ffffff" opacity="0.85" />
-                  {/* plant pot 1 */}
-                  <path d="M215 270 L225 245 L275 245 L285 270 Z" fill="#f4c053" opacity="0.9" />
-                  <path d="M250 245 C240 210 230 205 235 180 C245 195 258 200 250 245 Z" fill="#ffffff" opacity="0.75" />
-                  <path d="M250 245 C260 215 275 210 275 185 C265 200 258 210 250 245 Z" fill="#ffffff" opacity="0.6" />
-                  {/* plant pot 2 */}
-                  <rect x="300" y="248" width="52" height="22" rx="3" fill="#ffffff" opacity="0.85" />
-                  <path d="M326 248 C316 220 310 205 320 175 C330 195 340 215 326 248 Z" fill="#f4c053" opacity="0.85" />
-                  <path d="M326 248 C336 225 344 215 350 190 C346 210 342 225 326 248 Z" fill="#ffffff" opacity="0.7" />
-                  {/* pencil cup */}
-                  <rect x="120" y="180" width="42" height="32" rx="3" fill="#25397c" />
-                  <rect x="128" y="150" width="4" height="35" fill="#f4c053" />
-                  <rect x="138" y="155" width="4" height="30" fill="#ffffff" opacity="0.8" />
-                  <rect x="148" y="145" width="4" height="40" fill="#f4c053" opacity="0.85" />
-                  {/* floating question mark */}
-                  <circle cx="360" cy="70" r="26" fill="none" stroke="#f4c053" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 4" />
-                  <text x="360" y="80" textAnchor="middle" fontSize="34" fill="#f4c053" fontFamily="Times New Roman" fontWeight="bold">?</text>
-                  {/* floating check */}
-                  <circle cx="60" cy="120" r="22" fill="#f4c053" opacity="0.2" />
-                  <path d="M50 120 L58 128 L72 112" stroke="#f4c053" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Bottom curve */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-background" style={{ clipPath: "ellipse(80% 100% at 50% 100%)" }} />
-      </section>
-
+      <ReferenceHome />
 
       {/* ══════ VIDEO SHOWCASE ══════ */}
-      <section className="py-12 md:py-16 bg-background relative -mt-6 z-10">
+      <section id="home-video" className="th-video-section" style={{padding: "56px 0", background: "#edf1f4", scrollMarginTop: 90}}>
         <div className="container max-w-4xl">
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
@@ -199,14 +66,14 @@ export default function Index() {
             {videoId ? (
               <YouTubePlayer videoId={videoId} title="প্রশ্নল্যাব টিউটোরিয়াল" />
             ) : (
-              <div className="aspect-video w-full rounded-2xl border border-border bg-muted animate-pulse" />
+              <p className="text-center text-muted-foreground py-8">উপরের তিনটি ধাপ অনুসরণ করে সহজেই শুরু করুন।</p>
             )}
           </motion.div>
         </div>
       </section>
 
       {/* ══════ REVIEWS ══════ */}
-      <section className="py-10 md:py-14 bg-background border-t border-border/50">
+      <section className="teacher-review-section py-10 md:py-14 border-t border-border/50">
         <div className="container">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">

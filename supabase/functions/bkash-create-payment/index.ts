@@ -1,3 +1,4 @@
+import { preparePayg } from "../_shared/payg.ts";
 // bKash Tokenized Checkout: Create Payment
 // Called by frontend to initiate a bKash payment. Returns paymentID + bkashURL.
 
@@ -68,6 +69,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const {
       selected_packages,
+      payg,
       coupon_code,
       phone,
       institute_name,
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
       callback_origin,
     } = body ?? {};
 
-    if (!Array.isArray(selected_packages) || selected_packages.length === 0) {
+    if (!payg && (!Array.isArray(selected_packages) || selected_packages.length === 0)) {
       return json({ error: "প্যাকেজ সিলেক্ট করুন" }, 400);
     }
     if (!phone || !/^01[3-9]\d{8}$/.test(String(phone))) {
@@ -83,9 +85,14 @@ Deno.serve(async (req) => {
     }
 
     // Compute amount server-side using DB prices
-    const ids = selected_packages.map((p: any) => Number(p.id)).filter(Boolean);
     let baseAmount = 0;
     const resolvedPackages: any[] = [];
+    if (payg) {
+      const order = await preparePayg(admin, payg);
+      baseAmount = order.price;
+      resolvedPackages.push(order);
+    } else {
+    const ids = selected_packages.map((p: any) => Number(p.id)).filter(Boolean);
     if (ids.length > 0) {
       const { data: pkgs } = await admin
         .from("pricing_packages")
@@ -110,10 +117,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    }
+
     // Validate coupon
     let discount = 0;
     let normalizedCoupon: string | null = null;
-    if (coupon_code) {
+    if (coupon_code && !payg) {
       const code = String(coupon_code).trim().toUpperCase();
       const { data: c } = await admin.from("coupons").select("*").eq("code", code).eq("is_active", true).maybeSingle();
       if (!c) return json({ error: "কুপন কোড সঠিক নয়" }, 400);
@@ -139,7 +148,7 @@ Deno.serve(async (req) => {
     const token = await getBkashToken();
 
     const origin = (callback_origin as string) || req.headers.get("origin") || "";
-    const callbackURL = `${origin.replace(/\/$/, "")}/payment/callback`;
+    const callbackURL = `${origin.replace(/\/$/, "")}/payment/callback${payg ? "?payg=1" : ""}`;
 
     const createRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/create`, {
       method: "POST",

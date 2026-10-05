@@ -28,19 +28,19 @@ afterEach(cleanup);
 describe("saved question library", () => {
   it("browses class, subject and chapter; includes multi-chapter papers without showing unrelated papers", async () => {
     setup();
-    fireEvent.click(await screen.findByRole("button", { name: "নবম ২টি প্রশ্নপত্র" }));
-    fireEvent.click(screen.getByRole("button", { name: "পদার্থ ২টি প্রশ্নপত্র" }));
-    fireEvent.click(screen.getByRole("button", { name: "গতি ১টি প্রশ্নপত্র" }));
+    fireEvent.click(await screen.findByRole("button", { name: "নবম/দশম" }));
+    fireEvent.click(screen.getByRole("button", { name: "পদার্থ" }));
+    fireEvent.click(screen.getByRole("button", { name: "গতি" }));
     expect(screen.getByText("বার্ষিক পরীক্ষা")).toBeInTheDocument();
     expect(screen.queryByText("মডেল টেস্ট")).not.toBeInTheDocument();
     expect(mock.eq).toHaveBeenCalledWith("teacher_id", "teacher-1");
     fireEvent.click(screen.getByRole("button", { name: "সকল শ্রেণি" }));
-    fireEvent.click(screen.getByRole("button", { name: "অষ্টম ০টি প্রশ্নপত্র" }));
+    fireEvent.click(screen.getByRole("button", { name: "অষ্টম শ্রেণি" }));
     expect(screen.getByText("এখানে এখনো কোনো প্রশ্নপত্র সংরক্ষিত নেই")).toBeInTheDocument();
   });
   it("searches saved papers and opens the selected ID without stale draft data", async () => {
     setup();
-    await screen.findByRole("button", { name: "নবম ২টি প্রশ্নপত্র" });
+    fireEvent.click(await screen.findByRole("button", { name: "নবম/দশম" }));
     fireEvent.change(screen.getByRole("textbox", { name: "প্রশ্নপত্র খুঁজুন" }), { target: { value: "মডেল" } });
     expect(screen.queryByText("বার্ষিক পরীক্ষা")).not.toBeInTheDocument();
     sessionStorage.setItem("viewPaperQuestions", "stale");
@@ -58,7 +58,7 @@ describe("saved question library", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("প্রশ্নপত্র লোড করা যায়নি");
     mock.fail = false;
     fireEvent.click(screen.getByRole("button", { name: "আবার চেষ্টা করুন" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "নবম ২টি প্রশ্নপত্র" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "নবম/দশম" })).toBeInTheDocument());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

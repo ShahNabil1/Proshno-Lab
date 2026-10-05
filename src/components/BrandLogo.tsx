@@ -11,7 +11,7 @@ type Props = {
 /**
  * Official Proshno Lab wordmark.
  * Font: HasanHera (lipighor.com) — loaded via @font-face in index.css.
- * Colours are locked to the brand logo: navy #1E3577 plate, white "প্রশ্ন", gold #F4C053 "ল্যাব".
+ * Colours are locked to the brand logo: navy #102E56 plate, white "প্রশ্ন", gold #00B4BC "ল্যাব".
  */
 export default function BrandLogo({ size = 34, plate = false, className }: Props) {
   return (
@@ -25,7 +25,7 @@ export default function BrandLogo({ size = 34, plate = false, className }: Props
       aria-label="প্রশ্নল্যাব"
     >
       <span className={plate ? "text-brand-onplate" : "text-brand-navy"}>প্রশ্ন</span>
-      <span className="text-brand-gold">ল্যাব</span>
+      <span className="text-brand-teal">ল্যাব</span>
     </span>
   );
 }

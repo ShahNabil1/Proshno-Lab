@@ -1,9 +1,13 @@
+import { LANGUAGE_TYPE_LABELS, isLanguageType } from "@/lib/languageQuestionTypes";
 import * as XLSX from "xlsx";
 import { normalizeAnswerKey } from "@/lib/answerKey";
+import { languagePasteVariants } from "@/lib/languagePasteGuides";
+import { ENGLISH_FIRST_MCQ } from "@/lib/englishFirstTemplates";
 
-export type QType = "mcq" | "cq" | "short" | "descriptive";
+export type QType = string;
 
 export const TYPE_LABELS: Record<QType, string> = {
+  ...LANGUAGE_TYPE_LABELS,
   mcq: "MCQ (বহুনির্বাচনী)",
   cq: "CQ (সৃজনশীল)",
   short: "সংক্ষিপ্ত প্রশ্ন (SQ)",
@@ -72,13 +76,21 @@ const REF_NOTES = [
 ];
 
 // ============ Template generation ============
-export function downloadTemplate(type: QType, isMath = false) {
+export function downloadTemplate(type: QType, isMath = false, englishFirst = false) {
+  if (type === 'mcq' && englishFirst) {
+    XLSX.writeFile(buildEnglishFirstMcqTemplate(), 'mcq_english_first_template.xlsx');
+    return;
+  }
+  if (languagePasteVariants(type,englishFirst)) {
+    XLSX.writeFile(buildLanguageTemplate(type,englishFirst), `${type}${englishFirst?'_english_first':''}_template.xlsx`);
+    return;
+  }
   const wb = XLSX.utils.book_new();
   let rows: any[][] = [];
   let sample: any[] = [];
   let notes: string[] = [];
 
-  switch (type) {
+  switch (isLanguageType(type) ? "short" : type) {
     case "mcq":
       rows = [["উদ্দীপক (HTML, optional)", "প্রশ্ন*", "অপশন ক*", "অপশন খ*", "অপশন গ*", "অপশন ঘ*", "সঠিক উত্তর* (a/b/c/d)", "ব্যাখ্যা", "ছবি URL (Cloudinary)", "বোর্ড", "বছর", ...REF_COLS]];
       sample = ["", "বাংলাদেশের রাজধানী কোথায়?", "চট্টগ্রাম", "ঢাকা", "রাজশাহী", "সিলেট", "b", "ঢাকা বাংলাদেশের রাজধানী", "", "", "", ...REF_SAMPLE];
@@ -107,6 +119,10 @@ export function downloadTemplate(type: QType, isMath = false) {
       break;
   }
 
+  if (isLanguageType(type)) {
+    rows[0].push("মোট নম্বর (প্যাসেজ হলে ০)"); sample.push(0);
+    notes.unshift("একটি প্যাসেজের উপপ্রশ্নগুলো এক সারিতে সম্পূর্ণ প্রশ্নসেট হিসেবে লিখুন। টেবিল ও শব্দের বক্সের জন্য HTML ব্যবহার করা যায়।");
+  }
   // Keep the topic column at the end so files made from older templates remain
   // position-compatible. The parser also accepts this column in any position.
   rows[0].push("টপিক (ঐচ্ছিক — না থাকলে অটো তৈরি হবে)");
@@ -129,14 +145,61 @@ export function downloadTemplate(type: QType, isMath = false) {
 
 
 // ============ Excel parsing ============
+export function buildLanguageTemplate(type: QType, englishFirst = false) {
+  const variants = languagePasteVariants(type,englishFirst);
+  if (!variants) throw new Error(`No language template for ${type}`);
+  const topics: Record<string,string[]> = {gap_filling:["With clues","Without clues"],letter_application:["Formal Letter","Formal E-mails","Informal Letter"]};
+  const headers = ["প্যাসেজ / নির্দেশনা (ঐচ্ছিক)", "সম্পূর্ণ প্রশ্নসেট*", "সম্পূর্ণ উত্তর", "ছবি URL", "ব্যাখ্যা", ...REF_COLS, "মোট নম্বর (প্যাসেজ হলে ০)", "টপিক (ঐচ্ছিক — না থাকলে অটো তৈরি হবে)"];
+  const rows = variants.map((variant,i) => {
+    const [question, answer = ""] = variant.sample.split("উত্তর:");
+    const parts = question.split(/^প্রশ্ন:\s*/m);
+    const stimulus = parts.length > 1 ? parts[0].replace(/^উদ্দীপক:\s*/, '').trim() : '';
+    const questionText = parts.length > 1 ? parts.slice(1).join('প্রশ্ন:').trim() : question.trim();
+    return [stimulus, questionText, answer.trim(), "", "", "", "", 0, englishFirst ? '' : topics[type]?.[i] || ""];
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws["!cols"] = headers.map((_,i)=>({wch:i===1||i===2?65:25}));
+  ws["!rows"] = [{hpt:30},...rows.map(()=>({hpt:180}))];
+  XLSX.utils.book_append_sheet(wb,ws,"Questions");
+  const notes = [
+    `${TYPE_LABELS[type]} — নমুনা সারিগুলো নিজের প্রশ্ন দিয়ে বদলান বা মুছে ফেলুন।`,
+    "প্রতি সারিতে একটি সম্পূর্ণ প্রশ্নসেট দিন। (a)–(j) বা একই passage-এর বাক্যগুলো আলাদা সারিতে ভাগ করবেন না।",
+    "প্রশ্ন ও উত্তর আলাদা কলামে লিখুন; উত্তর কলামে উত্তর: বা Ans: লিখতে হবে না।",
+    "টেবিল/শব্দের বক্সের কলাম | অথবা Tab দিয়ে আলাদা করুন। HTML টেবিলও দেওয়া যাবে। একটি cell-এ নতুন লাইন দিতে Alt+Enter চাপুন।",
+    "পুরো Letter/E-mail অথবা Composition একই cell-এ একাধিক paragraph হিসেবে দিন।",
+    "মোট নম্বর নিজের প্রশ্নের জন্য নির্ধারণ করুন; নমুনায় ০ দেওয়া আছে।",
+    "টপিক নির্বাচিত অধ্যায়ে না থাকলে সেভের সময় তৈরি হবে।",
+    ...variants.map(v=>`${v.label}: ${v.desc}`), ...REF_NOTES,
+  ];
+  const instructions = XLSX.utils.aoa_to_sheet([["নির্দেশনা"],...notes.map(note=>[note])]);
+  instructions["!cols"] = [{wch:110}];
+  XLSX.utils.book_append_sheet(wb,instructions,"Instructions");
+  return wb;
+}
+
+export function buildEnglishFirstMcqTemplate() {
+  const q = parsePastedText(ENGLISH_FIRST_MCQ,'mcq')[0];
+  const wb = XLSX.utils.book_new();
+  const headers = ["উদ্দীপক (Seen Passage)","প্রশ্ন*","অপশন ক*","অপশন খ*","অপশন গ*","অপশন ঘ*","সঠিক উত্তর* (a/b/c/d)","ব্যাখ্যা","ছবি URL","বোর্ড","বছর",...REF_COLS,"টপিক (ঐচ্ছিক)"];
+  const ws = XLSX.utils.aoa_to_sheet([headers,[q.stimulus,q.question,q.option_a,q.option_b,q.option_c,q.option_d,q.correct_answer,'','','','','','','']]);
+  ws['!cols'] = headers.map((_,i)=>({wch:i===0?65:30}));
+  XLSX.utils.book_append_sheet(wb,ws,'Questions');
+  const notes = XLSX.utils.aoa_to_sheet([['নির্দেশনা'],['প্রতি সারিতে একটি MCQ এবং চারটি অপশন দিন; সঠিক উত্তর a/b/c/d হবে।'],['উদ্দীপক কলামে সংশ্লিষ্ট Seen Passage দিন; টপিক কলামে Lesson-এর নাম দিন।'],['নমুনা নিজের প্রশ্ন দিয়ে বদলান বা মুছে ফেলুন।']]);
+  notes['!cols'] = [{wch:110}];
+  XLSX.utils.book_append_sheet(wb,notes,'Instructions');
+  return wb;
+}
+
 export async function parseExcelFile(file: File, type: QType, isMath = false): Promise<ParsedQuestion[]> {
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
+  const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   if (rows.length < 2) return [];
   const header = (rows[0] || []).map(s);
   const headerText = header.join("|");
+  const marksColumn = header.findIndex(value => /মোট নম্বর|total marks/i.test(value));
   const topicColumn = header.findIndex((value) => /(?:^|\s)(?:topic|টপিক)(?:\s|$|\()/i.test(value));
   // Header wins when recognizable (old/new templates both work), else fall back to subject
   const mathSheet = type === "cq"
@@ -146,7 +209,14 @@ export async function parseExcelFile(file: File, type: QType, isMath = false): P
   return body.map((r) => {
     const cells = [...r];
     const topicName = topicColumn >= 0 ? s(cells.splice(topicColumn, 1)[0]) : "";
+    const adjustedMarksColumn = marksColumn - (topicColumn >= 0 && topicColumn < marksColumn ? 1 : 0);
+    const marksRaw = marksColumn >= 0 ? cells.splice(adjustedMarksColumn,1)[0] : 0;
     const question = rowToQuestion(cells, type, mathSheet);
+    if (isLanguageType(type)) {
+      const marks = Number(String(marksRaw).replace(/[০-৯]/g,c=>String("০১২৩৪৫৬৭৮৯".indexOf(c))));
+      question.creative_data = {marks: Number.isFinite(marks) && marks >= 0 ? marks : 0};
+      if (!Number.isFinite(marks) || marks < 0) question.errors.push("মোট নম্বর সঠিক নয়");
+    }
     if (topicName) question.topicName = topicName;
     return question;
   });
@@ -205,12 +275,12 @@ function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
     applyRefs(q, boardRefs, uniRefs);
     if (!finalStem) errors.push("উদ্দীপক আবশ্যক");
     if (!qk || !qkh || !qg) errors.push("ক/খ/গ প্রশ্ন আবশ্যক");
-  } else if (type === "short") {
+  } else if ((type === "short" || isLanguageType(type))) {
     const [stim, question, ans, img, expl, boardRefs, uniRefs] = r.map(s);
     const imgTag = wrapImg(img);
-    q.stimulus = [stim, imgTag].filter(Boolean).join("\n") || undefined;
-    q.question = question;
-    q.explanation = [ans, expl].filter(Boolean).join("\n") || undefined;
+    q.stimulus = [isLanguageType(type) ? languageMultiline(stim) : stim, imgTag].filter(Boolean).join("\n") || undefined;
+    q.question = isLanguageType(type) ? languageMultiline(question) : question;
+    q.explanation = [ans, expl].filter(Boolean).map(value => isLanguageType(type) ? languageMultiline(value) : value).join("\n") || undefined;
     applyRefs(q, boardRefs, uniRefs);
     if (!question) errors.push("প্রশ্ন খালি");
   } else if (type === "descriptive") {
@@ -239,6 +309,24 @@ function mdImages(t: string) {
 
 const multiline = (v: string) => mdImages(String(v || "").trim()).replace(/\n/g, "<br/>");
 
+function languageMultiline(value: string) {
+  const lines = value.trim().split("\n");
+  const result: string[] = [];
+  const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].includes("\t") && !/^\s*\|.*\|\s*$/.test(lines[i])) { result.push(lines[i]); continue; }
+    const rows: string[] = [];
+    while (i < lines.length && (lines[i].includes("\t") || /^\s*\|.*\|\s*$/.test(lines[i]))) {
+      const cells = lines[i].includes("\t") ? lines[i].split("\t") : lines[i].trim().slice(1,-1).split("|");
+      if (!cells.every(c => /^\s*:?-+:?\s*$/.test(c))) rows.push(`<tr>${cells.map(c => `<td>${escape(c.trim())}</td>`).join("")}</tr>`);
+      i++;
+    }
+    i--;
+    result.push(`<table border="1"><tbody>${rows.join("")}</tbody></table>`);
+  }
+  return multiline(result.join("\n"));
+}
+
 // key patterns — value is ALWAYS the last capture group
 const KEY_PATTERNS: Array<[string, RegExp]> = [
   ["ans_ka", /^\(?\s*(?:উত্তর|উঃ|ans(?:wer)?)\s*[-–]?\s*(?:ক|a)\s*[).:：]\s*(.*)$/i],
@@ -250,6 +338,7 @@ const KEY_PATTERNS: Array<[string, RegExp]> = [
   ["answer", /^\(?\s*(?:সঠিক\s*উত্তর|উত্তর|উঃ|ans(?:wer)?)\s*[).:：]\s*(.*)$/i],
   ["explanation", /^\(?\s*(?:ব্যাখ্যা|বর্ণনা|explanation|expl)\s*[).:：]\s*(.*)$/i],
   ["board", /^\(?\s*(?:বোর্ড(?:\s*রেফারেন্স)?|board(?:\s*ref)?)\s*[).:：]\s*(.*)$/i],
+  ["school", /^\(?\s*(?:স্কুল(?:\s*রেফারেন্স)?|বিদ্যালয়(?:\s*রেফারেন্স)?|বিদ্যালয়(?:\s*রেফারেন্স)?|school(?:\s*(?:ref|reference))?)\s*[).:：]\s*(.*)$/i],
   ["uni", /^\(?\s*(?:বিশ্ববিদ্যালয়(?:\s*রেফারেন্স)?|ভার্সিটি|university|uni(?:versity)?\s*ref)\s*[).:：]\s*(.*)$/i],
   ["image", /^\(?\s*(?:ছবি|চিত্র|image|img)\s*(?:url)?\s*[).:：]\s*(.*)$/i],
 ];
@@ -261,6 +350,9 @@ const optKey = (raw: string) => OPT_KEY[raw] || raw.toLowerCase();
 function splitBlocks(text: string, type: QType): string[] {
   const bySep = text.split(/\n\s*(?:-{3,}|={3,}|\*{3,}|#{3,})\s*\n/);
   if (bySep.length > 1) return bySep.map((t) => t.trim()).filter(Boolean);
+  // Language sets may contain numbered sentences, letter paragraphs and answers.
+  // Only an explicit separator starts another set; blank lines are content.
+  if (isLanguageType(type)) return [text];
 
   const startRe = type === "cq"
     ? /^\s*(?:উদ্দীপক|উদ্দিপক|stimulus)\s*[).:：]|^\s*[0-9০-৯]+\s*[.)।]/i
@@ -283,14 +375,14 @@ function splitBlocks(text: string, type: QType): string[] {
   return out;
 }
 
-function parseBlockFields(block: string) {
+function parseBlockFields(block: string, languageSet = false) {
   const f: Record<string, string> = {};
   const opts: Record<string, string> = {};
   const lead: string[] = [];
   let cur: { t: "lead" | "f" | "o"; k: string } = { t: "lead", k: "" };
 
   const append = (v: string) => {
-    if (!v) return;
+    if (!v && !languageSet) return;
     if (cur.t === "lead") lead.push(v);
     else if (cur.t === "f") f[cur.k] = f[cur.k] ? f[cur.k] + "\n" + v : v;
     else opts[cur.k] = opts[cur.k] ? opts[cur.k] + "\n" + v : v;
@@ -298,21 +390,28 @@ function parseBlockFields(block: string) {
 
   const raws = block.split("\n");
   for (let i = 0; i < raws.length; i++) {
-    let line = raws[i].trim();
-    if (!line) continue;
-    if (i === 0 || lead.length === 0) line = line.replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
+    let line = languageSet && raws[i].includes("\t") ? raws[i].replace(/\r$/, "") : raws[i].trim();
+    if (!line) { if (languageSet) append(""); continue; }
+    if (i === 0 || (!languageSet && lead.length === 0)) line = line.replace(/^\s*[0-9০-৯]+\s*[.)।]\s*/, "");
     if (!line) continue;
 
     if (IMG_URL.test(line)) { f.image = f.image ? f.image + "\n" + line : line; cur = { t: "f", k: "image" }; continue; }
 
+    if (languageSet && /^(?:উত্তর|উঃ|answer|ans)\s*\(?[a-jকখগঘঙচছজঝঞ]\)?\s*[).:：]/i.test(line)) {
+      cur = { t: "f", k: "answer" };
+      append(line.replace(/^(?:উত্তর|উঃ|answer|ans)\s*/i, ""));
+      continue;
+    }
+
     let hit = false;
     for (const [key, re] of KEY_PATTERNS) {
+      if (languageSet && key.startsWith("ans_")) continue;
       const m = line.match(re);
       if (m) {
         cur = { t: "f", k: key };
-        f[key] = "";
         const val = (m[m.length - 1] || "").trim();
-        if (val) f[key] = val;
+        if (["board", "school", "uni"].includes(key)) f[key] = [f[key], val].filter(Boolean).join("\n");
+        else f[key] = val;
         hit = true;
         break;
       }
@@ -320,7 +419,7 @@ function parseBlockFields(block: string) {
     if (hit) continue;
 
     const om = line.match(OPT_RE);
-    if (om) {
+    if (om && !languageSet) {
       const k = optKey(om[1]);
       cur = { t: "o", k };
       opts[k] = om[2].trim();
@@ -342,7 +441,7 @@ function imagesHtml(v?: string) {
 }
 
 function attachCommon(q: ParsedQuestion, f: Record<string, string>) {
-  if (f.board) q.boardRefs = parseRefCell(f.board).map((r) => ({ board: r.name, year: r.year }));
+  if (f.board || f.school) q.boardRefs = parseRefCell([f.board,f.school].filter(Boolean).join("\n")).map((r) => ({ board: r.name, year: r.year }));
   if (f.uni) q.uniRefs = parseRefCell(f.uni).map((r) => ({ name: r.name, year: r.year }));
 }
 
@@ -355,7 +454,7 @@ export function parsePastedText(text: string, type: QType, isMath = false): Pars
 }
 
 function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQuestion | null {
-  const { f, opts, lead } = parseBlockFields(block);
+  const { f, opts, lead } = parseBlockFields(block, isLanguageType(type));
   const errors: string[] = [];
   const q: ParsedQuestion = { tempId: uid(), type, question: "", errors };
   const img = imagesHtml(f.image);
@@ -407,12 +506,20 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
     attachCommon(q, f);
     if (!stem) errors.push("উদ্দীপক detect হয়নি");
     if (!qk || !qkh || !qg) errors.push(mathMode ? "গণিত CQ-তে ক/খ/গ — ৩টি প্রশ্নই লাগবে" : "ক/খ/গ প্রশ্ন detect হয়নি");
-    
+
     if (!stem && !qk) return null;
     return q;
   }
 
 
+  if (isLanguageType(type)) {
+    q.stimulus = [languageMultiline(f.stimulus || ""), img].filter(Boolean).join("\n") || undefined;
+    q.question = languageMultiline([lead.join("\n"), f.question || ""].filter(Boolean).join("\n"));
+    q.explanation = [languageMultiline(f.answer || ""), languageMultiline(f.explanation || "")].filter(Boolean).join("<br/>") || undefined;
+    attachCommon(q, f);
+    if (!q.question) { errors.push("প্রশ্ন detect হয়নি"); return null; }
+    return q;
+  }
   if (type === "short") {
     q.stimulus = [multiline(f.stimulus || ""), img].filter(Boolean).join("\n") || undefined;
     q.question = multiline(f.question || "") || leadText;
@@ -513,8 +620,9 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
   } else if (q.type === "cq" || q.type === "descriptive") {
     p.creative_data = q.creative_data || {};
     p.explanation = q.explanation || null;
-  } else if (q.type === "short") {
+  } else if ((q.type === "short" || isLanguageType(q.type))) {
     p.explanation = q.explanation || null;
   }
+  if (isLanguageType(q.type)) { p.creative_data = q.creative_data || { marks: 0 }; p.correct_answer = q.correct_answer || null; }
   return p;
 }

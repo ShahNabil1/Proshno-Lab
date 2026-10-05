@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-import BrandLogo from "@/components/BrandLogo";
-import { brandMarkUrl } from "@/lib/brandAssets";
+import BrandLockup from "@/components/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 
@@ -68,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then(({ data }) => setIsAdmin(!!data));
     supabase.rpc("has_role", { _user_id: user.id, _role: "developer" })
       .then(({ data }) => setIsDeveloper(!!data));
-    
+
     supabase.from("user_roles").select("allowed_pages").eq("user_id", user.id).eq("role", "admin").maybeSingle()
       .then(({ data }) => {
         setAllowedPages((data as any)?.allowed_pages || null);
@@ -107,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Check if current route is allowed
   const currentPath = location.pathname;
   const isRouteAllowed = !allowedPages || allowedPages.some(p => currentPath === p || currentPath.startsWith(p + "/"));
-  
+
   // Check if route is hidden for non-developers
   const isAdminPageHidden = !isDeveloper && adminHiddenPages.includes(currentPath);
 
@@ -132,14 +131,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const fullName = user.user_metadata?.full_name || "Admin";
 
   return (
-    <div className="h-screen overflow-hidden flex bg-background font-body">
+    <div className="admin-workspace h-screen overflow-hidden flex bg-white font-body">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Admin Dark Navy Sidebar */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden text-white select-none shadow-2xl lg:shadow-none",
+        "brand-sidebar fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden text-white select-none shadow-2xl lg:shadow-none",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         desktopCollapsed
           ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
@@ -147,21 +146,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}>
         {/* Brand Header */}
         <div className="min-h-[86px] flex items-center justify-between px-3.5 py-3 border-b border-white/15 shrink-0 bg-[#07162b] shadow-sm">
-          <Link to="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 min-w-0 group" title="হোম পেইজে যান">
-            <img
-              src={brandMarkUrl}
-              alt="প্রশ্নল্যাব"
-              className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-amber-400/50 group-hover:ring-[#F4C053] transition-all shadow-md"
-            />
-            <div className="flex flex-col min-w-0 leading-none">
-              <BrandLogo size={40} className="[&_.text-brand-navy]:text-white font-bold drop-shadow-sm tracking-tight" />
-              <span className="text-[13px] text-amber-300 font-semibold tracking-wide mt-1.5 leading-none">এডমিন কন্ট্রোল প্যানেল</span>
-            </div>
+          <Link to="/" onClick={() => setSidebarOpen(false)} className="sidebar-brand-link flex items-center min-w-0 group" title="হোম পেইজে যান">
+            <BrandLockup size={48} />
           </Link>
 
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1 shrink-0"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white border-transparent hover:bg-white/5 hover:text-white transition-colors ml-1 shrink-0"
             aria-label="সাইডবার বন্ধ করুন"
           >
             <X className="w-5 h-5" />
@@ -172,7 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-2 text-white custom-sidebar-scrollbar [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
           {Object.entries(groups).map(([groupLabel, items]) => (
             <div key={groupLabel}>
-              <p className="text-[13px] font-heading font-bold uppercase tracking-wider text-white px-2.5 pt-2 pb-1">{groupLabel}</p>
+              <p className="text-sm font-heading font-normal text-white/55 px-3 pt-4 pb-2">{groupLabel}</p>
               <div className="space-y-1">
                 {items.map((item) => {
                   const active = location.pathname === item.path;
@@ -180,23 +171,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link
                       key={item.path}
                       to={item.path}
+                      aria-current={active ? "page" : undefined}
                       onClick={() => setSidebarOpen(false)}
                       className={cn(
-                        "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[15px] font-semibold transition-all duration-150 leading-tight select-none",
+                        "sidebar-nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-[18px] font-normal transition-colors duration-150 leading-7 select-none border-l-2",
                         active
-                          ? "bg-[#C8D5E5] text-[#0A1E38] shadow-sm font-bold"
-                          : "text-white hover:bg-white/10"
+                          ? "bg-white/10 text-white border-[#00B4BC]"
+                          : "text-white border-transparent hover:bg-white/5 hover:text-white"
                       )}
                     >
                       <div
                         className={cn(
-                          "w-[26px] h-[26px] rounded flex items-center justify-center shrink-0 border transition-colors",
+                          "w-5 h-5 flex items-center justify-center shrink-0 transition-colors",
                           active
-                            ? "border-[#0A1E38]/40 text-[#0A1E38] bg-[#0A1E38]/10"
-                            : "border-white/40 text-white bg-white/5 group-hover:border-white"
+                            ? "text-[#00B4BC]"
+                            : "text-white/50 group-hover:text-[#00B4BC]"
                         )}
                       >
-                        <item.icon className="w-3.5 h-3.5" />
+                        <item.icon className="w-[18px] h-[18px]" strokeWidth={1.6} />
                       </div>
                       <span className="truncate">{item.label}</span>
                     </Link>
@@ -211,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-2.5 pt-1.5 border-t border-white/10 bg-[#07162b]/80">
           <Link
             to="/dashboard"
-            className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-white/95 bg-[#0f2c54] hover:bg-[#153e77] border border-[#1e467d] transition-all shadow-sm"
+            className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-white/95 bg-white/5 hover:bg-white/10 border border-white/15 transition-all shadow-sm"
           >
             ← শিক্ষক ড্যাশবোর্ডে ফিরুন
           </Link>

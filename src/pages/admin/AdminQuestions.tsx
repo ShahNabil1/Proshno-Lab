@@ -1,3 +1,6 @@
+import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
+import LanguageQuestionForm from "@/components/LanguageQuestionForm";
+import { ALL_TYPES, BASE_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, suggestedLanguageTopics, languageRules } from "@/lib/languageQuestionTypes";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
@@ -24,7 +27,7 @@ import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { sortClasses, sortSubjects, sortChapters } from "@/lib/classOrder";
 import AdminQuestionDuplicates from "@/pages/admin/AdminQuestionDuplicates";
 
-const typeOptions = ["mcq", "short", "cq", "descriptive"];
+const typeOptions = ALL_TYPES;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
 const SPECIAL_FILTER_OPTIONS = [
@@ -131,6 +134,28 @@ export default function AdminQuestions() {
 
   // Determine if selected subject is math-type (3-part CQ) or other (4-part CQ)
   const selectedSubjectName = subjects.find(s => String(s.id) === form.subject_id)?.name || allSubjects.find(s => String(s.id) === form.subject_id)?.name || "";
+  const selectedClassName = allClasses.find(c => String(c.id) === form.class_id)?.name || "";
+  const selectedChapterName = patternChapterName(form.chapter_id,chapters);
+  const formTypes = allowedQuestionTypes(selectedClassName, selectedSubjectName, selectedChapterName);
+  const filterTypes = filterSubjectId ? allowedQuestionTypes(allClasses.find(c=>String(c.id)===filterClassId)?.name || "", allSubjects.find(s=>String(s.id)===filterSubjectId)?.name || "", filterChapters.find(c=>String(c.id)===filterChapterId)?.name || "") : ALL_TYPES;
+  const suggestedChapters: string[] = [];
+  const countTypes = filterSubjectId ? filterTypes : BASE_TYPES;
+  const keepLegacyType = Boolean(editItem && form.class_id === String(editItem.class_id) && form.subject_id === String(editItem.subject_id) && form.chapter_id === String(editItem.chapter_id));
+  const [languageMarks, setLanguageMarks] = useState(0);
+  const [newTopicName, setNewTopicName] = useState("");
+  useEffect(() => {
+    if (!keepLegacyType && !formTypes.includes(form.type)) setForm(f=>({...f,type:formTypes[0] || "mcq"}));
+  }, [form.class_id, form.subject_id, form.chapter_id, selectedClassName, selectedSubjectName, selectedChapterName, editItem]);
+  useEffect(() => { if (filterType && !filterTypes.includes(filterType)) setFilterType(""); }, [filterClassId,filterSubjectId,filterChapterId]);
+  useEffect(() => { setLanguageMarks(Number(editItem?.creative_data?.marks) || 0); setNewTopicName(""); }, [editItem, fullPageCreate]);
+  useEffect(() => { setNewTopicName(""); }, [form.chapter_id]);
+  const languageEditor = isLanguageType(form.type) ? <LanguageQuestionForm type={form.type} question={form.question} answer={form.correct_answer} stimulus={stimulusText} marks={languageMarks} onChange={(field,value)=> {
+    if(field === "marks") setLanguageMarks(Number(value));
+    else if(field === "stimulus") setStimulusText(String(value));
+    else setForm(f=>({...f,[field]:String(value)}));
+  }} /> : null;
+  const suggestedTopics = suggestedLanguageTopics(selectedClassName,selectedSubjectName,selectedChapterName);
+  const languageTopicInput = form.chapter_id && languageRules(selectedClassName,selectedSubjectName) ? <div><Label>নতুন টপিক (ঐচ্ছিক)</Label><Input list="language-topic-suggestions" value={newTopicName} onChange={e=>{setNewTopicName(e.target.value);setForm(f=>({...f,topic_id:""}));}} placeholder="টপিক লিখুন বা তালিকা থেকে নিন" /><datalist id="language-topic-suggestions">{suggestedTopics.map(t=><option key={t} value={t} />)}</datalist></div> : null;
   const isMathSubject = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test(selectedSubjectName.trim());
 
   const classes = filterClasses(allClasses);
@@ -236,12 +261,12 @@ export default function AdminQuestions() {
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const typeCountsQuery = useQuery({
-    queryKey: ["admin-questions-type-counts", { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId }],
+    queryKey: ["admin-questions-type-counts", countTypes.join(","), { searchTerm: searchTerm.trim(), filterClassId, filterSubjectId, filterChapterId, filterTopicId }],
     enabled: !permLoading && !filterSpecial,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     queryFn: async () => {
-      const types = ["mcq", "short", "cq", "descriptive"];
+      const types = countTypes;
       const results = await Promise.all(types.map(async (t) => {
         let q = supabase.from("questions").select("id", { count: "exact", head: true }).eq("type", t);
         if (filterClassId) q = q.eq("class_id", Number(filterClassId));
@@ -256,7 +281,7 @@ export default function AdminQuestions() {
     },
   });
   const specialTypeCounts = filterSpecial ? (specialPoolQuery.data || []).reduce((counts: Record<string, number>, q: any) => {
-    if (q.type in counts) counts[q.type] += 1;
+    counts[q.type] = (counts[q.type] || 0) + 1;
     return counts;
   }, { mcq: 0, short: 0, cq: 0, descriptive: 0 }) : null;
   const typeCounts = specialTypeCounts ?? typeCountsQuery.data ?? { mcq: 0, short: 0, cq: 0, descriptive: 0 };
@@ -288,7 +313,7 @@ export default function AdminQuestions() {
 
   // Load topics when chapter changes
   useEffect(() => {
-    if (!form.chapter_id) { setTopics([]); return; }
+    if (!form.chapter_id || form.chapter_id.startsWith(PATTERN_CHAPTER_PREFIX)) { setTopics([]); setLoadingTopics(false); return; }
     setLoadingTopics(true);
     supabase.from("topics").select("id, name").eq("chapter_id", Number(form.chapter_id)).order("name")
       .then(({ data }) => { setTopics(data || []); setLoadingTopics(false); });
@@ -342,6 +367,27 @@ export default function AdminQuestions() {
   };
 
   const handleSave = async () => {
+    const resolveChapter = async () => {
+      try {
+        const id=await ensurePatternChapter(form.chapter_id,Number(form.subject_id));
+        if(form.chapter_id.startsWith(PATTERN_CHAPTER_PREFIX)) {
+          setChapters(cs=>cs.some(c=>c.id===id)?cs:[...cs,{id,name:selectedChapterName}]);
+          setForm(f=>({...f,chapter_id:String(id)}));
+        }
+        return id;
+      } catch(error:any) {toast.error(error.message);return null;}
+    };
+    const resolveTopic = async (chapterId:number) => {
+      if(!newTopicName.trim()) return form.topic_id ? Number(form.topic_id) : null;
+      const existing = topics.find(t=>t.name.trim().toLowerCase()===newTopicName.trim().toLowerCase());
+      if(existing) return existing.id;
+      const {data,error}=await supabase.from("topics").insert({name:newTopicName.trim(),chapter_id:chapterId}).select("id,name").single();
+      if(error || !data) throw error || new Error("Topic could not be created");
+      setTopics(ts=>[...ts,data]);setForm(f=>({...f,topic_id:String(data.id)}));setNewTopicName("");return data.id;
+    };
+    const safeResolveTopic = async (chapterId:number) => {
+      try {return {id:await resolveTopic(chapterId)};} catch(error:any) {toast.error(error.message);return null;}
+    };
     // Grouped MCQ save logic
     if (form.type === "mcq" && isGroupedMcq) {
       if (!stimulusText || !form.class_id || !form.subject_id || !form.chapter_id) {
@@ -354,6 +400,10 @@ export default function AdminQuestions() {
         return;
       }
 
+      const resolvedChapterId = await resolveChapter();
+      if(!resolvedChapterId) return;
+      const resolvedTopic = await safeResolveTopic(resolvedChapterId);
+      if(!resolvedTopic) return;
       const { data: { user } } = await supabase.auth.getUser();
       const groupId = editItem?.stimulus_group_id || crypto.randomUUID();
 
@@ -365,8 +415,8 @@ export default function AdminQuestions() {
       const payloads = validQs.map((gq) => ({
         class_id: Number(form.class_id),
         subject_id: Number(form.subject_id),
-        chapter_id: Number(form.chapter_id),
-        topic_id: form.topic_id ? Number(form.topic_id) : null,
+        chapter_id: resolvedChapterId,
+        topic_id: resolvedTopic.id,
         category_id: form.category_id ? Number(form.category_id) : null,
         type: "mcq",
         question: gq.question,
@@ -422,9 +472,13 @@ export default function AdminQuestions() {
       ? (form.desc_q_ka.substring(0, 100) + (form.desc_q_ka.length > 100 ? "..." : ""))
       : form.question;
 
+    const resolvedChapterId=await resolveChapter();
+    if(!resolvedChapterId) return;
+    const resolvedTopic = await safeResolveTopic(resolvedChapterId);
+    if(!resolvedTopic) return;
     const payload: any = {
-      class_id: Number(form.class_id), subject_id: Number(form.subject_id), chapter_id: Number(form.chapter_id),
-      topic_id: form.topic_id ? Number(form.topic_id) : null,
+      class_id: Number(form.class_id), subject_id: Number(form.subject_id), chapter_id: resolvedChapterId,
+      topic_id: resolvedTopic.id,
       type: form.type,
       question: questionText,
       option_a: form.option_a || null, option_b: form.option_b || null,
@@ -433,7 +487,7 @@ export default function AdminQuestions() {
       board_references: form.board_references.length > 0 ? form.board_references : [],
       university_references: form.university_references.length > 0 ? form.university_references : [],
       // For single MCQ with optional stimulus
-      stimulus_text: form.type === "mcq" && stimulusText ? stimulusText : null,
+      stimulus_text: (form.type === "mcq" || isLanguageType(form.type)) && stimulusText ? stimulusText : null,
       stimulus_group_id: null,
     };
 
@@ -462,6 +516,7 @@ export default function AdminQuestions() {
       };
     }
 
+    if (isLanguageType(form.type)) payload.creative_data = { marks: languageMarks };
     if (form.category_id) payload.category_id = Number(form.category_id);
 
     if (editItem) {
@@ -547,12 +602,7 @@ export default function AdminQuestions() {
     });
   };
 
-  const typeLabel = (type: string) => ({
-    mcq: "MCQ",
-    short: "সংক্ষিপ্ত",
-    cq: "সৃজনশীল",
-    descriptive: "বর্ণনামূলক",
-  }[type] || type.toUpperCase());
+  const typeLabel = questionTypeLabel;
 
   const answerLetter = (answer: string | null | undefined) => ({
     a: "ক", b: "খ", c: "গ", d: "ঘ",
@@ -619,7 +669,7 @@ export default function AdminQuestions() {
             ? <p className="font-semibold text-emerald-800">সঠিক উত্তর: {answerLetter(item.correct_answer)}</p>
             : <p className="text-muted-foreground">সঠিক উত্তর যোগ করা হয়নি।</p>
         )}
-        {item.type === "short" && (item.correct_answer
+        {(item.type === "short" || isLanguageType(item.type)) && (item.correct_answer
           ? richBlock(item.correct_answer)
           : <p className="text-muted-foreground">উত্তর যোগ করা হয়নি।</p>)}
         {(item.type === "cq" || item.type === "descriptive") && (hasStructuredAnswer
@@ -664,6 +714,7 @@ export default function AdminQuestions() {
                   <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.chapter_id} onChange={(e) => setForm({ ...form, chapter_id: e.target.value, topic_id: "" })}>
                     <option value="">নির্বাচন করুন</option>
                     {chapters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {suggestedChapters.map(name=><option key={name} value={PATTERN_CHAPTER_PREFIX+name}>{name}</option>)}
                   </select>
                 </div>
                 <div>
@@ -676,10 +727,13 @@ export default function AdminQuestions() {
                 <div>
                   <Label>টাইপ</Label>
                   <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                    {typeOptions.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+                    {[...new Set([...formTypes, ...(keepLegacyType ? [form.type] : [])])].map((t) => <option key={t} value={t}>{questionTypeLabel(t)}</option>)}
                   </select>
                 </div>
               </div>
+              {form.chapter_id.startsWith(PATTERN_CHAPTER_PREFIX) && <p className="text-sm text-muted-foreground">নতুন বিভাগটি প্রশ্ন সেভ করার সময় তৈরি হবে। Lesson-এর নাম নতুন টপিক হিসেবে লিখতে পারেন।</p>}
+              {languageTopicInput}
+              {languageEditor}
               {/* Reuse the same form content from dialog below - rendered inline */}
               {form.type === "cq" ? (
                 <div className="space-y-4">
@@ -859,7 +913,7 @@ export default function AdminQuestions() {
           <SelectTrigger className="w-[150px]"><SelectValue placeholder="টাইপ" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">সকল টাইপ</SelectItem>
-            {typeOptions.map((t) => <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>)}
+            {filterTypes.map((t) => <SelectItem key={t} value={t}>{questionTypeLabel(t)}</SelectItem>)}
           </SelectContent>
         </Select>
         {(searchTerm || filterClassId || filterSubjectId || filterChapterId || filterTopicId || filterType || filterSpecial) && (
@@ -916,12 +970,7 @@ export default function AdminQuestions() {
           <span className="text-xs font-medium">মোট প্রশ্ন:</span>
           <span className="text-sm font-bold tabular-nums">{totalCount.toLocaleString("bn-BD")}</span>
         </div>
-        {[
-          { key: "mcq", label: "MCQ", color: "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" },
-          { key: "short", label: "সংক্ষিপ্ত", color: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100" },
-          { key: "cq", label: "সৃজনশীল", color: "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100" },
-          { key: "descriptive", label: "বর্ণনামূলক", color: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100" },
-        ].map((t) => {
+        {countTypes.map(key=>({key,label:questionTypeLabel(key),color:"border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"})).map((t) => {
           const active = filterType === t.key;
           return (
             <button
@@ -1147,6 +1196,7 @@ export default function AdminQuestions() {
                 <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.chapter_id} onChange={(e) => setForm({ ...form, chapter_id: e.target.value, topic_id: "" })}>
                   <option value="">নির্বাচন করুন</option>
                   {chapters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {suggestedChapters.map(name=><option key={name} value={PATTERN_CHAPTER_PREFIX+name}>{name}</option>)}
                 </select>
               </div>
               <div>
@@ -1159,7 +1209,7 @@ export default function AdminQuestions() {
               <div>
                 <Label>টাইপ</Label>
                 <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                  {typeOptions.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+                  {[...new Set([...formTypes, ...(keepLegacyType ? [form.type] : [])])].map((t) => <option key={t} value={t}>{questionTypeLabel(t)}</option>)}
                 </select>
               </div>
             </div>
@@ -1385,6 +1435,9 @@ export default function AdminQuestions() {
               </>
             )}
 
+            {form.chapter_id.startsWith(PATTERN_CHAPTER_PREFIX) && <p className="text-sm text-muted-foreground">নতুন বিভাগটি প্রশ্ন সেভ করার সময় তৈরি হবে। Lesson-এর নাম নতুন টপিক হিসেবে লিখতে পারেন।</p>}
+            {languageTopicInput}
+            {languageEditor}
             {/* References & Metadata Section */}
             <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
               <p className="text-sm font-semibold text-muted-foreground">রেফারেন্স এবং মেটাডাটা</p>

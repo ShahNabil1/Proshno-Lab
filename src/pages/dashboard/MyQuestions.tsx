@@ -1,5 +1,5 @@
-﻿import { useEffect, useState } from "react";
-import { ChevronRight, Folder, FileText, Trash2, Calendar, Cloud, Search, ArrowLeft, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronRight, Folder, FileText, Trash2, Calendar, Cloud, Search, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -13,7 +13,22 @@ import type { Tables } from "@/integrations/supabase/types";
 type SavedPaper = Pick<Tables<"saved_papers">, "id" | "institution_name" | "exam_name" | "class_name" | "subject_name" | "chapter_names" | "question_ids" | "created_at">;
 type Catalog = { classes: Tables<"classes">[]; subjects: Tables<"subjects">[]; chapters: Tables<"chapters">[] };
 const bn = (n: number) => n.toLocaleString("bn-BD");
-const className = (p: SavedPaper) => p.class_name || "অশ্রেণীবদ্ধ";
+// Group both language versions by level without changing saved paper records.
+const classFolder = (name: string) => {
+  const normalized = name.normalize("NFC").replace(/য়/g, "য়").replace(/[০-৯]/g, d => String("০১২৩৪৫৬৭৮৯".indexOf(d)));
+  const levels: [number, string, string[]][] = [
+    [12, "এইচএসসি", ["একাদশ", "দ্বাদশ", "এইচএসসি", "hsc"]],
+    [10, "নবম/দশম", ["নবম", "দশম"]],
+    [8, "অষ্টম শ্রেণি", ["অষ্টম"]], [7, "সপ্তম শ্রেণি", ["সপ্তম"]],
+    [6, "ষষ্ঠ শ্রেণি", ["ষষ্ঠ"]], [5, "পঞ্চম শ্রেণি", ["পঞ্চম"]],
+    [4, "চতুর্থ শ্রেণি", ["চতুর্থ"]], [3, "তৃতীয় শ্রেণি", ["তৃতীয়"]],
+  ];
+  const numbers = (normalized.match(/\d+/g) || []).map(Number);
+  const level = Math.max(-1, ...numbers);
+  return levels.find(([n, , words]) => (n === 12 ? level === 11 || level === 12 : n === 10 ? level === 9 || level === 10 : level === n) || words.some(w => normalized.toLowerCase().includes(w)))?.[1] || name;
+};
+const CLASS_FOLDER_ORDER = ["এইচএসসি", "নবম/দশম", "অষ্টম শ্রেণি", "সপ্তম শ্রেণি", "ষষ্ঠ শ্রেণি", "পঞ্চম শ্রেণি", "চতুর্থ শ্রেণি", "তৃতীয় শ্রেণি"];
+const className = (p: SavedPaper) => classFolder(p.class_name || "অশ্রেণীবদ্ধ");
 const subjectName = (p: SavedPaper) => p.subject_name || "বিষয় উল্লেখ নেই";
 const unique = (values: string[]) => [...new Set(values)];
 
@@ -21,7 +36,7 @@ export default function MyQuestions() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const selectedClass = params.get("class") || "";
+  const selectedClass = classFolder(params.get("class") || "");
   const selectedSubject = selectedClass ? params.get("subject") || "" : "";
   const selectedChapter = selectedSubject ? params.get("chapter") || "" : "";
   const [papers, setPapers] = useState<SavedPaper[]>([]);
@@ -93,51 +108,47 @@ export default function MyQuestions() {
   const scope = !selectedClass ? papers : !selectedSubject ? classPapers : !selectedChapter ? subjectPapers : subjectPapers.filter(p => p.chapter_names?.includes(selectedChapter));
   const query = search.trim().toLocaleLowerCase();
   const filtered = scope.filter(p => [p.exam_name, p.institution_name, p.class_name, p.subject_name, ...(p.chapter_names || [])].join(" ").toLocaleLowerCase().includes(query));
-  const classIds = catalog.classes.filter(c => c.name === selectedClass).map(c => c.id);
+  const classIds = catalog.classes.filter(c => classFolder(c.name) === selectedClass).map(c => c.id);
   const subjects = catalog.subjects.filter(s => classIds.includes(s.class_id));
   const subjectIds = subjects.filter(s => s.name === selectedSubject).map(s => s.id);
   const folders = !selectedClass
-    ? unique([...catalog.classes.map(c => c.name), ...papers.map(className)])
+    ? unique([...catalog.classes.map(c => classFolder(c.name)), ...papers.map(className)]).sort((a, b) => {
+        const rank = (name: string) => { const i = CLASS_FOLDER_ORDER.indexOf(name); return i < 0 ? 100 : i; };
+        return rank(a) - rank(b) || a.localeCompare(b, "bn");
+      })
     : !selectedSubject
       ? unique([...subjects.map(s => s.name), ...classPapers.map(subjectName)])
       : !selectedChapter
         ? unique([...catalog.chapters.filter(c => subjectIds.includes(c.subject_id)).map(c => c.name), ...subjectPapers.flatMap(p => p.chapter_names || [])])
         : [];
-  const count = (name: string) => (!selectedClass ? papers.filter(p => className(p) === name) : !selectedSubject ? classPapers.filter(p => subjectName(p) === name) : subjectPapers.filter(p => p.chapter_names?.includes(name))).length;
 
   return (
-    <div className="space-y-6">
-      <div className="gradient-hero rounded-2xl p-6 sm:p-8 text-white">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-white/15 p-3"><Cloud className="h-7 w-7" /></div>
-            <div><h1 className="font-heading text-2xl font-bold">আমার তৈরি প্রশ্ন</h1><p className="mt-1 text-sm text-white/80">ক্লাউড ব্যাকআপ • {bn(papers.length)}টি সংরক্ষিত প্রশ্নপত্র</p></div>
-          </div>
-          <Button variant="secondary" onClick={() => navigate("/dashboard/create")}><Plus className="w-4 h-4 mr-2" />প্রশ্ন তৈরি করুন</Button>
-        </div>
-        <p className="mt-5 text-sm text-white/80">সংরক্ষিত প্রশ্নপত্র শ্রেণি, বিষয় ও অধ্যায় অনুযায়ী খুঁজুন। খুলে দেখুন, সম্পাদনা করুন বা ডাউনলোড করুন।</p>
-      </div>
+    <div className="space-y-3 text-zinc-950">
+      <header className="flex items-center justify-center gap-2 bg-[#0A1E38] px-4 py-3 text-white">
+        <Cloud className="h-5 w-5" /><h1 className="font-heading text-xl font-bold">ক্লাউড ব্যাকআপ</h1>
+      </header>
+      <p className="border border-dashed border-zinc-200 px-4 py-3 text-center text-sm text-zinc-600">আপনার সংরক্ষিত প্রশ্নপত্র শ্রেণি, বিষয় ও অধ্যায় অনুযায়ী সাজানো আছে।</p>
 
-      <nav aria-label="প্রশ্নপত্রের অবস্থান" className="flex flex-wrap items-center gap-2 text-sm">
+      {selectedClass && <nav aria-label="প্রশ্নপত্রের অবস্থান" className="flex flex-wrap items-center gap-2 text-sm">
         <button className="text-primary hover:underline" onClick={() => go()}>সকল শ্রেণি</button>
         {selectedClass && <><ChevronRight className="w-4 h-4" /><button className="text-primary hover:underline" onClick={() => go(selectedClass)}>{selectedClass}</button></>}
         {selectedSubject && <><ChevronRight className="w-4 h-4" /><button className="text-primary hover:underline" onClick={() => go(selectedClass, selectedSubject)}>{selectedSubject}</button></>}
         {selectedChapter && <><ChevronRight className="w-4 h-4" /><span aria-current="page">{selectedChapter}</span></>}
-      </nav>
-      <div className="flex items-center gap-3">
+      </nav>}
+      {selectedClass && <div className="flex items-center gap-3">
         {selectedClass && <Button variant="outline" size="icon" aria-label="পেছনে যান" onClick={() => selectedChapter ? go(selectedClass, selectedSubject) : selectedSubject ? go(selectedClass) : go()}><ArrowLeft className="w-4 h-4" /></Button>}
         <div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" aria-label="প্রশ্নপত্র খুঁজুন" placeholder="পরীক্ষা, বিষয় বা অধ্যায় দিয়ে খুঁজুন..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-      </div>
+      </div>}
 
       {loading ? <div role="status" className="py-12 text-center text-muted-foreground">লোড হচ্ছে...</div> : error ? (
         <div role="alert" className="rounded-xl border p-8 text-center"><p className="mb-4">প্রশ্নপত্র লোড করা যায়নি। আবার চেষ্টা করুন।</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>আবার চেষ্টা করুন</Button></div>
       ) : <>
         {!query && folders.length > 0 && <section aria-label={!selectedClass ? "শ্রেণি সমূহ" : !selectedSubject ? "বিষয় সমূহ" : "অধ্যায় সমূহ"}>
-          <h2 className="font-heading text-lg font-bold mb-3">{!selectedClass ? "শ্রেণি সমূহ" : !selectedSubject ? `${selectedClass} — বিষয় সমূহ` : "অধ্যায় সমূহ"}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {folders.map(name => <button key={name} onClick={() => !selectedClass ? go(name) : !selectedSubject ? go(selectedClass, name) : go(selectedClass, selectedSubject, name)} className="group flex items-center gap-3 rounded-xl border bg-card p-5 text-left transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <div className="rounded-lg bg-primary/10 p-3"><Folder className="w-6 h-6 text-primary" /></div>
-              <div className="flex-1 min-w-0"><p className="font-heading font-semibold break-words">{name}</p><p className="text-xs text-muted-foreground mt-1">{bn(count(name))}টি প্রশ্নপত্র</p></div><ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
+
+          <div className="divide-y divide-zinc-200 border-b border-zinc-200">
+            {folders.map(name => <button key={name} onClick={() => !selectedClass ? go(name) : !selectedSubject ? go(selectedClass, name) : go(selectedClass, selectedSubject, name)} className="group flex w-full items-center gap-3 bg-white px-3 py-3.5 text-left transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
+              <Folder className="h-4 w-4 shrink-0 fill-zinc-950 text-zinc-950" />
+              <div className="flex-1 min-w-0"><p className="font-body text-base break-words">{name}</p></div><ChevronRight className="w-5 h-5 shrink-0 text-zinc-400" />
             </button>)}
           </div>
         </section>}

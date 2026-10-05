@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
-import BrandLogo from "@/components/BrandLogo";
-import { brandMarkUrl } from "@/lib/brandAssets";
+import BrandLockup from "@/components/BrandLockup";
+
 
 
 
@@ -35,9 +35,9 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
     analytics.pageView(location.pathname, document.title);
   }, [location.pathname]);
 
-  const headerBg = scrolled
-    ? "bg-[#21368a]/95 backdrop-blur-xl shadow-lg"
-    : "bg-[#21368a] border-b border-white/10";
+  const headerBg = isHeroPage ? "bg-[#0A1E38]/95 backdrop-blur-xl border-b border-white/10" : scrolled
+    ? "bg-[#0A1E38]/95 backdrop-blur-xl shadow-lg"
+    : "bg-[#0A1E38] border-b border-white/10";
 
   const navLinks = [
     { to: "/", label: "হোম" },
@@ -53,21 +53,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
         <div className="container flex items-center justify-between gap-2 h-16 lg:h-[76px]">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2 lg:gap-3 group min-w-0 flex-1">
-            <img
-              src={brandMarkUrl}
-              loading="eager"
-              decoding="async"
-              alt="প্রশ্নল্যাব লোগো"
-              className="h-9 w-9 lg:h-14 lg:w-14 rounded-full object-cover shrink-0"
-            />
-            <div className="leading-none min-w-0">
-              <BrandLogo size={30} className="lg:text-[44px] [&_.text-brand-navy]:text-white" />
-              <div className="hidden sm:flex items-baseline gap-1 text-[11px] lg:text-[12px] text-white mt-1 font-bold tracking-wide whitespace-nowrap">
-                <span>শিক্ষকদের জন্য</span>
-                <span className="brand-free">ফ্রী</span>
-                <span>প্রশ্ন তৈরির প্ল্যাটফর্ম...</span>
-              </div>
-            </div>
+            <span className="lg:hidden"><BrandLockup size={30} /></span>
+            <span className="hidden lg:inline-flex"><BrandLockup size={40} /></span>
           </Link>
 
 
@@ -85,7 +72,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                     active && "text-white"
                   )}
                 >
-                  <span className={cn("relative", active && "link-underline-gold pb-1")}>
+                  <span className={cn("relative", active && "border-b border-white/70 pb-1")}>
                     {l.label}
                   </span>
                 </Link>
@@ -98,7 +85,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             {user ? (
               <>
                 <Link to="/dashboard">
-                  <Button size="sm" className="btn-gold border-0 font-heading font-bold px-2.5 sm:px-4 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm">
+                  <Button size="sm" className="bg-white text-[#0A1E38] hover:bg-slate-100 border-0 font-heading font-bold px-2.5 sm:px-4 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm">
                     <LayoutDashboard className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">ড্যাশবোর্ড</span>
                   </Button>
@@ -123,7 +110,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <Link to="/login">
                 <Button
                   size="sm"
-                  className="btn-gold border-0 font-heading font-bold px-3 sm:px-5 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm"
+                  className="bg-white text-[#0A1E38] hover:bg-slate-100 border-0 font-heading font-bold px-3 sm:px-5 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm"
                 >
                   <User className="w-4 h-4 shrink-0" />
                   লগইন
@@ -150,7 +137,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="lg:hidden overflow-hidden bg-[#1E3577] border-t border-white/10"
+              className="lg:hidden overflow-hidden bg-[#0A1E38] border-t border-white/10"
             >
               <div className="container py-3 flex flex-col">
                 {navLinks.map((l) => (
@@ -171,24 +158,15 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <main className="flex-1">{children}</main>
 
       {/* Footer — hidden on demo page */}
-      {!isDemoPage && <footer className="bg-[#022548] text-white/90">
+      {!isDemoPage && <footer className="bg-[#0A1E38] text-white/90">
         <div className="container py-6 lg:py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6 items-start">
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="inline-flex items-center gap-2 lg:gap-3">
-                <img
-                  src={brandMarkUrl}
-              loading="eager"
-              decoding="async"
-                  alt="প্রশ্নল্যাব লোগো"
-                  className="h-11 w-11 lg:h-12 lg:w-12 rounded-full object-cover shrink-0"
-                />
-                <BrandLogo size={36} className="lg:text-[42px] [&_.text-brand-navy]:text-white" />
+                <BrandLockup size={36} />
               </Link>
-              <p className="text-sm leading-relaxed text-white/80">
-                শিক্ষকদের জন্য <span className="text-[#F4C053] font-bold">ফ্রী</span> প্রশ্ন তৈরির প্ল্যাটফর্ম।
-              </p>
+
             </div>
 
             {/* Quick Links */}
@@ -207,15 +185,15 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <h4 className="font-heading font-bold text-white text-base mb-4">যোগাযোগ</h4>
               <ul className="space-y-3.5 text-sm">
                 <li className="flex items-start gap-3">
-                  <MapPin className="w-[18px] h-[18px] text-[#F4C053] mt-0.5 shrink-0" />
+                  <MapPin className="w-[18px] h-[18px] text-[#00B4BC] mt-0.5 shrink-0" />
                   <span className="text-white/80">ময়মনসিংহ, বাংলাদেশ</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone className="w-[18px] h-[18px] text-[#F4C053] shrink-0" />
+                  <Phone className="w-[18px] h-[18px] text-[#00B4BC] shrink-0" />
                   <a href="tel:+8809696638867" className="text-white/80 hover:text-white transition-colors">+880 9696-638867</a>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Mail className="w-[18px] h-[18px] text-[#F4C053] shrink-0" />
+                  <Mail className="w-[18px] h-[18px] text-[#00B4BC] shrink-0" />
                   <a href="mailto:hi@proshnolab.com" className="text-white/80 hover:text-white transition-colors">hi@proshnolab.com</a>
                 </li>
               </ul>

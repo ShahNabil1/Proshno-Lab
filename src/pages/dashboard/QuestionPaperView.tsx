@@ -1,5 +1,9 @@
+import AutoFitQuestionGrid from "@/components/AutoFitQuestionGrid";
+import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from '@/lib/englishPaperSections';
+import { languageSubject, patternGrade } from '@/lib/languageQuestionTypes';
+import { isLanguageType, questionTypeLabel, questionMarks } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
-import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment, type CSSProperties } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -18,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCloudBackup } from "@/hooks/useCloudBackup";
+
 import { findRepeatedStimuli, hasRenderableStimulus, normalizeStimulusKey } from "@/lib/stimulusGroups";
 import InPaperOmrBox from "@/components/paper/InPaperOmrBox";
 import ChirkutAnswerSheet from "@/components/paper/ChirkutAnswerSheet";
@@ -151,7 +155,7 @@ function removeNearDuplicateQuestions(rows: QuestionRow[]): QuestionRow[] {
     const [type, text] = getQuestionDuplicateSignature(question).split("::", 2);
     const isDuplicate = text && kept.some((candidate) =>
       candidate.type === type
-      && (candidate.text === text || duplicateTextSimilarity(candidate.text, text) >= 0.94)
+      && (candidate.text === text || (!isLanguageType(question.type) && !question.stimulus_text && !candidate.question.stimulus_text && duplicateTextSimilarity(candidate.text, text) >= 0.94))
     );
     if (!isDuplicate) kept.push({ question, type, text });
   }
@@ -271,7 +275,7 @@ export default function QuestionPaperView() {
   const paperRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
-  const [saving, setSaving] = useState(false);
+  const autoSaveInFlight = useRef(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -340,6 +344,8 @@ export default function QuestionPaperView() {
     columnGap: 15,
     textAlign: "justify" as TextAlign,
     mcqOptionLayouts: {} as Record<string, McqOptionLayout>,
+    answeringColumns: 2 as 1 | 2,
+    manualSectionColumns: {} as Record<string, 1 | 2>,
     showDuplicateMarker: false,
     showSheet: false,
     sheetInstructorName: true,
@@ -401,37 +407,6 @@ export default function QuestionPaperView() {
     descToAnswer: 0,
   });
 
-  // Cloud backup hook
-  const { cloudBackupEnabled } = useCloudBackup();
-
-  // Auto-save helper
-  const autoSavePaper = useCallback(async (paperMeta: PaperMeta, paperQuestions: QuestionRow[], paperSettings: typeof settings) => {
-    if (!cloudBackupEnabled) return; // Skip if cloud backup disabled
-    if (!user || !paperMeta || paperQuestions.length === 0) return;
-    try {
-      const paperData = {
-        teacher_id: user.id,
-        institution_name: paperMeta.instituteName || "",
-        exam_name: paperMeta.programName || "",
-        class_name: paperMeta.className || "",
-        subject_name: paperMeta.subjectName || "",
-        chapter_names: paperMeta.chapterNames || [],
-        question_ids: paperQuestions.map(q => q.id),
-        meta: paperMeta as any,
-        settings: paperSettings as any,
-      };
-      const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
-      if (error) throw error;
-      setCurrentPaperId(data.id);
-      // Update URL with paper_id so refresh works
-      const newParams = new URLSearchParams(window.location.search);
-      newParams.set("paper_id", data.id);
-      window.history.replaceState({}, "", `${window.location.pathname}?${newParams.toString()}`);
-    } catch (err) {
-      console.error("Auto-save failed:", err);
-    }
-  }, [user, cloudBackupEnabled]);
-
   useEffect(() => {
     const paperId = searchParams.get("paper_id");
     const qData = sessionStorage.getItem("viewPaperQuestions");
@@ -466,14 +441,6 @@ export default function QuestionPaperView() {
           setQuestions(hydratedQuestions);
           sessionStorage.setItem("viewPaperQuestions", JSON.stringify(hydratedQuestions));
 
-          if (paperId && cloudBackupEnabled) {
-            supabase.from("saved_papers").update({
-              question_ids: hydratedQuestions.map((question) => question.id),
-              meta: parsedMeta as any,
-            } as any).eq("id", paperId).then(() => {});
-          } else if (cloudBackupEnabled && hydratedQuestions.length > 0) {
-            autoSavePaper(parsedMeta, hydratedQuestions, settings);
-          }
         });
       }
       const restoredSettings = savedSettings ? JSON.parse(savedSettings) : {};
@@ -838,61 +805,62 @@ export default function QuestionPaperView() {
     }
   };
 
-  const handleSavePaper = async () => {
-    if (!user || !meta || questions.length === 0) {
-      toast.error("সেভ করার জন্য প্রশ্ন ও মেটাডাটা প্রয়োজন");
-      return;
-    }
-    setSaving(true);
-    try {
-      const paperData = {
-        teacher_id: user.id,
-        institution_name: meta.instituteName || "",
-        exam_name: meta.programName || "",
-        class_name: meta.className || "",
-        subject_name: meta.subjectName || "",
-        chapter_names: meta.chapterNames || [],
-        question_ids: questions.map(q => q.id),
-        meta: meta as any,
-        settings: settings as any,
-      };
-
-      if (currentPaperId) {
-        // Update existing - but we don't have UPDATE policy, so delete + insert
-        await supabase.from("saved_papers").delete().eq("id", currentPaperId);
-        const { data, error } = await supabase.from("saved_papers").insert({ ...paperData, id: currentPaperId } as any).select("id").single();
-        if (error) throw error;
-        toast.success("প্রশ্নপত্র আপডেট হয়েছে!");
-      } else {
-        const { data, error } = await supabase.from("saved_papers").insert(paperData as any).select("id").single();
+  // Every newly generated paper is saved once, regardless of cloud-backup preferences.
+  useEffect(() => {
+    if (!user || !meta || !questions.length || currentPaperId || autoSaveInFlight.current) return;
+    if (new URLSearchParams(window.location.search).has("paper_id")) return;
+    const timer = window.setTimeout(async () => {
+      if (autoSaveInFlight.current) return;
+      autoSaveInFlight.current = true;
+      try {
+        const { data, error } = await supabase.from("saved_papers").insert({
+          teacher_id: user.id,
+          institution_name: meta.instituteName || "",
+          exam_name: meta.programName || "",
+          class_name: meta.className || "",
+          subject_name: meta.subjectName || "",
+          chapter_names: meta.chapterNames || [],
+          question_ids: questions.map(q => q.id),
+          meta: meta as any,
+          settings: settings as any,
+        }).select("id").single();
         if (error) throw error;
         setCurrentPaperId(data.id);
-        // Update URL with paper_id so refresh works
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set("paper_id", data.id);
-        window.history.replaceState({}, "", `${window.location.pathname}?${newParams.toString()}`);
-        toast.success("প্রশ্নপত্র সেভ হয়েছে!");
+        const params = new URLSearchParams(window.location.search);
+        params.set("paper_id", data.id);
+        window.history.replaceState({}, "", `${window.location.pathname}?${params}`);
+        toast.success("প্রশ্নপত্র স্বয়ংক্রিয়ভাবে সেভ হয়েছে");
+      } catch (error) {
+        autoSaveInFlight.current = false;
+        console.error("Auto-save failed:", error);
+        toast.error("প্রশ্নপত্র অটো সেভ হয়নি। সংযোগ পরীক্ষা করে পেজটি রিফ্রেশ করুন।");
       }
-    } catch (err: any) {
-      toast.error("সেভ করতে সমস্যা হয়েছে");
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [user, meta, questions, settings, currentPaperId]);
   /* Sort questions by type priority: MCQ(1) → Short(2) → CQ(3) → Descriptive(4) */
   const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
   const sortedQuestions = [...questions].sort(
     (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
   );
 
+  const mcqOnly = questions.length > 0 && questions.every(q => q.type === 'mcq');
+  const autoMcqMode = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!questions.length || autoMcqMode.current === mcqOnly) return;
+    autoMcqMode.current = mcqOnly;
+    setSettings(prev => ({ ...prev, showMarksBox: mcqOnly, optionStyle: mcqOnly ? 'none' : 'bracket' }));
+  }, [questions.length, mcqOnly]);
+  const isEnglishPaper = !mcqOnly && languageSubject(meta?.subjectName || '') === 'english1' && patternGrade(meta?.className || '') === 8;
+  const englishPaper = englishPaperSections(sortedQuestions);
   const mcqQuestions = sortedQuestions.filter(q => q.type === "mcq");
   const cqQuestions = sortedQuestions.filter(q => q.type === "cq");
   const shortQuestions = sortedQuestions.filter(q => q.type === "short");
   const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
+  const languageQuestions = sortedQuestions.filter(q => isLanguageType(q.type));
+  const languageMarks = isEnglishPaper ? englishPaper.sections.filter(s=>s.type !== "mcq").reduce((sum,s)=>sum+s.marks,0) : languageQuestions.reduce((sum,q)=>sum+questionMarks(q),0);
 
-  const isEnglishVersion = Boolean(meta && /english|eglish|ইংলিশ/i.test(meta.className || ""));
+  const isEnglishVersion = languageSubject(meta?.subjectName || "") === "english1" || Boolean(meta && /english|eglish|ইংলিশ/i.test(meta.className || ""));
   const paperNumber = (n: number): string => isEnglishVersion ? String(n) : toBanglaNum(n);
   const optionLabels = isEnglishVersion ? ["a", "b", "c", "d"] : ["ক", "খ", "গ", "ঘ"];
 
@@ -915,7 +883,7 @@ export default function QuestionPaperView() {
     /^mathemathis$/i.test(name.trim()) ? "Mathematics" : name;
 
   const formatEnglishChapterName = (name: string, index: number): string => {
-    if (/^chapter\s*\d+/i.test(name)) return name;
+    if (isEnglishPaper || /^chapter\s*\d+/i.test(name)) return name;
     const normalized = /^real number$/i.test(name.trim()) ? "Real Numbers" : name;
     return `Chapter ${index + 1} - ${normalized}`;
   };
@@ -923,10 +891,10 @@ export default function QuestionPaperView() {
   const cqToAnswerForTotal = settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length;
   const shortToAnswerForTotal = settings.shortToAnswer > 0 ? Math.min(settings.shortToAnswer, shortQuestions.length) : shortQuestions.length;
   const descToAnswerForTotal = settings.descToAnswer > 0 ? Math.min(settings.descToAnswer, descriptiveQuestions.length) : descriptiveQuestions.length;
-  const totalMarks = mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
+  const totalMarks = languageMarks + mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
 
   // Calculate total time: MCQ=1min, CQ=10min, Short=2min, Descriptive=10min
-  const totalTimeMinutes = (isEnglishVersion ? Math.ceil(mcqQuestions.length * 1.5) : mcqQuestions.length) + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
+  const totalTimeMinutes = isEnglishPaper && totalMarks === 100 && englishPaper.sections.length === 13 ? 180 : languageMarks + (isEnglishVersion ? Math.ceil(mcqQuestions.length * 1.5) : mcqQuestions.length) + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
   const formatTime = (mins: number): string => {
     if (isEnglishVersion) {
       const hours = Math.floor(mins / 60);
@@ -1056,7 +1024,7 @@ export default function QuestionPaperView() {
   };
 
   const getMcqOptionLayout = (q: QuestionRow): McqOptionLayout =>
-    settings.mcqOptionLayouts[String(q.id)] || (shouldStackOptions(q) ? "1x4" : "2x2");
+    settings.mcqOptionLayouts[String(q.id)] || (isEnglishPaper ? "4x1" : shouldStackOptions(q) ? "1x4" : "2x2");
 
   const getMcqOptionGridColumns = (q: QuestionRow): string => {
     const layout = getMcqOptionLayout(q);
@@ -1069,9 +1037,18 @@ export default function QuestionPaperView() {
     ? null
     : questions.find(q => q.id === activeQuestionId && q.type === "mcq") || null;
 
+  const activeAnswering = activeQuestionId !== null && questions.some(q=>q.id === activeQuestionId && ['answering_questions', 'true_false'].includes(q.type));
+  const cycleAnsweringColumns = () => {
+    const type = questions.find(q => q.id === activeQuestionId)?.type;
+    if (!type) return;
+    const grid = activeEditEl?.closest('[data-auto-fit-columns]') as HTMLElement | null;
+    const current = Number(grid?.dataset.autoFitColumns || settings.manualSectionColumns?.[type] || 2);
+    setSettings(prev => ({ ...prev, manualSectionColumns: { ...prev.manualSectionColumns, [type]: current === 1 ? 2 : 1 } }));
+  };
   const cycleActiveMcqOptionLayout = () => {
     if (!activeMcq) return;
-    const current = getMcqOptionLayout(activeMcq);
+    const fittedColumns = activeEditEl?.querySelector<HTMLElement>("[data-auto-fit-columns]")?.dataset.autoFitColumns;
+    const current = settings.mcqOptionLayouts[String(activeMcq.id)] || (fittedColumns === "1" ? "1x4" : fittedColumns === "2" ? "2x2" : getMcqOptionLayout(activeMcq));
     const next: McqOptionLayout = current === "1x4" ? "2x2" : current === "2x2" ? "4x1" : "1x4";
     setSettings(prev => ({
       ...prev,
@@ -1322,6 +1299,20 @@ export default function QuestionPaperView() {
 
   const settingsContent = (
     <>
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm flex items-center gap-1.5">
+              <Pencil className="h-3.5 w-3.5 text-primary" /> এডিটিং মোড
+            </span>
+            <Switch checked={editingMode} onCheckedChange={(v) => {
+              setEditingMode(v);
+              if (!v) handleCloseToolbar();
+              if (v) toast.info("এডিটিং মোড অন হয়েছে");
+            }} />
+          </div>
+        </div>
+
+
       {/* প্রশ্নে সংযুক্তি */}
       <div className="border-b border-border pb-3 mb-3">
         <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নে সংযুক্তি</h4>
@@ -1736,19 +1727,6 @@ export default function QuestionPaperView() {
         <div className="mb-3">
           <div className="flex items-center justify-between">
             <span className="text-sm flex items-center gap-1.5">
-              <Pencil className="h-3.5 w-3.5 text-primary" /> এডিটিং মোড
-            </span>
-            <Switch checked={editingMode} onCheckedChange={(v) => {
-              setEditingMode(v);
-              if (!v) handleCloseToolbar();
-              if (v) toast.info("এডিটিং মোড অন হয়েছে");
-            }} />
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm flex items-center gap-1.5">
               <SlidersHorizontal className="h-3.5 w-3.5 text-primary" /> MCQ অপশন অ্যাডজাস্ট
             </span>
             <Switch
@@ -2104,8 +2082,8 @@ export default function QuestionPaperView() {
       {/* Floating Toolbar */}
       <FloatingToolbar
         targetEl={activeEditEl}
-        optionLayout={activeMcq ? getMcqOptionLayout(activeMcq) : undefined}
-        onOptionLayoutChange={activeMcq ? cycleActiveMcqOptionLayout : undefined}
+        optionLayout={activeMcq ? getMcqOptionLayout(activeMcq) : activeAnswering ? ((settings.manualSectionColumns?.[questions.find(q => q.id === activeQuestionId)?.type || ""] || Number(activeEditEl?.closest<HTMLElement>("[data-auto-fit-columns]")?.dataset.autoFitColumns) || 2) === 1 ? "1 column" : "2 columns") : undefined}
+        onOptionLayoutChange={activeMcq ? cycleActiveMcqOptionLayout : activeAnswering ? cycleAnsweringColumns : undefined}
         onDelete={activeQuestionId !== null ? handleDeleteQuestion : undefined}
         onExchange={activeQuestionId !== null ? handleExchangeQuestion : undefined}
         onClose={handleCloseToolbar}
@@ -2122,7 +2100,7 @@ export default function QuestionPaperView() {
               📝 উত্তরমালা
             </Button>
           )}
-          <Button size="sm" className="flex-1 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading text-xs" onClick={handleDownload}>
+          <Button size="sm" className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading text-xs" onClick={handleDownload}>
             <Download className="h-3.5 w-3.5 mr-1" /> ডাউনলোড
           </Button>
           {isAdmin && (
@@ -2135,6 +2113,9 @@ export default function QuestionPaperView() {
 
       {/* Paper preview */}
       <style>{`
+        .english-paper-sections .latex-renderer table { width: 100% !important; max-width: 100%; table-layout: auto; border-collapse: collapse; }
+        .english-paper-sections .english-rearranging br { display: initial !important; }
+        .english-paper-sections th, .english-paper-sections td { border: 1px solid #111; padding: 2px 6px; overflow-wrap: anywhere; }
         @media print {
           @page {
             size: ${settings.paperSize} ${settings.paperOrientation};
@@ -2212,7 +2193,7 @@ export default function QuestionPaperView() {
 
         {editingMode && (
           <Alert className="mb-4 border-[#ccd8e6] bg-[#eef3f9] text-[#0c2340]">
-            <Pencil className="h-4 w-4 text-[#1E3577]" />
+            <Pencil className="h-4 w-4 text-[#102E56]" />
             <AlertDescription className="text-xs" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
               এডিটিং মোড অন করা হয়েছে। আপনি এখন সরাসরি প্রশ্নে ক্লিক করে যেকোনো লেখা পরিবর্তন করতে পারবেন। মনে রাখবেন, এই পরিবর্তনগুলো ডাটাবেসে সেভ হবে না। তাই এডিট শেষ করে প্রশ্নটি অবশ্যই ডাউনলোড করে নিন।
             </AlertDescription>
@@ -2496,7 +2477,7 @@ export default function QuestionPaperView() {
                     {isEnglishVersion ? formatEnglishSubjectName(meta.subjectName) : meta.subjectName}
                   </p>
                 )}
-                {settings.showChapterName && meta.chapterNames.length > 0 && (
+                {!isEnglishPaper && settings.showChapterName && meta.chapterNames.length > 0 && (
                   <p className={`${editableClass} paper-header-chapter`} data-editable="chapters" onClick={handleEditableClick} suppressContentEditableWarning>
                     {isEnglishVersion
                       ? meta.chapterNames.map(formatEnglishChapterName).join(", ")
@@ -2601,7 +2582,7 @@ export default function QuestionPaperView() {
 
             {settings.showInstruction && (
               <div className="paper-header-instructions">
-                {mcqQuestions.length > 0 && (
+                {!isEnglishPaper && mcqQuestions.length > 0 && (
                   <p className={editableClass} data-editable="instruction" onClick={handleEditableClick} suppressContentEditableWarning>
                     <i><strong>{isEnglishVersion ? "Note:" : "দ্রষ্টব্য:"}</strong>{" "}{isEnglishVersion
                       ? "In the provided MCQ answer sheet, fill the circle corresponding to the correct answer for each question"
@@ -2628,16 +2609,16 @@ export default function QuestionPaperView() {
           <div
             className="combined-question-flow"
             style={{
-              columnCount: settings.columns,
-              columnGap: settings.columns > 1 ? `${settings.columnGap}px` : "0",
-              columnRule: settings.columns > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
+              columnCount: isEnglishPaper ? 1 : settings.columns,
+              columnGap: !isEnglishPaper && settings.columns > 1 ? `${settings.columnGap}px` : "0",
+              columnRule: !isEnglishPaper && settings.columns > 1 && settings.columnDivider ? COLUMN_DIVIDER_STYLE : undefined,
               columnFill: "balance" as const,
               border: settings.questionSectionBorderStyle === "none" ? undefined : settings.questionSectionBorderStyle === "double" ? `3px double ${settings.questionSectionBorderColor}` : `1px solid ${settings.questionSectionBorderColor}`,
               padding: settings.questionSectionBorderStyle === "none" ? undefined : "6px",
             }}
           >
           {/* ===== MCQ SECTION ===== */}
-          {!settings.chirkutHideQuestions && mcqQuestions.length > 0 && (() => {
+          {!isEnglishPaper && !settings.chirkutHideQuestions && mcqQuestions.length > 0 && (() => {
             // Note: isMultiCompletionQ detection removed — all MCQs treated uniformly
 
             // Group MCQs by their stored group ID. Older bulk uploads did not
@@ -2914,6 +2895,36 @@ export default function QuestionPaperView() {
             </div>
             );
           })()}
+
+          {!isEnglishPaper && !settings.chirkutHideQuestions && languageQuestions.length > 0 && <div className="language-question-section">
+            {languageQuestions.map((q,index)=><div key={q.id} className="paper-question-item" style={{marginBottom:`${settings.questionGap}px`,breakInside:'avoid'}}>
+              <div className="flex justify-between font-semibold"><span>{paperNumber(index+1)}. {questionTypeLabel(q.type)}</span>{questionMarks(q)>0 && <span>{paperNumber(questionMarks(q))}</span>}</div>
+              {q.stimulus_text && <LatexRenderer text={q.stimulus_text} />}
+              <LatexRenderer text={q.question} />
+              {settings.showAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
+            </div>)}
+          </div>}
+
+          {isEnglishPaper && !settings.chirkutHideQuestions && <div className="english-paper-sections">
+            {englishPaper.sections.map((section, si) => <div key={section.type}>
+              {(si === 0 || englishPaper.sections[si-1].part !== section.part) && <div className="paper-question-item text-center font-bold">Part {section.part === 'reading' ? 'A - Reading' : 'B - Writing'} [Marks - {englishPaper.sections.filter(s=>s.part === section.part).reduce((sum,s)=>sum+s.marks,0)}]</div>}
+              {section.passage && (si === 0 || englishPaper.sections[si-1].passage?.question !== section.passage.question) && <div data-editable={`passage-${section.passage.id}`} onClick={(e) => handleEditableClick(e,section.passage!.id)} suppressContentEditableWarning className={`paper-question-item ${editableClass}`}>
+                <p className="font-semibold">{englishPassageInstruction(englishPaper.sections,si)}</p>
+                <LatexRenderer text={section.passage.question} />
+              </div>}
+              <div className="paper-question-item grid grid-cols-[24px_minmax(0,1fr)_auto] gap-x-2 font-semibold"><span className="font-bold" style={{fontWeight:700}}>{section.number}.</span><span>{section.instruction || questionTypeLabel(section.type)}{section.type === "poem_questions" && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ""}</span><span className="shrink-0 whitespace-nowrap">{section.marks > 0 ? section.marksLine : ''}</span></div>
+              <AutoFitQuestionGrid enabled={['answering_questions','true_false'].includes(section.type)} manualColumns={settings.manualSectionColumns?.[section.type]} maxColumns={section.type === 'answering_questions' ? settings.answeringColumns || 2 : 2} gap={24} style={{marginLeft:32,minWidth:0}} className={section.type === 'vocabulary' ? 'flex flex-wrap gap-x-4' : ''}>
+              {section.items.map((q,index) => <Fragment key={q.id}>
+                {q.stimulus_text && !section.passage && (index === 0 || q.stimulus_text !== section.items[index-1].stimulus_text) && <div data-editable={`stimulus-${q.id}`} onClick={(e) => handleEditableClick(e)} suppressContentEditableWarning className={`paper-question-item col-span-full w-full ${editableClass}`}><LatexRenderer text={q.stimulus_text} /></div>}
+                <div data-editable={`${section.type === "mcq" ? "mcq" : "lang"}-${q.id}`} onClick={(e) => handleEditableClick(e,q.id)} suppressContentEditableWarning className={`paper-question-item ${section.type === 'rearranging' ? 'english-rearranging' : ''} ${editableClass}`} style={{marginBottom:`${settings.questionGap}px`,breakInside:'avoid'}}>
+
+                <div className="flex gap-2">{englishItemLabel(section.type,index,section.items.length) && <span className="shrink-0">{englishItemLabel(section.type,index,section.items.length)}</span>}<LatexRenderer className="min-w-0 flex-1" text={q.question} /></div>
+                {section.type === 'mcq' && <AutoFitQuestionGrid className="ml-7" manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} gap={16} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1}>{(['option_a','option_b','option_c','option_d'] as const).map((key,oi)=><div key={key}>({['i','ii','iii','iv'][oi]}) <LatexRenderer inline text={q[key] || ''} /></div>)}</AutoFitQuestionGrid>}
+                {settings.showAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
+              </div></Fragment>)}
+              </AutoFitQuestionGrid>
+            </div>)}
+          </div>}
 
           {/* ===== SHORT SECTION (2nd) ===== */}
           {!settings.chirkutHideQuestions && shortQuestions.length > 0 && (() => {
@@ -3363,17 +3374,12 @@ export default function QuestionPaperView() {
               </h3>
 
               <div className="paper-settings-sticky-actions flex gap-2 mb-4">
-                <Button className="flex-1 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload}>
+                <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload}>
                   <Download className="h-4 w-4 mr-2" /> ডাউনলোড
                 </Button>
                 {isAdmin && (
                   <Button variant="outline" className="font-heading font-semibold text-[#082f57] border-[#082f57] hover:bg-[#082f57]/5" onClick={handleDocxExport} disabled={docxExporting}>
                     {docxExporting ? "তৈরি হচ্ছে..." : "Word"}
-                  </Button>
-                )}
-                {(
-                  <Button variant="outline" className="font-heading font-semibold" onClick={handleSavePaper} disabled={saving}>
-                    <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
                   </Button>
                 )}
               </div>
@@ -3394,17 +3400,12 @@ export default function QuestionPaperView() {
           </SheetHeader>
           <div className="px-2 pb-4">
             <div className="flex gap-2 mb-4">
-              <Button className="flex-1 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold" onClick={() => { setSettingsOpen(false); handleDownload(); }}>
+              <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold" onClick={() => { setSettingsOpen(false); handleDownload(); }}>
                 <Download className="h-4 w-4 mr-2" /> ডাউনলোড
               </Button>
               {isAdmin && (
                 <Button variant="outline" className="font-heading font-semibold" onClick={handleDocxExport} disabled={docxExporting}>
                   {docxExporting ? "তৈরি হচ্ছে..." : "Word"}
-                </Button>
-              )}
-              {(
-                <Button variant="outline" className="font-heading font-semibold" onClick={() => { handleSavePaper(); }} disabled={saving}>
-                  <Save className="h-4 w-4 mr-1" /> {saving ? "..." : "সেভ"}
                 </Button>
               )}
             </div>

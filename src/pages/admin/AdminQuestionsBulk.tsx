@@ -1,3 +1,6 @@
+import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
+import { allowedQuestionTypes, isLanguageType, languageSubject, patternGrade } from "@/lib/languageQuestionTypes";
+import EnglishFirstUpload from '@/components/admin/bulk/EnglishFirstUpload';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +24,7 @@ import {
 } from "@/lib/bulkQuestions";
 import AIExtract from "@/components/admin/bulk/AIExtract";
 import PasteGuide from "@/components/admin/bulk/PasteGuide";
+import { languagePasteVariants, withPasteReferences } from "@/lib/languagePasteGuides";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
 import { findRepeatedStimuli, normalizeStimulusKey } from "@/lib/stimulusGroups";
 
@@ -80,16 +84,28 @@ export default function AdminQuestionsBulk() {
   useEffect(() => {
     if (!subjectId) { setChapters([]); return; }
     supabase.from("chapters").select("id, name").eq("subject_id", Number(subjectId)).eq("is_active", true).order("name")
-      .then(({ data }) => setChapters(sortChapters(data || [])));
+      .then(({ data }) => {
+        const available = sortChapters(data || []);
+        setChapters(available);
+        setChapterId(current => available.some(c=>String(c.id)===current) ? current : '');
+      });
   }, [subjectId]);
   useEffect(() => {
-    if (!chapterId) { setTopics([]); return; }
+    if (!chapterId || chapterId.startsWith(PATTERN_CHAPTER_PREFIX)) { setTopics([]); return; }
     supabase.from("topics").select("id, name").eq("chapter_id", Number(chapterId)).order("name")
       .then(({ data }) => setTopics(data || []));
   }, [chapterId]);
 
-  const contextValid = classId && subjectId && chapterId;
+  const allowedTypes = allowedQuestionTypes(classes.find(c=>String(c.id)===classId)?.name || "",subjects.find(s=>String(s.id)===subjectId)?.name || "",patternChapterName(chapterId,chapters));
+  const suggestedChapters: string[] = [];
+  const [bulkMarks,setBulkMarks] = useState(0);
+  useEffect(()=>{ if(!allowedTypes.includes(type)) { setType(allowedTypes[0] || "mcq");setParsed([]); } },[classId,subjectId,chapterId,classes,subjects,chapters]);
+  useEffect(()=>{if(chapterId.startsWith(PATTERN_CHAPTER_PREFIX)){setChapterId('');setTopicId('');}},[chapterId]);
+  const contextValid = classId && subjectId && chapters.some(c=>String(c.id)===chapterId);
   const isMathSubject = isMathSubjectName(subjects.find((s) => String(s.id) === subjectId)?.name);
+
+  const isEnglishFirst = languageSubject(subjects.find(s=>String(s.id)===subjectId)?.name || '') === 'english1';
+  const pasteVariants = languagePasteVariants(type,isEnglishFirst);
 
   const stats = useMemo(() => {
     const invalid = parsed.filter((q) => q.errors.length > 0).length;
@@ -101,6 +117,7 @@ export default function AdminQuestionsBulk() {
   /** Marks in-batch duplicates + duplicates already saved in the selected chapter. */
   const applyDedupe = async (items: ParsedQuestion[]) => {
     const marked = markBatchDuplicates(items);
+    if(chapterId.startsWith(PATTERN_CHAPTER_PREFIX)) return marked;
     try {
       const sigs = new Set<string>();
       const PAGE = 1000;
@@ -147,7 +164,7 @@ export default function AdminQuestionsBulk() {
 
   const handlePaste = async () => {
     if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
-    const items = parsePastedText(pasteText, type, isMathSubject);
+    const items = parsePastedText(pasteText, type, isMathSubject).map(q=>isLanguageType(q.type)?{...q,creative_data:{marks:bulkMarks}}:q);
     if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি — i আইকনে ফরম্যাট দেখুন"); return; }
     await loadItems(items, "detect হয়েছে");
   };
@@ -200,11 +217,17 @@ export default function AdminQuestionsBulk() {
     // Resolve every Excel topic once. Existing topics are reused; missing ones
     // are created in one batch under the currently selected chapter.
     const topicIds = new Map<string, number>();
+    let resolvedChapterId = Number(chapterId);
     try {
+      resolvedChapterId = await ensurePatternChapter(chapterId,Number(subjectId));
+      if(chapterId.startsWith(PATTERN_CHAPTER_PREFIX)) {
+        setChapters(cs=>cs.some(c=>c.id===resolvedChapterId)?cs:[...cs,{id:resolvedChapterId,name:patternChapterName(chapterId,chapters)}]);
+        setChapterId(String(resolvedChapterId));
+      }
       const { data: currentTopics, error: topicsError } = await supabase
         .from("topics")
         .select("id, name")
-        .eq("chapter_id", Number(chapterId));
+        .eq("chapter_id", resolvedChapterId);
       if (topicsError) throw topicsError;
 
       (currentTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
@@ -220,7 +243,7 @@ export default function AdminQuestionsBulk() {
       if (missingByKey.size > 0) {
         const { data: createdTopics, error: createError } = await supabase
           .from("topics")
-          .insert([...missingByKey.values()].map((name) => ({ name, chapter_id: Number(chapterId) })))
+          .insert([...missingByKey.values()].map((name) => ({ name, chapter_id: resolvedChapterId })))
           .select("id, name");
         if (createError) throw createError;
         (createdTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
@@ -255,10 +278,10 @@ export default function AdminQuestionsBulk() {
         error: "",
         payloads: slice.map((q) => {
           const stimulusKey = normalizeStimulusKey(q.stimulus);
-          return toDbPayload(q, {
+          return toDbPayload(isLanguageType(q.type) ? {...q,creative_data:q.creative_data || {marks:bulkMarks}} : q, {
             class_id: Number(classId),
             subject_id: Number(subjectId),
-            chapter_id: Number(chapterId),
+            chapter_id: resolvedChapterId,
             topic_id: q.topicName
               ? (topicIds.get(topicKey(q.topicName)) || null)
               : (topicId && topicId !== "__none__" ? Number(topicId) : null),
@@ -320,6 +343,16 @@ export default function AdminQuestionsBulk() {
     setFailedChunks((prev) => prev.filter((c) => c.id !== id));
   };
 
+  if (isEnglishFirst && patternGrade(classes.find(c=>String(c.id)===classId)?.name || '') === 8) {
+    return <div className="space-y-5">
+      <h1 className="text-2xl font-bold">অষ্টম শ্রেণি · English 1st Paper আপলোড</h1>
+      <div className="grid sm:grid-cols-2 gap-3 border rounded p-4 bg-white">
+        <Select value={classId} onValueChange={v=>{setClassId(v);setSubjectId('');setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{classes.map(c=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select>
+        <Select value={subjectId} onValueChange={v=>{setSubjectId(v);setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{subjects.map(s=><SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent></Select>
+      </div>
+      <EnglishFirstUpload key={`${classId}:${subjectId}`} classId={classId} subjectId={subjectId} chapters={chapters} />
+    </div>;
+  }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -363,7 +396,7 @@ export default function AdminQuestionsBulk() {
               <Label>অধ্যায় *</Label>
               <Select value={chapterId} onValueChange={(v) => { setChapterId(v); setTopicId(""); }} disabled={!subjectId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
-                <SelectContent>{chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}{suggestedChapters.map(name=><SelectItem key={name} value={PATTERN_CHAPTER_PREFIX+name}>{name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -381,12 +414,12 @@ export default function AdminQuestionsBulk() {
               <Select value={type} onValueChange={(v) => { setType(v as QType); setParsed([]); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(TYPE_LABELS) as QType[]).map((t) => <SelectItem key={t} value={t}>{TYPE_LABELS[t]}</SelectItem>)}
+                  {allowedTypes.map((t) => <SelectItem key={t} value={t}>{TYPE_LABELS[t]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          {subjectId && chapters.length === 0 && (
+          {subjectId && chapters.length === 0 && suggestedChapters.length === 0 && (
             <p className="text-sm text-amber-700" role="status">
               এই বিষয়ের কোনো অধ্যায় পাওয়া যায়নি। প্রশ্ন আপলোডের আগে অধ্যায় ম্যানেজমেন্ট থেকে অন্তত একটি অধ্যায় যোগ করুন।
             </p>
@@ -410,7 +443,7 @@ export default function AdminQuestionsBulk() {
 
             <TabsContent value="excel" className="pt-4 space-y-3">
               <div className="flex flex-wrap items-center gap-3">
-                <Button variant="outline" onClick={() => downloadTemplate(type, isMathSubject)} className="gap-2">
+                <Button variant="outline" onClick={() => downloadTemplate(type, isMathSubject, isEnglishFirst)} className="gap-2">
                   <Download className="w-4 h-4" /> {TYPE_LABELS[type]} টেমপ্লেট ডাউনলোড
                 </Button>
                 <input
@@ -443,17 +476,20 @@ export default function AdminQuestionsBulk() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label className="flex items-center gap-1">
                   {TYPE_LABELS[type]} পেস্ট করুন
-                  <PasteGuide type={type} isMath={isMathSubject} onInsert={(s) => setPasteText(s)} />
+                  <PasteGuide type={type} isMath={isMathSubject} englishFirst={isEnglishFirst} onInsert={(s) => setPasteText(s)} />
                 </Label>
                 <span className="text-xs text-muted-foreground">
-                  {type === "cq" && isMathSubject
+                  {isLanguageType(type)
+                    ? "সম্পূর্ণ প্রশ্ন ও উত্তর দিন। একাধিক প্রশ্নসেটের মাঝে আলাদা লাইনে --- দিন।"
+                    : type === "cq" && isMathSubject
                     ? "গণিত/উচ্চতর গণিত: ৩টি প্রশ্ন — ক (২), খ (৪), গ (৪)। ঘ) লাগবে না।"
                     : "উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড"}
                 </span>
               </div>
-              <Textarea
+              {isLanguageType(type) && <div className="mb-3"><Label>প্রতি প্রশ্নসেটের মোট নম্বর (প্যাসেজ হলে ০)</Label><input aria-label="প্রতি প্রশ্নসেটের মোট নম্বর" className="border rounded p-2 ml-2" type="number" min="0" step="0.5" value={bulkMarks} onChange={e=>setBulkMarks(Math.max(0,Number(e.target.value)||0))} /></div>}
+                <Textarea
                 value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-                placeholder={type === "mcq"
+                placeholder={pasteVariants?.[0] ? withPasteReferences(pasteVariants[0].sample) : (type === "mcq"
                   ? "১. প্রশ্ন?\nক) অপশন\nখ) অপশন\nগ) অপশন\nঘ) অপশন\nউত্তর: খ\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩\nবিশ্ববিদ্যালয়: ঢাবি-২০২১\nছবি: https://..."
                   : type === "cq"
                   ? (isMathSubject
@@ -462,7 +498,7 @@ export default function AdminQuestionsBulk() {
 
                   : type === "descriptive"
                   ? "১. ক) প্রশ্ন...\nখ) প্রশ্ন...\nউত্তর ক: ...\nউত্তর খ: ...\nবোর্ড: ঢাকা-২০২৩"
-                  : "১. প্রশ্ন?\nউত্তর: ...\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩"}
+                  : "১. প্রশ্ন?\nউত্তর: ...\nব্যাখ্যা: ...\nবোর্ড: ঢাকা-২০২৩")}
                 rows={12} className="font-mono text-sm"
               />
               <div className="flex items-center gap-2">
@@ -534,6 +570,10 @@ export default function AdminQuestionsBulk() {
                     {!(q.type === "cq" || q.type === "descriptive") && (
                       <div className="font-medium text-sm break-words"><LatexRenderer text={q.question || "(no question)"} /></div>
                     )}
+                    {isLanguageType(q.type) && q.explanation && (
+                      <div className="text-sm mt-3 border-t pt-2"><div className="font-semibold text-emerald-700">উত্তর / ব্যাখ্যা:</div><LatexRenderer text={q.explanation} /></div>
+                    )}
+                    {!!q.boardRefs?.length && <div className="text-xs mt-2 text-muted-foreground">বোর্ড / স্কুল: {q.boardRefs.map(ref=>[ref.board,ref.year].filter(Boolean).join("—")).join(", ")}</div>}
 
                     {q.type === "mcq" && (
                       <div className="text-xs text-muted-foreground mt-1 grid grid-cols-2 gap-x-4">

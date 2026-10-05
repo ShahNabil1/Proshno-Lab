@@ -5,78 +5,77 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Proshno Lab — Navy + Gold theme
-  Palette: #022548 (deep navy) · #161f9a (royal indigo) · #253977 (navy indigo)
-           · #25397c (navy blue) · #f4c053 (gold)
-  Type: SolaimanLipi (Bangla) + Times New Roman (English)
-*/
+/* Proshno Lab identity: navy #0A1E38, teal #00B4BC, white surfaces.
+   Teal is an accent; dark teal is used for readable text on white.
+   Legacy gold/indigo names remain aliases for existing components. */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 210 94% 14%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 94% 14%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 94% 14%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary = royal indigo #161f9a */
-    --primary: 236 75% 35%;
+    /* Primary matches the dashboard sidebar navy #0A1E38. */
+    --primary: 214 70% 13%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 40% 96%;
-    --secondary-foreground: 224 52% 25%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 224 30% 95%;
-    --muted-foreground: 224 15% 42%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 42%;
 
-    /* Gold accent #f4c053 */
-    --accent: 42 88% 64%;
-    --accent-foreground: 210 94% 14%;
+    /* Quiet teal tint for hover and selection surfaces. */
+    --accent: 182 45% 94%;
+    --accent-foreground: 214 70% 13%;
 
     --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 25% 90%;
-    --input: 224 25% 90%;
-    --ring: 236 75% 35%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 214 70% 13%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 210 94% 14%;
+    --sidebar-background: 214 70% 13%;
     --sidebar-foreground: 224 40% 92%;
-    --sidebar-primary: 42 88% 64%;
+    --sidebar-primary: 183 100% 37%;
     --sidebar-primary-foreground: 210 94% 14%;
     --sidebar-accent: 224 52% 25%;
     --sidebar-accent-foreground: 224 40% 92%;
     --sidebar-border: 224 40% 22%;
-    --sidebar-ring: 42 88% 64%;
+    --sidebar-ring: 183 100% 37%;
 
     /* Brand tokens */
-    --navy: 210 94% 14%;         /* #022548 */
+    --navy: 214 70% 13%;         /* #022548 */
     --navy-deep: 210 96% 10%;
-    --navy-mid: 224 54% 32%;     /* #25397c */
-    --navy-soft: 224 52% 31%;    /* #253977 */
-    --indigo: 236 75% 35%;       /* #161f9a */
-    --gold: 42 88% 64%;          /* #f4c053 */
-    --gold-deep: 38 82% 52%;
+    --navy-mid: 214 55% 22%;     /* #25397c */
+    --navy-soft: 214 45% 25%;    /* #253977 */
+    --indigo: 214 70% 13%;       /* #161f9a */
+    --teal: 183 100% 37%;
+    --teal-ink: 183 100% 26%;
+    --gold: 183 100% 37%;          /* #f4c053 */
+    --gold-deep: 183 100% 26%;
     --slate-bg: 224 40% 97%;
     --slate-alt: 0 0% 100%;
 
     /* Marketing/hero display font only (opt-in via .font-heading) */
     --font-heading: 'SolaimanLipi', 'Kalpurush', serif;
     /* Global UI font: SolaimanLipi for Bangla, Times New Roman for English */
-    --font-body: 'SolaimanLipi', 'Times New Roman', 'Kalpurush', Times, serif;
+    --font-body: 'SolaimanLipi', Arial, 'Kalpurush', sans-serif;
 
     --shadow-sm: 0 1px 3px 0 hsl(210 94% 14% / 0.06), 0 1px 2px -1px hsl(210 94% 14% / 0.04);
     --shadow-md: 0 6px 20px -4px hsl(210 94% 14% / 0.10), 0 2px 6px -2px hsl(210 94% 14% / 0.05);
     --shadow-lg: 0 18px 48px -12px hsl(210 94% 14% / 0.18), 0 6px 16px -6px hsl(210 94% 14% / 0.08);
     --shadow-xl: 0 32px 80px -16px hsl(210 94% 14% / 0.28);
-    --shadow-gold: 0 10px 30px -6px hsl(42 88% 55% / 0.45);
-    --shadow-indigo: 0 12px 36px -10px hsl(236 75% 35% / 0.45);
+    --shadow-gold: 0 10px 30px -6px hsl(183 100% 37% / 0.15);
+    --shadow-indigo: 0 12px 36px -10px hsl(214 70% 13% / 0.15);
     --shadow-glass: 0 8px 32px 0 hsl(210 94% 14% / 0.08);
   }
 
@@ -87,19 +86,19 @@
     --card-foreground: 224 40% 94%;
     --popover: 210 80% 12%;
     --popover-foreground: 224 40% 94%;
-    --primary: 42 88% 64%;
+    --primary: 183 100% 37%;
     --primary-foreground: 210 94% 14%;
     --secondary: 224 40% 18%;
     --secondary-foreground: 224 40% 94%;
     --muted: 224 30% 16%;
     --muted-foreground: 224 20% 65%;
-    --accent: 42 88% 64%;
-    --accent-foreground: 210 94% 14%;
+    --accent: 182 45% 94%;
+    --accent-foreground: 214 70% 13%;
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
     --border: 224 30% 20%;
     --input: 224 30% 20%;
-    --ring: 42 88% 64%;
+    --ring: 183 100% 37%;
   }
 }
 
@@ -133,9 +132,9 @@
   .font-body { font-family: var(--font-body); }
   .font-heading { font-family: var(--font-heading); }
 
-  /* Canva-matched hero: solid navy-blue block on the left melting into a soft blue-grey on the right */
+  /* Solid sidebar navy for page banners. */
   .gradient-hero {
-    background: linear-gradient(90deg, #21368a 0%, #253977 45%, #31468a 58%, #4a5c9e 72%, #7a87b0 88%, #a6afc8 100%);
+    background: #0A1E38;
   }
   .gradient-navy {
     background: linear-gradient(135deg, hsl(var(--navy)) 0%, hsl(var(--indigo)) 100%);
@@ -144,7 +143,7 @@
     background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--gold-deep)) 100%);
   }
   .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(38 92% 58%) 100%);
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--teal-ink)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -209,7 +208,7 @@
 
   /* Shimmer for gold buttons */
   .btn-gold {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(38 92% 58%) 100%);
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--teal-ink)) 100%);
     color: hsl(var(--navy));
     position: relative;
     overflow: hidden;
@@ -265,7 +264,7 @@
      so pre-existing dashboard/admin utility classes keep working. ===== */
   .gradient-green { background: linear-gradient(135deg, hsl(var(--indigo)) 0%, hsl(var(--navy)) 100%); }
   .text-gradient-green {
-    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(38 92% 58%) 100%);
+    background: linear-gradient(135deg, hsl(var(--gold)) 0%, hsl(var(--teal-ink)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -2222,8 +2221,9 @@
   border-radius: 0.375em;
   padding: 0.16em 0.34em 0.24em;
 }
-.text-brand-navy { color: #1E3577; }
-.text-brand-gold { color: #F4C053; }
+.text-brand-navy { color: #102E56; }
+.text-brand-teal { color: #00B4BC; }
+.text-brand-gold { color: #00B4BC; }
 .text-brand-onplate { color: #FFFFFF; }
 
 /* Sparkling gold "ফ্রী" badge — matches official brand artwork */
@@ -2509,3 +2509,155 @@
   background: transparent !important;
   padding: 0 !important;
 }
+
+/* Shared brand controls: calm surfaces, consistent focus, no decorative gradients. */
+@layer utilities {
+  .gradient-green, .gradient-navy { background: #0A1E38; }
+  .gradient-gold, .btn-gold { background: #00B4BC; color: #07162b; }
+  .btn-gold:hover { background: #2ac8ce; box-shadow: none; transform: none; }
+  .text-gold, .text-indigo { color: #00858c; }
+  .brand-free { color: #00B4BC; text-shadow: none; }
+}
+
+/* Manual question workspace: restrained ProshnoLab branding. */
+.question-builder .reference-badge {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+.question-builder .reference-badge__dot { background: #00858c; }
+.question-builder aside input:focus-visible { outline-color: #00b4bc; }
+
+.subscription-workspace [role="progressbar"] > div { background: #00b4bc; }
+.subscription-workspace [data-state="checked"][role="checkbox"] { background: #0a1e38; border-color: #0a1e38; }
+
+/* A clear, paced call to action in the sidebar. */
+.sidebar-create-cta { position: relative; isolation: isolate; overflow: visible; border: 1px solid #5be4e9; animation: create-cta-pulse 3.6s ease-in-out infinite; transition: background-color 180ms ease, box-shadow 180ms ease; }
+.sidebar-create-cta::before { content: ""; position: absolute; right: 11px; top: 50%; width: 28px; height: 28px; border: 1.5px solid #07162b66; border-radius: 9px; pointer-events: none; animation: create-cta-ring 3.6s ease-out infinite; }
+.sidebar-create-cta svg { position: relative; padding: 4px; width: 28px; height: 28px; border-radius: 7px; background: #07162b; color: #31dbe2; transition: transform 240ms ease, color 180ms ease; }
+.sidebar-create-cta:hover { animation-play-state: paused; background: #21cbd2; box-shadow: 0 0 0 3px #00b4bc25, 0 6px 20px #00b4bc25; }
+.sidebar-create-cta:hover svg { transform: rotate(90deg); color: white; }
+@keyframes create-cta-pulse { 0%, 100% { box-shadow: 0 0 0 0 #00b4bc00; } 45% { box-shadow: 0 0 0 4px #00b4bc25, 0 0 18px #00b4bc20; } }
+@keyframes create-cta-ring { 0%, 20% { opacity: 0; transform: translateY(-50%) scale(.85); } 30% { opacity: .7; } 65%, 100% { opacity: 0; transform: translateY(-50%) scale(1.65); } }
+@media (prefers-reduced-motion: reduce) { .sidebar-create-cta, .sidebar-create-cta::before { animation: none; } .sidebar-create-cta svg { transition: none; } }
+
+/* Responsive motion for the ProshnoLab navigation. */
+.brand-sidebar { background-image: radial-gradient(ellipse at 0 35%, #00b4bc0b, transparent 65%); }
+.brand-sidebar nav { scrollbar-width: thin; scrollbar-color: #ffffff26 transparent; }
+.sidebar-nav-item { position: relative; transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.sidebar-nav-item svg { transition: color 180ms ease, transform 220ms ease; }
+.sidebar-nav-item span { transition: transform 220ms ease; }
+.sidebar-nav-item[aria-current="page"] { background: linear-gradient(90deg, #00b4bc20, #ffffff0c); box-shadow: inset 0 0 0 1px #00b4bc1f; }
+.sidebar-nav-item:focus-visible { background-color: #ffffff12; }
+.sidebar-nav-group summary { display: flex; align-items: center; justify-content: space-between; list-style: none; transition: background-color 180ms ease, color 180ms ease; }
+.sidebar-nav-group summary::-webkit-details-marker { display: none; }
+.sidebar-nav-group summary::after { content: ""; width: 7px; height: 7px; border-right: 1.5px solid #94a3b8; border-bottom: 1.5px solid #94a3b8; transform: rotate(45deg); transition: transform 220ms ease, border-color 180ms ease; margin-right: 3px; }
+.sidebar-nav-group[open] summary { color: #21d3da; background: #ffffff05; }
+.sidebar-nav-group[open] summary::after { transform: rotate(225deg); border-color: #21d3da; }
+.sidebar-nav-group[open] > div { animation: sidebar-reveal 220ms ease-out; }
+.sidebar-brand-link img { transition: transform 250ms ease; }
+@keyframes sidebar-reveal { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@media (hover: hover) {
+  .sidebar-nav-item:hover { background-color: #ffffff0e; border-left-color: #00b4bc80; }
+  .sidebar-nav-item:hover svg { color: #21d3da; transform: translateY(-1px); }
+  .sidebar-nav-item:hover span { transform: translateX(3px); }
+  .sidebar-nav-group summary:hover { background-color: #ffffff0a; }
+  .sidebar-brand-link:hover img { transform: rotate(-4deg) scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav-item, .sidebar-nav-item svg, .sidebar-nav-item span, .sidebar-nav-group summary, .sidebar-nav-group summary::after, .sidebar-brand-link img { transition: none; }
+  .sidebar-nav-group[open] > div { animation: none; }
+  .sidebar-nav-item:hover svg, .sidebar-nav-item:hover span, .sidebar-brand-link:hover img { transform: none; }
+}
+
+.auto-selection-panel { transition: border-color 180ms ease, box-shadow 180ms ease; }
+.auto-selection-panel:hover { border-color: #00b4bc66; }
+.auto-selection-panel:focus-within { border-color: #00b4bc; box-shadow: 0 0 0 3px #00b4bc0f; }
+.auto-create-workspace [role="slider"] { accent-color: #00b4bc; }
+.auto-create-workspace button:not(:disabled), .create-mode-switch button { transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.auto-create-workspace button:focus-visible { outline: 2px solid #00b4bc; outline-offset: 3px; }
+.auto-create-workspace button.bg-\[\#0A1E38\]:hover:not(:disabled) { box-shadow: 0 4px 14px #0a1e3820; }
+
+.auto-stepper { position: relative; }
+.auto-selection-panel { background: white; border-top: 3px solid #e2e8f0; }
+.auto-selection-panel:focus-within { border-top-color: #00b4bc; }
+.auto-create-workspace h2 { color: #0a1e38; line-height: 1.5; }
+.auto-create-workspace [role="combobox"] { box-shadow: 0 1px 2px #0a1e3805; }
+.auto-create-workspace .auto-selection-panel label { font-weight: 600; }
+@media (max-width: 639px) { .auto-stepper button { flex-direction: column; gap: 6px; text-align: center; padding: 12px 5px; font-size: 14px; } }
+
+/* Clear boundaries on the automatic question form. */
+.auto-create-workspace .border-slate-200, .create-mode-switch { border-color: #b8c7d6; }
+.auto-create-workspace .auto-selection-panel { border: 1px solid #b8c7d6; border-top: 3px solid #b8c7d6; }
+.auto-create-workspace input, .auto-create-workspace [role="combobox"], .auto-create-workspace button.border { border-color: #b8c7d6; }
+.auto-create-workspace .auto-stepper button[aria-current="step"] { border-color: #00858c; }
+.auto-create-workspace .auto-selection-panel:hover { border-color: #00858c; }
+.auto-create-workspace .auto-selection-panel:focus-within { border-color: #00858c; box-shadow: 0 0 0 3px #00b4bc12; }
+.auto-create-workspace input:focus-visible, .auto-create-workspace [role="combobox"]:focus-visible { border-color: #00858c; }
+
+/* Softer automatic workspace surfaces and precise 2px corners. */
+main:has(.auto-create-workspace) { background: #edf1f4; }
+.auto-create-workspace { color: #0a1e38; }
+.auto-create-workspace .bg-white { background-color: #f6f8fa; }
+.auto-create-workspace .auto-selection-panel { background: #e9eff3; }
+.auto-create-workspace input, .auto-create-workspace [role="combobox"] { background-color: #f4f7f9; }
+.auto-create-workspace [class*="rounded"], main:has(.auto-create-workspace) .create-mode-switch, main:has(.auto-create-workspace) .create-mode-switch [class*="rounded"] { border-radius: 2px; }
+main:has(.auto-create-workspace) .create-mode-switch { background: #e3eaf0; }
+.auto-create-workspace .auto-stepper button:not([aria-current="step"]) { background: #e3eaf0; }
+.auto-create-workspace .auto-stepper button[aria-current="step"] { background: #f4f7f9; }
+
+/* Keep both question creation modes visually consistent. */
+main:has(.manual-create-form) { background: #edf1f4; }
+.manual-create-form { font-family: var(--font-body); color: #0a1e38; }
+.manual-create-form [class*="rounded"], main:has(.manual-create-form) .create-mode-switch, main:has(.manual-create-form) .create-mode-switch [class*="rounded"] { border-radius: 2px; }
+main:has(.manual-create-form) .create-mode-switch { background: #e3eaf0; border-color: #b8c7d6; }
+.manual-create-form .bg-white { background-color: #f6f8fa; }
+.manual-create-form .border-slate-200 { border-color: #b8c7d6; }
+.manual-create-form input, .manual-create-form [role="combobox"], .manual-create-form [role="button"] { background-color: #f4f7f9; border-color: #b8c7d6; font-size: 16px; }
+.manual-create-form input:focus-visible, .manual-create-form [role="combobox"]:focus-visible, .manual-create-form [role="button"]:focus-visible { border-color: #00858c; box-shadow: 0 0 0 3px #00b4bc12; }
+.manual-create-form h1 { font-size: 24px; font-weight: 700; line-height: 1.5; }
+.manual-create-form label, .manual-form-fields p { font-weight: 600; }
+.manual-create-form button.bg-\[\#0A1E38\] { font-size: 16px; }
+
+/* Keep manual picker labels crisp, including unavailable selections. */
+.manual-create-form input, .manual-create-form [role="combobox"], .manual-create-form [role="button"] { color: #0a1e38; font-size: 16px; font-weight: 500; }
+.manual-create-form input::placeholder { color: #475569; opacity: 1; }
+.manual-create-form [role="combobox"]:disabled, .manual-create-form [role="button"][aria-disabled="true"] { opacity: 1; color: #475569; }
+.manual-create-form [role="button"] .text-slate-500, .manual-create-form [role="combobox"] [data-placeholder], .manual-create-form [role="combobox"][data-placeholder] { color: #334155; }
+.manual-create-form [role="combobox"] svg, .manual-create-form [role="button"] svg { color: #64748b; opacity: 1; }
+
+.manual-create-form [role="button"] { opacity: 1 !important; color: #0a1e38; font-weight: 500; }
+.manual-create-form [role="button"] .text-slate-500 { color: #0a1e38; }
+.manual-create-form [role="combobox"] { color: #0a1e38; font-weight: 500; }
+
+/* Manual form corners match the user's input-box reference. */
+.manual-create-form input, .manual-create-form [role="button"], .manual-create-form [role="combobox"], .manual-create-form button { border-radius: 4px; }
+.manual-create-form > .rounded-2xl { border-radius: 6px; }
+main:has(.manual-create-form) .create-mode-switch, main:has(.manual-create-form) .create-mode-switch button { border-radius: 4px; }
+.manual-create-form input[class], .manual-create-form button[class], .manual-create-form [role="button"][class], .manual-create-form [role="combobox"][class] { border-radius: 4px; }
+/* Match automatic form corners to the manual form. */
+.auto-create-workspace input[class], .auto-create-workspace button[class], .auto-create-workspace [role="button"][class], .auto-create-workspace [role="combobox"][class], .auto-create-workspace .auto-selection-panel { border-radius: 4px; }
+.auto-create-workspace > .rounded-2xl { border-radius: 6px; }
+main:has(.auto-create-workspace) .create-mode-switch, main:has(.auto-create-workspace) .create-mode-switch button { border-radius: 4px; }
+.helpline-page { background: #edf1f4; padding: 64px 24px; }
+.helpline-content { max-width: 880px; margin: 0 auto; }
+.helpline-heading { text-align: center; margin-bottom: 32px; color: #0a1e38; }
+.helpline-heading > svg { width: 28px; height: 28px; margin: 0 auto 12px; color: #00858c; }
+.helpline-heading h1 { font-size: 30px; font-weight: 700; line-height: 1.6; margin: 0 0 8px; }
+.helpline-heading p { font-size: 16px; line-height: 1.7; color: #475569; }
+.helpline-channels { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.helpline-channel { display: flex; align-items: center; gap: 14px; padding: 24px 20px; border: 1px solid #b8c7d6; border-radius: 4px; background: #f8fafc; color: #0a1e38; text-decoration: none; transition: border-color .18s, background-color .18s; }
+.helpline-channel:hover { border-color: #00858c; background: #e8f4f5; }
+.helpline-channel:focus-visible { outline: 2px solid #00858c; outline-offset: 3px; }
+.helpline-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 4px; background: #e1edef; color: #00858c; }
+.helpline-icon svg { width: 21px; height: 21px; }
+.helpline-details { flex: 1; min-width: 0; }
+.helpline-details strong { display: block; font-size: 18px; font-weight: 600; }
+.helpline-details > span { display: block; font-size: 14px; color: #475569; margin-top: 5px; overflow-wrap: anywhere; }
+.helpline-action { color: #00858c; display: flex; align-items: center; gap: 4px; }
+.helpline-action span { display: none; }
+.helpline-action svg { width: 18px; height: 18px; }
+@media(max-width:640px) { .helpline-page { padding: 36px 16px; } .helpline-channels { grid-template-columns: 1fr; } .helpline-channel { padding: 20px 16px; } }
+.helpline-page { padding-top: 112px; min-height: 70vh; }
+@media(max-width:640px) { .helpline-page { padding-top: 100px; } }

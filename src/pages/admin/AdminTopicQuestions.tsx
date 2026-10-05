@@ -1,3 +1,5 @@
+import LanguageQuestionForm from "@/components/LanguageQuestionForm";
+import { ALL_TYPES, LANGUAGE_TYPE_LABELS, allowedQuestionTypes, isLanguageType } from "@/lib/languageQuestionTypes";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -16,8 +18,8 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
 
 const FONT = "'SolaimanLipi', sans-serif";
-const typeOptions = ["mcq", "short", "cq", "descriptive"];
-const typeLabelsMap: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
+const typeOptions = ALL_TYPES;
+const typeLabelsMap: Record<string, string> = { ...LANGUAGE_TYPE_LABELS, mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
 const ITEMS_PER_PAGE = 20;
 
 export default function AdminTopicQuestions() {
@@ -31,7 +33,7 @@ export default function AdminTopicQuestions() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
-  const [meta, setMeta] = useState<{ class_id: number; subject_id: number; chapter_id: number; subject_name: string } | null>(null);
+  const [meta, setMeta] = useState<{ class_id: number; subject_id: number; chapter_id: number; subject_name: string; class_name: string; chapter_name: string } | null>(null);
   const [qFilterType, setQFilterType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -52,6 +54,10 @@ export default function AdminTopicQuestions() {
     university_references: [] as Array<{ name: string; year: string }>,
   });
 
+  const formTypes = allowedQuestionTypes(meta?.class_name || "",meta?.subject_name || "",meta?.chapter_name || chapterName);
+  const [languageMarks,setLanguageMarks] = useState(0);
+  useEffect(()=>{setLanguageMarks(Number(editItem?.creative_data?.marks)||0);},[editItem]);
+  useEffect(()=>{if(!editItem && !formTypes.includes(form.type)) setForm(f=>({...f,type:formTypes[0]||"mcq"}));},[formTypes.join(","),editItem]);
   const isMathSubject = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test((meta?.subject_name || "").trim());
 
   // Load meta (class, subject, chapter) from topic
@@ -60,11 +66,12 @@ export default function AdminTopicQuestions() {
     (async () => {
       const { data: topic } = await supabase.from("topics").select("chapter_id").eq("id", topicId).single();
       if (!topic) return;
-      const { data: chapter } = await supabase.from("chapters").select("id, subject_id").eq("id", topic.chapter_id).single();
+      const { data: chapter } = await supabase.from("chapters").select("id, name, subject_id").eq("id", topic.chapter_id).single();
       if (!chapter) return;
       const { data: subject } = await supabase.from("subjects").select("id, class_id, name").eq("id", chapter.subject_id).single();
       if (!subject) return;
-      setMeta({ class_id: subject.class_id, subject_id: subject.id, chapter_id: chapter.id, subject_name: subject.name });
+      const {data:cls}=await supabase.from("classes").select("name").eq("id",subject.class_id).single();
+      setMeta({ class_name:cls?.name || "", chapter_name:chapter.name, class_id: subject.class_id, subject_id: subject.id, chapter_id: chapter.id, subject_name: subject.name });
     })();
   }, [topicId]);
 
@@ -171,11 +178,12 @@ export default function AdminTopicQuestions() {
       correct_answer: form.type === "mcq" ? normalizeAnswerKey(form.correct_answer) : form.correct_answer || null, explanation: form.explanation || null,
       board_references: form.board_references.length > 0 ? form.board_references : [],
       university_references: form.university_references.length > 0 ? form.university_references : [],
-      stimulus_text: form.type === "mcq" && stimulusText ? stimulusText : null,
+      stimulus_text: (form.type === "mcq" || isLanguageType(form.type)) && stimulusText ? stimulusText : null,
       stimulus_group_id: null,
       topic_id: topicId, class_id: meta.class_id, subject_id: meta.subject_id, chapter_id: meta.chapter_id,
     };
 
+    if (isLanguageType(form.type)) payload.creative_data = {marks:languageMarks};
     if (form.type === "cq") {
       if (isMathSubject) {
         payload.creative_data = { is_math: true, stem: form.cq_stem, q_ka: form.cq_q_ka, q_kha: form.cq_q_kha, q_ga: form.cq_q_ga, ans_ka: form.cq_ans_ka, ans_kha: form.cq_ans_kha, ans_ga: form.cq_ans_ga };
@@ -225,12 +233,13 @@ export default function AdminTopicQuestions() {
       <div>
         <Label style={{ fontFamily: FONT }}>প্রশ্নের ধরন</Label>
         <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" style={{ fontFamily: FONT }} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-          {typeOptions.map((t) => <option key={t} value={t}>{typeLabelsMap[t] || t.toUpperCase()}</option>)}
+          {[...new Set([...formTypes, ...(editItem ? [form.type] : [])])].map((t) => <option key={t} value={t}>{typeLabelsMap[t] || t.toUpperCase()}</option>)}
         </select>
       </div>
 
       {/* MCQ Form */}
-      {form.type === "mcq" && (
+      {isLanguageType(form.type) && <LanguageQuestionForm type={form.type} question={form.question} answer={form.correct_answer} stimulus={stimulusText} marks={languageMarks} onChange={(field,value)=>{if(field==='marks') setLanguageMarks(Number(value)); else if(field==='stimulus') setStimulusText(String(value));else setForm(f=>({...f,[field]:String(value)}));}} />}
+{form.type === "mcq" && (
         <>
           {!editItem && (
             <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">

@@ -64,10 +64,10 @@ export default function AdminHome() {
   }, []);
 
   const overviewCards = [
-    { label: "শিক্ষক", value: stats.teachers, icon: Users, color: "text-blue-600" },
+    { label: "শিক্ষক", value: stats.teachers, icon: Users, color: "text-[#0A1E38]" },
     { label: "প্রশ্ন", value: stats.questions, icon: FileText, color: "text-primary" },
-    { label: "শ্রেণী", value: stats.classes, icon: BookOpen, color: "text-amber-600" },
-    { label: "বিষয়", value: stats.subjects, icon: Layers, color: "text-violet-600" },
+    { label: "শ্রেণী", value: stats.classes, icon: BookOpen, color: "text-[#0A1E38]" },
+    { label: "বিষয়", value: stats.subjects, icon: Layers, color: "text-[#0A1E38]" },
   ];
 
   return (
@@ -77,27 +77,27 @@ export default function AdminHome() {
       {/* Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {overviewCards.map((c) => (
-          <Card key={c.label}>
+          <Card key={c.label} className="border-slate-200 shadow-none">
             <CardContent className="p-5 flex items-start justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">{c.label}</p>
                 <p className={`text-3xl font-heading font-bold mt-1 ${c.color}`}>{c.value}</p>
               </div>
-              <c.icon className={`w-5 h-5 ${c.color} opacity-60 mt-1`} />
+              <c.icon className={`w-5 h-5 text-[#00858C] mt-1`} />
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Active Subscriptions */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="border-[#0A1E38] bg-[#0A1E38] text-white">
         <CardContent className="p-5 flex items-center gap-4">
-          <div className="p-3 rounded-full bg-primary/10">
-            <CreditCard className="w-6 h-6 text-primary" />
+          <div className="p-3 rounded-xl bg-[#00B4BC]/15">
+            <CreditCard className="w-6 h-6 text-[#00B4BC]" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">রিয়েল-টাইম একটিভ সাবস্ক্রিপশন</p>
-            <p className="text-4xl font-heading font-bold text-primary">{stats.activeSubscriptions}</p>
+            <p className="text-sm text-white/70">রিয়েল-টাইম একটিভ সাবস্ক্রিপশন</p>
+            <p className="text-4xl font-heading font-bold text-white">{stats.activeSubscriptions}</p>
           </div>
         </CardContent>
       </Card>
@@ -105,7 +105,7 @@ export default function AdminHome() {
       {/* Daily & Monthly Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Today */}
-        <Card>
+        <Card className="border-slate-200 shadow-none">
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="w-4 h-4" />
@@ -118,14 +118,14 @@ export default function AdminHome() {
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground">নতুন শিক্ষক</p>
-                <p className="text-2xl font-heading font-bold text-blue-600">{stats.todayTeachers}</p>
+                <p className="text-2xl font-heading font-bold text-[#0A1E38]">{stats.todayTeachers}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* This Month */}
-        <Card>
+        <Card className="border-slate-200 shadow-none">
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Activity className="w-4 h-4" />
@@ -138,11 +138,11 @@ export default function AdminHome() {
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground">শিক্ষক</p>
-                <p className="text-2xl font-heading font-bold text-blue-600">{stats.monthTeachers}</p>
+                <p className="text-2xl font-heading font-bold text-[#0A1E38]">{stats.monthTeachers}</p>
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground">পারচেজ</p>
-                <p className="text-2xl font-heading font-bold text-amber-600">{stats.monthPurchases}</p>
+                <p className="text-2xl font-heading font-bold text-[#0A1E38]">{stats.monthPurchases}</p>
               </div>
             </div>
           </CardContent>

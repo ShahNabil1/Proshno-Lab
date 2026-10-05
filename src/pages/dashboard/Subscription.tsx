@@ -144,19 +144,19 @@ export default function Subscription() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="subscription-workspace space-y-7 max-w-6xl mx-auto">
       {/* Hero */}
-      <div className="gradient-hero rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-[#0A1E38] rounded-2xl p-6 md:p-8 text-white border-l-4 border-[#00B4BC]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-              <Crown className="w-7 h-7 text-primary-foreground" />
-              <h1 className="font-heading text-xl md:text-2xl font-bold">সাবস্ক্রিপশন ড্যাশবোর্ড</h1>
+              <Crown className="w-6 h-6 text-[#00B4BC]" />
+              <h1 className="font-heading text-xl md:text-2xl font-bold">আমার সাবস্ক্রিপশন</h1>
             </div>
-            <p className="text-white/70 text-sm">আপনার প্ল্যান পরিচালনা করুন ও নতুন প্যাকেজ এক্সপ্লোর করুন</p>
+            <p className="text-white/70 text-sm">প্ল্যানের মেয়াদ দেখুন ও প্রয়োজনের প্যাকেজ বেছে নিন</p>
           </div>
           {primarySub && primarySub.ends_at && (
-            <div className="bg-[#022548] border border-white/15 shadow-lg rounded-xl p-4 min-w-[220px]">
+            <div className="bg-white/5 border border-white/15 shadow-none rounded-xl p-4 min-w-[220px]">
               <p className="text-xs text-white/70 mb-1">বর্তমান প্ল্যান: <span className="font-bold text-white">{primarySub.plan}</span></p>
               <Progress value={getProgress(primarySub.starts_at, primarySub.ends_at)} className="h-2 mb-1.5 bg-white/25" />
               <p className="text-xs text-white text-center font-heading font-bold">{toBanglaNum(getDaysLeft(primarySub.ends_at))} দিন বাকি</p>
@@ -177,7 +177,7 @@ export default function Subscription() {
               const progress = getProgress(sub.starts_at, sub.ends_at);
               const isExpiring = daysLeft <= 30;
               return (
-                <Card key={sub.id} className="border-primary/30 shadow-[0_0_15px_-3px_hsl(var(--primary)/0.3)] overflow-hidden">
+                <Card key={sub.id} className="border-slate-200 shadow-none overflow-hidden border-t-2 border-t-[#00B4BC]">
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -185,7 +185,7 @@ export default function Subscription() {
                           <Crown className="w-4 h-4 text-primary" />
                           <h3 className="font-heading font-bold">{sub.plan}</h3>
                         </div>
-                        <Badge className="gradient-green text-primary-foreground border-0 text-[10px]">
+                        <Badge className="bg-[#00B4BC]/10 text-[#006A70] border border-[#00B4BC]/20 text-xs">
                           <ShieldCheck className="w-3 h-3 mr-1" /> সক্রিয়
                         </Badge>
                       </div>
@@ -267,17 +267,17 @@ export default function Subscription() {
               const bought = isPurchased(pkg);
               const isComingSoon = pkg.is_coming_soon;
               return (
-                <Card key={pkg.id} className={`relative overflow-hidden transition-all ${bought ? "border-primary/40 shadow-[0_0_15px_-3px_hsl(var(--primary)/0.25)]" : "border-primary/20 bg-gradient-to-br from-primary/5 to-accent/20 hover:shadow-md"}`}>
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-3 py-0.5 rounded-bl-lg">সেরা অফার</div>
+                <Card key={pkg.id} className={`relative overflow-hidden transition-all ${bought ? "border-slate-200 shadow-none" : "border-slate-200 bg-white hover:border-[#00B4BC]/60 hover:shadow-sm"}`}>
+                  <div className="absolute top-0 right-0 bg-slate-100 text-slate-600 text-[10px] font-heading font-bold px-3 py-0.5 rounded-bl-lg">সেরা অফার</div>
                   {isComingSoon && (
                     <div className="absolute top-0 left-0 z-10">
-                      <Badge className="rounded-none rounded-br-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white border-0 text-[10px] font-heading gap-1.5 px-3 py-1 shadow-lg shadow-amber-500/30 animate-pulse">
-                        <Clock className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
+                      <Badge className="rounded-none rounded-br-xl bg-slate-100 text-slate-600 border-0 text-[10px] font-heading gap-1.5 px-3 py-1 shadow-none">
+                        <Clock className="w-3 h-3" style={{ animationDuration: '3s' }} /> Coming Soon
                       </Badge>
                     </div>
                   )}
                   {bought && (
-                    <div className="absolute top-0 left-0 bg-primary text-primary-foreground text-[10px] font-heading font-bold px-2.5 py-0.5 rounded-br-lg flex items-center gap-1">
+                    <div className="absolute top-0 left-0 bg-[#00B4BC]/10 text-[#006A70] text-[10px] font-heading font-bold px-2.5 py-0.5 rounded-br-lg flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> সক্রিয়
                     </div>
                   )}
@@ -291,7 +291,7 @@ export default function Subscription() {
                     <div className="space-y-1.5 mb-4">
                       {features.map((f, i) => (
                         <div key={i} className="flex items-center gap-1.5 text-xs">
-                          <CheckCircle2 className="w-3 h-3 text-primary shrink-0" /><span>{f}</span>
+                          <CheckCircle2 className="w-3 h-3 text-[#00858C] shrink-0" /><span>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -320,7 +320,7 @@ export default function Subscription() {
         {classGroups.size > 0 && (
           <>
             <p className="text-sm text-muted-foreground">
-              ✅ আপনার পছন্দের বিষয়গুলো সিলেক্ট করুন, তারপর নিচে চেকআউট করুন
+              বিষয়ভিত্তিক প্যাকেজ বেছে নিন
             </p>
             <Accordion type="multiple" className="space-y-2">
               {Array.from(classGroups.entries()).map(([className, pkgs]) => (
@@ -348,7 +348,7 @@ export default function Subscription() {
                         return (
                           <Card
                             key={pkg.id}
-                            className={`transition-all cursor-pointer ${isSelected && !isDisabledByAllSubject ? "border-primary/40 bg-primary/5 shadow-sm" : effectivelyBought ? "border-primary/40 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.2)]" : isDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"}`}
+                            className={`transition-all cursor-pointer ${isSelected && !isDisabledByAllSubject ? "border-[#00B4BC] bg-[#00B4BC]/5 shadow-none" : effectivelyBought ? "border-slate-200 bg-slate-50 shadow-none" : isDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-sm"}`}
                             onClick={() => !isDisabled && togglePackage(pkg)}
                           >
                             <CardContent className="p-4 relative">
@@ -356,8 +356,8 @@ export default function Subscription() {
                                 <Badge className="absolute top-2 right-2 gradient-green text-primary-foreground border-0 text-[9px] px-1.5 py-0">সক্রিয়</Badge>
                               )}
                               {isComingSoon && !effectivelyBought && (
-                                <Badge className="absolute top-2 right-2 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-yellow-400/15 text-amber-600 border-amber-400/40 text-[9px] px-2 py-0.5 gap-1 shadow-sm shadow-amber-500/10 animate-pulse font-bold">
-                                  <Clock className="w-2.5 h-2.5 animate-spin" style={{ animationDuration: '3s' }} /> Coming Soon
+                                <Badge className="absolute top-2 right-2 bg-slate-100 text-slate-600 border-slate-200 text-[9px] px-2 py-0.5 gap-1 shadow-none font-bold">
+                                  <Clock className="w-2.5 h-2.5" style={{ animationDuration: '3s' }} /> Coming Soon
                                 </Badge>
                               )}
                               {isDisabledByAllSubject && !effectivelyBought && !isComingSoon && (

@@ -128,6 +128,14 @@ Deno.serve(async (req) => {
       return json({ status: "failed", error: msg, details: execData }, 400);
     }
 
+    const paygOrder = Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.find((p: any) => p.kind === "payg");
+    if (paygOrder) {
+      if (Number(execData.amount) !== Number(paymentRow.amount) || execData.currency !== "BDT") return json({ error: "Payment amount mismatch" }, 400);
+      const { error } = await admin.from("bkash_payments").update({ status: "completed", trx_id: execData.trxID, bkash_response: execData }).eq("id", paymentRow.id);
+      if (error) throw error;
+      return json({ status: "completed", trxID: execData.trxID, kind: "payg" });
+    }
+
     // Success — provision subscriptions and permissions
     const selectedPkgs = Array.isArray(paymentRow.selected_packages) ? paymentRow.selected_packages : [];
     const endsAt = new Date();

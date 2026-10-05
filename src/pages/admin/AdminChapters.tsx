@@ -1,3 +1,5 @@
+import LanguageQuestionForm from "@/components/LanguageQuestionForm";
+import { ALL_TYPES, LANGUAGE_TYPE_LABELS, allowedQuestionTypes, isLanguageType } from "@/lib/languageQuestionTypes";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,11 +20,11 @@ import LatexRenderer from "@/components/LatexRenderer";
 import RichTextEditor from "@/components/RichTextEditor";
 import ReferenceInput from "@/components/ReferenceInput";
 import ReferenceBadges from "@/components/ReferenceBadges";
-import { sortClasses, sortChapters } from "@/lib/classOrder";
+import { sortClasses, sortChapters, formatChapterName } from "@/lib/classOrder";
 
 const FONT = "'SolaimanLipi', sans-serif";
-const typeOptions = ["mcq", "short", "cq", "descriptive"];
-const typeLabelsMap: Record<string, string> = { mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
+const typeOptions = ALL_TYPES;
+const typeLabelsMap: Record<string, string> = { ...LANGUAGE_TYPE_LABELS, mcq: "MCQ", short: "সংক্ষিপ্ত", cq: "সৃজনশীল", descriptive: "বর্ণনামূলক" };
 const ITEMS_PER_PAGE = 20;
 
 /** Splits bulk textarea input into trimmed, de-duplicated chapter names (strips leading bullets/numbers). */
@@ -115,6 +117,12 @@ export default function AdminChapters() {
     return "";
   }, [addQChapter, editQItem, allSubjects]);
 
+  const scopeChapter = addQChapter || chapters.find(c=>c.id===editQItem?.chapter_id);
+  const scopeSubject = allSubjects.find(s=>s.id===(scopeChapter?.subject_id || editQItem?.subject_id));
+  const formTypes = allowedQuestionTypes(classes.find(c=>c.id===scopeSubject?.class_id)?.name || "",scopeSubject?.name || "",scopeChapter?.name || "");
+  const [languageMarks,setLanguageMarks] = useState(0);
+  useEffect(()=>{setLanguageMarks(Number(editQItem?.creative_data?.marks)||0);},[editQItem]);
+  useEffect(()=>{if(!editQItem && !formTypes.includes(qForm.type)) setQForm(f=>({...f,type:formTypes[0]||"mcq"}));},[formTypes.join(","),editQItem]);
   const isMathSubject = /^(গণিত|উচ্চতর গণিত|math|higher math)/i.test(getSubjectName().trim());
 
   useEffect(() => {
@@ -130,11 +138,24 @@ export default function AdminChapters() {
   }, [permLoading]);
 
   const fetchChapters = async () => {
-    const { data } = await supabase
-      .from("chapters")
-      .select("*, subjects(name, class_id, classes(name))")
-      .order("created_at", { ascending: false });
-    let filtered = data || [];
+    // Supabase caps each response; collect every page before filtering locally.
+    const pageSize = 500;
+    const loaded: ChapterItem[] = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase
+        .from("chapters")
+        .select("*, subjects(name, class_id, classes(name))")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error) {
+        toast.error("Unable to load chapters: " + error.message);
+        return;
+      }
+      loaded.push(...(data || []));
+      if ((data || []).length < pageSize) break;
+    }
+    let filtered = loaded;
     if (!hasFullAccess) {
       filtered = filtered.filter((ch: any) =>
         isSubjectAllowed(ch.subjects?.class_id, ch.subject_id)
@@ -371,10 +392,11 @@ export default function AdminChapters() {
       correct_answer: qForm.type === "mcq" ? normalizeAnswerKey(qForm.correct_answer) : qForm.correct_answer || null, explanation: qForm.explanation || null,
       board_references: qForm.board_references.length > 0 ? qForm.board_references : [],
       university_references: qForm.university_references.length > 0 ? qForm.university_references : [],
-      stimulus_text: qForm.type === "mcq" && stimulusText ? stimulusText : null,
+      stimulus_text: (qForm.type === "mcq" || isLanguageType(qForm.type)) && stimulusText ? stimulusText : null,
       stimulus_group_id: null,
     };
 
+    if (isLanguageType(qForm.type)) payload.creative_data = {marks:languageMarks};
     if (qForm.type === "cq") {
       if (isMathSubject) {
         payload.creative_data = { is_math: true, stem: qForm.cq_stem, q_ka: qForm.cq_q_ka, q_kha: qForm.cq_q_kha, q_ga: qForm.cq_q_ga, ans_ka: qForm.cq_ans_ka, ans_kha: qForm.cq_ans_kha, ans_ga: qForm.cq_ans_ga };
@@ -428,13 +450,14 @@ export default function AdminChapters() {
         <div>
           <Label style={{ fontFamily: FONT }}>টাইপ</Label>
           <select className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background" style={{ fontFamily: FONT }} value={qForm.type} onChange={(e) => setQForm({ ...qForm, type: e.target.value })}>
-            {typeOptions.map((t) => <option key={t} value={t}>{typeLabelsMap[t] || t.toUpperCase()}</option>)}
+            {[...new Set([...formTypes, ...(editQItem ? [qForm.type] : [])])].map((t) => <option key={t} value={t}>{typeLabelsMap[t] || t.toUpperCase()}</option>)}
           </select>
         </div>
       </div>
 
       {/* MCQ Form */}
-      {qForm.type === "mcq" && (
+      {isLanguageType(qForm.type) && <LanguageQuestionForm type={qForm.type} question={qForm.question} answer={qForm.correct_answer} stimulus={stimulusText} marks={languageMarks} onChange={(field,value)=>{if(field==='marks') setLanguageMarks(Number(value)); else if(field==='stimulus') setStimulusText(String(value));else setQForm(f=>({...f,[field]:String(value)}));}} />}
+{qForm.type === "mcq" && (
         <>
           {!(editQDialogOpen && editQItem) && (
             <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
@@ -788,7 +811,7 @@ export default function AdminChapters() {
               {displayChapters.map((item) => (
                 <TableRow key={item.id} className={!item.is_active ? "opacity-60" : ""}>
                   <TableCell>{item.id}</TableCell>
-                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="font-medium">{formatChapterName(item.name)}</TableCell>
                   <TableCell>{(item as any).subjects?.classes?.name || "—"}</TableCell>
                   <TableCell>{(item as any).subjects?.name || "—"}</TableCell>
                   <TableCell className="text-center">

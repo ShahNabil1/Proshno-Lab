@@ -1,3 +1,6 @@
+import { englishBlocks } from '@/lib/englishFirstBuilder';
+import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
+import { ALL_TYPES, allowedQuestionTypes, isLanguageType, languageSubject, questionTypeLabel, patternGrade } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
 import { toast } from "sonner";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -36,20 +39,21 @@ import {
 
 const toBanglaNum = (n: number | string) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 
-const typeOptions = ["mcq", "cq", "short", "descriptive", "all"];
+const typeOptions = [...ALL_TYPES, "all"];
 const typeLabels: Record<string, string> = {
   mcq: "বহুনির্বাচনী",
   cq: "সৃজনশীল",
   short: "সংক্ষিপ্ত",
   descriptive: "বর্ণনামূলক",
-  all: "সমন্বিত প্রশ্ন (সৃজঃ + বহুঃ + সংক্ষিপ্ত + অন্যান্য)",
+  all: "সব ধরনের প্রশ্ন",
 };
 const typeDbValues: Record<string, string[]> = {
   mcq: ["mcq"],
   cq: ["cq"],
   short: ["short"],
   descriptive: ["descriptive"],
-  all: ["mcq", "cq", "short", "descriptive"],
+  ...Object.fromEntries(ALL_TYPES.map(t=>[t,[t]])),
+  all: ALL_TYPES,
 };
 
 type WarningField = "subject" | "chapter" | null;
@@ -193,13 +197,15 @@ const latestQuestionYear = (question: QuestionRow): number => {
 
 export default function QuestionCreate({ onQuestionListChange }: { onQuestionListChange?: (open: boolean) => void }) {
   const { user } = useAuth();
-  const { unlimited: unlimitedAccess } = useUnlimitedAccess();
+  const { unlimited: unlimitedAccess, loading: accessLoading } = useUnlimitedAccess();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const addToPaper = searchParams.get("add_to_paper") === "true";
+  const [englishSections, setEnglishSections] = useState<number[]>([0,1,2,3,4,5,6,7,8]);
+  const [englishPreviewRows, setEnglishPreviewRows] = useState<QuestionRow[] | null>(null);
   const [step, setStep] = useState<Step>("form");
   useEffect(() => {
-    onQuestionListChange?.(step === "questionList");
+    onQuestionListChange?.(step !== "form");
     return () => onQuestionListChange?.(false);
   }, [step, onQuestionListChange]);
   const [form, setForm] = useState({
@@ -231,6 +237,27 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   }, [selectedSubjectIds, subjects]);
 
   const selectedSubject = selectedSubjects[0];
+  const showEnglishBuilder = !addToPaper && selectedSubjects.length === 1 && languageSubject(selectedSubject?.name || '') === 'english1' && patternGrade(classes.find(c => String(c.id) === form.classId)?.name || '') === 8;
+  useEffect(() => {
+    if (showEnglishBuilder && chapters.length) {
+      setForm(previous => ({ ...previous, chapterIds: chapters.filter(c => hasSubscription || c.is_free).map(c => String(c.id)) }));
+    }
+  }, [showEnglishBuilder, chapters, hasSubscription]);
+  const defaultTypeSubjectKey = useRef("");
+  useEffect(() => {
+    const key = selectedSubjects.map(subject => subject.id).sort((a, b) => a - b).join(",");
+    if (key === defaultTypeSubjectKey.current) return;
+    defaultTypeSubjectKey.current = key;
+    if (selectedSubjects.some(subject => languageSubject(subject.name) === "english1")) {
+      setForm(previous => ({ ...previous, type: "all" }));
+    }
+  }, [selectedSubjects]);
+  const scopedTypeOptions = ["all", ...new Set(selectedSubjects.flatMap(sub=> {
+    const cls=classes.find(c=>c.id===sub.class_id)?.name || "";
+    const chosen=chapters.filter(c=>form.chapterIds.includes(String(c.id)) && c.subject_id===sub.id);
+    return chosen.length?chosen.flatMap(c=>allowedQuestionTypes(cls,sub.name,c.name)):allowedQuestionTypes(cls,sub.name);
+  }))];
+  useEffect(()=> {if(selectedSubjects.length && !scopedTypeOptions.includes(form.type)) setForm(f=>({...f,type:"all"}));},[form.classId,selectedSubjects,form.chapterIds,chapters]);
   const effectiveClassId = selectedSubject?.class_id || Number(form.classId || 0);
   const selectableClasses = useMemo(
     () => classes.filter((item) => !/english|eglish|version|ইংলিশ/i.test(item.name || "")),
@@ -242,76 +269,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
 
-  // ---- Draft persistence: keep step/form/selection alive across page refresh ----
-  const DRAFT_KEY = "questionCreateDraft";
-  const draftRestoredRef = useRef(false);
-  const [restoringDraft, setRestoringDraft] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = sessionStorage.getItem("questionCreateDraft");
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      return d?.step && d.step !== "form";
-    } catch { return false; }
-  });
-
-  useEffect(() => {
-    if (addToPaper) { draftRestoredRef.current = true; setRestoringDraft(false); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const raw = sessionStorage.getItem(DRAFT_KEY);
-        if (!raw) return;
-        const d = JSON.parse(raw);
-        if (!d?.form?.classId || !d?.form?.subjectId || !d.step || d.step === "form") return;
-        setForm(d.form);
-        if (d.step === "questionSet" && !Array.isArray(d.questionIds)) {
-          if (!cancelled) setStep("questionSet");
-          return;
-        }
-        const rows = await fetchQuestionRows(d.form);
-        if (cancelled) return;
-        const order: number[] = Array.isArray(d.questionIds) ? d.questionIds : [];
-        if (order.length > 0) {
-          const pos = new Map(order.map((id, i) => [id, i]));
-          rows.sort((a, b) => (pos.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (pos.get(b.id) ?? Number.MAX_SAFE_INTEGER));
-        }
-        setQuestions(rows);
-        setSelectedIds(new Set<number>(Array.isArray(d.selectedIds) ? d.selectedIds : []));
-        if (d.filterType !== undefined) setFilterType(d.filterType);
-        if (d.currentPage) setCurrentPage(d.currentPage);
-        setStep(d.step);
-      } catch {
-        // ignore corrupt draft
-      } finally {
-        if (!cancelled) { draftRestoredRef.current = true; setRestoringDraft(false); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [addToPaper]);
-
-  // Save draft whenever meaningful state changes (after restore has completed)
-  useEffect(() => {
-    if (addToPaper || !draftRestoredRef.current) return;
-    try {
-      if (step === "form") {
-        sessionStorage.removeItem(DRAFT_KEY);
-        return;
-      }
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-        step,
-        form,
-        questionIds: questions.map(q => q.id),
-        selectedIds: Array.from(selectedIds),
-        filterType,
-        currentPage,
-      }));
-    } catch { /* storage full – ignore */ }
-  });
-
-  // Keep the draft when navigating to the paper preview so browser Back can
-  // restore the manual form, filters and selected question IDs. Returning to
-  // the form still clears the draft in the persistence effect above.
+  const restoringDraft = false;
+  useEffect(() => { sessionStorage.removeItem('questionCreateDraft'); }, []);
 
   // Load existing paper question IDs when in add_to_paper mode and auto-skip form
   const [autoSkipDone, setAutoSkipDone] = useState(false);
@@ -435,9 +394,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   // Load chapters when subjects change
   useEffect(() => {
     if (selectedSubjectIds.length === 0) { setChapters([]); setTopics([]); return; }
-    supabase.from("chapters").select("id, name, is_free, subject_id").in("subject_id", selectedSubjectIds.map(Number)).eq("is_active", true).order("name")
+    let query = supabase.from("chapters").select("id, name, is_free, subject_id").in("subject_id", selectedSubjectIds.map(Number));
+    if (!unlimitedAccess) query = query.eq("is_active", true);
+    query.order("name")
       .then(({ data }) => setChapters(sortChapters((data as any[]) || [])));
-  }, [selectedSubjectIds.join(",")]);
+  }, [selectedSubjectIds.join(","), unlimitedAccess]);
 
   // Check access: user_permissions OR active subscriptions
   useEffect(() => {
@@ -528,8 +489,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       ));
       let query = supabase.from("questions").select("*, chapters!inner(is_active)")
         .in("class_id", subjectClassIds.length > 0 ? subjectClassIds : [Number(f.classId)])
-        .in("subject_id", sIds.map(Number))
-        .eq("chapters.is_active", true);
+        .in("subject_id", sIds.map(Number));
+      if (!unlimitedAccess) query = query.eq("chapters.is_active", true);
 
       if (f.chapterIds && f.chapterIds.length > 0) {
         query = query.in("chapter_id", f.chapterIds.map(Number));
@@ -551,10 +512,21 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       allRows.push(...batch);
       if (batch.length < pageSize) break;
     }
+    if (showEnglishBuilder) {
+      const types = new Set<string>(englishSections.flatMap(i => {
+        const block = englishBlocks[i];
+        return [...block.needs.map(n => n[0]), ...('passage' in block ? [block.passage] : [])];
+      }));
+      return allRows.filter(q => types.has(q.type));
+    }
     return allRows;
   };
 
   const handleCreateQuestionSet = async () => {
+    if (!addToPaper && !form.programName.trim()) {
+      toast.error("পরীক্ষার নাম লিখুন");
+      return;
+    }
     if (!form.classId) {
       toast.error("শ্রেণী নির্বাচন করুন");
       return;
@@ -596,9 +568,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           setFilterType(null);
         }
       } else {
-        setFilterType("mcq");
+        setFilterType(null);
       }
-      toast.success(`${shuffled.length}টি প্রশ্ন পাওয়া গেছে!`);
       setStep(addToPaper ? "questionList" : "questionSet");
     } catch {
       toast.error("প্রশ্ন আনতে সমস্যা হয়েছে");
@@ -615,12 +586,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       const question = questions.find(q => q.id === id);
       const isAdding = !next.has(id);
 
-      if (isAdding && next.size >= 200) {
+      if (!showEnglishBuilder && isAdding && next.size >= 200) {
         toast.warning("সর্বোচ্চ ২০০টি প্রশ্ন নির্বাচন করা যাবে");
         return prev;
       }
 
-      if (question?.stimulus_group_id) {
+      if (!showEnglishBuilder && question?.stimulus_group_id) {
         // Auto-select/deselect all questions in the same group
         const groupQs = questions.filter(q => q.stimulus_group_id === question.stimulus_group_id);
         if (isAdding && next.size + groupQs.filter(gq => !next.has(gq.id)).length > 200) {
@@ -759,7 +730,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return result;
   };
 
-  const filteredQuestions = getFilteredQuestions();
+  const filteredQuestions = englishPreviewRows ?? getFilteredQuestions();
   const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -771,7 +742,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       toast.error("অন্তত একটি প্রশ্ন সিলেক্ট করুন");
       return;
     }
-    const selected = questions.filter(q => selectedIds.has(q.id));
+    const selectedQuestions = questions.filter(q => selectedIds.has(q.id) && (!showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type)));
+    const normalizePassage = (text: string) => text.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    const selected = showEnglishBuilder ? questions.filter(q => selectedQuestions.includes(q) || (
+      /^(seen_passage|unseen_passage)/.test(q.type) && selectedQuestions.some(item => item.chapter_id === q.chapter_id && (
+        (item.stimulus_text && normalizePassage(item.stimulus_text) === normalizePassage(q.question)) ||
+        (item.stimulus_group_id && item.stimulus_group_id === q.stimulus_group_id)
+      ))
+    )) : selectedQuestions;
     // Store in sessionStorage for the view page
     sessionStorage.setItem("viewPaperQuestions", JSON.stringify(selected));
     sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(effectiveClassId), subjectId: selectedSubjectIds.join(","), chapterIds: (form.chapterIds || []).map(String) }));
@@ -863,123 +841,41 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   // ─── STEP 2: Question Set Header ───
   if (step === "questionSet") {
-    return (
-      <div className="max-w-2xl mx-auto space-y-4 py-2 sm:py-5">
-        {/* Step Progress Bar */}
-        <div className="bg-white rounded-[1px] p-3.5 border border-slate-300 shadow-xs">
-          <div className="flex items-center justify-between max-w-lg mx-auto text-sm">
-            <div className="flex items-center gap-2 text-emerald-700 font-bold cursor-pointer" onClick={() => setStep("form")}>
-              <span className="w-5 h-5 rounded-[1px] bg-emerald-100 flex items-center justify-center text-xs">✓</span>
-              <span>১. বিষয় ও অধ্যায়</span>
-            </div>
-            <div className="w-8 sm:w-12 h-0.5 bg-emerald-400" />
-            <div className="flex items-center gap-2 text-slate-800 font-bold">
-              <span className="w-5 h-5 rounded-[1px] bg-slate-800 text-white flex items-center justify-center text-xs">২</span>
-              <span>২. প্রশ্নসেট ওভারভিউ</span>
-            </div>
-            <div className="w-8 sm:w-12 h-0.5 bg-slate-200" />
-            <div className="flex items-center gap-2 text-slate-400 font-medium">
-              <span className="w-5 h-5 rounded-[1px] bg-slate-100 flex items-center justify-center text-xs">৩</span>
-              <span className="hidden sm:inline">৩. প্রশ্ন নির্বাচন</span>
-            </div>
-          </div>
+    const minutes = Number(form.count) || 100;
+    return <div className="max-w-[874px] mx-auto py-8 sm:py-12">
+      <div className="bg-white border border-slate-200 shadow-sm min-h-[630px] px-5 sm:px-6 py-8 flex flex-col">
+        <div className="text-center space-y-1">
+          <h2 className="text-2xl font-bold">{institute?.name || 'Institute'}</h2>
+          {form.programName && <p>{form.programName}</p>}
+          <p>{className}</p><p>{subjectName}</p>
         </div>
-
-        {/* Official Question Paper Header Preview Card */}
-        <Card className="border border-slate-300 shadow-xs bg-white rounded-[1px] overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-2.5 flex items-center justify-between text-sm text-slate-600 font-medium">
-            <span className="flex items-center gap-1.5 font-bold text-slate-800">
-              <School className="w-4 h-4 text-emerald-700" /> প্রশ্নপত্রের অফিসিয়াল কাঠামো
-            </span>
-            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-[1px] font-semibold text-xs">
-              প্রস্তুতকৃত
-            </span>
-          </div>
-
-          <CardContent className="p-6 sm:p-8 space-y-5">
-            <div className="text-center space-y-1.5 pb-1">
-              <h2 className="text-2xl font-bold font-heading text-slate-900 tracking-tight">
-                {institute?.name || "আপনার প্রতিষ্ঠানের নাম"}
-              </h2>
-              {form.programName && (
-                <p className="text-lg font-semibold text-slate-700">
-                  {form.programName}
-                </p>
-              )}
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-base text-slate-700 pt-1">
-                {className && <span>শ্রেণি: <strong className="text-slate-900 font-bold">{className}</strong></span>}
-                {subjectName && <span>বিষয়: <strong className="text-slate-900 font-bold">{subjectName}</strong></span>}
-                {subjectCode && <span className="text-sm text-slate-500">(বিষয় কোড: {subjectCode})</span>}
-              </div>
-
-              {selectedChapterNames.length > 0 && (
-                <div className="pt-2 flex flex-wrap justify-center items-center gap-1.5">
-                  <span className="text-sm text-slate-500">অধ্যায়:</span>
-                  {selectedChapterNames.map((name, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center text-sm bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-[1px] border border-slate-200 font-medium"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between text-base font-semibold text-slate-700 border-y border-dashed border-slate-300 py-2.5 px-3 bg-slate-50 rounded-[1px]">
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-slate-500" />
-                সময়: ১০ মিনিট
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-800">
-                <Award className="w-4 h-4 text-emerald-700" />
-                পূর্ণমান: {toBanglaNum(form.count || 25)}
-              </span>
-            </div>
-
-            <p className="text-center text-sm text-slate-500 italic">
-              [ দ্রষ্টব্য: প্রশ্নপত্রে কোনো প্রকার দাগ বা চিহ্ন দেয়া যাবেনা। প্রতিটি প্রশ্নের মান সমান। ]
-            </p>
-
-            {/* Success Callout Box */}
-            <div className="rounded-[1px] p-4 bg-emerald-50 border border-emerald-300 text-center space-y-2">
-              <div className="flex items-center justify-center gap-2 text-emerald-800">
-                <CheckCircle2 className="h-5 w-5 text-emerald-700 shrink-0" />
-                <span className="text-lg font-bold">
-                  প্রশ্নসেট সফলভাবে তৈরি হয়েছে!
-                </span>
-              </div>
-              <p className="text-base text-slate-700 max-w-md mx-auto">
-                ডেটাবেজে আপনার নির্বাচিত বিষয় ও অধ্যায়সমূহের মোট <strong className="text-emerald-800 font-bold">{toBanglaNum(questions.length)}টি</strong> প্রশ্ন প্রস্তুত রয়েছে। নিচের বাটনে ক্লিক করে পছন্দমতো প্রশ্ন বেছে নিন।
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto h-12 px-5 rounded-[1px] border-slate-300 text-slate-700 hover:bg-slate-100 text-base font-medium"
-                onClick={() => setStep("form")}
-              >
-                <ArrowLeft className="w-4 h-4 mr-1.5" /> তথ্যে পরিবর্তন করুন
-              </Button>
-              <Button
-                className="w-full sm:w-auto h-12 px-7 rounded-[1px] bg-[#059669] hover:bg-[#047857] text-white font-bold text-base shadow-sm border-0 transition-all flex items-center justify-center gap-2"
-                onClick={handleAddQuestions}
-              >
-                <span>প্রশ্ন পছন্দ ও বাছাই করুন</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex justify-between mt-2 border-b border-slate-200 pb-1">
+          <span>সময়: {Math.floor(minutes / 60) > 0 ? `${toBanglaNum(Math.floor(minutes / 60))} ঘণ্টা ` : ''}{toBanglaNum(minutes % 60)} মিনিট</span><span>পূর্ণমান: {toBanglaNum(form.count || 100)}</span>
+        </div>
+        <p className="text-center mt-3">প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন দেওয়া যাবে না।</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 py-16">
+          <div className="flex items-center gap-2 text-xl"><CheckCircle2 className="h-5 w-5 text-emerald-600" /><span>প্রশ্নসেট তৈরি হয়েছে!</span></div>
+          <p className="text-slate-600">নিচের বাটনে ক্লিক করে ডেটাবেজ থেকে প্রশ্ন যুক্ত করুন</p>
+          <Button onClick={() => { setSelectedIds(new Set()); setEnglishPreviewRows(null); handleAddQuestions(); }} className="rounded-lg bg-[#0A1E38] hover:bg-[#102E56] px-8 h-10">প্রশ্ন যুক্ত করুন</Button>
+        </div>
       </div>
-    );
+    </div>;
   }
 
   // ─── STEP 3: Question List with Advanced Filter Sidebar ───
   if (step === "questionList") {
+    const englishSelectionContent = showEnglishBuilder ? <EnglishFirstPaperBuilder
+      key={`${form.subjectId}:${form.chapterIds.join(',')}`}
+      enabledBlocks={englishSections}
+      chapters={chapters}
+      topics={topics}
+      onPreview={rows => {
+        setEnglishPreviewRows(rows); setCurrentPage(1);
+        setQuestions(previous => [...previous, ...rows.filter(q => !previous.some(r => r.id === q.id))]);
+        scrollMainToTop();
+      }}
+      initialQuestions={questions}
+    /> : null;
     const filterSidebarContent = (
       <div className="space-y-4">
         {/* Keyword search */}
@@ -1020,7 +916,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   onClick={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}
                 >
                   <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${active ? 'border-[#0A1E38] bg-[#0A1E38]' : 'border-slate-300'}`}>
-                    {active && <div className="w-1.5 h-1.5 rounded-full bg-[#F4C053]" />}
+                    {active && <div className="w-1.5 h-1.5 rounded-full bg-[#00B4BC]" />}
                   </div>
                   <span>{opt.label}</span>
                 </div>
@@ -1033,13 +929,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         <div className="border border-border rounded-lg p-3">
           <h4 className="font-heading font-bold text-sm mb-2">টাইপ</h4>
           <div className="space-y-2">
-            {[
-              { value: null, label: "সব" },
-              { value: "mcq", label: "বহুনির্বাচনী" },
-              { value: "short", label: "সংক্ষিপ্ত" },
-              { value: "cq", label: "সৃজনশীল" },
-              { value: "descriptive", label: "বর্ণনামূলক" },
-            ].map(opt => (
+            {[{value:null,label:"All"}, ...scopedTypeOptions.filter(t=>t!=="all").map(value=>({value,label:questionTypeLabel(value)}))].map(opt => (
               <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" name="filterType" checked={filterType === opt.value} onChange={() => setFilterType(opt.value)} className="accent-primary" />
                 {opt.label}
@@ -1336,17 +1226,17 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
     return (
       <>
-        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+        <div className="question-builder lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
           {/* Main content - independently scrollable on desktop */}
           <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
             <div className="sticky top-0 z-20 space-y-3 bg-background pb-2">
-              <div className="flex items-center justify-between flex-nowrap gap-4 overflow-x-auto bg-slate-900 text-white p-3 sm:px-4 rounded-[1px] shadow-xs border border-slate-800 scrollbar-none">
+              <div className="flex items-center justify-between flex-nowrap gap-4 overflow-x-auto bg-[#0A1E38] text-white p-3 sm:px-4 rounded-lg shadow-xs border border-[#0A1E38] scrollbar-none">
                 <div className="flex items-center gap-4 whitespace-nowrap text-sm font-semibold shrink-0">
                   <span className="text-slate-200 font-bold">নির্বাচিত</span>
-                  <span className="text-blue-100">বহুঃ {toBanglaNum(selectedTypeCounts.mcq)} / {toBanglaNum(totalTypeCounts.mcq)}</span>
-                  <span className="text-purple-100">সৃজঃ {toBanglaNum(selectedTypeCounts.cq)} / {toBanglaNum(totalTypeCounts.cq)}</span>
-                  <span className="text-amber-100">সংঃ {toBanglaNum(selectedTypeCounts.short)} / {toBanglaNum(totalTypeCounts.short)}</span>
-                  <span className="text-rose-100">বর্ণনাঃ {toBanglaNum(selectedTypeCounts.descriptive)} / {toBanglaNum(totalTypeCounts.descriptive)}</span>
+                  <span className="text-white/80">বহুঃ {toBanglaNum(selectedTypeCounts.mcq)} / {toBanglaNum(totalTypeCounts.mcq)}</span>
+                  <span className="text-white/80">সৃজঃ {toBanglaNum(selectedTypeCounts.cq)} / {toBanglaNum(totalTypeCounts.cq)}</span>
+                  <span className="text-white/80">সংঃ {toBanglaNum(selectedTypeCounts.short)} / {toBanglaNum(totalTypeCounts.short)}</span>
+                  <span className="text-white/80">বর্ণনাঃ {toBanglaNum(selectedTypeCounts.descriptive)} / {toBanglaNum(totalTypeCounts.descriptive)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
@@ -1354,7 +1244,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     variant="outline"
                     size="sm"
                     onClick={() => setStep("questionSet")}
-                    className="h-9 rounded-[1px] bg-white/10 hover:bg-white/20 text-white border-white/20 text-sm font-medium"
+                    className="h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white border-white/20 text-sm font-medium"
                   >
                     ← বিবরণী
                   </Button>
@@ -1363,15 +1253,15 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     size="sm"
                     onClick={handleViewPaper}
                     disabled={selectedIds.size === 0}
-                    className="h-9 rounded-[1px] bg-white/10 hover:bg-white/20 text-white border-white/30 text-sm font-medium"
+                    className="h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white border-white/30 text-sm font-medium"
                   >
-                    <Eye className="h-4 w-4 mr-1 text-amber-300" /> প্রিভিউ
+                    <Eye className="h-4 w-4 mr-1 text-[#00B4BC]" /> প্রিভিউ
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleSaveAndView}
                     disabled={selectedIds.size === 0}
-                    className="h-9 rounded-[1px] bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-xs border-0"
+                    className="h-9 rounded-lg bg-[#00B4BC] hover:bg-[#20C5CC] text-[#0A1E38] font-bold text-sm shadow-xs border-0"
                   >
                     <Save className="h-4 w-4 mr-1" /> প্রশ্নপত্র সেভ করুন
                   </Button>
@@ -1447,10 +1337,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 const countByType = (t: string) => base.filter(q => q.type === t).length;
                 const fmt = (n: number) => n.toLocaleString("bn-BD");
                 const badges = [
-                  { value: "mcq", label: "MCQ", count: countByType("mcq"), dot: "bg-blue-500" },
-                  { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), dot: "bg-amber-500" },
-                  { value: "cq", label: "সৃজনশীল", count: countByType("cq"), dot: "bg-purple-500" },
-                  { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), dot: "bg-rose-500" },
+                  { value: "mcq", label: "MCQ", count: countByType("mcq"), dot: "bg-[#00B4BC]" },
+                  { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), dot: "bg-[#00B4BC]" },
+                  { value: "cq", label: "সৃজনশীল", count: countByType("cq"), dot: "bg-[#00B4BC]" },
+                  { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), dot: "bg-[#00B4BC]" },
                 ];
 
                 const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
@@ -1491,7 +1381,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                               disabled={isDisabled}
                               onClick={() => setFilterType(b.value)}
                               className={`relative inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-lg text-[12.5px] sm:text-[13px] font-semibold tracking-tight transition-all duration-200 whitespace-nowrap shrink-0 ${isActive
-                                  ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
+                                  ? "bg-[#0A1E38] text-white shadow-none"
                                   : isDisabled
                                     ? "text-muted-foreground/60 cursor-not-allowed"
                                     : "text-foreground/80 hover:text-foreground hover:bg-background/70"
@@ -1501,7 +1391,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                               <span>{b.label}</span>
                               <span
                                 className={`inline-flex items-center justify-center min-w-[1.4rem] h-[18px] px-1.5 rounded-md text-[11px] font-bold tabular-nums tracking-tight transition-colors ${isActive
-                                    ? "bg-primary/15 text-primary"
+                                    ? "bg-white/15 text-white"
                                     : "bg-background text-foreground/80 border border-border"
                                   }`}
                               >
@@ -1528,8 +1418,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
               })()}
             </div>
 
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl px-4 py-2 text-center text-xs text-amber-800 flex items-center justify-center gap-2">
-              <Flag className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-center text-xs text-slate-600 flex items-center justify-center gap-2">
+              <Flag className="w-3.5 h-3.5 text-[#00858C] shrink-0" />
               <span>প্রশ্নে কোনো ভুল বা অসঙ্গতি পেলে ফ্ল্যাগ আইকনে ক্লিক করে রিপোর্ট করুন।</span>
             </div>
 
@@ -1547,7 +1437,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     <SheetTitle className="font-heading">এডভান্সড ফিল্টার মেনু</SheetTitle>
                   </SheetHeader>
                   <ScrollArea className="h-[calc(85vh-60px)] pr-2 mt-4">
-                    {filterSidebarContent}
+                    {englishSelectionContent || filterSidebarContent}
                   </ScrollArea>
                 </SheetContent>
               </Sheet>
@@ -1555,27 +1445,33 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
             <div className="space-y-3">
               {paginatedQuestions.map((q, idx) => {
+                if (showEnglishBuilder && /^(seen_passage|unseen_passage)/.test(q.type)) {
+                  return <div key={q.id} className="rounded-lg border border-[#00B4BC]/20 border-l-4 border-l-[#00B4BC] bg-[#00B4BC]/5 p-4" data-passage-preview>
+                    <div className="mb-2 text-sm font-bold text-[#0A1E38]">{questionTypeLabel(q.type)}</div>
+                    <div className="text-base leading-relaxed text-slate-900"><LatexRenderer text={q.question} /></div>
+                  </div>;
+                }
                 const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
                 const isSelected = selectedIds.has(q.id);
                 const typeMeta: Record<string, { label: string; dot: string; chip: string }> = {
-                  mcq: { label: "MCQ", dot: "bg-blue-500", chip: "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-950/60 dark:border-blue-900" },
-                  short: { label: "সংক্ষিপ্ত", dot: "bg-amber-500", chip: "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/60 dark:border-amber-900" },
-                  cq: { label: "সৃজনশীল", dot: "bg-purple-500", chip: "text-purple-700 bg-purple-50 border-purple-200 dark:text-purple-300 dark:bg-purple-950/60 dark:border-purple-900" },
-                  descriptive: { label: "বর্ণনামূলক", dot: "bg-rose-500", chip: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/60 dark:border-rose-900" },
+                  mcq: { label: "MCQ", dot: "bg-[#00B4BC]", chip: "text-[#00858C] bg-[#00B4BC]/5 border-[#00B4BC]/20" },
+                  short: { label: "সংক্ষিপ্ত", dot: "bg-[#00B4BC]", chip: "text-[#00858C] bg-[#00B4BC]/5 border-[#00B4BC]/20" },
+                  cq: { label: "সৃজনশীল", dot: "bg-[#00B4BC]", chip: "text-[#00858C] bg-[#00B4BC]/5 border-[#00B4BC]/20" },
+                  descriptive: { label: "বর্ণনামূলক", dot: "bg-[#00B4BC]", chip: "text-[#00858C] bg-[#00B4BC]/5 border-[#00B4BC]/20" },
                 };
-                const tm = typeMeta[q.type] ?? { label: q.type, dot: "bg-muted-foreground", chip: "text-muted-foreground bg-muted border-border" };
+                const tm = typeMeta[q.type] ?? { label: questionTypeLabel(q.type), dot: "bg-muted-foreground", chip: "text-muted-foreground bg-muted border-border" };
                 return (
                   <Card
                     key={q.id}
                     onClick={() => toggleQuestion(q.id)}
-                    className={`group relative overflow-hidden cursor-pointer border rounded-[1px] transition-all duration-150 ${isSelected
-                        ? "border-slate-800 shadow-xs bg-slate-50/70 ring-1 ring-slate-800"
-                        : "border-slate-300 hover:border-slate-400 bg-white shadow-xs"
+                    className={`group relative overflow-hidden cursor-pointer border rounded-lg transition-all duration-150 ${isSelected
+                        ? "border-[#00B4BC] shadow-none bg-[#00B4BC]/[0.03] ring-1 ring-[#00B4BC]/20"
+                        : "border-slate-200 hover:border-[#00B4BC]/50 bg-white shadow-none"
                       }`}
                   >
                     <span
                       aria-hidden
-                      className={`pointer-events-none absolute left-0 top-0 h-full w-[3px] transition-all duration-150 ${isSelected ? "bg-emerald-600 opacity-100" : `${tm.dot} opacity-0 group-hover:opacity-60`
+                      className={`pointer-events-none absolute left-0 top-0 h-full w-[3px] transition-all duration-150 ${isSelected ? "bg-[#00B4BC] opacity-100" : `${tm.dot} opacity-0 group-hover:opacity-60`
                         }`}
                     />
                     <CardContent className="p-4 pl-[18px]">
@@ -1585,10 +1481,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             checked={isSelected}
                             onCheckedChange={() => toggleQuestion(q.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded-[1px] border-slate-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                            className="rounded-lg border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
-                          <span className={`inline-flex items-center gap-1.5 h-[22px] px-2 rounded-[1px] text-[11px] font-bold tracking-tight border ${tm.chip}`}>
-                            <span className={`h-1.5 w-1.5 rounded-[1px] ${tm.dot}`} />
+                          <span className={`inline-flex items-center gap-1.5 h-[22px] px-2 rounded-lg text-[11px] font-bold tracking-tight border ${tm.chip}`}>
+                            <span className={`h-1.5 w-1.5 rounded-lg ${tm.dot}`} />
                             {tm.label}
                           </span>
                         </div>
@@ -1598,7 +1494,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             uniRefs={q.university_references as any}
                           />
                           <button
-                            className="inline-flex items-center justify-center h-7 w-7 rounded-[1px] text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="রিপোর্ট করুন"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1622,17 +1518,17 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                           ? (cData?.stem || q.stimulus_text || q.question)
                           : q.question;
 
-                        const hasSeparateStimulus = !isCqOrDesc && Boolean(
+                        const hasSeparateStimulus = !showEnglishBuilder && q.type === "mcq" && Boolean(
                           q.stimulus_text && (q.stimulus_text.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\s/i.test(q.stimulus_text))
                         );
 
-                        const isShort = q.type === "short";
+                        const isShort = (q.type === "short" || isLanguageType(q.type));
                         return (
                           <div>
                             {hasSeparateStimulus && !isShort && (
                               <div
                                 key={`stim-${q.id}`}
-                                className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-[1px] italic text-base rich-text-content text-slate-800"
+                                className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-lg italic text-base rich-text-content text-slate-800"
                               >
                                 <LatexRenderer text={q.stimulus_text || ""} />
                               </div>
@@ -1646,7 +1542,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             {hasSeparateStimulus && isShort && (
                               <div
                                 key={`stim-${q.id}`}
-                                className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-[1px] italic text-base rich-text-content text-slate-800"
+                                className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-lg italic text-base rich-text-content text-slate-800"
                               >
                                 <LatexRenderer text={q.stimulus_text || ""} />
                               </div>
@@ -1662,9 +1558,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             const label = ["ক", "খ", "গ", "ঘ"][oi];
                             const isAnswer = isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                             return (
-                              <div key={key} className={`flex items-center gap-2.5 p-2.5 rounded-[1px] text-base ${isAnswer ? "bg-emerald-50 text-emerald-900 font-bold border border-emerald-300" : "bg-slate-50 text-slate-800 border border-slate-200"}`}>
+                              <div key={key} className={`flex items-center gap-2.5 p-2.5 rounded-lg text-base ${isAnswer ? "bg-[#00B4BC]/[0.07] text-[#006A70] font-bold border border-[#00B4BC]/30" : "bg-slate-50 text-slate-800 border border-slate-200"}`}>
                                 <span
-                                  className="shrink-0 inline-flex items-center justify-center rounded-[1px] border border-current font-bold leading-none text-xs"
+                                  className="shrink-0 inline-flex items-center justify-center rounded-lg border border-current font-bold leading-none text-xs"
                                   style={{ width: "1.6em", height: "1.6em" }}
                                 >
                                   {label}
@@ -1764,8 +1660,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <div className="space-y-4 pb-2">
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-heading font-bold text-center mb-3 border-b border-border pb-2">এডভান্সড ফিল্টার মেনু</h3>
-                  {filterSidebarContent}
+                  <h3 className="font-heading font-bold text-[#0A1E38] text-left mb-4 border-b border-border pb-3">{showEnglishBuilder ? 'English প্রশ্নপত্র বাছাই' : 'এডভান্সড ফিল্টার মেনু'}</h3>
+                  {englishSelectionContent || filterSidebarContent}
                 </CardContent>
               </Card>
             </div>
@@ -1807,9 +1703,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   // ─── STEP 1: Minimal Form matching Screenshot 2 ───
   return (
-    <div className="max-w-xl mx-auto py-2 sm:py-5">
+    <div className="manual-create-form max-w-5xl mx-auto py-2 sm:py-4">
       {addToPaper && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-[1px] p-4 text-center">
+        <div className="mb-4 bg-[#00B4BC]/5 border border-[#00B4BC]/20 rounded-lg p-4 text-center">
           <h1 className="font-heading text-lg font-bold text-slate-800">
             বিদ্যমান প্রশ্নপত্রে আরও প্রশ্ন যুক্ত করুন
           </h1>
@@ -1820,15 +1716,22 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       )}
 
       {/* Main Minimal Form Card */}
-      <Card className="border border-slate-300 shadow-xs bg-white rounded-[1px] overflow-hidden">
-        <CardContent className="p-6 sm:p-8 space-y-3.5">
+      <Card className="border border-slate-200 shadow-[0_6px_28px_-16px_#0a1e3830] bg-white rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5 sm:px-7">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00B4BC]/10 text-[#00858C]"><FileText className="h-5 w-5" /></span>
+          <div><h1 className="text-xl font-semibold text-[#0A1E38]">কাস্টম প্রশ্নপত্র</h1><p className="mt-1 text-sm text-slate-500">পরীক্ষার তথ্য ও প্রশ্নের পরিসর নির্ধারণ করুন</p></div>
+        </div>
+        <CardContent className="manual-form-fields p-5 sm:p-7 grid grid-cols-1 gap-3">
           {/* 1. Exam / Program Name */}
-          <div>
+          <div className="">
             <Input
+              id="manual-exam-name"
               placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন *"
+              aria-label="পরীক্ষার নাম"
+              required
               value={form.programName}
               onChange={(e) => setForm({ ...form, programName: e.target.value })}
-              className="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white"
+              className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white"
             />
           </div>
 
@@ -1838,7 +1741,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
               value={form.classId}
               classes={selectableClasses}
               placeholder="শ্রেণি"
-              triggerClassName="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 bg-white"
+              triggerClassName="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 bg-white"
               onChange={(v) => {
                 setSubjectVersion("bangla");
                 setForm({ ...form, classId: v, subjectId: "", subjectIds: [], chapterIds: [] });
@@ -1857,7 +1760,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
               disabled={!form.classId}
               placeholder="বিষয় *"
               triggerIcon="scan"
-              triggerClassName="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] text-base text-slate-800 bg-white"
+              triggerClassName="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 bg-white"
               onVersionChange={(version) => {
                 setSubjectVersion(version);
                 setForm({ ...form, subjectId: "", subjectIds: [], chapterIds: [] });
@@ -1869,7 +1772,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </div>
 
           {/* 4. Chapter Picker */}
+          {showEnglishBuilder ? <Button variant="outline" className="w-full h-12 justify-between rounded-lg border-slate-200 text-base font-normal" onClick={() => setChapterModalOpen(true)}>
+            <span>প্রশ্নের ধরন</span><span className="text-sm">{toBanglaNum(englishSections.length)}টি নির্বাচিত</span><Scan className="h-4 w-4 text-slate-500" />
+          </Button> : <>
           <div
+            className=""
             onClick={() => {
               if (selectedSubjectIds.length === 0) {
                 setWarningDialog("chapter");
@@ -1881,7 +1788,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <div
               role="button"
               tabIndex={0}
-              className={`flex h-12 w-full items-center justify-between rounded-[1px] border border-slate-300 bg-white px-3.5 py-1 text-base cursor-pointer transition-colors text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0A1E38] ${selectedSubjectIds.length === 0 ? "opacity-60 bg-slate-50" : ""
+              className={`flex h-12 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3.5 py-1 text-base cursor-pointer transition-colors text-slate-800 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0A1E38] ${selectedSubjectIds.length === 0 ? "opacity-60 bg-slate-50" : ""
                 }`}
             >
               <span className="truncate font-medium flex-1 min-w-0 py-1 px-0.5 leading-normal">
@@ -1899,21 +1806,27 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             </div>
           </div>
 
+          </>}
+
+          <>
           {/* 5. Type & Marks (Two-Column Grid) */}
-          <div className="grid grid-cols-2 gap-3 pt-0.5">
+          <div className=" grid grid-cols-2 gap-5 pt-0.5">
             <div>
-              <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger className="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] text-base text-slate-800 bg-white">
-                  <SelectValue placeholder="টাইপ" />
+                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                <SelectTrigger className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 bg-white">
+                  <SelectValue placeholder="টাইপ">{selectedSubjectIds.length === 0 ? "টাইপ" : (typeLabels[form.type] || questionTypeLabel(form.type))}</SelectValue>
                 </SelectTrigger>
-                <SelectContent className="rounded-[1px] border-slate-300">
-                  {typeOptions.map((t) => (
+                <SelectContent className="rounded-lg border-slate-200">
+                  {(showEnglishBuilder ? ["all"] : scopedTypeOptions).map((t) => (
                     <SelectItem key={t} value={t} className="text-base py-2">
-                      {typeLabels[t]}
+                      {showEnglishBuilder && t === "all" ? "\u09b8\u09ac \u09a7\u09b0\u09a8\u09c7\u09b0 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8" : typeLabels[t] || questionTypeLabel(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {form.type === "all" && !showEnglishBuilder && (
+                <p className="mt-2 text-xs text-slate-500">নির্বাচিত অধ্যায়ের সব ধরনের প্রশ্ন একসঙ্গে আসবে।</p>
+              )}
             </div>
 
             <div>
@@ -1951,7 +1864,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     }
                   }}
                   placeholder="১০০"
-                  className="h-12 rounded-[1px] border-slate-300 focus:border-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white pr-20"
+                  className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white pr-20"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none select-none">
                   সর্বোচ্চ ২০০
@@ -1961,49 +1874,53 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </div>
 
           {/* 6. Submit Action Button */}
-          <div className="pt-2">
+          <div className=" pt-4 border-t border-slate-100">
             <Button
-              className="w-full h-12 rounded-[1px] bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
+              className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading || selectedSubjectIds.length === 0 || form.chapterIds.length === 0}
+              disabled={loading || (!addToPaper && !form.programName.trim()) || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
               title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>
             </Button>
           </div>
+          </>
         </CardContent>
       </Card>
 
       {/* Chapter Selection Dialog */}
       <Dialog open={chapterModalOpen} onOpenChange={setChapterModalOpen}>
-        <DialogContent className="max-w-lg rounded-[1px] border-slate-300 p-0 overflow-hidden bg-white">
+        <DialogContent className="max-w-lg rounded-lg border-slate-200 p-0 overflow-hidden bg-white">
           <div className="flex items-center justify-between pl-5 pr-14 py-3.5 bg-slate-100 border-b border-slate-200">
-            <div className="text-base font-bold text-slate-800">অধ্যায় নির্বাচন করুন</div>
+            <div className="text-base font-bold text-slate-800">{showEnglishBuilder ? 'প্রশ্নের ধরন নির্বাচন করুন' : 'অধ্যায় নির্বাচন করুন'}</div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 px-2 py-1 rounded-[1px]">
-                {toBanglaNum(form.chapterIds.length)} / {toBanglaNum(chapters.length)} টি সিলেক্টেড
+              <span className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+                {toBanglaNum(showEnglishBuilder ? englishSections.length : form.chapterIds.length)} / {toBanglaNum(showEnglishBuilder ? englishBlocks.length : chapters.length)} টি সিলেক্টেড
               </span>
               <button
                 type="button"
-                onClick={toggleAllChapters}
-                className="text-xs font-bold text-[#0A1E38] hover:bg-slate-200 bg-white border border-slate-300 px-2.5 py-1 rounded-[1px] transition-colors cursor-pointer"
+                onClick={showEnglishBuilder ? () => setEnglishSections(previous => previous.length === englishBlocks.length ? [] : englishBlocks.map((_, i) => i)) : toggleAllChapters}
+                className="text-xs font-bold text-[#0A1E38] hover:bg-slate-200 bg-white border border-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               >
-                {form.chapterIds.length === chapters.filter(c => hasSubscription || c.is_free).length && chapters.length > 0
+                {(showEnglishBuilder ? englishSections.length === englishBlocks.length : form.chapterIds.length === chapters.filter(c => hasSubscription || c.is_free).length && chapters.length > 0)
                   ? "সব আনসিলেক্ট"
                   : "সব সিলেক্ট"}
               </button>
             </div>
           </div>
           <div className="p-4">
-            <ScrollArea className="h-72 border border-slate-200 rounded-[1px]">
+            <ScrollArea className="h-72 border border-slate-200 rounded-lg">
               <div className="p-2 space-y-1">
-                {chapters.map((c) => {
+                {showEnglishBuilder ? englishBlocks.map((block, index) => <label key={block.title} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-base cursor-pointer ${englishSections.includes(index) ? 'bg-[#0A1E38]/5 border border-[#0A1E38]/25 font-semibold' : 'hover:bg-slate-50'}`}>
+                  <Checkbox checked={englishSections.includes(index)} onCheckedChange={checked => setEnglishSections(previous => checked ? [...previous, index] : previous.filter(i => i !== index))} />
+                  <span>{block.title.split(' (')[0]} {index < 3 ? [' - Q1 + Q2', ' - Q3 + Q4', ' - Q5 + Q6 + Q7'][index] : ''}</span>
+                </label>) : chapters.map((c) => {
                   const isSelected = form.chapterIds.includes(String(c.id));
                   const isLocked = !hasSubscription && !c.is_free;
                   return (
                     <label
                       key={c.id}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-[1px] transition-colors text-base select-none ${isLocked
+                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-base select-none ${isLocked
                           ? "opacity-60 cursor-not-allowed bg-slate-100"
                           : isSelected
                             ? "bg-[#0A1E38]/5 text-[#0A1E38] font-semibold cursor-pointer border border-[#0A1E38]/25"
@@ -2022,12 +1939,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleChapter(String(c.id))}
-                          className="rounded-[1px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
+                          className="rounded-lg border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                         />
                       )}
                       <span className={isLocked ? "text-slate-400" : ""}>{c.name}</span>
                       {isLocked && (
-                        <span className="ml-auto text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-[1px] font-semibold">
+                        <span className="ml-auto text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-semibold">
                           প্যাকেজ প্রয়োজন
                         </span>
                       )}
@@ -2045,14 +1962,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
               type="button"
               variant="outline"
               onClick={() => setChapterModalOpen(false)}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-base px-5 h-11 rounded-[1px] border border-slate-300 cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-base px-5 h-11 rounded-lg border border-slate-200 cursor-pointer"
             >
               বন্ধ করুন
             </Button>
             <Button
               type="button"
               onClick={() => setChapterModalOpen(false)}
-              className="bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base px-6 h-11 rounded-[1px] cursor-pointer border border-[#0A1E38]"
+              className="bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base px-6 h-11 rounded-lg cursor-pointer border border-[#0A1E38]"
             >
               নিশ্চিত করুন
             </Button>
@@ -2061,14 +1978,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       </Dialog>
 
       <Dialog open={!!warningDialog} onOpenChange={() => setWarningDialog(null)}>
-        <DialogContent className="max-w-md rounded-[1px] border-slate-300">
+        <DialogContent className="max-w-md rounded-lg border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">{warningDialog && warningMessages[warningDialog].title}</DialogTitle>
           </DialogHeader>
           <p className="text-center text-base text-slate-600 py-2">{warningDialog && warningMessages[warningDialog].prerequisite}</p>
           <DialogFooter className="flex gap-2 sm:gap-2">
-            <Button variant="outline" className="flex-1 bg-slate-100 hover:bg-slate-200 rounded-[1px] text-base" onClick={() => setWarningDialog(null)}>সিলেক্ট করুন</Button>
-            <Button variant="outline" className="flex-1 bg-destructive/10 hover:bg-destructive/20 border-destructive/30 rounded-[1px] text-base" onClick={() => setWarningDialog(null)}>বন্ধ করুন</Button>
+            <Button variant="outline" className="flex-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-base" onClick={() => setWarningDialog(null)}>সিলেক্ট করুন</Button>
+            <Button variant="outline" className="flex-1 bg-destructive/10 hover:bg-destructive/20 border-destructive/30 rounded-lg text-base" onClick={() => setWarningDialog(null)}>বন্ধ করুন</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
