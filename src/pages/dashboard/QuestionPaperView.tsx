@@ -149,17 +149,14 @@ function duplicateTextSimilarity(left: string, right: string): number {
   return (2 * overlap) / (left.length + right.length - 2);
 }
 
-function removeNearDuplicateQuestions(rows: QuestionRow[]): QuestionRow[] {
-  const kept: Array<{ question: QuestionRow; type: string; text: string }> = [];
-  for (const question of rows) {
-    const [type, text] = getQuestionDuplicateSignature(question).split("::", 2);
-    const isDuplicate = text && kept.some((candidate) =>
-      candidate.type === type
-      && (candidate.text === text || (!isLanguageType(question.type) && !question.stimulus_text && !candidate.question.stimulus_text && duplicateTextSimilarity(candidate.text, text) >= 0.94))
-    );
-    if (!isDuplicate) kept.push({ question, type, text });
-  }
-  return kept.map(({ question }) => question);
+// Preserve the user's selection; similar wording is only a duplicate marker.
+function uniqueSelectedQuestions(rows: QuestionRow[]): QuestionRow[] {
+  const seenIds = new Set<number>();
+  return rows.filter(question => {
+    if (seenIds.has(question.id)) return false;
+    seenIds.add(question.id);
+    return true;
+  });
 }
 
 // Match eproshnobank's subtle, print-friendly question-column separator.
@@ -417,7 +414,7 @@ export default function QuestionPaperView() {
       // Prioritize sessionStorage (fresh generation or returning from "add more")
       const parsedQuestions = JSON.parse(qData);
       const parsedMeta = JSON.parse(mData);
-      setQuestions(removeNearDuplicateQuestions(parsedQuestions));
+      setQuestions(uniqueSelectedQuestions(parsedQuestions));
       setMeta(parsedMeta);
 
       // A draft/session can contain an older lightweight question shape. Hydrate it
@@ -430,7 +427,7 @@ export default function QuestionPaperView() {
           if (error) return;
           const fullRows = new Map(data.map((question) => [question.id, question as QuestionRow]));
           const seenIds = new Set<number>();
-          const hydratedQuestions = removeNearDuplicateQuestions(parsedQuestions.flatMap((question: QuestionRow) => {
+          const hydratedQuestions = uniqueSelectedQuestions(parsedQuestions.flatMap((question: QuestionRow) => {
             const sourceQuestion = fullRows.get(question.id);
             // Duplicate cleanup can delete an ID while this paper is still open.
             // Drop deleted cached rows and collapse repeated canonical IDs.
@@ -481,7 +478,7 @@ export default function QuestionPaperView() {
               .then(({ data: qData }) => {
                 if (qData) {
                   const qMap = new Map(qData.map(q => [q.id, q]));
-                  setQuestions(removeNearDuplicateQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]));
+                  setQuestions(uniqueSelectedQuestions(ids.map(id => qMap.get(id)).filter(Boolean) as QuestionRow[]));
                 }
               });
           }
@@ -746,7 +743,7 @@ export default function QuestionPaperView() {
       })
     );
 
-    Promise.all(imagePromises).then(() => {
+    Promise.all([...imagePromises, document.fonts.ready]).then(() => {
       // Images can change the natural height of their question after the
       // initial render. Rebuild the page ranges with their final dimensions
       // before opening the print dialog.
@@ -1212,6 +1209,45 @@ export default function QuestionPaperView() {
           if (!item.hasAttribute("data-preview-item-index") || itemIndex < start || itemIndex >= end) item.remove();
           else item.removeAttribute("data-preview-item-index");
         });
+        const cloneFlow = clone.querySelector<HTMLElement>(".combined-question-flow");
+        if (cloneFlow) {
+          // Chromium can clip the final fragment of nested CSS columns in print.
+          // Give each prepared sheet explicit columns of complete question blocks.
+          const columns = Array.from({ length: columnCount }, () => document.createElement("div"));
+          columns.forEach((column, columnIndex) => {
+            column.className = "paper-explicit-column";
+            if (columnIndex > 0 && settings.columnDivider) {
+              column.style.borderLeft = COLUMN_DIVIDER_STYLE;
+              column.style.paddingLeft = `${settings.columnGap / 2}px`;
+            }
+          });
+          const targetHeight = itemHeights.slice(start, end).reduce((sum, height) => sum + height, 0) / columnCount;
+          let columnIndex = 0;
+          let columnHeight = 0;
+          let itemOffset = start;
+          Array.from(cloneFlow.children).forEach(section => {
+            const retainedItems = Array.from(section.querySelectorAll<HTMLElement>(".mcq-print-item"));
+            if (!retainedItems.length) return;
+            const headingNodes = Array.from(section.children).filter(child => !child.classList.contains("mcq-print-columns") && !child.classList.contains("mcq-print-layout"));
+            retainedItems.forEach((item, itemIndex) => {
+              const height = itemHeights[itemOffset++] || 24;
+              if (columnIndex < columnCount - 1 && columnHeight > 0 && columnHeight + height / 2 > targetHeight) {
+                columnIndex += 1;
+                columnHeight = 0;
+              }
+              if (itemIndex === 0) headingNodes.forEach(heading => columns[columnIndex].appendChild(heading));
+              columns[columnIndex].appendChild(item);
+              columnHeight += height;
+            });
+          });
+          cloneFlow.classList.add("paper-explicit-columns");
+          cloneFlow.style.columnCount = "auto";
+          cloneFlow.style.columnRule = "none";
+          cloneFlow.style.display = "grid";
+          cloneFlow.style.gridTemplateColumns = `repeat(${columnCount}, minmax(0, 1fr))`;
+          cloneFlow.style.gap = `${settings.columnGap}px`;
+          cloneFlow.replaceChildren(...columns);
+        }
         if (index > 0) {
           clone.querySelector(".paper-document-header")?.remove();
           clone.querySelector<HTMLElement>("[data-watermark-screen]")?.remove();

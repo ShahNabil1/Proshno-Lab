@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckSquare, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { areQuestionsDuplicates } from "@/lib/questionDuplicates";
+import { getExactQuestionDuplicateSignature } from "@/lib/questionDuplicates";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -29,6 +29,8 @@ type QuestionRow = {
   subject_id: number;
   chapter_id: number;
   created_at: string;
+  correct_answer?: string | null;
+  explanation?: string | null;
 };
 
 type NamedRow = { id: number; name: string; class_id?: number; subject_id?: number };
@@ -37,6 +39,8 @@ type DuplicateGroup = { signature: string; keep: QuestionRow; duplicates: Questi
 export default function AdminQuestionDuplicates({ embedded = false, onClose }: { embedded?: boolean; onClose?: () => void } = {}) {
   const navigate = useNavigate();
   const [visibleGroups, setVisibleGroups] = useState<DuplicateGroup[]>([]);
+  const [chapterStats, setChapterStats] = useState<Array<{ type: string; total: number; duplicates: number }> | null>(null);
+  const [groupLimit, setGroupLimit] = useState(20);
   const [totalGroups, setTotalGroups] = useState(0);
   const [classes, setClasses] = useState<NamedRow[]>([]);
   const [subjects, setSubjects] = useState<NamedRow[]>([]);
@@ -68,43 +72,58 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
     }
   };
 
+  const scanRevision = useRef(0);
+
   const loadGroups = async () => {
+    const revision = ++scanRevision.current;
+    setGroupLimit(20);
+    setChapterStats(null);
+    setVisibleGroups([]);
+    setTotalGroups(0);
+    setSelected(new Set());
     setLoading(true);
     setScanError("");
     try {
-      // A selected chapter is small enough to use the exact same 94% similarity
-      // rule as View Paper. This catches visually identical questions whose
-      // wording/LaTeX differs slightly (for example, "কর" vs "করো").
+      // Compare exact full content within the selected chapter.
       if (chapterId !== "all") {
         const rows: QuestionRow[] = [];
         const pageSize = 1000;
         for (let from = 0; ; from += pageSize) {
           let query = supabase
             .from("questions")
-            .select("id,type,question,option_a,option_b,option_c,option_d,creative_data,stimulus_text,class_id,subject_id,chapter_id,created_at")
+            .select("*")
             .eq("chapter_id", Number(chapterId))
             .order("id")
             .range(from, from + pageSize - 1);
           if (classId !== "all") query = query.eq("class_id", Number(classId));
           if (subjectId !== "all") query = query.eq("subject_id", Number(subjectId));
-          if (questionType !== "all") query = query.eq("type", questionType);
+
           const { data: page, error: pageError } = await query;
           if (pageError) throw pageError;
           rows.push(...((page || []) as QuestionRow[]));
           if (!page || page.length < pageSize) break;
         }
 
-        const grouped: DuplicateGroup[] = [];
+        const bySignature = new Map<string, DuplicateGroup>();
         for (const question of rows) {
-          const match = grouped.find((group) => areQuestionsDuplicates(group.keep, question));
+          const signature = `${question.class_id}:${question.subject_id}:${question.chapter_id}:${getExactQuestionDuplicateSignature(question)}`;
+          const match = bySignature.get(signature);
           if (match) {
             match.all.push(question);
             match.duplicates.push(question);
           } else {
-            grouped.push({ signature: `similar-${question.id}`, keep: question, duplicates: [], all: [question] });
+            bySignature.set(signature, { signature, keep: question, duplicates: [], all: [question] });
           }
         }
-        const duplicatesOnly = grouped.filter((group) => group.duplicates.length > 0);
+        const grouped = [...bySignature.values()];
+        const stats = [...new Set(rows.map(q => q.type))].map(type => ({
+          type,
+          total: rows.filter(q => q.type === type).length,
+          duplicates: grouped.filter(group => group.keep.type === type).reduce((sum, group) => sum + group.duplicates.length, 0),
+        }));
+        const duplicatesOnly = grouped.filter((group) => group.duplicates.length > 0 && (questionType === "all" || group.keep.type === questionType));
+        if (revision !== scanRevision.current) return;
+        setChapterStats(stats);
         setVisibleGroups(duplicatesOnly);
         setTotalGroups(duplicatesOnly.length);
         setSelected(new Set());
@@ -120,21 +139,57 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
         _offset: 0,
       });
       if (error) throw error;
-      const groups = (data || []).map((row: any) => {
-        const all = (row.occurrences || []) as QuestionRow[];
-        const keep = all.find((q) => q.id === Number(row.keep_id)) || all[0];
-        return { signature: row.signature, keep, duplicates: all.filter((q) => q.id !== keep.id), all };
-      }).filter((group: DuplicateGroup) => group.keep && group.duplicates.length > 0);
-      setVisibleGroups(groups);
-      setTotalGroups(Number(data?.[0]?.total_groups || groups.length));
+      if (revision !== scanRevision.current) return;
+      // RPC signatures may span chapters. Never offer a cross-chapter merge.
+      const groups: DuplicateGroup[] = (data || []).flatMap((row: any) => {
+        const buckets = new Map<string, QuestionRow[]>();
+        for (const question of (row.occurrences || []) as QuestionRow[]) {
+          if (question.class_id == null || question.subject_id == null || question.chapter_id == null) continue;
+          if (classId !== "all" && question.class_id !== Number(classId)) continue;
+          if (subjectId !== "all" && question.subject_id !== Number(subjectId)) continue;
+          if (chapterId !== "all" && question.chapter_id !== Number(chapterId)) continue;
+          if (questionType !== "all" && question.type !== questionType) continue;
+          const scope = `${question.class_id}:${question.subject_id}:${question.chapter_id}:${question.type}`;
+          const bucket = buckets.get(scope) || [];
+          bucket.push(question);
+          buckets.set(scope, bucket);
+        }
+        return [...buckets].filter(([, rows]) => rows.length > 1).map(([scope, rows]) => {
+          const all = [...rows].sort((a, b) => a.id - b.id);
+          return { signature: `${scope}:${row.signature}`, keep: all[0], duplicates: all.slice(1), all };
+        });
+      });
+      const ids = [...new Set(groups.flatMap(group => group.all.map(q => q.id)))];
+      const fullRows = new Map<number, QuestionRow>();
+      for (let i = 0; i < ids.length; i += 500) {
+        const { data: rows, error: rowError } = await supabase.from("questions").select("*").in("id", ids.slice(i, i + 500));
+        if (rowError) throw rowError;
+        if (revision !== scanRevision.current) return;
+        rows?.forEach(row => fullRows.set(row.id, row as QuestionRow));
+      }
+      const verified = new Map<string, DuplicateGroup>();
+      for (const question of [...fullRows.values()].sort((a, b) => a.id - b.id)) {
+        const signature = `${question.class_id}:${question.subject_id}:${question.chapter_id}:${getExactQuestionDuplicateSignature(question)}`;
+        const match = verified.get(signature);
+        if (match) {
+          match.all.push(question);
+          match.duplicates.push(question);
+        } else {
+          verified.set(signature, { signature, keep: question, duplicates: [], all: [question] });
+        }
+      }
+      const verifiedGroups = [...verified.values()].filter(group => group.duplicates.length > 0);
+      setVisibleGroups(verifiedGroups);
+      setTotalGroups(verifiedGroups.length);
       setSelected(new Set());
     } catch (error: any) {
+      if (revision !== scanRevision.current) return;
       setVisibleGroups([]);
       setTotalGroups(0);
       setScanError(error.message || "Unknown error");
       toast.error(`Duplicate scan ব্যর্থ: ${error.message}`);
     } finally {
-      setLoading(false);
+      if (revision === scanRevision.current) setLoading(false);
     }
   };
 
@@ -188,10 +243,22 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
     }
   };
 
-  const questionText = (q: QuestionRow) => {
-    if (q.type === "cq") return q.creative_data?.stem || q.question;
-    if (q.type === "descriptive") return q.creative_data?.desc_q_ka || q.question;
-    return q.question;
+  const renderFullQuestion = (q: QuestionRow) => {
+    let cd = q.creative_data || {};
+    if (typeof cd === "string") { try { cd = JSON.parse(cd); } catch { cd = {}; } }
+    const parts = q.type === "cq"
+      ? ["ka", "kha", "ga", "gha"].map((key, index) => ({ label: ["ক", "খ", "গ", "ঘ"][index], text: cd[`q_${key}`] || cd.sub_questions?.[index]?.text || cd.questions?.[index]?.text, answer: cd[`ans_${key}`] }))
+      : q.type === "descriptive" ? ["ka", "kha"].map((key, index) => ({ label: ["ক", "খ"][index], text: cd[`desc_q_${key}`], answer: cd[`desc_ans_${key}`] })) : [];
+    return <div className="mt-3 space-y-3 text-base leading-7 text-slate-950 break-words">
+      {q.stimulus_text && q.stimulus_text !== q.question && <LatexRenderer text={q.stimulus_text} />}
+      <LatexRenderer text={q.type === "cq" ? cd.stem || q.question : q.question} />
+      {q.type === "mcq" && <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {[q.option_a, q.option_b, q.option_c, q.option_d].map((option, index) => <div key={index} className="flex gap-2 rounded border border-slate-200 bg-white px-3 py-2"><strong>{["ক", "খ", "গ", "ঘ"][index]}.</strong><LatexRenderer text={option || "—"} /></div>)}
+      </div>}
+      {parts.filter(part => part.text).map(part => <div key={part.label}><div className="flex gap-2"><strong>({part.label})</strong><LatexRenderer text={part.text} /></div>{part.answer && <div className="mt-1 text-sm"><strong>উত্তর: </strong><LatexRenderer text={part.answer} /></div>}</div>)}
+      {q.correct_answer && <div className="border-t border-slate-200 pt-2"><strong>সঠিক উত্তর: </strong><LatexRenderer text={q.type === "mcq" ? ({ a: "ক", b: "খ", c: "গ", d: "ঘ" } as Record<string, string>)[q.correct_answer.toLowerCase()] || q.correct_answer : q.correct_answer} /></div>}
+      {q.explanation && <div><strong>ব্যাখ্যা: </strong><LatexRenderer text={q.explanation} /></div>}
+    </div>;
   };
 
   return (
@@ -235,9 +302,24 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
             </SelectContent>
           </Select>
         </div>
+        {chapterStats && <div className="space-y-3 border-t pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[{ label: "মোট প্রশ্ন (ডুপ্লিকেটসহ)", value: chapterStats.reduce((sum, row) => sum + row.total, 0) },
+              { label: "অতিরিক্ত ডুপ্লিকেট কপি", value: chapterStats.reduce((sum, row) => sum + row.duplicates, 0) },
+              { label: "সব ডুপ্লিকেট বাদ দিলে থাকবে", value: chapterStats.reduce((sum, row) => sum + row.total - row.duplicates, 0) }].map(item =>
+              <div key={item.label} className="rounded border border-cyan-200 bg-cyan-50/50 p-3"><p className="text-sm text-slate-600">{item.label}</p><strong className="text-2xl text-slate-950">{item.value.toLocaleString("bn-BD")}</strong></div>)}
+          </div>
+          <p className="text-sm text-muted-foreground">অধ্যায়ের সব ধরনের প্রশ্নের হিসাব; প্রতি দলে একটি মূল কপি থাকবে।</p>
+          <table className="w-full text-sm border-collapse"><thead><tr className="bg-slate-100 text-left"><th className="p-2">ধরন</th><th className="p-2">মোট প্রশ্ন</th><th className="p-2">অতিরিক্ত ডুপ্লিকেট</th><th className="p-2">বাদ দিলে থাকবে</th></tr></thead><tbody>
+            {[...new Set(["mcq", "cq", "short", "descriptive", ...chapterStats.map(row => row.type)])].map(type => {
+              const row = chapterStats.find(row => row.type === type) || { total: 0, duplicates: 0 };
+              return <tr key={type} className="border-b"><th className="p-2 text-left">{({mcq: "MCQ", cq: "CQ", short: "SQ", descriptive: "বর্ণনামূলক"} as Record<string, string>)[type] || type}</th><td className="p-2">{row.total.toLocaleString("bn-BD")}</td><td className="p-2 text-amber-800">{row.duplicates.toLocaleString("bn-BD")}</td><td className="p-2 font-semibold">{(row.total - row.duplicates).toLocaleString("bn-BD")}</td></tr>;
+            })}
+          </tbody></table>
+        </div>}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <div className="flex gap-2">
-            <Badge variant="outline">Group: {totalGroups}</Badge>
+            <Badge variant="outline">ডুপ্লিকেট দল: {totalGroups}</Badge>
             <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100">Delete করা যাবে: {totalDuplicateRows}</Badge>
           </div>
           <div className="flex items-center gap-3">
@@ -257,18 +339,18 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
         <Card><CardContent className="py-14 text-center text-muted-foreground"><CheckSquare className="w-10 h-10 mx-auto mb-3 text-emerald-600" />এই filter-এ duplicate প্রশ্ন পাওয়া যায়নি</CardContent></Card>
       ) : (
         <div className="space-y-3">
-          {visibleGroups.map((group, index) => (
+          {visibleGroups.slice(0, groupLimit).map((group, index) => (
             <Card key={group.signature} className={selected.has(group.signature) ? "border-amber-400 bg-amber-50/30" : ""}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <Checkbox className="mt-1" checked={selected.has(group.signature)} onCheckedChange={(v) => toggleGroup(group.signature, v === true)} />
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="font-semibold">Group #{index + 1}</span>
+                      <span className="font-semibold">দল #{index + 1}</span>
                       <Badge variant="outline">{group.keep.type.toUpperCase()}</Badge>
                       <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{group.duplicates.length}টি duplicate</Badge>
                     </div>
-                    <LatexRenderer text={questionText(group.keep)} className="text-sm font-medium" />
+                    <p className="text-sm text-muted-foreground">ডিলিটের আগে প্রতিটি কপি মিলিয়ে দেখুন।</p>
                   </div>
                   <Button size="sm" variant="destructive" onClick={() => askDelete([group])} disabled={deleting} className="gap-1 shrink-0"><Trash2 className="w-4 h-4" /> Duplicate Delete</Button>
                 </div>
@@ -282,12 +364,14 @@ export default function AdminQuestionDuplicates({ embedded = false, onClose }: {
                         <span>{nameOf(subjects, q.subject_id)}</span><span>›</span>
                         <span>{nameOf(chapters, q.chapter_id)}</span>
                       </div>
+                      {renderFullQuestion(q)}
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
           ))}
+          {groupLimit < visibleGroups.length && <Button variant="outline" onClick={() => setGroupLimit(limit => limit + 20)}>Show next 20 groups ({groupLimit}/{visibleGroups.length})</Button>}
         </div>
       )}
 

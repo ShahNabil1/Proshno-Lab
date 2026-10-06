@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { englishBlocks } from '@/lib/englishFirstBuilder';
 import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
 import { ALL_TYPES, allowedQuestionTypes, isLanguageType, languageSubject, questionTypeLabel, patternGrade } from "@/lib/languageQuestionTypes";
@@ -18,7 +19,7 @@ import {
   CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save,
   SlidersHorizontal, ChevronLeft, ChevronRight, RotateCcw,
   BookOpen, GraduationCap, Clock, Award, FileText, CheckCheck, Layers,
-  ListFilter, CheckCircle2, ArrowRight, ArrowLeft, School, HelpCircle, Filter, Scan
+  ListFilter, CheckCircle2, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, School, HelpCircle, Filter, Scan
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -40,6 +41,8 @@ import {
 const toBanglaNum = (n: number | string) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[+d]);
 
 const typeOptions = [...ALL_TYPES, "all"];
+const EXAM_NAME_OPTIONS = ["ক্লাস টেস্ট", "অধ্যায়ভিত্তিক পরীক্ষা", "সাপ্তাহিক পরীক্ষা", "মাসিক পরীক্ষা"];
+const DEFAULT_EXAM_NAME = "ক্লাস টেস্ট";
 const typeLabels: Record<string, string> = {
   mcq: "বহুনির্বাচনী",
   cq: "সৃজনশীল",
@@ -168,8 +171,20 @@ const schoolNamesFromRefs = (refs: any): string[] => {
       name.length > 0
       && !canonicalBoard(name)
       && !/বোর্ড/i.test(name)
-      && /(স্কুল|কলেজ|বিদ্যালয়|বিদ্যালয়|ক্যাডেট|একাডেমি|মাদ্রাসা|ইনস্টিটিউট)/i.test(name)
+      && /(স্কুল|কলেজ|বিদ্যালয়|বিদ্যালয়|ক্যাডেট|একাডেমি|মাদ্রাসা|ইনস্টিটিউট|school|college|academy|institute|madras)/i.test(name)
     );
+};
+
+const schoolQuestionRefs = (question: QuestionRow): any[] => [
+  ...(Array.isArray(question.board_references) ? question.board_references : []),
+  ...(Array.isArray(question.university_references) ? question.university_references : []),
+];
+const referenceYear = (ref: any): string => {
+  const explicit = normalizeYear(ref?.year);
+  if (explicit) return explicit;
+  const name = bnDigitsToLatin(String(ref?.board ?? ref?.name ?? ""));
+  const match = name.match(/(?:19|20)\d{2}\b|['’]\s*(\d{2})\b/);
+  return match ? normalizeYear(match[1] || match[0]) : "";
 };
 
 const refMatchesSchools = (refs: any, schools: Set<string>, year = ""): boolean => {
@@ -178,7 +193,7 @@ const refMatchesSchools = (refs: any, schools: Set<string>, year = ""): boolean 
     const name = String(ref?.board ?? ref?.name ?? "").trim();
     if (!schoolNamesFromRefs([ref]).includes(name)) return false;
     const schoolOk = schools.size === 0 || schools.has(name);
-    const yearOk = !year || normalizeYear(ref?.year) === normalizeYear(year);
+    const yearOk = !year || referenceYear(ref) === normalizeYear(year);
     return schoolOk && yearOk;
   });
 };
@@ -201,22 +216,40 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const addToPaper = searchParams.get("add_to_paper") === "true";
-  const [englishSections, setEnglishSections] = useState<number[]>([0,1,2,3,4,5,6,7,8]);
-  const [englishPreviewRows, setEnglishPreviewRows] = useState<QuestionRow[] | null>(null);
-  const [step, setStep] = useState<Step>("form");
+  const draftKey = `questionCreateDraft:v2:${addToPaper ? "add" : "manual"}`;
+  const [draft] = useState<any>(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");
+      return saved && (!user || saved.owner === user.id) ? saved : null;
+    } catch { return null; }
+  });
+  const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const updateTarget = () => setToolbarTarget(media.matches ? document.getElementById("question-picker-header-slot") : null);
+    updateTarget();
+    media.addEventListener("change", updateTarget);
+    return () => media.removeEventListener("change", updateTarget);
+  }, []);
+  const restoringDraft = false;
+  const [englishSections, setEnglishSections] = useState<number[]>(draft?.englishSections || [0,1,2,3,4,5,6,7,8]);
+  const [englishPreviewRows, setEnglishPreviewRows] = useState<QuestionRow[] | null>(draft?.englishPreviewRows || null);
+  const [step, setStep] = useState<Step>(draft?.step || "form");
   useEffect(() => {
     onQuestionListChange?.(step !== "form");
     return () => onQuestionListChange?.(false);
   }, [step, onQuestionListChange]);
-  const [form, setForm] = useState({
-    programName: "",
+  const [form, setForm] = useState(() => ({
+    programName: DEFAULT_EXAM_NAME,
     classId: "",
     subjectId: "",
     subjectIds: [] as string[],
     chapterIds: [] as string[],
     type: "mcq",
     count: "100",
-  });
+    ...draft?.form,
+  }));
+  const [customExamName, setCustomExamName] = useState(draft?.customExamName || false);
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
   const [subjects, setSubjects] = useState<{ id: number; class_id: number; name: string; subject_code?: string | null }[]>([]);
@@ -224,7 +257,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const [topics, setTopics] = useState<{ id: number; name: string; chapter_id: number }[]>([]);
   const [warningDialog, setWarningDialog] = useState<WarningField>(null);
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
-  const [subjectVersion, setSubjectVersion] = useState<SubjectVersion>("bangla");
+  const [subjectVersion, setSubjectVersion] = useState<SubjectVersion>(draft?.subjectVersion || "bangla");
 
   const selectedSubjectIds = useMemo(() => {
     if (form.subjectIds && form.subjectIds.length > 0) return form.subjectIds;
@@ -265,12 +298,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   );
   const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
-  const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [questions, setQuestions] = useState<QuestionRow[]>(draft?.questions || []);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(draft?.selectedIds || []));
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
 
-  const restoringDraft = false;
-  useEffect(() => { sessionStorage.removeItem('questionCreateDraft'); }, []);
+
 
   // Load existing paper question IDs when in add_to_paper mode and auto-skip form
   const [autoSkipDone, setAutoSkipDone] = useState(false);
@@ -305,18 +337,39 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   }, [addToPaper, autoSkipDone, form.classId, form.subjectId]);
 
   // Filter states for sidebar
-  const [filterSearch, setFilterSearch] = useState("");
-  const [filterType, setFilterType] = useState<string | null>(null);
-  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set());
-  const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set());
-  const [filterUntopicedChapterIds, setFilterUntopicedChapterIds] = useState<Set<number>>(new Set());
-  const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set());
-  const [filterSchools, setFilterSchools] = useState<Set<string>>(new Set());
-  const [filterYear, setFilterYear] = useState("");
-  const [filterSchoolYear, setFilterSchoolYear] = useState("");
-  const [filterSpecial, setFilterSpecial] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [filterSearch, setFilterSearch] = useState<string>(draft?.filterSearch || "");
+  const [filterType, setFilterType] = useState<string | null>(draft?.filterType || null);
+  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set(draft?.filterChapterIds || []));
+  const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set(draft?.filterTopicIds || []));
+  const [filterUntopicedChapterIds, setFilterUntopicedChapterIds] = useState<Set<number>>(new Set(draft?.filterUntopicedChapterIds || []));
+  const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set(draft?.filterBoards || []));
+  const [filterSchools, setFilterSchools] = useState<Set<string>>(new Set(draft?.filterSchools || []));
+  const [filterYear, setFilterYear] = useState<string>(draft?.filterYear || "");
+  const [filterSchoolYear, setFilterSchoolYear] = useState<string>(draft?.filterSchoolYear || "");
+  const [filterSpecial, setFilterSpecial] = useState<string | null>(draft?.filterSpecial || null);
+  const [currentPage, setCurrentPage] = useState<number>(draft?.currentPage || 1);
   const mainScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    const saveDraft = () => {
+      try {
+        sessionStorage.setItem(draftKey, JSON.stringify({
+          owner: user.id, form, step, questions, selectedIds: [...selectedIds],
+          customExamName, subjectVersion, englishSections, englishPreviewRows,
+          filterSearch, filterType, filterChapterIds: [...filterChapterIds],
+          filterTopicIds: [...filterTopicIds], filterUntopicedChapterIds: [...filterUntopicedChapterIds],
+          filterBoards: [...filterBoards], filterSchools: [...filterSchools],
+          filterYear, filterSchoolYear, filterSpecial, currentPage,
+        }));
+      } catch { /* Storage may be unavailable; keep the current work in memory. */ }
+    };
+    const timer = window.setTimeout(saveDraft, 150);
+    window.addEventListener("pagehide", saveDraft);
+    return () => { window.clearTimeout(timer); window.removeEventListener("pagehide", saveDraft); };
+  }, [user, draftKey, form, step, questions, selectedIds, customExamName, subjectVersion,
+    englishSections, englishPreviewRows, filterSearch, filterType, filterChapterIds,
+    filterTopicIds, filterUntopicedChapterIds, filterBoards, filterSchools,
+    filterYear, filterSchoolYear, filterSpecial, currentPage]);
   // Smoothly scroll the main content column to top (works in both desktop split-scroll and mobile page-scroll)
   const scrollMainToTop = () => {
     const el = mainScrollRef.current;
@@ -327,6 +380,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     }
   };
   const ITEMS_PER_PAGE = 20;
+  const scrollMainToBottom = () => {
+    const el = mainScrollRef.current;
+    if (el && window.getComputedStyle(el).overflowY === "auto") {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else {
+      el?.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  };
   // Report modal states
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportQuestionId, setReportQuestionId] = useState<number | null>(null);
@@ -523,10 +584,6 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   };
 
   const handleCreateQuestionSet = async () => {
-    if (!addToPaper && !form.programName.trim()) {
-      toast.error("পরীক্ষার নাম লিখুন");
-      return;
-    }
     if (!form.classId) {
       toast.error("শ্রেণী নির্বাচন করুন");
       return;
@@ -613,7 +670,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
   const schoolList = useMemo(() => Array.from(new Set(
-    questions.flatMap(q => schoolNamesFromRefs(q.board_references))
+    questions.flatMap(q => schoolNamesFromRefs(schoolQuestionRefs(q)))
   )).sort((a, b) => a.localeCompare(b, "bn")), [questions]);
   const boardYears = useMemo(() => Array.from(new Set(
     questions.flatMap(question => {
@@ -626,10 +683,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   )).sort((a, b) => Number(b) - Number(a)), [questions]);
   const schoolYears = useMemo(() => Array.from(new Set(
     questions.flatMap(question => {
-      const refs = Array.isArray(question.board_references) ? question.board_references : [];
+      const refs = schoolQuestionRefs(question);
       return refs
         .filter((ref: any) => schoolNamesFromRefs([ref]).length > 0)
-        .map((ref: any) => normalizeYear(ref?.year))
+        .map(referenceYear)
         .filter(Boolean);
     })
   )).sort((a, b) => Number(b) - Number(a)), [questions]);
@@ -679,7 +736,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     }
 
     if (filterSchools.size > 0 || filterSchoolYear) {
-      result = result.filter(r => refMatchesSchools(r.board_references, filterSchools, filterSchoolYear));
+      result = result.filter(r => refMatchesSchools(schoolQuestionRefs(r), filterSchools, filterSchoolYear));
     }
 
     // Special search filters (radio - only one active at a time)
@@ -733,15 +790,28 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const filteredQuestions = englishPreviewRows ?? getFilteredQuestions();
   const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterSchools, filterYear, filterSchoolYear, filterSpecial]);
-
-  const handleSaveAndView = () => {
-    if (selectedIds.size === 0) {
-      toast.error("অন্তত একটি প্রশ্ন সিলেক্ট করুন");
+  const selectablePageQuestions = paginatedQuestions.filter(q => !showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type));
+  const pageSelectedCount = selectablePageQuestions.filter(q => selectedIds.has(q.id)).length;
+  const togglePageSelection = (checked: boolean) => {
+    const ids = new Set(selectablePageQuestions.map(q => q.id));
+    if (!showEnglishBuilder) {
+      const groups = new Set(selectablePageQuestions.map(q => q.stimulus_group_id).filter(Boolean));
+      questions.forEach(q => { if (q.stimulus_group_id && groups.has(q.stimulus_group_id)) ids.add(q.id); });
+    }
+    const next = new Set(selectedIds);
+    ids.forEach(id => { if (checked) next.add(id); else next.delete(id); });
+    if (!showEnglishBuilder && next.size > 200) {
+      toast.warning("এই পেজের সব প্রশ্ন নিলে ২০০ প্রশ্নের সীমা অতিক্রম করবে");
       return;
     }
+    setSelectedIds(next);
+  };
+
+  // Reset page when filters change
+  const firstFilterRender = useRef(true);
+  useEffect(() => { if (firstFilterRender.current) { firstFilterRender.current = false; return; } setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterSchools, filterYear, filterSchoolYear, filterSpecial]);
+
+  const savePaperDraft = () => {
     const selectedQuestions = questions.filter(q => selectedIds.has(q.id) && (!showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type)));
     const normalizePassage = (text: string) => text.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     const selected = showEnglishBuilder ? questions.filter(q => selectedQuestions.includes(q) || (
@@ -768,12 +838,18 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       subjectName,
       subjectCode,
       chapterNames: selectedChapterNames,
-      programName: form.programName,
+      programName: form.programName.trim() || DEFAULT_EXAM_NAME,
       teacherName: user?.user_metadata?.full_name || user?.email || "",
       topicNames: topicNamesForPaper,
     }));
-    toast.success(`${selectedIds.size}টি প্রশ্ন সংরক্ষিত হয়েছে!`);
   };
+
+  useEffect(() => {
+    if (step !== "questionList" || addToPaper) return;
+    savePaperDraft();
+  }, [step, addToPaper, selectedIds, questions, showEnglishBuilder, topics, institute,
+    effectiveClassId, selectedSubjectIds, form.chapterIds, form.programName,
+    className, subjectName, subjectCode, selectedChapterNames, user]);
 
   const handleViewPaper = () => {
     if (selectedIds.size === 0) {
@@ -814,7 +890,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         navigate("/dashboard/view-paper");
       }
     } else {
-      handleSaveAndView();
+      savePaperDraft();
       navigate("/dashboard/view-paper");
     }
   };
@@ -846,7 +922,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       <div className="bg-white border border-slate-200 shadow-sm min-h-[630px] px-5 sm:px-6 py-8 flex flex-col">
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-bold">{institute?.name || 'Institute'}</h2>
-          {form.programName && <p>{form.programName}</p>}
+          <p>{form.programName.trim() || DEFAULT_EXAM_NAME}</p>
           <p>{className}</p><p>{subjectName}</p>
         </div>
         <div className="flex justify-between mt-2 border-b border-slate-200 pb-1">
@@ -877,7 +953,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       initialQuestions={questions}
     /> : null;
     const filterSidebarContent = (
-      <div className="space-y-4">
+      <div className="question-filter-panel space-y-4">
         {/* Keyword search */}
         <div className="flex gap-1.5">
           <Input
@@ -892,7 +968,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         </div>
 
         {/* Unique Question Box */}
-        <div className="border border-slate-200 bg-slate-50/80 rounded-xl p-3 text-center">
+        <div className="question-filter-section border border-slate-200 bg-slate-50/80 rounded-xl p-3 text-center">
           <h4 className="font-heading font-bold text-slate-800 text-xs flex items-center justify-center gap-1">
             <Filter className="w-3.5 h-3.5 text-[#0A1E38]" /> ইউনিক প্রশ্ন ফিল্টার
           </h4>
@@ -900,8 +976,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         </div>
 
         {/* Special search */}
-        <div className="border border-slate-200 bg-white rounded-xl p-3 shadow-xs">
-          <div className="flex items-center gap-1.5 mb-2.5 pb-1.5 border-b border-slate-100">
+        <div className="question-filter-special question-filter-section border border-slate-200 bg-white rounded-xl p-3 shadow-xs">
+          <div className="question-filter-heading flex items-center gap-1.5">
             <Award className="w-3.5 h-3.5 text-[#0A1E38]" />
             <h4 className="font-heading font-bold text-xs text-[#0A1E38]">ProshnoLab স্পেশাল ফিল্টার</h4>
           </div>
@@ -909,25 +985,18 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             {specialSearchOptions.map(opt => {
               const active = filterSpecial === opt.id;
               return (
-                <div
-                  key={opt.id}
-                  className={`flex items-center gap-2 text-xs cursor-pointer py-1 px-1.5 rounded-lg transition-colors ${active ? "bg-[#0A1E38]/5 text-[#0A1E38] font-semibold" : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  onClick={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)}
-                >
-                  <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${active ? 'border-[#0A1E38] bg-[#0A1E38]' : 'border-slate-300'}`}>
-                    {active && <div className="w-1.5 h-1.5 rounded-full bg-[#00B4BC]" />}
-                  </div>
+                <label key={opt.id} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={active} onCheckedChange={() => setFilterSpecial(prev => prev === opt.id ? null : opt.id)} />
                   <span>{opt.label}</span>
-                </div>
+                </label>
               );
             })}
           </div>
         </div>
 
         {/* Type filter */}
-        <div className="border border-border rounded-lg p-3">
-          <h4 className="font-heading font-bold text-sm mb-2">টাইপ</h4>
+        <div className="question-filter-section border border-border rounded-lg p-3">
+          <h4 className="question-filter-heading font-heading font-bold text-sm mb-2">টাইপ</h4>
           <div className="space-y-2">
             {[{value:null,label:"All"}, ...scopedTypeOptions.filter(t=>t!=="all").map(value=>({value,label:questionTypeLabel(value)}))].map(opt => (
               <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -945,8 +1014,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           const chapterPool = filterType ? questions.filter(q => q.type === filterType) : questions;
           const chapterCount = (cid: number) => chapterPool.filter(q => q.chapter_id === cid).length;
           return (
-            <div className="border border-border rounded-lg p-3">
-              <div className="flex items-center justify-between mb-3">
+            <div className="question-filter-section border border-border rounded-lg p-3">
+              <div className="question-filter-heading flex items-center justify-between mb-3">
                 <h4 className="font-heading font-bold text-sm">অধ্যায়</h4>
                 {filterChapterIds.size > 0 && (
                   <button
@@ -1023,8 +1092,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           const chapterTopicTotal = (cid: number) =>
             topicPool.filter(q => q.chapter_id === cid).length;
           return (
-            <div className="border border-border rounded-lg p-3">
-              <div className="flex items-center justify-between mb-3">
+            <div className="question-filter-section border border-border rounded-lg p-3">
+              <div className="question-filter-heading flex items-center justify-between mb-3">
                 <h4 className="font-heading font-bold text-sm">টপিক</h4>
                 {(filterTopicIds.size > 0 || filterUntopicedChapterIds.size > 0) && (
                   <button
@@ -1146,8 +1215,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         })()}
 
         {/* Board filter */}
-        <div className="border border-border rounded-lg p-3">
-          <div className="flex items-center justify-between mb-2">
+        <div className="question-filter-section border border-border rounded-lg p-3">
+          <div className="question-filter-heading flex items-center justify-between mb-2">
             <h4 className="font-heading font-bold text-sm">বোর্ড</h4>
             {(filterBoards.size > 0 || !!filterYear) && (
               <button
@@ -1180,8 +1249,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
         {/* School filter */}
         {schoolList.length > 0 && (
-          <div className="border border-border rounded-lg p-3">
-            <div className="flex items-center justify-between mb-2">
+          <div className="question-filter-section border border-border rounded-lg p-3">
+            <div className="question-filter-heading flex items-center justify-between mb-2">
               <h4 className="font-heading font-bold text-sm">স্কুল ও কলেজ</h4>
               {(filterSchools.size > 0 || !!filterSchoolYear) && (
                 <button
@@ -1224,19 +1293,19 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       </div>
     );
 
-    return (
-      <>
-        <div className="question-builder lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
-          {/* Main content - independently scrollable on desktop */}
-          <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
-            <div className="sticky top-0 z-20 space-y-3 bg-background pb-2">
-              <div className="flex items-center justify-between flex-nowrap gap-4 overflow-x-auto bg-[#0A1E38] text-white p-3 sm:px-4 rounded-lg shadow-xs border border-[#0A1E38] scrollbar-none">
-                <div className="flex items-center gap-4 whitespace-nowrap text-sm font-semibold shrink-0">
-                  <span className="text-slate-200 font-bold">নির্বাচিত</span>
-                  <span className="text-white/80">বহুঃ {toBanglaNum(selectedTypeCounts.mcq)} / {toBanglaNum(totalTypeCounts.mcq)}</span>
-                  <span className="text-white/80">সৃজঃ {toBanglaNum(selectedTypeCounts.cq)} / {toBanglaNum(totalTypeCounts.cq)}</span>
-                  <span className="text-white/80">সংঃ {toBanglaNum(selectedTypeCounts.short)} / {toBanglaNum(totalTypeCounts.short)}</span>
-                  <span className="text-white/80">বর্ণনাঃ {toBanglaNum(selectedTypeCounts.descriptive)} / {toBanglaNum(totalTypeCounts.descriptive)}</span>
+    const toolbarContent = (
+<div className="question-picker-toolbar sticky top-0 z-20">
+              <div className="question-picker-toolbar-top flex items-center justify-between flex-nowrap gap-4 overflow-x-auto bg-[#0A1E38] text-white p-3 sm:px-4 scrollbar-none">
+                <div className="selected-question-summary" aria-label="ধরন অনুযায়ী নির্বাচিত প্রশ্ন" aria-live="polite" aria-atomic="true">
+                  <span className="selected-question-summary__label"><CheckCheck className="h-4 w-4" /> নির্বাচিত</span>
+                  {([
+                    ["mcq", "MCQ"], ["cq", "সৃজনশীল"], ["short", "সংক্ষিপ্ত"], ["descriptive", "বর্ণনামূলক"],
+                  ] as const).map(([type, label]) => (
+                    <span key={type} className={`selected-question-count selected-question-count--${type}`} data-active={selectedTypeCounts[type] > 0}>
+                      <span>{label}</span>
+                      <strong key={selectedTypeCounts[type]}>{toBanglaNum(selectedTypeCounts[type])}</strong>
+                    </span>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
@@ -1253,21 +1322,26 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     size="sm"
                     onClick={handleViewPaper}
                     disabled={selectedIds.size === 0}
-                    className="h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white border-white/30 text-sm font-medium"
+                    className="question-preview-button"
                   >
-                    <Eye className="h-4 w-4 mr-1 text-[#00B4BC]" /> প্রিভিউ
+                    <Eye className="h-5 w-5 shrink-0" /> প্রিভিউ
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveAndView}
-                    disabled={selectedIds.size === 0}
-                    className="h-9 rounded-lg bg-[#00B4BC] hover:bg-[#20C5CC] text-[#0A1E38] font-bold text-sm shadow-xs border-0"
-                  >
-                    <Save className="h-4 w-4 mr-1" /> প্রশ্নপত্র সেভ করুন
-                  </Button>
+
                 </div>
               </div>
 
+              <div className="question-picker-toolbar-bottom flex items-center gap-3 px-3 py-2">
+                <label className="page-select-control flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-800" title="এই পেজে দেখানো প্রশ্নগুলো একসঙ্গে নির্বাচন করুন">
+                  <Checkbox
+                    aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
+                    disabled={selectablePageQuestions.length === 0}
+                    checked={selectablePageQuestions.length > 0 && pageSelectedCount === selectablePageQuestions.length ? true : pageSelectedCount > 0 ? "indeterminate" : false}
+                    onCheckedChange={checked => togglePageSelection(checked === true)}
+                  />
+                  <span>{pageSelectedCount === selectablePageQuestions.length && selectablePageQuestions.length > 0
+                    ? "এই পেজের নির্বাচন বাতিল"
+                    : `এই পেজের ${toBanglaNum(selectablePageQuestions.length)}টি প্রশ্ন নিন`}</span>
+                </label>
               {/* Live count badges + Reset — reflect ALL sidebar filters except type itself */}
               {(() => {
                 // Apply every sidebar filter EXCEPT type, so each badge shows its own true count
@@ -1296,7 +1370,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   }
 
                   if (filterSchools.size > 0 || filterSchoolYear) {
-                    result = result.filter(r => refMatchesSchools(r.board_references, filterSchools, filterSchoolYear));
+                    result = result.filter(r => refMatchesSchools(schoolQuestionRefs(r), filterSchools, filterSchoolYear));
                   }
 
                   if (filterSpecial === "board") {
@@ -1362,7 +1436,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 };
 
                 return (
-                  <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap w-full min-w-0">
+                  <div className="question-picker-type-filters flex items-center gap-2 min-w-0 flex-1">
                     <div className="-mx-1 sm:mx-0 flex-1 min-w-0 overflow-x-auto sm:overflow-visible scrollbar-none">
                       <div
                         role="tablist"
@@ -1416,7 +1490,20 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   </div>
                 );
               })()}
+                <div className="flex gap-1.5">
+                  <Button variant="outline" size="sm" onClick={scrollMainToTop} aria-label="প্রশ্ন তালিকার উপরে যান" className="h-8 gap-1 bg-white"><ArrowUp className="h-3.5 w-3.5" /> উপরে</Button>
+                  <Button variant="outline" size="sm" onClick={scrollMainToBottom} aria-label="প্রশ্ন তালিকার নিচে যান" className="h-8 gap-1 bg-white"><ArrowDown className="h-3.5 w-3.5" /> নিচে</Button>
+                </div>
+              </div>
             </div>
+    );
+
+    return (
+      <>
+        <div className="question-builder lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+          {/* Main content - independently scrollable on desktop */}
+          <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
+            {toolbarTarget ? createPortal(toolbarContent, toolbarTarget) : toolbarContent}
 
             <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-center text-xs text-slate-600 flex items-center justify-center gap-2">
               <Flag className="w-3.5 h-3.5 text-[#00858C] shrink-0" />
@@ -1448,7 +1535,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 if (showEnglishBuilder && /^(seen_passage|unseen_passage)/.test(q.type)) {
                   return <div key={q.id} className="rounded-lg border border-[#00B4BC]/20 border-l-4 border-l-[#00B4BC] bg-[#00B4BC]/5 p-4" data-passage-preview>
                     <div className="mb-2 text-sm font-bold text-[#0A1E38]">{questionTypeLabel(q.type)}</div>
-                    <div className="text-base leading-relaxed text-slate-900"><LatexRenderer text={q.question} /></div>
+                    <div className="text-base leading-relaxed text-slate-900"><LatexRenderer italicMathVariables text={q.question} /></div>
                   </div>;
                 }
                 const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx;
@@ -1464,7 +1551,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   <Card
                     key={q.id}
                     onClick={() => toggleQuestion(q.id)}
-                    className={`group relative overflow-hidden cursor-pointer border rounded-lg transition-all duration-150 ${isSelected
+                    data-selected={isSelected}
+                    className={`question-select-card group relative overflow-hidden cursor-pointer border rounded-lg transition-all duration-150 ${isSelected
                         ? "border-[#00B4BC] shadow-none bg-[#00B4BC]/[0.03] ring-1 ring-[#00B4BC]/20"
                         : "border-slate-200 hover:border-[#00B4BC]/50 bg-white shadow-none"
                       }`}
@@ -1483,10 +1571,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             onClick={(e) => e.stopPropagation()}
                             className="rounded-lg border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
-                          <span className={`inline-flex items-center gap-1.5 h-[22px] px-2 rounded-lg text-[11px] font-bold tracking-tight border ${tm.chip}`}>
-                            <span className={`h-1.5 w-1.5 rounded-lg ${tm.dot}`} />
+                          <span className={`question-type-badge inline-flex items-center gap-1.5 h-[22px] px-2 rounded-lg text-[11px] font-bold tracking-tight border ${tm.chip}`}>
                             {tm.label}
                           </span>
+                          {isSelected && <span className="question-selected-label"><CheckCircle2 className="h-3.5 w-3.5" /> নির্বাচিত</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <ReferenceBadges
@@ -1530,13 +1618,13 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                                 key={`stim-${q.id}`}
                                 className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-lg italic text-base rich-text-content text-slate-800"
                               >
-                                <LatexRenderer text={q.stimulus_text || ""} />
+                                <LatexRenderer italicMathVariables text={q.stimulus_text || ""} />
                               </div>
                             )}
-                            <div className="font-medium mb-3 flex items-baseline gap-2 text-base text-slate-900 leading-relaxed">
+                            <div className="question-select-prompt font-medium mb-3 flex items-baseline gap-2 text-base text-slate-900 leading-relaxed">
                               <span className="shrink-0 font-bold text-slate-800 font-mono text-base">{toBanglaNum(globalIdx + 1)}. </span>
                               <div className="flex-1 mc-block-question min-w-0 text-base">
-                                <LatexRenderer key={`q-${q.id}`} text={displayQuestion} />
+                                <LatexRenderer italicMathVariables key={`q-${q.id}`} text={displayQuestion} />
                               </div>
                             </div>
                             {hasSeparateStimulus && isShort && (
@@ -1544,7 +1632,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                                 key={`stim-${q.id}`}
                                 className="question-picker-stimulus mb-3 p-3 border-l-2 border-slate-400 bg-slate-50 rounded-lg italic text-base rich-text-content text-slate-800"
                               >
-                                <LatexRenderer text={q.stimulus_text || ""} />
+                                <LatexRenderer italicMathVariables text={q.stimulus_text || ""} />
                               </div>
                             )}
                           </div>
@@ -1558,14 +1646,15 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                             const label = ["ক", "খ", "গ", "ঘ"][oi];
                             const isAnswer = isCorrectOption(q.correct_answer, oi, [q.option_a, q.option_b, q.option_c, q.option_d]);
                             return (
-                              <div key={key} className={`flex items-center gap-2.5 p-2.5 rounded-lg text-base ${isAnswer ? "bg-[#00B4BC]/[0.07] text-[#006A70] font-bold border border-[#00B4BC]/30" : "bg-slate-50 text-slate-800 border border-slate-200"}`}>
+                              <div key={key} data-correct={isAnswer} aria-label={isAnswer ? `${label}: সঠিক উত্তর` : undefined} className={`question-select-option flex items-center gap-2.5 p-2.5 rounded-lg text-base ${isAnswer ? "bg-[#00B4BC]/[0.07] text-[#006A70] font-bold border border-[#00B4BC]/30" : "bg-slate-50 text-slate-800 border border-slate-200"}`}>
                                 <span
                                   className="shrink-0 inline-flex items-center justify-center rounded-lg border border-current font-bold leading-none text-xs"
                                   style={{ width: "1.6em", height: "1.6em" }}
                                 >
                                   {label}
                                 </span>
-                                <LatexRenderer text={val} inline />
+                                <span className="question-option-value"><LatexRenderer italicMathVariables text={val} inline /></span>
+                                {isAnswer && <CheckCircle2 className="question-answer-check" aria-label="সঠিক উত্তর" />}
                               </div>
                             );
                           })}
@@ -1581,7 +1670,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                         const hasSubs = subFields.some(f => data?.[f.key]);
                         if (!hasSubs) return null;
                         return (
-                          <div className="mt-3 space-y-2 pl-4 border-l-2 border-primary/20">
+                          <div className="mt-3 space-y-2 pl-4">
                             {subFields.map(f => {
                               const val = data?.[f.key];
                               if (!val) return null;
@@ -1589,7 +1678,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                                 <div key={f.key} className="text-sm flex items-start gap-1.5 leading-relaxed">
                                   <span className="font-semibold shrink-0 select-none">({f.label})</span>
                                   <div className="flex-1 min-w-0 cq-sub-content">
-                                    <LatexRenderer text={val} inline />
+                                    <LatexRenderer italicMathVariables text={val} inline />
                                   </div>
                                 </div>
                               );
@@ -1648,15 +1737,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 </Button>
               </div>
             )}
-            {filteredQuestions.length > 0 && (
-              <p className="text-center text-xs text-muted-foreground pb-2">
-                মোট {filteredQuestions.length}টি প্রশ্নের মধ্যে {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredQuestions.length)} দেখাচ্ছে
-              </p>
-            )}
           </div>
 
           {/* Right sidebar - Advanced Filter (independently scrollable on desktop) */}
-          <aside className="hidden lg:block lg:overflow-y-auto lg:pr-1 lg:scroll-smooth">
+          <aside className="question-filter-sidebar hidden lg:block lg:overflow-y-auto lg:pr-1 lg:scroll-smooth">
             <div className="space-y-4 pb-2">
               <Card>
                 <CardContent className="p-4">
@@ -1723,16 +1807,30 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         </div>
         <CardContent className="manual-form-fields p-5 sm:p-7 grid grid-cols-1 gap-3">
           {/* 1. Exam / Program Name */}
-          <div className="">
-            <Input
+          <div className="space-y-2">
+            <Select
+              value={customExamName ? "custom" : form.programName || DEFAULT_EXAM_NAME}
+              onValueChange={(value) => {
+                setCustomExamName(value === "custom");
+                setForm(previous => ({ ...previous, programName: value === "custom" ? "" : value }));
+              }}
+            >
+              <SelectTrigger aria-label="প্রোগ্রাম/পরীক্ষার নাম" className="h-12 rounded-lg border-slate-200 text-base text-slate-800 bg-white">
+                <SelectValue placeholder={DEFAULT_EXAM_NAME} />
+              </SelectTrigger>
+              <SelectContent>
+                {EXAM_NAME_OPTIONS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                <SelectItem value="custom">নিজে পরীক্ষার নাম লিখুন</SelectItem>
+              </SelectContent>
+            </Select>
+            {customExamName && <Input
               id="manual-exam-name"
-              placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন *"
+              placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন (খালি থাকলে ক্লাস টেস্ট)"
               aria-label="পরীক্ষার নাম"
-              required
               value={form.programName}
               onChange={(e) => setForm({ ...form, programName: e.target.value })}
               className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white"
-            />
+            />}
           </div>
 
           {/* 2. Class Picker */}
@@ -1878,7 +1976,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <Button
               className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading || (!addToPaper && !form.programName.trim()) || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
+              disabled={loading || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
               title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>

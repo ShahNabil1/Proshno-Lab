@@ -243,7 +243,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shrink-0">
+        <header className="dashboard-header h-16 bg-white border-b border-border flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-2">
             {/* Mobile-only menu toggle */}
             <Button
@@ -266,7 +266,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Menu className="w-5 h-5" />
             </Button>
           </div>
-          <div className="flex-1" />
+          <div id="question-picker-header-slot" className="flex-1 min-w-0 mx-3" />
           <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

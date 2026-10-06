@@ -22,6 +22,7 @@ export default function QuestionCreateHub() {
     // handler is not involved in that history navigation.
     if (nextMode === "manual" && activeMode !== "manual") {
       sessionStorage.removeItem("questionCreateDraft");
+      sessionStorage.removeItem("questionCreateDraft:v2:manual");
     }
     // Explicit navigation pushes a real history entry, so browser Back from
     // ?mode=manual reliably returns to the clean create hub URL.

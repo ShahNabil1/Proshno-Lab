@@ -6,6 +6,7 @@ interface LatexRendererProps {
   text: string;
   className?: string;
   inline?: boolean;
+  italicMathVariables?: boolean;
 }
 
 // Module-level cache so repeated renders (screen + print copies, settings toggles,
@@ -75,9 +76,10 @@ export function getLatexIssueReasons(text: string | null | undefined): string[] 
 
 export const hasLatexIssues = (text: string | null | undefined): boolean => getLatexIssueReasons(text).length > 0;
 
-function renderLatex(text: string): string {
+function renderLatex(text: string, italicMathVariables = false): string {
   if (!text) return "";
-  const cached = renderCache.get(text);
+  const cacheKey = `${italicMathVariables ? "italic:" : "original:"}${text}`;
+  const cached = renderCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
   const pattern = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\$([\s\S]*?)\$|\\\(([\s\S]*?)\\\)/g;
@@ -93,7 +95,18 @@ function renderLatex(text: string): string {
     // equals signs in detailed answer sheets.
     // Older imported questions contain recoverable shortcuts such as A\B and
     // unmatched \left/\right. Repair them only for display; stored data stays intact.
-    const expr = applyLatexCompatibilityRepairs(prepareLatexExpression(rawExpr));
+    let expr = applyLatexCompatibilityRepairs(prepareLatexExpression(rawExpr));
+    // Imported variable products and coefficients are often wrapped in roman text.
+    // Normalize only in the question picker; preserve units and authored paper output.
+    if (italicMathVariables) {
+      const romanWords = new Set(["sin", "cos", "tan", "cot", "sec", "csc", "log", "ln", "exp", "lim", "max", "min", "cm", "mm", "km", "kg", "mg", "ms", "mol"]);
+      expr = expr.replace(/\\mathrm\{([^{}]+)\}/g, (original, content: string) => {
+        const term = content.trim();
+        return /^(?:\d+(?:\.\d+)?)?[a-zA-Z]{1,3}$/.test(term) && !romanWords.has(term.toLowerCase())
+          ? `{${term}}`
+          : original;
+      });
+    }
     try {
       const render = (source: string) => katex.renderToString(source, {
         displayMode: isDisplay,
@@ -114,7 +127,7 @@ function renderLatex(text: string): string {
   });
 
   if (renderCache.size > MAX_CACHE) renderCache.clear();
-  renderCache.set(text, html);
+  renderCache.set(cacheKey, html);
   return html;
 }
 
@@ -122,8 +135,8 @@ function renderLatex(text: string): string {
  * Renders text with inline LaTeX expressions wrapped in $...$ or $$...$$.
  * Non-LaTeX text is rendered as-is.
  */
-function LatexRenderer({ text, className = "", inline = false }: LatexRendererProps) {
-  const html = useMemo(() => renderLatex(text), [text]);
+function LatexRenderer({ text, className = "", inline = false, italicMathVariables = false }: LatexRendererProps) {
+  const html = useMemo(() => renderLatex(text, italicMathVariables), [text, italicMathVariables]);
   const rootRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {

@@ -4,6 +4,10 @@ export type DuplicateComparableQuestion = {
   question: string;
   stimulus_text?: string | null;
   creative_data?: any | null;
+  option_a?: string | null;
+  option_b?: string | null;
+  option_c?: string | null;
+  option_d?: string | null;
 };
 
 const IGNORED_CREATIVE_KEYS = /^(id|answer|answers|explanation|correct_answer|ans_|desc_ans_|marks?|created_at|updated_at)/i;
@@ -84,4 +88,39 @@ export function removeNearDuplicateQuestions<T extends DuplicateComparableQuesti
     if (!kept.some((candidate) => areQuestionsDuplicates(candidate, question))) kept.push(question);
   }
   return kept;
+}
+
+// Cleanup requires exact content, not a similarity score. Keep mathematical
+// commands, case, brackets, decimal points and powers significant.
+export function normalizeExactDuplicateText(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi, " image:$1 ")
+    .replace(/<sup[^>]*>(.*?)<\/sup>/gi, "^{$1}")
+    .replace(/<sub[^>]*>(.*?)<\/sub>/gi, "_{$1}")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(nbsp|ensp|emsp|thinsp);|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "")
+    .replace(/\\(?:left|right|displaystyle|textstyle)\b/g, "")
+    .replace(/\\(?:mathrm|mathbf|mathit|mathnormal)\{([^{}]*)\}/g, "$1")
+    .replace(/[\u2212\u2013\u2014]/g, "-")
+    .replace(/\$/g, "")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
+export function getExactQuestionDuplicateSignature(question: DuplicateComparableQuestion): string {
+  let creative = question.creative_data;
+  if (typeof creative === "string") {
+    try { creative = JSON.parse(creative); } catch { /* Keep unparsed content significant. */ }
+  }
+  const content = [question.question, question.stimulus_text];
+  if (/^(cq|creative|descriptive)$/i.test(question.type)) {
+    content.push(...collectCreativeQuestionText(creative));
+  }
+  const options = question.type.toLowerCase() === "mcq"
+    ? [question.option_a, question.option_b, question.option_c, question.option_d].map(normalizeExactDuplicateText).sort()
+    : [];
+  return JSON.stringify([question.type.toLowerCase(), content.map(normalizeExactDuplicateText), options]);
 }

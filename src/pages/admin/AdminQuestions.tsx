@@ -1,6 +1,7 @@
 import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
 import LanguageQuestionForm from "@/components/LanguageQuestionForm";
 import { ALL_TYPES, BASE_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, suggestedLanguageTopics, languageRules } from "@/lib/languageQuestionTypes";
+import { questionHasNoAnswer, questionHasNoExplanation } from "@/lib/questionAnswers";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
@@ -31,6 +32,8 @@ const typeOptions = ALL_TYPES;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
 const SPECIAL_FILTER_OPTIONS = [
+  { id: "no_answer", label: "উত্তর ছাড়া প্রশ্ন" },
+  { id: "no_explanation", label: "ব্যাখ্যা ছাড়া MCQ ও সংক্ষিপ্ত প্রশ্ন" },
   { id: "board", label: "রিপিটেড বোর্ড প্রশ্ন" },
   { id: "math", label: "গাণিতিক" },
   { id: "theoretical", label: "তত্ত্বীয়" },
@@ -75,6 +78,8 @@ const specialFilterMatches = (question: any, filter: string) => {
       || /(?:^|[^a-zA-Z])i\).*(?:^|[^a-zA-Z])ii\).*(?:^|[^a-zA-Z])iii\)/s.test(stripped);
   }
   if (filter === "assertion") return Array.isArray(question.board_references) && question.board_references.length > 0;
+  if (filter === "no_answer") return questionHasNoAnswer(question);
+  if (filter === "no_explanation") return questionHasNoExplanation(question);
   if (filter === "latex_error") return questionHasLatexIssues(question);
   return true;
 };
@@ -288,6 +293,7 @@ export default function AdminQuestions() {
   const questionsLoading = filterSpecial ? specialPoolQuery.isFetching : listQuery.isFetching;
 
   const invalidateQuestions = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-questions-special-pool"] });
     queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
     queryClient.invalidateQueries({ queryKey: ["admin-questions-type-counts"] });
   };
