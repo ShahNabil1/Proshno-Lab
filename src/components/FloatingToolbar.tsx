@@ -114,7 +114,7 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
 
   const changeFontSize = (delta: number) => {
     if (!targetEl) return;
-    const newSize = Math.max(10, Math.min(28, fontSize + delta));
+    const newSize = Math.max(5, Math.min(28, fontSize + delta));
     setFontSize(newSize);
     targetEl.style.fontSize = `${newSize}px`;
   };

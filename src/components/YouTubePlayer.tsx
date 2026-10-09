@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize2, RotateCcw } from "lucide-react";
 
@@ -47,7 +48,7 @@ const fmt = (s: number) => {
 
 interface Props {
   videoId: string;
-  title?: string;
+  title?: ReactNode;
   /** Autoplay when the player scrolls into view */
   autoPlayOnView?: boolean;
 }

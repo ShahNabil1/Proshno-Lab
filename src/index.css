@@ -600,25 +600,25 @@
 }
 
 @media screen and (max-width: 640px) {
-  .paper-document-heading-center {
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-document-heading-center {
     min-height: 0;
   }
 
-  .paper-header-marks-box,
-  .paper-header-subject-code,
-  .paper-header-set-code {
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-marks-box,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-subject-code,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-set-code {
     position: static;
     width: max-content;
     margin-top: 5px;
     font-size: 1em;
   }
 
-  .paper-header-subject-code,
-  .paper-header-set-code {
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-subject-code,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-set-code {
     margin-left: auto;
   }
 
-  .paper-header-student-info {
+  [data-print-paper]:not(.paper-paged-snapshot-source) .paper-header-student-info {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 }
@@ -679,284 +679,13 @@
   page-break-inside: auto;
 }
 
-@media print {
-  /* Dynamic page size from data attribute */
-  @page {
-    margin: 10mm;
-  }
-
-  /* Print the exact MCQ tree shown in preview. Keeping a second print-only
-     copy caused different question order, column flow and spacing. */
-  .paper-builder-shell {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  .paper-preview-scroll,
-  [data-print-scale-wrapper] {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* The screen preview is a viewport-height scroll box. If that fixed height
-     survives printing, Chrome paginates the scroll box itself and appends a
-     trailing blank page. Print must use the document's natural height. */
-  .paper-preview-scroll,
-  .paper-live-preview-source {
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  /* Hidden preview controls must not reserve printable space. */
-  .paper-quick-settings {
-    display: none !important;
-  }
-
-  .mcq-print-layout {
-    display: none !important;
-  }
-
-  .mcq-print-layout-grid {
-    display: none !important;
-  }
-
-  /* ===== WATERMARK PRINT BEHAVIOUR =====
-     Hide tiled screen watermark; show a single fixed-position watermark
-     which browsers repeat on every printed page. */
-  [data-watermark-screen] {
-    display: none !important;
-  }
-
-  [data-watermark-print] {
-    display: flex !important;
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: 100vw !important;
-    height: auto !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 0 !important;
-    pointer-events: none !important;
-  }
-
-  [data-watermark-print] img {
-    max-width: none !important;
-  }
-
-  [data-print-paper] .combined-question-flow,
-  [data-print-paper] .mcq-print-columns {
-    /* Balance the final print fragment like Word columns. With every MCQ and
-       explanation allowed to fragment below, Chrome no longer inserts an
-       empty intermediate page or leaves the final right column mostly blank. */
-    column-fill: balance !important;
-    overflow: visible !important;
-  }
-
-  [data-print-paper] .mcq-print-item {
-    display: block !important;
-    width: 100% !important;
-    vertical-align: top;
-    margin-bottom: var(--paper-question-gap, 6px) !important;
-    /* Keep Word-like continuous flow: a long question/answer may continue in
-       the next column or page instead of leaving a large empty rectangle. */
-    break-inside: auto !important;
-    page-break-inside: auto !important;
-    -webkit-column-break-inside: auto !important;
-    overflow: visible !important;
-  }
-
-  [data-print-paper] .mcq-print-item > * {
-    break-inside: auto !important;
-    page-break-inside: auto !important;
-    -webkit-column-break-inside: auto !important;
-  }
-
-  /* The screen card stays together for readability, but in PDF it must be
-     allowed to continue in the next column/page. An inline `break-inside:
-     avoid` here was the remaining source of clipped answer lines. */
-  [data-print-paper] .mcq-explanation,
-  [data-print-paper] .mcq-explanation * {
-    break-inside: auto !important;
-    page-break-inside: auto !important;
-    -webkit-column-break-inside: auto !important;
-    overflow: visible !important;
-  }
-
-  /* Hide everything except the paper */
-  body * {
-    visibility: hidden;
-  }
-
-  /* The paper container and its children */
-  [data-print-paper],
-  [data-print-paper] * {
-    visibility: visible !important;
-  }
-
-  /* Also make all ancestor elements of the paper visible (for layout) */
-  [data-print-paper] {
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    font-size: var(--paper-print-font-size, 14px) !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    outline: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    transform: none !important;
-    zoom: 1 !important;
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  /* Reset the scaling wrapper during print */
-  [data-print-scale-wrapper] {
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 0 !important;
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  /* Ensure all ancestors of paper are visible for layout flow */
-  [data-print-paper],
-  [data-print-paper] ~ *,
-  body, html {
-    overflow: visible !important;
-    height: auto !important;
-  }
-
-  /* Prevent small question blocks (MCQ, Short) from splitting */
-  [data-print-paper] [data-editable^="mcq-"],
-  [data-print-paper] [data-editable^="short-"],
-  [data-print-paper] [data-editable="mcq-title"],
-  [data-print-paper] [data-editable="short-title"] {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* The parent column stream uses column-fill:auto, so MCQs can safely
-     continue across a print fragment without balanced-column clipping. */
-  [data-print-paper] [data-editable^="mcq-"] {
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    -webkit-column-break-inside: auto !important;
-    overflow: visible !important;
-  }
-
-  /* Allow large blocks (CQ, Descriptive) to split across pages */
-  [data-print-paper] [data-editable^="cq-"],
-  [data-print-paper] [data-editable^="desc-"] {
-    page-break-inside: auto;
-    break-inside: auto;
-  }
-
-  /* Section headers must stay with next content */
-  [data-print-paper] [data-section-header] {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Prevent orphan lines */
-  [data-print-paper] p,
-  [data-print-paper] div {
-    /* Do not let Chrome reserve several lines at every nested answer wrapper;
-       that reservation was the source of the large blank PDF areas. */
-    orphans: 1;
-    widows: 1;
-  }
-
-  /* Section headers should stay with content */
-  [data-print-paper] h1,
-  [data-print-paper] h2,
-  [data-print-paper] h3,
-  [data-print-paper] h4 {
-    page-break-after: avoid;
-    break-after: avoid;
-  }
-
-  /* Tables & images inside paper */
-  [data-print-paper] table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 4px 0;
-  }
-  [data-print-paper] th,
-  [data-print-paper] td {
-    border: 1px solid #333;
-    padding: 2px 6px;
-    font-size: 0.85em;
-  }
-  [data-print-paper] th {
-    font-weight: 600;
-  }
-  [data-print-paper] img:not([data-watermark-img]) {
-    max-width: 100% !important;
-    /* Do not set height here: an explicitly saved height must survive print,
-       while images without one naturally fall back to auto. */
-    object-fit: contain;
-    display: inline-block;
-    margin: 4px 0;
-  }
-
-  /* Hide sidebar, nav, buttons, alerts */
-  aside,
-  nav,
-  header:not(.paper-document-header),
-  .sidebar,
-  button,
-  [role="alert"] {
-    display: none !important;
-  }
-}
-
-/* Dynamic @page sizes using CSS custom properties set via JS */
-:root[data-print-size="210mm 297mm"] {
-  @media print { @page { size: 210mm 297mm portrait; } }
-}
-:root[data-print-size="8.5in 11in"] {
-  @media print { @page { size: 8.5in 11in portrait; } }
-}
-:root[data-print-size="8.5in 14in"] {
-  @media print { @page { size: 8.5in 14in portrait; } }
-}
-:root[data-print-size="148mm 210mm"] {
-  @media print { @page { size: 148mm 210mm portrait; } }
-}
-
-/* Unify KaTeX-rendered content with the site fonts:
-   \text{} Bangla/English -> SolaimanLipi / Times New Roman, math letters -> Times New Roman italic.
-   KaTeX's own glyph fonts are kept for math symbols/delimiters so radicals & braces still render.
-   font-size: 1em forces the rendered text to match the surrounding system text size exactly. */
+/* Keep KaTeX's glyphs and metrics together. Body fonts must not replace
+   math letters: fractions, scripts and delimiters use KaTeX font metrics. */
 .latex-renderer .katex {
-  font-size: 1em;
+  font-size: 1.18em;
 }
-.latex-renderer .katex .mathrm,
-.latex-renderer .katex .text,
-.latex-renderer .katex .textbf,
-.latex-renderer .katex .textit {
-  font-family: 'SolaimanLipi', 'Times New Roman', serif;
-  font-size: 1em;
-}
-.latex-renderer .katex .mathnormal,
-.latex-renderer .katex .mathdefault {
-  font-family: 'Times New Roman', Times, serif;
-  font-style: italic;
-  font-size: 1em;
+.latex-renderer .katex .text {
+  font-family: KaTeX_Main, 'SolaimanLipi', serif;
 }
 
 /* Prevent long equation lines from overflowing across the column divider:
@@ -966,9 +695,9 @@
   white-space: normal;
 }
 [data-print-paper] .latex-renderer .katex-html > .base {
-  display: inline;
+  display: inline-block;
   width: auto;
-  white-space: normal;
+  white-space: nowrap;
 }
 [data-print-paper] .latex-renderer {
   overflow-wrap: break-word;
@@ -1205,9 +934,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.72em;
-  min-height: 1.48em;
-  padding: 0.06em 0.2em;
+  min-width: 1.4em;
+  min-height: 1.2em;
+  padding: 0.02em 0.14em;
+  font-size: 0.9em;
+  line-height: 1.15;
   border-radius: 2px;
   background: #050505 !important;
   color: #fff !important;
@@ -1258,7 +989,7 @@
 .cq-main-content {
   grid-column: 2;
   min-width: 0;
-  line-height: 1.38;
+  line-height: 1.25;
 }
 
 .cq-stem-row {
@@ -1284,8 +1015,9 @@
 
 .cq-sub-questions {
   display: grid;
-  row-gap: 0.04em;
-  margin-top: 0.12em;
+  row-gap: calc(2em / 14);
+  margin-top: calc(6em / 14);
+  padding-bottom: calc(4em / 14);
 }
 
 .cq-sub-question-row {
@@ -1294,7 +1026,7 @@
   column-gap: 0.18em;
   align-items: start;
   min-width: 0;
-  line-height: 1.38;
+  line-height: 1.25;
 }
 
 .cq-sub-question-label,
@@ -1708,9 +1440,10 @@
 }
 
 /* Question-paper settings: clearly separated, low-glare control groups. */
-.paper-builder-shell {
-  --primary: 160 94% 30%;
-  --ring: 160 94% 30%;
+.paper-builder-shell, .paper-mobile-settings {
+  --primary: 214 70% 13%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 183 100% 37%;
 }
 
 /* Hide only the paper-preview scrollbar while preserving wheel, touchpad,
@@ -1985,10 +1718,40 @@
 
 /* Printed MCQ labels: reference-sized ring and full-size Bangla letter. */
 .mcq-option-choice {
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 0.32em;
   min-width: 0;
+}
+
+/* Let the question/answer flex column shrink to the printed column width.
+   The default min-width:auto lets a long equation widen the entire row. */
+[data-print-paper] .mcq-print-item > div > div,
+.paper-paged-preview-sheet .mcq-print-item > div > div {
+  min-width: 0;
+}
+
+.mcq-option-choice > .latex-renderer {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.math-authored-rows, .math-authored-row {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+}
+.math-authored-row { margin: 0.25em 0; line-height: 1.65; }
+.math-flow { white-space: normal; }
+.math-flow-term { display: inline-block; white-space: nowrap; }
+.math-flow-term ~ .math-flow-term { margin-left: 0.15em; }
+[data-print-paper] .latex-renderer .katex,
+[data-print-paper] .latex-renderer .katex-html,
+.paper-paged-preview-sheet .latex-renderer .katex,
+.paper-paged-preview-sheet .latex-renderer .katex-html {
+  white-space: normal !important;
 }
 
 .mcq-option-label-circle {
@@ -2061,56 +1824,6 @@
   top: 0;
   visibility: hidden;
   pointer-events: none;
-}
-
-@media print {
-  .paper-print-layout-preview {
-    background-image: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Print the pre-paginated sheets instead of asking Chromium to fragment one
-     multi-column element across pages (which clips text and can add a blank
-     page). Each sheet is one explicit printed page. */
-  .paper-paged-preview.paper-paged-print-source {
-    display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #fff !important;
-  }
-
-  .paper-paged-preview-sheet {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    break-after: page;
-    page-break-after: always;
-  }
-
-  .paper-paged-preview-sheet:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  .paper-paged-snapshot-source {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-  }
-
-  .paper-live-print-source {
-    display: none !important;
-  }
-
-  .paper-live-preview-source {
-    position: static !important;
-    left: auto !important;
-    width: auto !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
 }
 
 .mcq-option-label-glyph {
@@ -2278,7 +1991,7 @@
 [data-print-paper] .answer-content .katex,
 .answer-content .katex-html,
 [data-print-paper] .answer-content .katex-html {
-  white-space: nowrap !important;
+  white-space: normal !important;
 }
 .answer-content .latex-renderer p,
 [data-print-paper] .answer-content .latex-renderer p {
@@ -2487,12 +2200,12 @@
 /* Mobile paper preview always starts in a readable single-column layout.
    Print/download output continues to use the teacher's saved column setting. */
 @media screen and (max-width: 640px) {
-  [data-print-paper] .combined-question-flow,
-  [data-print-paper] .mcq-screen-layout,
-  [data-print-paper] .short-question-container,
-  [data-print-paper] .cq-question-container,
-  [data-print-paper] .desc-question-container,
-  [data-print-paper] .combined-question-items {
+  [data-print-paper]:not(.paper-paged-snapshot-source) .combined-question-flow,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .mcq-screen-layout,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .short-question-container,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .cq-question-container,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .desc-question-container,
+  [data-print-paper]:not(.paper-paged-snapshot-source) .combined-question-items {
     column-count: 1 !important;
     column-gap: 0 !important;
     column-rule: none !important;
@@ -2562,7 +2275,7 @@
   border-radius: 3px;
   box-shadow: 0 1px 3px #0a1e3808;
 }
-.question-builder .question-select-card:hover { border-color: #00858c; }
+
 .question-builder .question-select-card[data-selected="true"] {
   border-color: #00858c;
   background: #eaf8f6;
@@ -2673,6 +2386,15 @@
 .auto-create-workspace [role="combobox"] { box-shadow: 0 1px 2px #0a1e3805; }
 .auto-create-workspace .auto-selection-panel label { font-weight: 600; }
 @media (max-width: 639px) { .auto-stepper button { flex-direction: column; gap: 6px; text-align: center; padding: 12px 5px; font-size: 14px; } }
+@media (max-width: 639px) {
+  .auto-create-workspace { margin-top: 16px; }
+  .auto-create-workspace .auto-selection-panel { min-height: 0; padding: 12px; }
+  .auto-create-workspace h2 { font-size: 18px; }
+  .auto-create-workspace h2 + p { font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+  .auto-create-workspace .flex.justify-end > button { width: 100%; }
+  .auto-stepper button { min-width: 0; min-height: 76px; }
+  .create-mode-switch button { min-height: 94px; }
+}
 
 /* Clear boundaries on the automatic question form. */
 .auto-create-workspace .border-slate-200, .create-mode-switch { border-color: #b8c7d6; }
@@ -2851,36 +2573,253 @@ main:has(.auto-create-workspace) .create-mode-switch, main:has(.auto-create-work
 .page-select-control { padding: 5px 8px; border: 1px solid #9edee1; background: #fff; border-radius: 4px; }
 .page-select-control:hover { background: #e3f8f8; border-color: #00a7af; }
 
-/* Print snapshots must not retain compositor clipping from screen previews. */
-@media print {
-  .paper-paged-preview-slice { will-change: auto !important; transform: none !important; overflow: visible !important; contain: none !important; }
-  .paper-paged-snapshot-source .mcq-print-item { break-inside: avoid !important; page-break-inside: avoid !important; -webkit-column-break-inside: avoid !important; }
-  .paper-header-subject-code, .paper-header-set-code { right: 3px; overflow: visible; }
-  .paper-header-code-cells { padding: 2px; flex-shrink: 0; overflow: visible; }
-  .paper-header-code-cells > span, .paper-header-set-code > span:last-child { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 1.6em; padding: 2px 6px; box-sizing: border-box; overflow: visible; }
+/* Question selection controls fit the phone width without horizontal scrolling. */
+.selected-question-type-icon { display: none; }
+@media (max-width: 1023px) {
+  main:has(.question-builder) { overflow: visible; }
+  .question-picker-toolbar { display: contents; overflow: visible; }
+  .question-picker-toolbar-top { position: sticky; top: 0; z-index: 30; flex-direction: column; align-items: stretch; gap: 6px; overflow: visible; padding: 8px; border-radius: 6px; box-shadow: 0 3px 10px #0a1e3825; }
+  .selected-question-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; min-width: 0; gap: 6px; white-space: normal; }
+  .selected-question-summary__label, .selected-question-type-name, .question-toolbar-action-label { display: none; }
+  .selected-question-type-icon { display: block; flex-shrink: 0; }
+  .selected-question-count { min-width: 0; justify-content: center; gap: 8px; height: 34px; padding: 4px; }
+  .question-picker-toolbar-top > div:last-child { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .question-picker-toolbar-top > div:last-child button { width: 100%; min-height: 44px; }
+  #question-picker-header-slot .question-preview-button { min-width: 0; padding: 0 8px; }
+  .question-picker-toolbar-bottom { flex-direction: column; align-items: stretch; gap: 8px; overflow: visible; padding: 10px 12px; background: #f1fcfc; border: 1px solid #9edee1; border-radius: 6px; }
+  .question-picker-toolbar-bottom > label { white-space: normal; min-height: 44px; }
+  .question-picker-type-filters { min-width: 0; width: 100%; flex-wrap: wrap; }
+  .question-picker-type-filters > div:first-child { margin: 0; overflow: visible; flex-basis: 100%; }
+  .question-picker-toolbar-bottom [role="tablist"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin: 0; gap: 6px; }
+  .question-picker-toolbar-bottom [role="tab"] { justify-content: space-between; min-width: 0; height: 44px; padding: 0 8px; border: 1px solid #b8c7d6; border-radius: 4px; }
+  .question-picker-toolbar-bottom > .flex:last-child { display: none; }
+  .question-card-heading > div:last-child { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+  .question-card-heading > div:last-child > button { min-width: 44px; min-height: 44px; }
+  .question-builder .question-select-card { min-width: 0; }
+  .question-builder .question-select-card [role="checkbox"] { width: 22px; height: 22px; }
+}
+@media (max-width: 1023px) {
+  .dashboard-header:has(#question-picker-header-slot > *) { position: sticky; top: 0; z-index: 40; height: auto; padding: 0; background: #0a1e38; border-bottom: 1px solid #9edee1; }
+  .dashboard-header:has(#question-picker-header-slot > *) > div:first-child { position: absolute; left: 8px; top: 8px; z-index: 41; }
+  .dashboard-header:has(#question-picker-header-slot > *) > div:first-child button { color: white; width: 40px; height: 40px; }
+  .dashboard-header:has(#question-picker-header-slot > *) > div:last-child { display: none; }
+  .dashboard-header:has(#question-picker-header-slot > *) #question-picker-header-slot { margin: 0; width: 100%; }
+  #question-picker-header-slot .question-picker-toolbar-top { position: static; padding: 8px 8px 8px 56px; border-radius: 0; box-shadow: none; }
 }
 
-.paper-explicit-columns > .paper-explicit-column { display: block !important; min-width: 0; overflow: visible; }
-@media print {
-  .paper-explicit-columns { column-count: auto !important; column-rule: none !important; overflow: visible !important; }
-  .paper-explicit-column .mcq-print-item { width: 100%; overflow: visible !important; }
+/* Match the compact teacher-portal drawer on phones and tablets. */
+@media (max-width: 1023px) {
+  .brand-sidebar .sidebar-brand-link > span { gap: 4.5px !important; }
+  .brand-sidebar .sidebar-brand-link img { width: 45px !important; height: 39px !important; }
+  .brand-sidebar .sidebar-brand-link .brand-logo { font-size: 32px !important; }
+  .brand-sidebar .sidebar-create-cta svg { width: 24px; height: 24px; padding: 3px; }
+  .brand-sidebar .sidebar-create-cta::before { width: 24px; height: 24px; right: 11px; }
 }
 
-@media print {
-  /* App flex wrappers otherwise clip later printed fragments to their screen
-     layout height, including absolute-positioned code-cell borders. */
-  body *:has([data-print-paper]) {
-    display: block !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-    transform: none !important;
-    contain: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
+/* Teacher question picker typography matched to the reference portal. */
+.question-builder .question-select-prompt,
+.question-builder .question-select-option,
+.question-builder .question-select-card .question-picker-stimulus,
+.question-builder .question-select-card .latex-renderer {
+  font-size: 16px;
+  line-height: 24px;
+}
+.question-builder .question-select-prompt > span:first-child { font-size: 16px; }
+.question-builder .question-select-card .latex-renderer .katex { font-size: 1.13em; }
+
+/* Consistent, compact controls for the question selection workspace. */
+:is(.question-builder, #question-picker-header-slot, .question-filter-panel) :is(button, input, select, textarea, [role="checkbox"], [role="tab"], [class*="rounded"]),
+.question-builder .question-select-card,
+.question-builder .question-select-option,
+.question-builder .question-select-option > span:first-child,
+#question-picker-header-slot .selected-question-count { border-radius: 2px; }
+@media (max-width: 1023px) {
+  .dashboard-header:has(#question-picker-header-slot > *) { min-height: 52px; }
+  .dashboard-header:has(#question-picker-header-slot > *) > div:first-child { left: 6px; top: 8px; }
+  .dashboard-header:has(#question-picker-header-slot > *) > div:first-child button { width: 34px; height: 34px; border-radius: 2px; }
+  #question-picker-header-slot .question-picker-toolbar-top {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    min-height: 51px; padding: 8px 10px 8px 46px; gap: 8px; box-shadow: none;
   }
-  body .paper-live-print-source { display: none !important; }
+  #question-picker-header-slot .selected-question-summary { display: flex; width: auto; gap: 4px; flex: 1 1 auto; }
+  #question-picker-header-slot .selected-question-count { height: 30px; padding: 0 5px; gap: 4px; flex: 1 1 0; font-size: 12px; border-color: #ffffff25; }
+  #question-picker-header-slot .selected-question-type-icon { font-size: 11px; }
+  #question-picker-header-slot .selected-question-count strong { font-size: 13px; }
+  #question-picker-header-slot .question-picker-toolbar-top > div:last-child { display: flex; width: auto; gap: 4px; flex: 0 0 auto; }
+  #question-picker-header-slot .question-picker-toolbar-top > div:last-child button { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0; box-shadow: none; }
+  #question-picker-header-slot .question-picker-toolbar-top > div:last-child button svg { width: 16px; height: 16px; }
+}
+
+@media screen and (max-width: 767px) {
+  .dashboard-header:has(~ main .paper-builder-shell) { height: 48px; padding: 0 10px; }
+  .paper-builder-shell { margin: -12px; padding: 10px !important; min-width: 0; background: #edf1f5; }
+  .paper-mobile-toolbar { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; gap: 6px; padding: 10px; background: #fff; border: 1px solid #d7e0e9; border-radius: 2px; margin-bottom: 8px; box-shadow: 0 2px 6px #0a1e3808; }
+  .paper-mobile-toolbar-title { grid-column: 1 / -1; font-family: 'SolaimanLipi', sans-serif; font-size: 16px; font-weight: 600; color: #0a1e38; line-height: 24px; }
+  .paper-mobile-toolbar button { height: 40px; min-width: 0; border-radius: 2px; font-size: 14px; padding: 0 10px; gap: 4px; box-shadow: none; }
+  .paper-mobile-toolbar button svg { width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
+  .paper-mobile-secondary-actions { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap: 6px; margin-bottom: 12px; }
+  .paper-mobile-secondary-actions button { height: 40px; border-radius: 2px; font-size: 14px; padding: 0 8px; box-shadow: none; }
+  .paper-mobile-secondary-actions button:last-child { background: #0a1e38; }
+  .paper-preview-scroll { overflow-x: auto; height: auto; min-width: 0; }
+  .paper-builder-shell .paper-live-print-source:not(.paper-live-preview-source) > [data-print-paper] { font-size: 18px !important; line-height: 1.6 !important; border-radius: 2px; padding: 16px 12px !important; box-shadow: none !important; }
+  .paper-builder-shell .paper-live-print-source:not(.paper-live-preview-source) .mcq-print-columns { column-count: 1 !important; column-rule: none !important; }
+  .paper-mobile-settings { padding: 16px; background: #f7f9fb; }
+  .paper-mobile-settings :is(button, input, select, [class*="rounded"]) { border-radius: 2px; }
+  .paper-mobile-settings button { min-height: 40px; }
+}
+
+@media screen and (max-width: 767px) {
+  .paper-mobile-toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .paper-mobile-toolbar .paper-answer-toggle[aria-pressed="true"] { background: #e4f6f5; border-color: #008c91; color: #00666b; }
+}
+
+/* Paper editor controls use the ProshnoLab navy and cyan palette. */
+:is(.paper-builder-shell, .paper-mobile-settings) [role="switch"][data-state="checked"] { background-color: #0a1e38; }
+:is(.paper-builder-shell, .paper-mobile-settings) [role="slider"] { border-color: #00b4bc; }
+:is(.paper-builder-shell, .paper-mobile-settings) .text-primary { color: #0a1e38; }
+.paper-mobile-toolbar .paper-answer-toggle[aria-pressed="true"] { background: #e5f8fa; border-color: #00b4bc; color: #0a1e38; }
+
+/* Shared printable geometry. Print only removes the surrounding app/chrome;
+   it never changes document fonts, padding, boxes, columns or item breaks. */
+.paper-pagination-measure { position: fixed; left: -100000px; top: 0; visibility: hidden; pointer-events: none; }
+.paper-paged-preview-sheet { box-sizing: border-box; border: 0; outline: 1px solid #aeb4bc; }
+.paper-paged-preview-slice { will-change: auto; }
+.paper-explicit-columns > .paper-explicit-column { display: flow-root; min-width: 0; }
+.paper-paged-snapshot-source { flex: none; }
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body { margin: 0 !important; padding: 0 !important; }
+  body *:has(.paper-paged-print-source) {
+    display: block !important; width: auto !important; max-width: none !important;
+    height: auto !important; min-height: 0 !important; max-height: none !important;
+    margin: 0 !important; padding: 0 !important; overflow: visible !important;
+    transform: none !important; contain: none !important;
+  }
+  body *:has(.paper-paged-print-source) > :not(:has(.paper-paged-print-source)):not(.paper-paged-print-source) { display: none !important; }
+  .paper-paged-preview.paper-paged-print-source { display: block !important; margin: 0; padding: 0; background: white; }
+  .paper-paged-preview-sheet { margin: 0; outline: 0; box-shadow: none; break-inside: avoid; break-after: page; }
+  .paper-paged-preview-sheet:last-child { break-after: auto; }
+  .paper-paged-snapshot-source, .paper-paged-snapshot-source * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .paper-pagination-measure { display: none !important; }
+}
+
+.paper-shared-page-number { position: absolute; bottom: 3mm; left: 0; width: 100%; text-align: center; font: 11px Arial, sans-serif; color: #000; }
+
+.paper-part-heading { display:flex; justify-content:space-between; align-items:baseline; gap:1em; font-size:1em; margin:8px 0 4px; border-bottom:1px solid #888; padding-bottom:3px; break-inside:avoid; break-after:avoid; }
+.paper-part-instruction { font-size:0.9em; margin-bottom:6px; break-after:avoid; }
+
+/* Clear question typography, shared by the live paper and paged preview. */
+[data-print-paper] .combined-question-flow .mcq-print-item,
+.paper-paged-preview-sheet .mcq-print-item {
+  padding-top: calc(2em / 14);
+  padding-bottom: calc(2em / 14);
+}
+[data-print-paper] .mc-block-question,
+.paper-paged-preview-sheet .mc-block-question {
+  line-height: 1.25;
+  color: #080808;
+}
+[data-print-paper] .mcq-option-choice,
+.paper-paged-preview-sheet .mcq-option-choice {
+  align-items: baseline;
+  padding-top: 0.12em;
+  padding-bottom: 0.12em;
+}
+[data-print-paper] .cq-stem,
+.paper-paged-preview-sheet .cq-stem {
+  line-height: 1.55;
+}
+
+/* Optional answer-only fitting. Fixed px sizes are retained across main font changes. */
+.answer-content .answer-fit-line { display: block; max-width: 100%; min-width: 0; }
+.answer-content .answer-fit-measuring,
+.answer-content .answer-fit-measuring * { white-space: nowrap !important; }
+.answer-content .answer-fit-measuring .math-authored-row { display: inline; }
+
+.answer-content .answer-fit-single,
+.answer-content .answer-fit-single * { white-space: nowrap !important; }
+
+/* Worked answers keep natural spacing; paper justification must not stretch
+   short calculation steps across the full column. */
+.answer-content,
+[data-print-paper] .answer-content { text-align: left; text-align-last: auto; }
+
+/* Preserve mounted answer equations so subsequent on/off toggles only hide or
+   reveal them rather than removing and rebuilding thousands of math nodes. */
+[data-answers-hidden="true"] :is(.paper-answer-block, .mcq-explanation, .mcq-correct-answer-badge) { display: none !important; }
+
+/* Keep MCQ circles quieter than the question text and proportional to its size. */
+.mcq-option-choice .mcq-option-label-circle {
+  width: 1.04em;
+  height: 1.04em;
+  flex-basis: 1.04em;
+  border-width: 1px;
+}
+.mcq-option-choice .mcq-option-label-circle .mcq-option-label-glyph {
+  font-size: 0.96em;
+}
+
+/* Justification stretches the gap before inline math when a long expression
+   wraps. Keep equation-bearing question blocks at their natural word spacing. */
+[data-print-paper][data-content-align="justify"] :is(.cq-stem-text, .cq-sub-question-text, .mc-block-question):has(.katex),
+[data-print-paper][data-content-align="justify"] :is(div, span):has(> .mc-block-question .katex) {
+  text-align: left !important;
+  text-align-last: left !important;
+  word-spacing: normal !important;
+}
+[data-print-paper][data-content-align="justify"] :is(.cq-stem-text, .cq-sub-question-text, .mc-block-question):has(.katex) > p {
+  text-align: left !important;
+  text-align-last: left !important;
+  word-spacing: normal !important;
+}
+
+/* Option glyphs stay centered even when question prose uses left-aligned math. */
+.mcq-option-label-circle, .mcq-option-label-square,
+.mcq-option-label-glyph {
+  text-align-last: auto;
+  word-spacing: normal;
+}
+
+/* Continuous preview can split worked solutions between columns. PDF keeps
+   using its measured paginator and existing page geometry. */
+@media screen {
+  .paper-live-print-source > [data-print-paper] .combined-question-flow .mcq-print-item,
+  .paper-live-print-source > [data-print-paper] .combined-question-flow .paper-answer-block,
+  .paper-live-print-source > [data-print-paper] .combined-question-flow .cq-reference-answers,
+  .paper-live-print-source > [data-print-paper] .combined-question-flow .cq-reference-answer-row {
+    break-inside: auto !important;
+    -webkit-column-break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+}
+
+@media screen {
+  .paper-live-print-source > [data-print-paper] .cq-reference-answer-row { display: block; }
+  .paper-live-print-source > [data-print-paper] .cq-reference-answer-label { float: left; }
+  .paper-live-print-source > [data-print-paper] .cq-reference-answer-row > .answer-content { margin-left: 1.77em; }
+}
+
+/* Shared-stimulus MCQ instruction marker, in preview and print. */
+[data-print-paper] .mcq-stimulus-heading {
+  position: relative;
+  padding-left: calc(2rem + var(--question-number-gap, 6px));
+  font-weight: 700;
+  font-style: normal;
+  text-align: left;
+}
+[data-print-paper] .mcq-stimulus-heading::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.28em;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 0.08em;
+  background: #000;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+[data-print-paper] .mcq-stimulus > .mcq-stimulus-heading {
+  margin-left: -1.8rem;
 }

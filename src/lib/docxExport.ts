@@ -520,7 +520,7 @@ interface HtmlBlockOptions {
   suffixRuns?: Array<TextRun | ImportedXmlComponent | ImageRun>;
   indent?: { left: number };
   spacing?: Record<string, any>;
-  alignment?: AlignmentType;
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   images?: ExportImageMap;
   maxImageWidth?: number;
 }

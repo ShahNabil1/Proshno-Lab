@@ -585,7 +585,7 @@ export default function BoardCanvas({
               ...current,
               {
                 id: createElementId(),
-                kind: draft.shapeKind === "compass" ? "circle" : draft.shapeKind,
+                kind: draft.shapeKind,
                 x: rect.x,
                 y: rect.y,
                 w: rect.w,

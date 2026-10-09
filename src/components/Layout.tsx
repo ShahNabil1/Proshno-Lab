@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, LogOut, User, MapPin, Phone, Mail, LayoutDashboard } from "lucide-react";
@@ -224,7 +225,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
           {/* Bottom bar */}
           <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-white/70">
-            <div>© 2026 Proshno Lab. All rights reserved.</div>
+            <div>© 2026 <BrandLogo size={22} plate />. All rights reserved.</div>
             <div className="flex items-center gap-2">
               <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
               <span className="text-white/40">•</span>

@@ -31,6 +31,7 @@ type Question = {
   option_c?: string | null;
   option_d?: string | null;
   correct_answer?: string | null;
+  stimulus_text?: string | null;
   creative_data?: any;
   explanation?: string | null;
 };

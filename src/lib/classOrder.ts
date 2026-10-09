@@ -29,7 +29,7 @@ export function getClassLevel(name?: string | null): number {
 }
 
 /** Sorts class-like objects from highest class to lowest (একাদশ-দ্বাদশ first). */
-export function sortClasses<T extends { name?: string | null; id?: number }>(list: T[]): T[] {
+export function sortClasses<T extends { name?: string | null; id?: number | string }>(list: T[]): T[] {
   return [...list].sort((a, b) => {
     const diff = getClassLevel(b.name) - getClassLevel(a.name);
     if (diff !== 0) return diff;

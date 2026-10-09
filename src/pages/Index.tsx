@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import ReferenceHome from "@/components/ReferenceHome";
 import { motion } from "framer-motion";
 import { Users, Star, MessageSquare } from "lucide-react";
@@ -64,7 +65,7 @@ export default function Index() {
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
             {videoId ? (
-              <YouTubePlayer videoId={videoId} title="প্রশ্নল্যাব টিউটোরিয়াল" />
+              <YouTubePlayer videoId={videoId} title={<><BrandLogo size={20} plate /> টিউটোরিয়াল</>} />
             ) : (
               <p className="text-center text-muted-foreground py-8">উপরের তিনটি ধাপ অনুসরণ করে সহজেই শুরু করুন।</p>
             )}
@@ -126,7 +127,7 @@ export default function Index() {
                 এখনও কোনো রিভিউ যুক্ত হয়নি
               </p>
               <p className="text-muted-foreground text-xs leading-relaxed">
-                প্রশ্নল্যাব সম্পর্কে আপনার মূল্যবান অভিজ্ঞতা সবার সাথে ভাগ করে নিতে নিচে ক্লিক করুন।
+                <BrandLogo size={20} /> সম্পর্কে আপনার মূল্যবান অভিজ্ঞতা সবার সাথে ভাগ করে নিতে নিচে ক্লিক করুন।
               </p>
             </motion.div>
           ) : null}

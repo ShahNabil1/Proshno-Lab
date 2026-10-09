@@ -161,3 +161,13 @@ button{cursor:pointer}
 @media(max-width:520px){.highlight-icon{width:52px;height:52px}.highlight-icon svg{width:32px;height:32px}}
 @media(prefers-reduced-motion:reduce){.highlight-card,.hero-visual .laptop,.hero-visual .paper-card,.hero-visual .note,.card-spark{animation:none!important;transform:none!important}.card-spark{background:linear-gradient(135deg,var(--accent),#fff,var(--accent))}}
 }
+
+.home-wordmark { display: inline-flex; align-items: center; font-size: 1.25em; font-weight: 400; line-height: 1; vertical-align: baseline; white-space: nowrap; }
+.home-wordmark > i { font-family: inherit; font-style: normal; font-weight: 400; }
+
+.mini-logo .home-wordmark { font-size: 21px; }
+
+.hero-version-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 16px 0; padding: 10px 14px; border-left: 3px solid #00858c; border-radius: 6px; background: #e0f2f1; color: #102e56; font-size: 16px; }
+.hero-version-note strong { color: #00767c; }
+.hero-version-note span { font-size: 14px; }
+@media(max-width:900px) { .hero-version-note { justify-content: center; } }

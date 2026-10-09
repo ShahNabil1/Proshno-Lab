@@ -1,4 +1,8 @@
-import { memo, useLayoutEffect, useMemo, useRef } from "react";
+import { memo, useContext, useLayoutEffect, useMemo, useRef } from "react";
+import { EquationBoldContext, AnswerLineFitContext } from "@/contexts/EquationStyleContext";
+import { wrappableMathRows, wrappableMathParts } from "@/lib/wrappableMathRows";
+
+import { prepareAnswerLines, fitAnswerLines } from "@/lib/answerLineFit";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
@@ -76,9 +80,9 @@ export function getLatexIssueReasons(text: string | null | undefined): string[] 
 
 export const hasLatexIssues = (text: string | null | undefined): boolean => getLatexIssueReasons(text).length > 0;
 
-function renderLatex(text: string, italicMathVariables = false): string {
+function renderLatex(text: string, italicMathVariables = false, boldMath = false): string {
   if (!text) return "";
-  const cacheKey = `${italicMathVariables ? "italic:" : "original:"}${text}`;
+  const cacheKey = `${boldMath ? "bold:" : "normal:"}${italicMathVariables ? "italic:" : "original:"}${text}`;
   const cached = renderCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
@@ -108,11 +112,20 @@ function renderLatex(text: string, italicMathVariables = false): string {
       });
     }
     try {
-      const render = (source: string) => katex.renderToString(source, {
-        displayMode: isDisplay,
+      const renderSingle = (source: string, display = isDisplay) => katex.renderToString(boldMath ? `\\boldsymbol{${source}}` : source, {
+        displayMode: display,
+        output: "html",
         throwOnError: false,
         trust: true,
       });
+      const render = (source: string) => {
+        const rows = wrappableMathRows(source);
+        const flow = (row: string) => wrappableMathParts(row).map(part =>
+          `<span class="math-flow-term" role="math" aria-label="${escapeHtml(part)}">${renderSingle(part, false)}</span>`).join("<wbr>");
+        return rows
+          ? `<span class="math-authored-rows">${rows.map(row => `<span class="math-authored-row">${flow(row)}</span>`).join("")}</span>`
+          : `<span class="math-flow${isDisplay ? " math-authored-row" : ""}">${flow(source)}</span>`;
+      };
       let rendered = render(expr);
       if (rendered.includes("katex-error")) {
         const repaired = repairCommonLatexErrors(expr);
@@ -136,49 +149,39 @@ function renderLatex(text: string, italicMathVariables = false): string {
  * Non-LaTeX text is rendered as-is.
  */
 function LatexRenderer({ text, className = "", inline = false, italicMathVariables = false }: LatexRendererProps) {
-  const html = useMemo(() => renderLatex(text, italicMathVariables), [text, italicMathVariables]);
+  const boldMath = useContext(EquationBoldContext);
+  const answerFit = useContext(AnswerLineFitContext);
+  const fittedSizes = useRef(new Map<number, number>());
+  const fittedLayout = useRef(answerFit.layoutKey);
+  const html = useMemo(() => renderLatex(text, italicMathVariables, boldMath), [text, italicMathVariables, boldMath]);
   const rootRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root || !root.closest(".answer-content")) return;
-
+    const lines = prepareAnswerLines(root);
+    if (fittedLayout.current !== answerFit.layoutKey) {
+      fittedSizes.current.clear(); fittedLayout.current = answerFit.layoutKey;
+    }
+    if (!answerFit.enabled) {
+      fittedSizes.current.clear();
+      root.querySelectorAll<HTMLElement>(".answer-fit-line").forEach(line => { line.style.removeProperty("font-size"); line.classList.remove("answer-fit-single"); });
+      return;
+    }
+    let disposed = false;
     let frame = 0;
-    const fitAnswerMath = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const rootRect = root.getBoundingClientRect();
-        if (rootRect.width <= 0) return;
-
-        root.querySelectorAll<HTMLElement>(".katex").forEach(math => {
-          math.style.fontSize = "1em";
-        });
-
-        root.querySelectorAll<HTMLElement>(".katex").forEach(math => {
-          // Nested KaTeX nodes do not occur, but only fit the outer renderer if
-          // a future KaTeX version introduces them.
-          if (math.parentElement?.closest(".katex")) return;
-          const mathRect = math.getBoundingClientRect();
-          const availableWidth = Math.max(1, rootRect.right - mathRect.left - 2);
-          const naturalWidth = Math.max(math.scrollWidth, mathRect.width);
-          if (naturalWidth > availableWidth + 0.5) {
-            const scale = Math.max(0.6, Math.min(1, availableWidth / naturalWidth));
-            math.style.fontSize = `${scale}em`;
-          }
-        });
-      });
+    const measure = () => {
+      if (disposed) return;
+      const paper = root.closest<HTMLElement>("[data-print-paper]");
+      const scale = paper ? parseFloat(getComputedStyle(paper).fontSize) / answerFit.fontSize : 1;
+      fitAnswerLines(lines, 8 * scale, fittedSizes.current);
     };
-
-    fitAnswerMath();
-    const observer = new ResizeObserver(fitAnswerMath);
-    observer.observe(root);
-    window.addEventListener("beforeprint", fitAnswerMath);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener("beforeprint", fitAnswerMath);
-    };
-  }, [html]);
+    measure();
+    const onResize = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(measure); };
+    window.addEventListener("resize", onResize);
+    document.fonts?.ready.then(measure);
+    return () => { disposed = true; window.removeEventListener("resize", onResize); cancelAnimationFrame(frame); };
+  }, [html, answerFit.enabled, answerFit.fontSize, answerFit.layoutKey]);
 
   const Tag = inline ? "span" : "div";
 

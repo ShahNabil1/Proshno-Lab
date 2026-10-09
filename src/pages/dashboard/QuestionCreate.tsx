@@ -1,3 +1,4 @@
+import { getQuestionDuplicateSignature } from "@/lib/questionDuplicates";
 import { createPortal } from "react-dom";
 import { englishBlocks } from '@/lib/englishFirstBuilder';
 import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
@@ -24,6 +25,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LatexRenderer from "@/components/LatexRenderer";
+import AutoFitQuestionGrid from "@/components/AutoFitQuestionGrid";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
@@ -224,9 +226,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     } catch { return null; }
   });
   const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
+  const [mobileToolbarTarget, setMobileToolbarTarget] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
-    const updateTarget = () => setToolbarTarget(media.matches ? document.getElementById("question-picker-header-slot") : null);
+    const updateTarget = () => {
+      const target = document.getElementById("question-picker-header-slot");
+      setToolbarTarget(media.matches ? target : null);
+      setMobileToolbarTarget(!media.matches ? target : null);
+    };
     updateTarget();
     media.addEventListener("change", updateTarget);
     return () => media.removeEventListener("change", updateTarget);
@@ -298,9 +305,31 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   );
   const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
-  const [questions, setQuestions] = useState<QuestionRow[]>(draft?.questions || []);
+  const [questionRows, setQuestions] = useState<QuestionRow[]>(draft?.questions || []);
+  const questions = useMemo(() => {
+    const existing: QuestionRow[] = addToPaper
+      ? JSON.parse(sessionStorage.getItem("existingPaperQuestions") || "[]") : [];
+    const seen = new Set(existing.map(getQuestionDuplicateSignature).filter(Boolean));
+    const existingIds = new Set(existing.map(q => q.id));
+    return [...questionRows]
+      .sort((a, b) => latestQuestionYear(b) - latestQuestionYear(a) || b.id - a.id)
+      .filter(q => {
+        if (existingIds.has(q.id)) return false;
+        const key = getQuestionDuplicateSignature(q);
+        if (key && seen.has(key)) return false;
+        if (key) seen.add(key);
+        return true;
+      });
+  }, [questionRows, addToPaper]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(draft?.selectedIds || []));
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    const allowedIds = new Set(questions.map(q => q.id));
+    setSelectedIds(previous => {
+      const next = new Set([...previous].filter(id => allowedIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [questions]);
 
 
 
@@ -787,7 +816,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return result;
   };
 
-  const filteredQuestions = englishPreviewRows ?? getFilteredQuestions();
+  const filteredQuestions = useMemo(() => englishPreviewRows ? englishPreviewRows.filter(q => questions.some(item => item.id === q.id)) : getFilteredQuestions(), [englishPreviewRows, questions, filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterYear, filterSchools, filterSchoolYear, filterSpecial]);
   const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const selectablePageQuestions = paginatedQuestions.filter(q => !showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type));
@@ -1293,19 +1322,38 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       </div>
     );
 
-    const toolbarContent = (
-<div className="question-picker-toolbar sticky top-0 z-20">
+    const toolbarFilterContent = (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label="ফিল্টার" title="ফিল্টার" className="h-11 shrink-0 bg-white/10 hover:bg-white/20 text-white border-white/20">
+                    <SlidersHorizontal className="h-5 w-5" /><span className="question-toolbar-action-label">ফিল্টার</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
+                  <SheetHeader>
+                    <SheetTitle className="font-heading">এডভান্সড ফিল্টার মেনু</SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(85vh-60px)] pr-2 mt-4">
+                    {englishSelectionContent || filterSidebarContent}
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+    );
+    const toolbarTopContent = (
               <div className="question-picker-toolbar-top flex items-center justify-between flex-nowrap gap-4 overflow-x-auto bg-[#0A1E38] text-white p-3 sm:px-4 scrollbar-none">
                 <div className="selected-question-summary" aria-label="ধরন অনুযায়ী নির্বাচিত প্রশ্ন" aria-live="polite" aria-atomic="true">
                   <span className="selected-question-summary__label"><CheckCheck className="h-4 w-4" /> নির্বাচিত</span>
                   {([
-                    ["mcq", "MCQ"], ["cq", "সৃজনশীল"], ["short", "সংক্ষিপ্ত"], ["descriptive", "বর্ণনামূলক"],
-                  ] as const).map(([type, label]) => (
-                    <span key={type} className={`selected-question-count selected-question-count--${type}`} data-active={selectedTypeCounts[type] > 0}>
-                      <span>{label}</span>
+                    ["mcq", "MCQ"], ["cq", "CQ"], ["short", "SQ"],
+                  ] as const).map(([type, label]) => {
+                    const typeInitial = { mcq: "M", cq: "C", short: "S" }[type];
+                    return (
+                    <span key={type} title={label} aria-label={`${label}: ${toBanglaNum(selectedTypeCounts[type])}টি নির্বাচিত`} className={`selected-question-count selected-question-count--${type}`} data-active={selectedTypeCounts[type] > 0}>
+                      <span aria-hidden="true" className="selected-question-type-icon text-sm font-bold leading-none">{typeInitial}</span>
+                      <span className="selected-question-type-name">{label}</span>
                       <strong key={selectedTypeCounts[type]}>{toBanglaNum(selectedTypeCounts[type])}</strong>
                     </span>
-                  ))}
+                  ); })}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
@@ -1313,23 +1361,31 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     variant="outline"
                     size="sm"
                     onClick={() => setStep("questionSet")}
+                    aria-label="বিবরণীতে ফিরে যান"
+                    title="বিবরণী"
                     className="h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white border-white/20 text-sm font-medium"
                   >
-                    ← বিবরণী
+                    <ArrowLeft className="h-5 w-5" /><span className="question-toolbar-action-label">বিবরণী</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleViewPaper}
+                    aria-label="প্রশ্নপত্র প্রিভিউ"
+                    title="প্রিভিউ"
                     disabled={selectedIds.size === 0}
                     className="question-preview-button"
                   >
-                    <Eye className="h-5 w-5 shrink-0" /> প্রিভিউ
+                    <Eye className="h-5 w-5 shrink-0" /><span className="question-toolbar-action-label">প্রিভিউ</span>
                   </Button>
+                  {toolbarFilterContent}
 
                 </div>
               </div>
-
+    );
+    const toolbarContent = (
+      <div className="question-picker-toolbar sticky top-0 z-20">
+        {mobileToolbarTarget ? createPortal(toolbarTopContent, mobileToolbarTarget) : toolbarTopContent}
               <div className="question-picker-toolbar-bottom flex items-center gap-3 px-3 py-2">
                 <label className="page-select-control flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-800" title="এই পেজে দেখানো প্রশ্নগুলো একসঙ্গে নির্বাচন করুন">
                   <Checkbox
@@ -1412,9 +1468,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 const fmt = (n: number) => n.toLocaleString("bn-BD");
                 const badges = [
                   { value: "mcq", label: "MCQ", count: countByType("mcq"), dot: "bg-[#00B4BC]" },
-                  { value: "short", label: "সংক্ষিপ্ত", count: countByType("short"), dot: "bg-[#00B4BC]" },
-                  { value: "cq", label: "সৃজনশীল", count: countByType("cq"), dot: "bg-[#00B4BC]" },
-                  { value: "descriptive", label: "বর্ণনামূলক", count: countByType("descriptive"), dot: "bg-[#00B4BC]" },
+                  { value: "cq", label: "CQ", count: countByType("cq"), dot: "bg-[#00B4BC]" },
+                  { value: "short", label: "SQ", count: countByType("short"), dot: "bg-[#00B4BC]" },
+                  { value: null, label: "মোট", count: countByType("mcq") + countByType("cq") + countByType("short"), dot: "bg-[#00B4BC]" },
                 ];
 
                 const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
@@ -1502,32 +1558,18 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       <>
         <div className="question-builder lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
           {/* Main content - independently scrollable on desktop */}
-          <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2 lg:scroll-smooth">
+          <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2">
             {toolbarTarget ? createPortal(toolbarContent, toolbarTarget) : toolbarContent}
 
-            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-center text-xs text-slate-600 flex items-center justify-center gap-2">
+            <div className="hidden sm:flex bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-center text-xs text-slate-600 items-center justify-center gap-2">
               <Flag className="w-3.5 h-3.5 text-[#00858C] shrink-0" />
               <span>প্রশ্নে কোনো ভুল বা অসঙ্গতি পেলে ফ্ল্যাগ আইকনে ক্লিক করে রিপোর্ট করুন।</span>
             </div>
 
             {/* Mobile filter button + search */}
             <div className="lg:hidden flex gap-2">
-              <Input placeholder="কিওয়ার্ড সার্চ করুন" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} className="flex-1" />
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <SlidersHorizontal className="h-4 w-4 mr-1.5" /> ফিল্টার
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-                  <SheetHeader>
-                    <SheetTitle className="font-heading">এডভান্সড ফিল্টার মেনু</SheetTitle>
-                  </SheetHeader>
-                  <ScrollArea className="h-[calc(85vh-60px)] pr-2 mt-4">
-                    {englishSelectionContent || filterSidebarContent}
-                  </ScrollArea>
-                </SheetContent>
-              </Sheet>
+              <Input aria-label="প্রশ্ন খুঁজুন" placeholder="কিওয়ার্ড সার্চ করুন" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} className="flex-1 min-w-0 h-11 text-base" />
+
             </div>
 
             <div className="space-y-3">
@@ -1554,16 +1596,16 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     data-selected={isSelected}
                     className={`question-select-card group relative overflow-hidden cursor-pointer border rounded-lg transition-all duration-150 ${isSelected
                         ? "border-[#00B4BC] shadow-none bg-[#00B4BC]/[0.03] ring-1 ring-[#00B4BC]/20"
-                        : "border-slate-200 hover:border-[#00B4BC]/50 bg-white shadow-none"
+                        : "border-slate-200 bg-white shadow-none"
                       }`}
                   >
                     <span
                       aria-hidden
-                      className={`pointer-events-none absolute left-0 top-0 h-full w-[3px] transition-all duration-150 ${isSelected ? "bg-[#00B4BC] opacity-100" : `${tm.dot} opacity-0 group-hover:opacity-60`
+                      className={`pointer-events-none absolute left-0 top-0 h-full w-[3px] transition-all duration-150 ${isSelected ? "bg-[#00B4BC] opacity-100" : `${tm.dot} opacity-0`
                         }`}
                     />
                     <CardContent className="p-4 pl-[18px]">
-                      <div className="flex items-center justify-between mb-2.5 gap-2">
+                      <div className="question-card-heading flex flex-wrap items-center justify-between mb-2.5 gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Checkbox
                             checked={isSelected}
@@ -1639,7 +1681,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                         );
                       })()}
                       {q.type === "mcq" && q.option_a && (
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <AutoFitQuestionGrid measurementKey={JSON.stringify([q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer])} maxColumns={2} gap={10} className="question-select-options gap-y-2.5">
                           {["option_a", "option_b", "option_c", "option_d"].map((key, oi) => {
                             const val = (q as any)[key];
                             if (!val) return null;
@@ -1658,7 +1700,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                               </div>
                             );
                           })}
-                        </div>
+                        </AutoFitQuestionGrid>
                       )}
                       {(q.type === "cq" || q.type === "descriptive") && q.creative_data && (() => {
                         const data = typeof q.creative_data === "string" ? JSON.parse(q.creative_data) : q.creative_data;
@@ -1740,7 +1782,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </div>
 
           {/* Right sidebar - Advanced Filter (independently scrollable on desktop) */}
-          <aside className="question-filter-sidebar hidden lg:block lg:overflow-y-auto lg:pr-1 lg:scroll-smooth">
+          <aside className="question-filter-sidebar hidden lg:block lg:overflow-y-auto lg:pr-1">
             <div className="space-y-4 pb-2">
               <Card>
                 <CardContent className="p-4">
@@ -1787,7 +1829,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   // ─── STEP 1: Minimal Form matching Screenshot 2 ───
   return (
-    <div className="manual-create-form max-w-5xl mx-auto py-2 sm:py-4">
+    <div className="manual-create-form max-w-5xl mx-auto py-0 sm:py-4">
       {addToPaper && (
         <div className="mb-4 bg-[#00B4BC]/5 border border-[#00B4BC]/20 rounded-lg p-4 text-center">
           <h1 className="font-heading text-lg font-bold text-slate-800">
@@ -1801,11 +1843,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
       {/* Main Minimal Form Card */}
       <Card className="border border-slate-200 shadow-[0_6px_28px_-16px_#0a1e3830] bg-white rounded-2xl overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5 sm:px-7">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00B4BC]/10 text-[#00858C]"><FileText className="h-5 w-5" /></span>
-          <div><h1 className="text-xl font-semibold text-[#0A1E38]">কাস্টম প্রশ্নপত্র</h1><p className="mt-1 text-sm text-slate-500">পরীক্ষার তথ্য ও প্রশ্নের পরিসর নির্ধারণ করুন</p></div>
-        </div>
-        <CardContent className="manual-form-fields p-5 sm:p-7 grid grid-cols-1 gap-3">
+        <CardContent className="manual-form-fields p-3 sm:p-7 grid grid-cols-1 gap-3">
           {/* 1. Exam / Program Name */}
           <div className="space-y-2">
             <Select
@@ -1908,10 +1946,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
           <>
           {/* 5. Type & Marks (Two-Column Grid) */}
-          <div className=" grid grid-cols-2 gap-5 pt-0.5">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+            <div className="min-w-0">
                 <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 bg-white">
+                <SelectTrigger aria-label="প্রশ্নের ধরন" className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 bg-white">
                   <SelectValue placeholder="টাইপ">{selectedSubjectIds.length === 0 ? "টাইপ" : (typeLabels[form.type] || questionTypeLabel(form.type))}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-lg border-slate-200">
@@ -1922,15 +1960,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   ))}
                 </SelectContent>
               </Select>
-              {form.type === "all" && !showEnglishBuilder && (
-                <p className="mt-2 text-xs text-slate-500">নির্বাচিত অধ্যায়ের সব ধরনের প্রশ্ন একসঙ্গে আসবে।</p>
-              )}
             </div>
 
             <div>
               <div className="relative">
                 <Input
                   type="number"
+                  aria-label="প্রশ্নের সংখ্যা"
+                  inputMode="numeric"
                   min={1}
                   max={200}
                   value={form.count}
@@ -1962,17 +1999,17 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     }
                   }}
                   placeholder="১০০"
-                  className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white pr-20"
+                  className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white pr-36 sm:pr-20"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none select-none">
-                  সর্বোচ্চ ২০০
+                  <span className="sm:hidden">প্রশ্ন · </span>সর্বোচ্চ ২০০
                 </span>
               </div>
             </div>
           </div>
 
           {/* 6. Submit Action Button */}
-          <div className=" pt-4 border-t border-slate-100">
+          <div className="pt-2 sm:pt-4 border-t border-slate-100">
             <Button
               className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}

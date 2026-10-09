@@ -170,14 +170,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ProshnoLab Left Sidebar */}
       <aside className={cn(
-        "brand-sidebar fixed top-0 left-0 z-50 h-screen w-[260px] bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none shrink-0",
+        "brand-sidebar fixed top-0 left-0 z-50 h-[100dvh] w-[234px] max-w-[calc(100vw-48px)] lg:max-w-none bg-[#0A1E38] border-r border-[#152e52] flex flex-col transition-[transform,width,opacity] duration-300 ease-in-out lg:sticky lg:z-auto overflow-hidden shadow-2xl lg:shadow-none text-white select-none shrink-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         desktopCollapsed
           ? "lg:w-0 lg:min-w-0 lg:translate-x-0 lg:opacity-0 lg:border-r-0 lg:pointer-events-none"
           : "lg:w-[260px] lg:translate-x-0 lg:opacity-100"
       )}>
         {/* Brand Logo Header */}
-        <div className="min-h-[86px] flex items-center justify-between px-3.5 py-3 border-b border-white/15 shrink-0 bg-[#07162b] shadow-sm">
+        <div className="sidebar-brand-header min-h-[68px] lg:min-h-[86px] flex items-center justify-between px-3.5 py-3 border-b border-white/15 shrink-0 bg-[#07162b] shadow-sm">
           <Link
             to="/"
             onClick={(e) => {
@@ -203,14 +203,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        <nav aria-label="শিক্ষক কর্মক্ষেত্র" className="flex-1 overflow-y-auto px-4 py-4 space-y-5 text-white" style={{ textRendering: "auto", fontFamily: "SolaimanLipi, Arial, sans-serif" }}>
-          {!hiddenPages.includes("/dashboard/create") && <Link to="/dashboard/create" onClick={() => setSidebarOpen(false)} className="sidebar-create-cta flex items-center justify-between rounded-lg bg-[#00B4BC] px-4 py-3 text-lg font-semibold text-[#07162b] transition-colors hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><span>১ ক্লিকে প্রশ্ন তৈরি</span><PlusSquare className="h-5 w-5" /></Link>}
+        <nav aria-label="শিক্ষক কর্মক্ষেত্র" className="flex-1 overflow-y-auto px-3 py-3 space-y-3 lg:px-4 lg:py-4 lg:space-y-5 text-white" style={{ textRendering: "auto", fontFamily: "SolaimanLipi, Arial, sans-serif" }}>
+          {!hiddenPages.includes("/dashboard/create") && <Link to="/dashboard/create" onClick={() => setSidebarOpen(false)} className="sidebar-create-cta flex items-center justify-between rounded-lg bg-[#00B4BC] px-3 py-2 text-base lg:px-4 lg:py-3 lg:text-lg font-semibold text-[#07162b] transition-colors hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><span>১ ক্লিকে প্রশ্ন তৈরি</span><PlusSquare className="h-5 w-5" /></Link>}
           {sidebarGroups.map(group => {
             const links = <div className="space-y-1">{group.items.map(item => {
               const active = location.pathname === item.path;
-              return <Link key={item.path} to={item.path} aria-current={active ? "page" : undefined} onClick={() => setSidebarOpen(false)} className={cn("sidebar-nav-item flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-[18px] font-semibold leading-7 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00B4BC]", active ? "border-[#00B4BC] bg-white/10 text-white" : "border-transparent text-white hover:bg-white/5")}><item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-[#00B4BC]" : "text-slate-200")} strokeWidth={1.8} /><span>{item.label}</span></Link>;
+              return <Link key={item.path} to={item.path} aria-current={active ? "page" : undefined} onClick={() => setSidebarOpen(false)} className={cn("sidebar-nav-item flex items-center gap-3 rounded-lg border-l-2 px-2 py-1.5 text-[16px] lg:px-3 lg:py-2 lg:text-[18px] font-semibold leading-6 lg:leading-7 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00B4BC]", active ? "border-[#00B4BC] bg-white/10 text-white" : "border-transparent text-white hover:bg-white/5")}><item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-[#00B4BC]" : "text-slate-200")} strokeWidth={1.8} /><span>{item.label}</span></Link>;
             })}</div>;
-            return group.label === "OMR সরঞ্জাম" || group.label === "সহায়তা" ? <details key={group.label} open={group.items.some(item => location.pathname === item.path)} className="sidebar-nav-group group"><summary className="cursor-pointer rounded px-3 py-2 text-[18px] font-semibold leading-7 text-white hover:text-white">{group.label}</summary><div className="mt-1">{links}</div></details> : <section key={group.label}>{group.label && <h2 className="mb-2 px-3 text-sm font-semibold text-slate-200">{group.label}</h2>}{links}</section>;
+            return group.label === "OMR সরঞ্জাম" || group.label === "সহায়তা" ? <details key={group.label} open={group.items.some(item => location.pathname === item.path)} className="sidebar-nav-group group"><summary className="cursor-pointer rounded px-2 py-1.5 text-[16px] lg:px-3 lg:py-2 lg:text-[18px] font-semibold leading-6 lg:leading-7 text-white hover:text-white">{group.label}</summary><div className="mt-1">{links}</div></details> : <section key={group.label}>{group.label && <h2 className="mb-2 px-3 text-sm font-semibold text-slate-200">{group.label}</h2>}{links}</section>;
           })}
         </nav>
 

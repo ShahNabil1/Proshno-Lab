@@ -1,3 +1,4 @@
+import { selectUniqueQuestions } from "@/lib/selectUniqueQuestions";
 import { ALL_TYPES, LANGUAGE_TYPE_LABELS, allowedQuestionTypes, isLanguageType } from "@/lib/languageQuestionTypes";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,7 +81,7 @@ export default function AutoQuestionCreate() {
       if (error || data?.error) { toast.error(data?.error || "পেমেন্টের প্রশ্নপত্র লোড করা যায়নি"); return; }
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(data.questions));
       sessionStorage.setItem("viewPaperContext", JSON.stringify(data.context));
-      sessionStorage.setItem("viewPaperMeta", JSON.stringify(data.meta));
+      sessionStorage.setItem("viewPaperMeta", JSON.stringify({ ...data.meta, purchaseMode: "payg" }));
       navigate("/dashboard/view-paper");
     }).finally(() => setGenerating(false));
   }, [user?.id, navigate]);
@@ -119,7 +120,7 @@ export default function AutoQuestionCreate() {
     const cls=classes.find(c=>c.id===sub.class_id)?.name || "";
     const chosen=chapters.filter(c=>chapterIds.includes(String(c.id)) && c.subject_id===sub.id);
     return chosen.length ? chosen.flatMap(c=>allowedQuestionTypes(cls,sub.name,c.name)) : allowedQuestionTypes(cls,sub.name);
-  }))];
+  }))].filter(type => type !== "descriptive");
   useEffect(()=>{
     setEnabledTypes(prev=>Object.fromEntries(ALL_TYPES.map(t=>[t,scopedTypes.includes(t) && Boolean(prev[t])])));
     setCounts(prev=>Object.fromEntries(ALL_TYPES.map(t=>[t,prev[t] ?? 1])));
@@ -199,12 +200,13 @@ export default function AutoQuestionCreate() {
   const fetchAllIds = async (ids: number[], type: QType) => {
     const all: number[] = [];
     const PAGE = 1000;
-    for (let from = 0; from < 50000; from += PAGE) {
+    for (let from = 0; ; from += PAGE) {
       const { data, error } = await supabase
         .from("questions")
         .select("id")
         .in("chapter_id", ids)
         .eq("type", type)
+        .order("id")
         .range(from, from + PAGE - 1);
       if (error) throw error;
       const rows = (data || []) as { id: number }[];
@@ -278,15 +280,17 @@ export default function AutoQuestionCreate() {
       const picked: any[] = [];
       for (const t of activeTypes) {
         const allIds = await fetchAllIds(ids, t);
-        const pickIds = shuffle(allIds).slice(0, counts[t]);
-        if (pickIds.length === 0) continue;
-        const { data } = await supabase
-          .from("questions")
-          .select("id, class_id, subject_id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
-          .in("id", pickIds);
-        const rows = (data || []) as any[];
-        const order = new Map(pickIds.map((id, i) => [id, i]));
-        rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+        const rows = await selectUniqueQuestions(shuffle(allIds), counts[t], async pickIds => {
+          const { data, error } = await supabase
+            .from("questions")
+            .select("id, class_id, subject_id, question, option_a, option_b, option_c, option_d, correct_answer, type, explanation, board_references, university_references, topic_id, chapter_id, stimulus_group_id, stimulus_text, creative_data")
+            .in("id", pickIds);
+          if (error) throw error;
+          return data || [];
+        });
+        if (rows.length !== counts[t]) {
+          throw new Error(`${TYPE_LABELS[t] || t}: ${toBanglaNum(counts[t])} \u099f\u09bf \u0986\u09b2\u09be\u09a6\u09be \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u099a\u09be\u0993\u09df\u09be \u09b9\u09df\u09c7\u099b\u09c7, \u09aa\u09be\u0993\u09df\u09be \u0997\u09c7\u099b\u09c7 ${toBanglaNum(rows.length)} \u099f\u09bf\u0964 \u0986\u09b0\u0993 \u0985\u09a7\u09cd\u09af\u09be\u09df \u09af\u09c1\u0995\u09cd\u09a4 \u0995\u09b0\u09c1\u09a8 \u0985\u09a5\u09ac\u09be \u09b8\u0982\u0996\u09cd\u09af\u09be \u0995\u09ae\u09be\u09a8\u0964`);
+        }
         picked.push(...rows);
       }
 
@@ -325,6 +329,7 @@ export default function AutoQuestionCreate() {
 
   return (
     <div className="auto-create-workspace max-w-5xl mx-auto space-y-5">
+      <p className="text-sm text-slate-600">{"\u09a1\u09c1\u09aa\u09cd\u09b2\u09bf\u0995\u09c7\u099f \u09ac\u09be\u09a6 \u09a6\u09bf\u09df\u09c7 \u09a8\u09bf\u09b0\u09cd\u09ac\u09be\u099a\u09bf\u09a4 \u09b8\u0982\u0996\u09cd\u09af\u0995 \u0986\u09b2\u09be\u09a6\u09be \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u09a8\u09c7\u0993\u09df\u09be \u09b9\u09ac\u09c7\u0964 \u09aa\u09b0\u09cd\u09af\u09be\u09aa\u09cd\u09a4 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u09a8\u09be \u09a5\u09be\u0995\u09b2\u09c7 \u099c\u09be\u09a8\u09be\u09a8\u09cb \u09b9\u09ac\u09c7\u0964"}</p>
       {/* Stepper */}
       <div className="auto-stepper grid grid-cols-3 gap-2 sm:gap-3 mb-4">
         {STEPS.map(s => {
@@ -344,7 +349,7 @@ export default function AutoQuestionCreate() {
                 !active && !done && "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
               )}
             >
-              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm", active ? "bg-[#0A1E38] text-white" : done ? "bg-[#00B4BC]/10 text-[#006A70]" : "bg-slate-100 text-slate-400")}>{done ? <CheckCircle2 className="h-4 w-4" /> : toBanglaNum(s.id)}</span>
+              <span aria-hidden="true" className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm", active ? "bg-[#0A1E38] text-white" : done ? "bg-[#00B4BC]/10 text-[#006A70]" : "bg-slate-100 text-slate-400")}>{done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}</span>
               <span>{s.label}</span>
             </button>
           );
@@ -352,7 +357,7 @@ export default function AutoQuestionCreate() {
       </div>
 
       <Card className="border border-slate-200 rounded-2xl bg-white shadow-[0_4px_24px_-12px_#0a1e3820]">
-        <CardContent className="p-5 sm:p-7 md:p-8">
+        <CardContent className="p-4 sm:p-7 md:p-8">
           {step === 1 && (
             <div>
               <h2 className="font-heading text-xl md:text-2xl font-bold text-slate-800 mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
@@ -475,27 +480,34 @@ export default function AutoQuestionCreate() {
                   return (
                     <div
                       key={t}
+                      role="group"
+                      tabIndex={max > 0 ? 0 : undefined}
+                      onClick={() => { if (max > 0) setEnabledTypes(p => ({ ...p, [t]: !p[t] })); }}
+                      onKeyDown={(e) => { if (e.target === e.currentTarget && max > 0 && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setEnabledTypes(p => ({ ...p, [t]: !p[t] })); } }}
                       className={cn(
                         "border border-slate-200 rounded-xl p-4 sm:p-5 transition-colors bg-white",
+                        max > 0 ? "cursor-pointer" : "cursor-not-allowed",
                         on && "border-[#00B4BC] bg-[#00B4BC]/5"
                       )}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <label className="flex items-center gap-2.5 cursor-pointer font-bold text-base text-slate-800 select-none">
+                        <div className="flex items-center gap-2.5 font-bold text-base text-slate-800 select-none">
                           <Checkbox
+                            aria-label={`${TYPE_LABELS[t]} প্রশ্নের সংখ্যা`}
+                            onClick={(e) => e.stopPropagation()}
                             checked={on}
                             disabled={max === 0}
                             onCheckedChange={(chk) => setEnabledTypes(p => ({ ...p, [t]: !!chk }))}
                             className="h-4 w-4 rounded-xl border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                           />
                           <span>{TYPE_LABELS[t]} প্রশ্নের সংখ্যা</span>
-                        </label>
+                        </div>
                         <Badge variant="outline" className="text-sm font-medium border-slate-200 bg-slate-100 text-slate-700 rounded-xl px-2.5 py-0.5">
                           {countsLoading ? "..." : `উপলব্ধ ${toBanglaNum(max)}`}
                         </Badge>
                       </div>
                       {on && max > 0 && (
-                        <div className="pl-7 pt-2">
+                        <div className="pl-7 pt-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-3">
                             <Button
                               type="button"
@@ -548,7 +560,7 @@ export default function AutoQuestionCreate() {
                             />
                           </div>
                           <div className="mt-3 flex flex-wrap gap-1.5" aria-label={`${TYPE_LABELS[t]} দ্রুত সংখ্যা নির্বাচন`}>
-                            {[10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200].filter(n => n <= sliderMax).map(n => (
+                            {(t === "cq" ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15] : t === "short" ? [3, 5, 7, 8, 12, 15, 20] : [10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]).filter(n => n <= sliderMax).map(n => (
                               <button key={n} type="button" aria-pressed={Math.min(counts[t], sliderMax) === n} onClick={() => setCounts(p => ({ ...p, [t]: n }))} className={cn("h-8 min-w-10 border px-2 text-sm font-semibold", Math.min(counts[t], sliderMax) === n ? "border-[#0A1E38] bg-[#0A1E38] text-white" : "border-slate-300 bg-white text-slate-700 hover:border-[#00858C] hover:text-[#00858C]")}>{toBanglaNum(n)}</button>
                             ))}
                           </div>

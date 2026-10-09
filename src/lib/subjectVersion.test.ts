@@ -43,7 +43,7 @@ describe("subject version grouping", () => {
     expect(isSharedBanglaEnglishSubject(subjects[0], classes)).toBe(true);
     expect(isSharedBanglaEnglishSubject(subjects[1], classes)).toBe(false);
     expect(isSharedBanglaEnglishSubject(subjects[2], classes)).toBe(false);
-    expect(isSharedBanglaEnglishSubject({ id: 127, class_id: 31, name: "English 2nd Paper" }, classes)).toBe(true);
-    expect(isSharedBanglaEnglishSubject({ id: 128, class_id: 32, name: "বাংলা ২য় পত্র" }, classes)).toBe(true);
+    expect(isSharedBanglaEnglishSubject({ class_id: 31, name: "English 2nd Paper" }, classes)).toBe(true);
+    expect(isSharedBanglaEnglishSubject({ class_id: 32, name: "বাংলা ২য় পত্র" }, classes)).toBe(true);
   });
 });

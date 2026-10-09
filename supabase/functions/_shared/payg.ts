@@ -1,9 +1,10 @@
+import { selectUniqueQuestions } from "../../../src/lib/selectUniqueQuestions.ts";
 export const questionRate = (type: string) => type === "cq" ? 100 : 25;
 
 // Reserve a fixed set before payment. Prices and availability are resolved on
 // the server; retrying delivery returns this same set instead of new questions.
 export async function preparePayg(admin: any, request: any) {
-  const chapterIds = [...new Set((request?.chapter_ids || []).map(Number))];
+  const chapterIds = [...new Set<number>((request?.chapter_ids || []).map(Number))];
   if (!chapterIds.length || chapterIds.length > 200 || chapterIds.some(id => !Number.isSafeInteger(id) || id < 1)) throw new Error("Invalid chapters");
   const { data: chapters, error } = await admin.from("chapters").select("id, name, subject_id").in("id", chapterIds).eq("is_active", true);
   if (error || chapters?.length !== chapterIds.length) throw new Error("Selected chapters are unavailable");
@@ -29,7 +30,15 @@ export async function preparePayg(admin: any, request: any) {
     }
     if (ids.length < count) throw new Error(`Not enough ${type} questions; choose fewer before paying`);
     for (let i = ids.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-    questionIds.push(...ids.slice(0, count));
+    const selected = await selectUniqueQuestions(ids, count, async batch => {
+      const { data, error } = await admin.from("questions")
+        .select("id, type, question, stimulus_text, creative_data")
+        .in("id", batch);
+      if (error) throw error;
+      return data || [];
+    });
+    if (selected.length !== count) throw new Error(`Not enough unique ${type} questions: requested ${count}, available ${selected.length}; add chapters or choose fewer before paying`);
+    questionIds.push(...selected.map(question => question.id));
     counts[type] = count;
     totalPaisa += count * questionRate(type);
   }

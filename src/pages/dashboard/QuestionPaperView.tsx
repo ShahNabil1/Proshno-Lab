@@ -1,9 +1,13 @@
+import { paperPdfFilename } from "@/lib/paperPdfFilename";
+import PrintableDocument from "@/components/paper/PrintableDocument";
+import { flushSync } from "react-dom";
+import { buildPrintablePages, PAPER_DIMENSIONS, waitForPrintableAssets } from "@/lib/printableDocument";
 import AutoFitQuestionGrid from "@/components/AutoFitQuestionGrid";
 import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from '@/lib/englishPaperSections';
 import { languageSubject, patternGrade } from '@/lib/languageQuestionTypes';
 import { isLanguageType, questionTypeLabel, questionMarks } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
-import { useState, useEffect, useRef, useCallback, useMemo, Fragment, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo, Fragment, type CSSProperties } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,11 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Download, Settings, Plus, Minus, Save, Pencil, Upload, SlidersHorizontal, Tv } from "lucide-react";
+import { CheckCircle, AlignCenter, AlignJustify, AlignLeft, AlignRight, Download, Settings, Plus, Minus, Save, Pencil, Upload, SlidersHorizontal, Tv } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/LatexRenderer";
+import { EquationBoldContext, AnswerLineFitContext } from "@/contexts/EquationStyleContext";
 import FloatingToolbar from "@/components/FloatingToolbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +58,7 @@ interface QuestionRow {
 }
 
 interface PaperMeta {
+  purchaseMode?: string;
   instituteName: string;
   instituteUpazila?: string;
   instituteDistrict?: string;
@@ -68,6 +74,12 @@ interface PaperMeta {
   topicNames?: string[];
 }
 
+function isPaperMeta(value: unknown): value is PaperMeta {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const meta = value as Record<string, unknown>;
+  return ["instituteName", "className", "subjectName", "programName"].every(key => typeof meta[key] === "string")
+    && Array.isArray(meta.chapterNames) && meta.chapterNames.every(name => typeof name === "string");
+}
 type PaperSize = "A4" | "Letter" | "Legal" | "A5";
 type PaperOrientation = "portrait" | "landscape";
 type PreviewLayoutMode = "continuous" | "print";
@@ -127,26 +139,6 @@ function getQuestionDuplicateSignature(question: QuestionRow): string {
     base.push(...collectCreativeQuestionText(question.creative_data));
   }
   return `${question.type.toLowerCase()}::${normalizeDuplicateText(base.join(" "))}`;
-}
-
-function duplicateTextSimilarity(left: string, right: string): number {
-  if (left === right) return 1;
-  if (left.length < 24 || right.length < 24) return 0;
-  const leftPairs = new Map<string, number>();
-  for (let i = 0; i < left.length - 1; i += 1) {
-    const pair = left.slice(i, i + 2);
-    leftPairs.set(pair, (leftPairs.get(pair) || 0) + 1);
-  }
-  let overlap = 0;
-  for (let i = 0; i < right.length - 1; i += 1) {
-    const pair = right.slice(i, i + 2);
-    const available = leftPairs.get(pair) || 0;
-    if (available > 0) {
-      overlap += 1;
-      leftPairs.set(pair, available - 1);
-    }
-  }
-  return (2 * overlap) / (left.length + right.length - 2);
 }
 
 // Preserve the user's selection; similar wording is only a duplicate marker.
@@ -220,14 +212,13 @@ const formatAnswerContent = (raw: string): string => {
 };
 
 // Organized answer body (keeps RTE formatting, structures bulk plain text)
-const AnswerContent = ({ text, className = "" }: { text: string; className?: string }) => (
+const AnswerContent = memo(({ text, className = "" }: { text: string; className?: string }) => (
   <div className={`answer-content ${className}`}>
     <LatexRenderer text={formatAnswerContent(text)} />
   </div>
-);
+));
 
-// Print-friendly MCQ explanation, following the familiar answer-sheet layout:
-// a standalone heading followed by the worked explanation.
+// Print-friendly MCQ explanation.
 const McqExplanation = ({ text, isEnglishVersion = false }: { text: string; isEnglishVersion?: boolean }) => (
   <div className="mcq-explanation" style={{ position: "relative", marginTop: "9px", padding: "20px 8px 6px", border: "1px solid #777", borderRadius: "4px", fontSize: "0.9em", lineHeight: 1.5, breakInside: "avoid" }}>
     <div style={{ position: "absolute", top: "-1px", left: "-1px", padding: "1px 6px 2px", borderRadius: "3px 0 3px 0", background: "#050505", color: "#fff", fontWeight: 700, lineHeight: 1.25 }}>
@@ -237,13 +228,26 @@ const McqExplanation = ({ text, isEnglishVersion = false }: { text: string; isEn
   </div>
 );
 
+function QuestionNumberGapControl({ value, onCommit }: { value: number; onCommit: (value: number) => void }) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  const commit = (next: number) => { setDraft(next); onCommit(next); };
+  return <div className="mt-3 space-y-2 rounded-md border border-border/70 bg-muted/30 p-3">
+    <div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">নম্বর ও প্রশ্নের গ্যাপ</span><span className="text-sm font-semibold tabular-nums">{draft}px</span></div>
+    <div className="flex items-center gap-3">
+      <Button size="icon" variant="outline" className="h-9 w-9 shrink-0" aria-label="নম্বর ও প্রশ্নের গ্যাপ কমান" disabled={draft === 0} onClick={() => commit(Math.max(0, draft - 1))}><Minus className="h-4 w-4" /></Button>
+      <Slider aria-label="নম্বর ও প্রশ্নের গ্যাপ" className="flex-1 min-w-0 h-10 [&_[role=slider]]:h-7 [&_[role=slider]]:w-7" value={[draft]} min={0} max={24} step={1} onValueChange={([next]) => setDraft(next)} onValueCommit={([next]) => commit(next)} />
+      <Button size="icon" variant="outline" className="h-9 w-9 shrink-0" aria-label="নম্বর ও প্রশ্নের গ্যাপ বাড়ান" disabled={draft === 24} onClick={() => commit(Math.min(24, draft + 1))}><Plus className="h-4 w-4" /></Button>
+    </div>
+  </div>;
+}
 const CorrectAnswerBadge = ({ question, isEnglishVersion = false }: { question: QuestionRow; isEnglishVersion?: boolean }) => {
   const options = [question.option_a, question.option_b, question.option_c, question.option_d];
   const correctIndex = options.findIndex((_, index) => isCorrectOption(question.correct_answer, index, options));
   if (correctIndex < 0) return null;
   const labels = isEnglishVersion ? ["a", "b", "c", "d"] : ["ক", "খ", "গ", "ঘ"];
   return (
-    <span style={{ position: "absolute", right: "1px", top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: "22px", height: "22px", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#050505", color: "#fff", fontWeight: 700, lineHeight: 1, zIndex: 1 }}>
+    <span className="col-span-full mcq-correct-answer-badge" style={{ gridColumn: "1 / -1", justifySelf: "end", marginRight: "-27px", marginTop: "-22px", breakInside: "avoid", pageBreakInside: "avoid", display: "inline-flex", flexShrink: 0, width: "22px", height: "22px", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#050505", color: "#fff", fontWeight: 700, lineHeight: 1, zIndex: 1 }}>
       {labels[correctIndex]}
     </span>
   );
@@ -271,6 +275,7 @@ export default function QuestionPaperView() {
   const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
+  const [removedDuplicateQuestions, setRemovedDuplicateQuestions] = useState<QuestionRow[] | null>(null);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const autoSaveInFlight = useRef(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
@@ -278,6 +283,7 @@ export default function QuestionPaperView() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [pageNumberOpen, setPageNumberOpen] = useState(false);
+  const retainedAnswers = useRef(false);
   const [paginationRevision, setPaginationRevision] = useState(0);
   const [docxExporting, setDocxExporting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(isLocalMockAdminEnabled());
@@ -326,24 +332,27 @@ export default function QuestionPaperView() {
     optionStyle: "none" as OptionStyle,
     cqOptionStyle: "bracket" as OptionStyle,
     sqOptionStyle: "bracket" as OptionStyle,
-    questionNumberStyle: "bn-padded-danda" as QuestionNumberStyle,
+    questionNumberStyle: "bn-padded-danda" as CqNumberStyle,
     cqNumberStyle: "box" as CqNumberStyle,
+    sqNumberStyle: "bn-padded-danda" as CqNumberStyle,
     questionNumberGap: 6,
     fontLang: "bangla",
     fontSize: 14,
+    equationBold: true,
+    answerLineFit: false,
     columns: 2 as ColumnCount,
     columnDivider: true,
     headerSectionBorderStyle: "none" as SectionBorderStyle,
     headerSectionBorderColor: "#111827",
     questionSectionBorderStyle: "none" as SectionBorderStyle,
     questionSectionBorderColor: "#111827",
-    questionGap: 6,
+    questionGap: 0,
     columnGap: 15,
     textAlign: "justify" as TextAlign,
     mcqOptionLayouts: {} as Record<string, McqOptionLayout>,
     answeringColumns: 2 as 1 | 2,
     manualSectionColumns: {} as Record<string, 1 | 2>,
-    showDuplicateMarker: false,
+    showDuplicateMarker: true,
     showSheet: false,
     sheetInstructorName: true,
     sheetInstructorProfile: false,
@@ -404,13 +413,18 @@ export default function QuestionPaperView() {
     descToAnswer: 0,
   });
 
+  const answerFitPreference = useMemo(() => ({
+    enabled: settings.answerLineFit, fontSize: settings.fontSize,
+    layoutKey: JSON.stringify([settings.columns, settings.columnGap, settings.paperSize, settings.manualSectionColumns]),
+  }), [settings.answerLineFit, settings.fontSize, settings.columns, settings.columnGap, settings.paperSize, settings.manualSectionColumns]);
+
   useEffect(() => {
-    const paperId = searchParams.get("paper_id");
+    const paperId = searchParams.get("paper_id") || searchParams.get("id");
     const qData = sessionStorage.getItem("viewPaperQuestions");
     const mData = sessionStorage.getItem("viewPaperMeta");
     const savedSettings = sessionStorage.getItem("viewPaperSettings");
 
-    if (qData && mData) {
+    if (qData && mData && !searchParams.get("action")) {
       // Prioritize sessionStorage (fresh generation or returning from "add more")
       const parsedQuestions = JSON.parse(qData);
       const parsedMeta = JSON.parse(mData);
@@ -461,9 +475,16 @@ export default function QuestionPaperView() {
       // Load saved paper from DB
       setCurrentPaperId(paperId);
       supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           if (!data) return;
-          const loadedMeta = data.meta as PaperMeta;
+          if (!isPaperMeta(data.meta)) { toast.error("প্রশ্নপত্রের তথ্য সঠিক নয়।"); return; }
+          const loadedMeta: PaperMeta = { ...(data.meta as unknown as PaperMeta) };
+          if (!loadedMeta.purchaseMode && user) {
+            const { data: payments } = await supabase.from("bkash_payments").select("selected_packages").eq("user_id", user.id).eq("status", "completed");
+            const ids = new Set(data.question_ids || []);
+            const paid = (payments || []).some(payment => Array.isArray(payment.selected_packages) && payment.selected_packages.some((order: any) => order?.kind === "payg" && order.question_ids?.length === ids.size && order.question_ids.every((id: number) => ids.has(id))));
+            if (paid) loadedMeta.purchaseMode = "payg";
+          }
           const loadedSettings = (data.settings as any) || {};
           setMeta(loadedMeta);
           setSettings(prev => ({
@@ -521,6 +542,7 @@ export default function QuestionPaperView() {
 
   const handleEditableClick = useCallback((e: React.MouseEvent<HTMLElement>, questionId?: number) => {
     e.stopPropagation();
+    if (meta?.purchaseMode === "payg") return;
     const el = e.currentTarget;
     const isAlwaysEditableHeader = ALWAYS_EDITABLE_HEADER_FIELDS.has(el.dataset.editable || "");
     if (!editingMode && (questionId !== undefined || !isAlwaysEditableHeader)) return;
@@ -528,7 +550,34 @@ export default function QuestionPaperView() {
     el.focus();
     setActiveEditEl(el);
     setActiveQuestionId(questionId ?? null);
-  }, [editingMode]);
+  }, [editingMode, meta?.purchaseMode]);
+
+  // Delegate editing to the real paper tree, including answer bodies and
+  // fields without an individual React click handler.
+  useEffect(() => {
+    const paper = paperRef.current;
+    if (!paper || !editingMode || meta?.purchaseMode === "payg") return;
+    const click = (event: MouseEvent) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (!target || target.closest("button, input, select")) return;
+      const el = target.closest<HTMLElement>(".latex-renderer")
+        || target.closest<HTMLElement>("[data-editable], .paper-question-number, .cq-reference-answer-label, .cq-reference-answer-title, td, th, h1, h2, p, span")
+        || target;
+      if (el === paper || !paper.contains(el)) return;
+      event.stopPropagation();
+      if (activeEditEl === el && el.isContentEditable) return;
+      if (activeEditEl) activeEditEl.contentEditable = "false";
+      const question = el.closest<HTMLElement>('[data-editable^="mcq-"], [data-editable^="short-"], [data-editable^="cq-"], [data-editable^="desc-"]');
+      const id = question?.dataset.editable?.match(/-(\d+)$/)?.[1];
+      if (!el.dataset.editable) el.dataset.editable = "paper-field";
+      el.contentEditable = "true";
+      el.focus();
+      setActiveEditEl(el);
+      setActiveQuestionId(id ? Number(id) : null);
+    };
+    paper.addEventListener("click", click, true);
+    return () => paper.removeEventListener("click", click, true);
+  }, [editingMode, activeEditEl, meta?.purchaseMode]);
 
   const openMcqOptionAdjuster = useCallback(() => {
     const firstMcq = questions.find(q => q.type === "mcq");
@@ -555,6 +604,7 @@ export default function QuestionPaperView() {
     }
     setActiveEditEl(null);
     setActiveQuestionId(null);
+    if (activeEditEl) setPaginationRevision(value => value + 1);
   }, [activeEditEl]);
 
   const handleMcqOptionAdjustChange = useCallback((enabled: boolean) => {
@@ -575,6 +625,7 @@ export default function QuestionPaperView() {
     };
 
     const scrollHoveredQuestion = (event: KeyboardEvent) => {
+      if (editingMode || (event.target instanceof HTMLElement && event.target.isContentEditable)) return;
       if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
       if (hoveredQuestionIdRef.current === null) return;
 
@@ -591,7 +642,7 @@ export default function QuestionPaperView() {
       document.removeEventListener("mousemove", updateHoveredQuestion);
       document.removeEventListener("keydown", scrollHoveredQuestion);
     };
-  }, []);
+  }, [editingMode]);
 
   const handleDeleteQuestion = useCallback(() => {
     if (activeQuestionId !== null) {
@@ -714,45 +765,34 @@ export default function QuestionPaperView() {
     };
   }, [editingMode, handleCloseToolbar]);
 
-  const handleDownload = () => {
-    if (!paperRef.current) return;
-
-    // Close any editing state
-    paperRef.current.querySelectorAll("[contenteditable]").forEach(el => {
-      (el as HTMLElement).contentEditable = "false";
-    });
-    handleCloseToolbar();
-
-    // Set dynamic page size via data attribute on <html>
-    const pageSizeMap: Record<PaperSize, string> = {
-      A4: "210mm 297mm",
-      Letter: "8.5in 11in",
-      Legal: "8.5in 14in",
-      A5: "148mm 210mm",
-    };
-    const portraitSize = pageSizeMap[settings.paperSize].split(" ");
-    const orientedSize = settings.paperOrientation === "landscape" ? `${portraitSize[1]} ${portraitSize[0]}` : pageSizeMap[settings.paperSize];
-    document.documentElement.setAttribute("data-print-size", orientedSize);
-
-    // Wait for images/LaTeX to finish rendering
-    const images = paperRef.current.querySelectorAll("img");
-    const imagePromises = Array.from(images).map(img =>
-      img.complete ? Promise.resolve() : new Promise<void>(resolve => {
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-      })
-    );
-
-    Promise.all([...imagePromises, document.fonts.ready]).then(() => {
-      // Images can change the natural height of their question after the
-      // initial render. Rebuild the page ranges with their final dimensions
-      // before opening the print dialog.
-      setPaginationRevision(revision => revision + 1);
-      // Allow React pagination and KaTeX layout to settle.
-      setTimeout(() => {
+  const [printPreparing, setPrintPreparing] = useState(false);
+  const handleDownload = async () => {
+    if (!paperRef.current || printPreparing) return;
+    setPrintPreparing(true);
+    try {
+      paperRef.current.querySelectorAll<HTMLElement>("[contenteditable]").forEach(el => { el.contentEditable = "false"; });
+      handleCloseToolbar();
+      // Commit the completed shared pages before invoking native print.
+      const pages = await preparePrintablePages();
+      if (!pages.length) throw new Error("No printable pages are available");
+      flushSync(() => setPagedPreviewPages(pages));
+      await waitForPrintableAssets(document.querySelector<HTMLElement>('.paper-paged-print-source')!);
+      const previousTitle = document.title;
+      const restoreTitle = () => { document.title = previousTitle; };
+      // Chrome uses the page title as its suggested Save as PDF filename.
+      document.title = paperPdfFilename(meta?.subjectName, settings.showAnswerSheet || settings.chirkutHideQuestions).replace(/\.pdf$/, "");
+      window.addEventListener("afterprint", restoreTitle, { once: true });
+      try {
         window.print();
-      }, 500);
-    });
+      } catch (error) {
+        window.removeEventListener("afterprint", restoreTitle);
+        restoreTitle();
+        throw error;
+      }
+    } catch (error) {
+      console.error("PDF preparation failed", error);
+      toast.error("PDF তৈরি করা যায়নি: " + (error instanceof Error ? error.message : String(error)));
+    } finally { setPrintPreparing(false); }
   };
 
   const handleOpenSmartBoard = () => {
@@ -826,7 +866,7 @@ export default function QuestionPaperView() {
         const params = new URLSearchParams(window.location.search);
         params.set("paper_id", data.id);
         window.history.replaceState({}, "", `${window.location.pathname}?${params}`);
-        toast.success("প্রশ্নপত্র স্বয়ংক্রিয়ভাবে সেভ হয়েছে");
+
       } catch (error) {
         autoSaveInFlight.current = false;
         console.error("Auto-save failed:", error);
@@ -846,11 +886,31 @@ export default function QuestionPaperView() {
   useEffect(() => {
     if (!questions.length || autoMcqMode.current === mcqOnly) return;
     autoMcqMode.current = mcqOnly;
-    setSettings(prev => ({ ...prev, showMarksBox: mcqOnly, optionStyle: mcqOnly ? 'none' : 'bracket' }));
+    setSettings(prev => ({ ...prev, showMarksBox: mcqOnly, optionStyle: 'none' }));
   }, [questions.length, mcqOnly]);
   const isEnglishPaper = !mcqOnly && languageSubject(meta?.subjectName || '') === 'english1' && patternGrade(meta?.className || '') === 8;
   const englishPaper = englishPaperSections(sortedQuestions);
-  const mcqQuestions = sortedQuestions.filter(q => q.type === "mcq");
+  const mcqQuestions = (() => {
+    const items = sortedQuestions.filter(q => q.type === "mcq");
+    const repeated = findRepeatedStimuli(items, q => q.stimulus_text);
+    const keyOf = (q: QuestionRow) => q.stimulus_group_id
+      ? `id:${q.stimulus_group_id}`
+      : repeated.has(normalizeStimulusKey(q.stimulus_text))
+        ? `stimulus:${normalizeStimulusKey(q.stimulus_text)}` : null;
+    const members = new Map<string, QuestionRow[]>();
+    items.forEach(q => {
+      const key = keyOf(q);
+      if (key) members.set(key, [...(members.get(key) || []), q]);
+    });
+    const emitted = new Set<string>();
+    return items.flatMap(q => {
+      const key = keyOf(q);
+      if (!key) return [q];
+      if (emitted.has(key)) return [];
+      emitted.add(key);
+      return members.get(key) || [q];
+    });
+  })();
   const cqQuestions = sortedQuestions.filter(q => q.type === "cq");
   const shortQuestions = sortedQuestions.filter(q => q.type === "short");
   const descriptiveQuestions = sortedQuestions.filter(q => q.type === "descriptive");
@@ -1002,8 +1062,11 @@ export default function QuestionPaperView() {
     }
   };
 
-  const formatQuestionNumber = (n: number): string =>
-    formatQuestionNumberByStyle(n, settings.questionNumberStyle);
+  const formatQuestionNumber = (n: number, style: CqNumberStyle = settings.questionNumberStyle): React.ReactNode => {
+    if (style === "box") return <span className="cq-number-badge cq-number-badge--box">{isEnglishVersion ? String(n).padStart(2, "0") : toBanglaNum(n).padStart(2, "০")}</span>;
+    if (style === "pointer") return <span className="cq-number-badge cq-number-badge--pointer"><span>{isEnglishVersion ? n : toBanglaNum(n)}</span><span aria-hidden="true">▶</span></span>;
+    return formatQuestionNumberByStyle(n, style);
+  };
 
   const renderCqQuestionNumber = (n: number) => {
     const number = isEnglishVersion ? String(n) : toBanglaNum(n);
@@ -1021,7 +1084,7 @@ export default function QuestionPaperView() {
   };
 
   const getMcqOptionLayout = (q: QuestionRow): McqOptionLayout =>
-    settings.mcqOptionLayouts[String(q.id)] || (isEnglishPaper ? "4x1" : shouldStackOptions(q) ? "1x4" : "2x2");
+    settings.mcqOptionLayouts[String(q.id)] || "4x1";
 
   const getMcqOptionGridColumns = (q: QuestionRow): string => {
     const layout = getMcqOptionLayout(q);
@@ -1120,166 +1183,108 @@ export default function QuestionPaperView() {
 
   const editableClass = editingMode ? "outline-none cursor-text" : "outline-none cursor-default";
 
-  /* Paper size widths for preview */
-  const paperPreviewWidths: Record<PaperSize, string> = {
-    A4: "794px", Letter: "816px", Legal: "816px", A5: "560px",
-  };
-  const landscapePreviewWidths: Record<PaperSize, string> = {
-    A4: "1123px", Letter: "1056px", Legal: "1344px", A5: "794px",
-  };
-  const previewPaperWidth = settings.paperOrientation === "landscape" ? landscapePreviewWidths[settings.paperSize] : paperPreviewWidths[settings.paperSize];
-  const previewAspectRatios: Record<PaperSize, number> = {
-    A4: 297 / 210, Letter: 11 / 8.5, Legal: 14 / 8.5, A5: 210 / 148,
-  };
-  const previewWidthPx = parseInt(previewPaperWidth, 10) || 794;
-  const previewPageHeight = Math.round(previewWidthPx * (settings.paperOrientation === "landscape" ? 1 / previewAspectRatios[settings.paperSize] : previewAspectRatios[settings.paperSize]));
+  const [portraitWidth, portraitHeight] = PAPER_DIMENSIONS[settings.paperSize];
+  const pageWidthMm = settings.paperOrientation === "landscape" ? portraitHeight : portraitWidth;
+  const pageHeightMm = settings.paperOrientation === "landscape" ? portraitWidth : portraitHeight;
+  const previewPaperWidth = `${pageWidthMm}mm`;
+  const previewPageHeight = pageHeightMm * 96 / 25.4;
   const [pagedPreviewPages, setPagedPreviewPages] = useState<string[]>([]);
 
-  // Build real page-sized snapshots and distribute complete question blocks
-  // between them. Unlike clipping one tall document, this never slices text
-  // through the middle of a question at a page boundary.
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
+  const printableCache = useRef(new Map<string, string[]>());
+  const printablePending = useRef(new Map<string, { promise: Promise<string[]>; required: boolean }>());
+  const [previewPreparing, setPreviewPreparing] = useState(false);
+  const previewProgressRef = useRef<HTMLSpanElement>(null);
+  const previewProgressValue = useRef(0);
+  const showPreviewProgress = useCallback((percent: number) => {
+    previewProgressValue.current = percent;
+    if (previewProgressRef.current) previewProgressRef.current.textContent = `${percent}%`;
+  }, []);
+  const preparePrintablePages = useCallback(async (isCancelled?: () => boolean, onProgress?: (percent: number) => void) => {
       const paper = paperRef.current;
-      if (!paper) return;
-      const paperRect = paper.getBoundingClientRect();
-      const flow = paper.querySelector<HTMLElement>(".combined-question-flow");
-      const allSourceItems = Array.from(paper.querySelectorAll<HTMLElement>(".mcq-print-item"));
-      const sourceItems = allSourceItems.filter((item) => {
-        const rect = item.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-      });
-
-      if (!flow || sourceItems.length === 0) {
-        setPagedPreviewPages([paper.outerHTML.replace(/paper-print-layout-preview/g, "paper-paged-snapshot-source")]);
-        return;
+      if (!paper) return [];
+      onProgress?.(0);
+      await waitForPrintableAssets(paper);
+      onProgress?.(10);
+      if (isCancelled?.()) return [];
+      const layout = {
+        widthMm: pageWidthMm, heightMm: pageHeightMm,
+        columns: isEnglishPaper ? 1 : settings.columns, gap: settings.columnGap,
+        divider: settings.columnDivider ? COLUMN_DIVIDER_STYLE : "",
+        margins: [38 + settings.pageMarginTop, 38 + settings.pageMarginRight,
+          38 + settings.pageMarginBottom, 38 + settings.pageMarginLeft] as [number, number, number, number],
+      };
+      const key = JSON.stringify(layout) + paper.innerHTML + paper.getAttribute("style") + paper.getAttribute("data-answers-hidden");
+      const cachedPages = printableCache.current.get(key);
+      if (cachedPages) { onProgress?.(100); return cachedPages; }
+      const pending = printablePending.current.get(key);
+      if (pending) {
+        if (!isCancelled) pending.required = true;
+        const pages = await pending.promise;
+        onProgress?.(100);
+        return pages;
       }
+      const entry = { promise: Promise.resolve([] as string[]), required: !isCancelled };
+      entry.promise = buildPrintablePages(paper, layout, () => !entry.required && Boolean(isCancelled?.()), onProgress);
+      printablePending.current.set(key, entry);
+      let pages: string[];
+      try { pages = await entry.promise; }
+      finally { if (printablePending.current.get(key) === entry) printablePending.current.delete(key); }
+      if (isCancelled?.()) return [];
+      if (printableCache.current.size >= 4) printableCache.current.delete(printableCache.current.keys().next().value!);
+      printableCache.current.set(key, pages);
+      return pages;
+  }, [settings, pageWidthMm, pageHeightMm, isEnglishPaper]);
 
-      const columnCount = Math.max(1, Number(settings.columns) || 1);
-      const firstUsableHeight = Math.max(240, previewPageHeight - (flow.getBoundingClientRect().top - paperRect.top) - 34);
-      const laterUsableHeight = Math.max(240, previewPageHeight - 76);
-      // The continuous screen preview is intentionally magnified, while PDF
-      // restores the selected font size. Convert measured screen heights back
-      // to print-scale heights or every generated sheet is under-filled.
-      const screenToPrintScale = 1 / PREVIEW_FONT_SCALE;
-      const itemHeights = sourceItems.map((item) => {
-        const style = window.getComputedStyle(item);
-        // getBoundingClientRect() returns the union of every CSS-column
-        // fragment. For an item crossing a column it can therefore look
-        // almost page-high. scrollHeight is its actual intrinsic content
-        // height and remains stable for text, math and loaded images.
-        const intrinsicHeight = item.scrollHeight || item.getBoundingClientRect().height;
-        const measured = (intrinsicHeight + parseFloat(style.marginBottom || "0")) * screenToPrintScale;
-        // An element fragmented at a CSS-column boundary can report the
-        // bounding box of both fragments (almost the full section height).
-        // Its real question height is small, so use a conservative estimate.
-        return measured > previewPageHeight * 0.75 ? Math.max(64, settings.fontSize * 5.5) : measured;
+  useEffect(() => {
+    if (editingMode || !meta || !questions.length) return;
+    let cancelled = false;
+    showPreviewProgress(0);
+    setPreviewPreparing(true);
+    const timer = window.setTimeout(() => {
+      preparePrintablePages(() => cancelled, percent => { if (!cancelled) showPreviewProgress(percent); }).then(pages => {
+        if (!cancelled) { setPagedPreviewPages(pages); setPreviewPreparing(false); }
+      }).catch(error => {
+        if (!cancelled) { setPreviewPreparing(false); console.error("Printable pagination failed", error); }
       });
-      allSourceItems.forEach((item) => item.removeAttribute("data-preview-item-index"));
-      sourceItems.forEach((item, index) => item.setAttribute("data-preview-item-index", String(index)));
+    }, settings.previewLayoutMode === "print" ? 180 : 500);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [settings.previewLayoutMode, preparePrintablePages, questions, meta, isEnglishVersion, paginationRevision, showPreviewProgress, editingMode]);
 
-      const pageRanges: Array<[number, number]> = [];
-      let rangeStart = 0;
-      let pageIndex = 0;
-      while (rangeStart < sourceItems.length) {
-        const capacity = (pageIndex === 0 ? firstUsableHeight : laterUsableHeight) * columnCount;
-        let used = 0;
-        let rangeEnd = rangeStart;
-        while (rangeEnd < sourceItems.length) {
-          const nextHeight = Math.max(24, itemHeights[rangeEnd]);
-          if (rangeEnd > rangeStart && used + nextHeight > capacity) break;
-          used += nextHeight;
-          rangeEnd += 1;
-        }
-        pageRanges.push([rangeStart, Math.max(rangeStart + 1, rangeEnd)]);
-        rangeStart = Math.max(rangeStart + 1, rangeEnd);
-        pageIndex += 1;
-      }
-
-      const pages = pageRanges.map(([start, end], index) => {
-        const clone = paper.cloneNode(true) as HTMLElement;
-        clone.classList.remove("paper-print-layout-preview");
-        clone.classList.add("paper-paged-snapshot-source");
-        clone.style.height = `${previewPageHeight}px`;
-        clone.style.minHeight = `${previewPageHeight}px`;
-        clone.style.overflow = "hidden";
-        const cloneItems = Array.from(clone.querySelectorAll<HTMLElement>(".mcq-print-item"));
-        cloneItems.forEach((item) => {
-          const itemIndex = Number(item.getAttribute("data-preview-item-index"));
-          if (!item.hasAttribute("data-preview-item-index") || itemIndex < start || itemIndex >= end) item.remove();
-          else item.removeAttribute("data-preview-item-index");
-        });
-        const cloneFlow = clone.querySelector<HTMLElement>(".combined-question-flow");
-        if (cloneFlow) {
-          // Chromium can clip the final fragment of nested CSS columns in print.
-          // Give each prepared sheet explicit columns of complete question blocks.
-          const columns = Array.from({ length: columnCount }, () => document.createElement("div"));
-          columns.forEach((column, columnIndex) => {
-            column.className = "paper-explicit-column";
-            if (columnIndex > 0 && settings.columnDivider) {
-              column.style.borderLeft = COLUMN_DIVIDER_STYLE;
-              column.style.paddingLeft = `${settings.columnGap / 2}px`;
-            }
-          });
-          const targetHeight = itemHeights.slice(start, end).reduce((sum, height) => sum + height, 0) / columnCount;
-          let columnIndex = 0;
-          let columnHeight = 0;
-          let itemOffset = start;
-          Array.from(cloneFlow.children).forEach(section => {
-            const retainedItems = Array.from(section.querySelectorAll<HTMLElement>(".mcq-print-item"));
-            if (!retainedItems.length) return;
-            const headingNodes = Array.from(section.children).filter(child => !child.classList.contains("mcq-print-columns") && !child.classList.contains("mcq-print-layout"));
-            retainedItems.forEach((item, itemIndex) => {
-              const height = itemHeights[itemOffset++] || 24;
-              if (columnIndex < columnCount - 1 && columnHeight > 0 && columnHeight + height / 2 > targetHeight) {
-                columnIndex += 1;
-                columnHeight = 0;
-              }
-              if (itemIndex === 0) headingNodes.forEach(heading => columns[columnIndex].appendChild(heading));
-              columns[columnIndex].appendChild(item);
-              columnHeight += height;
-            });
-          });
-          cloneFlow.classList.add("paper-explicit-columns");
-          cloneFlow.style.columnCount = "auto";
-          cloneFlow.style.columnRule = "none";
-          cloneFlow.style.display = "grid";
-          cloneFlow.style.gridTemplateColumns = `repeat(${columnCount}, minmax(0, 1fr))`;
-          cloneFlow.style.gap = `${settings.columnGap}px`;
-          cloneFlow.replaceChildren(...columns);
-        }
-        if (index > 0) {
-          clone.querySelector(".paper-document-header")?.remove();
-          clone.querySelector<HTMLElement>("[data-watermark-screen]")?.remove();
-        }
-        return clone.outerHTML;
-      });
-      sourceItems.forEach((item) => item.removeAttribute("data-preview-item-index"));
-      setPagedPreviewPages(pages);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [settings, questions, meta, isEnglishVersion, previewPageHeight, paginationRevision]);
-
-  /* Detect duplicate questions */
-  const duplicateIds = new Set<number>();
-  if (settings.showDuplicateMarker) {
-    const signatures = questions.map((question) => {
-      const [type, text] = getQuestionDuplicateSignature(question).split("::", 2);
-      return { question, type, text };
-    });
-    for (let i = 0; i < signatures.length; i += 1) {
-      const current = signatures[i];
-      if (!current.text) continue;
-      for (let j = i + 1; j < signatures.length; j += 1) {
-        const candidate = signatures[j];
-        if (current.type !== candidate.type || !candidate.text) continue;
-        if (current.text === candidate.text || duplicateTextSimilarity(current.text, candidate.text) >= 0.94) {
-          duplicateIds.add(current.question.id);
-          duplicateIds.add(candidate.question.id);
-        }
-      }
+  const requestedActionHandled = useRef(false);
+  useEffect(() => {
+    if (requestedActionHandled.current || !meta || !questions.length) return;
+    const action = searchParams.get("action");
+    if (action === "edit") {
+      requestedActionHandled.current = true;
+      if (meta.purchaseMode !== "payg") setEditingMode(true);
+    } else if (action === "print") {
+      requestedActionHandled.current = true;
+      void handleDownload();
     }
-  }
+  }, [meta, questions, searchParams]);
+
+  /* Detect automatically; only compare with retained questions so the first copy survives. */
+  const { allDuplicateIds, redundantDuplicateIds } = useMemo(() => {
+    const allDuplicateIds = new Set<number>();
+    const redundantDuplicateIds = new Set<number>();
+    const retained: { question: QuestionRow; signature: string }[] = [];
+    for (const question of questions) {
+      const signature = getQuestionDuplicateSignature(question);
+      const match = retained.find(item => item.signature === signature);
+      if (match && signature.split("::").slice(1).join("::")) {
+        allDuplicateIds.add(match.question.id);
+        allDuplicateIds.add(question.id);
+        redundantDuplicateIds.add(question.id);
+      } else retained.push({ question, signature });
+    }
+    return { allDuplicateIds, redundantDuplicateIds };
+  }, [questions]);
+  const duplicateIds = settings.showDuplicateMarker ? allDuplicateIds : new Set<number>();
+  const removeDuplicateQuestions = () => {
+    handleCloseToolbar();
+    setRemovedDuplicateQuestions(questions);
+    setQuestions(previous => previous.filter(question => !redundantDuplicateIds.has(question.id)));
+  };
 
   /* Shuffle questions for set code */
   const handleShuffle = useCallback(() => {
@@ -1340,7 +1345,7 @@ export default function QuestionPaperView() {
             <span className="text-sm flex items-center gap-1.5">
               <Pencil className="h-3.5 w-3.5 text-primary" /> এডিটিং মোড
             </span>
-            <Switch checked={editingMode} onCheckedChange={(v) => {
+            <Switch disabled={meta?.purchaseMode === "payg"} checked={editingMode} onCheckedChange={(v) => {
               setEditingMode(v);
               if (!v) handleCloseToolbar();
               if (v) toast.info("এডিটিং মোড অন হয়েছে");
@@ -1354,7 +1359,7 @@ export default function QuestionPaperView() {
         <h4 className="font-heading font-bold text-sm mb-2">প্রশ্নে সংযুক্তি</h4>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm">উত্তরপত্র (বিস্তারিত)</span>
+            <span className="text-sm">উত্তরপত্র</span>
             <Switch checked={settings.showAnswerSheet} onCheckedChange={(v) => updateSetting("showAnswerSheet", v)} />
           </div>
           <div className="flex items-center justify-between">
@@ -1646,13 +1651,15 @@ export default function QuestionPaperView() {
         </div>
 
         <div className="mb-3">
-          <Label className="text-xs text-muted-foreground">প্রশ্নের নম্বর স্টাইল</Label>
-          <div className="question-number-style-selector mt-1 grid grid-cols-4 gap-1.5">
+          <Label className="text-xs text-muted-foreground">MCQ নম্বর স্টাইল</Label>
+          <div className="question-number-style-selector mt-1 grid grid-cols-3 gap-1.5">
             {([
               { value: "bn-padded-danda" as QuestionNumberStyle, label: "০১।", name: "বাংলা দুই অঙ্ক ও দাঁড়ি" },
               { value: "bn-padded-dot" as QuestionNumberStyle, label: "০২.", name: "বাংলা দুই অঙ্ক ও ডট" },
               { value: "bn-dot" as QuestionNumberStyle, label: "১.", name: "বাংলা সংখ্যা ও ডট" },
               { value: "en-padded-dot" as QuestionNumberStyle, label: "01.", name: "ইংরেজি দুই অঙ্ক ও ডট" },
+              { value: "box" as CqNumberStyle, label: "০১", name: "কালো বক্স" },
+              { value: "pointer" as CqNumberStyle, label: "১ ▶", name: "সংখ্যা ও তীর" },
             ]).map((style) => (
               <Button
                 key={style.value}
@@ -1664,7 +1671,7 @@ export default function QuestionPaperView() {
                 title={style.name}
                 onClick={() => updateSetting("questionNumberStyle", style.value)}
               >
-                {style.label}
+                <span className={`cq-number-control-preview ${style.value === "box" || style.value === "pointer" ? `cq-number-control-preview--${style.value}` : ""}`}>{style.label}</span>
               </Button>
             ))}
           </div>
@@ -1698,19 +1705,37 @@ export default function QuestionPaperView() {
               </div>
             </div>
           )}
-          <div className="mt-2 flex items-center gap-3 rounded-md border border-border/70 bg-muted/30 px-2.5 py-2">
-            <span className="shrink-0 text-xs text-muted-foreground">নম্বর ও প্রশ্নের গ্যাপ</span>
-            <Slider
-              aria-label="নম্বর ও প্রশ্নের গ্যাপ"
-              className="flex-1"
-              value={[settings.questionNumberGap]}
-              min={0}
-              max={24}
-              step={1}
-              onValueChange={([value]) => updateSetting("questionNumberGap", value)}
-            />
-            <span className="w-9 text-right text-xs font-semibold tabular-nums">{settings.questionNumberGap}px</span>
-          </div>
+          {shortQuestions.length > 0 && (
+            <div className="mt-2">
+              <Label className="text-xs text-muted-foreground">SQ নম্বর স্টাইল</Label>
+              <div className="mt-1 grid grid-cols-3 gap-1.5">
+                {([
+                  { value: "bn-padded-danda", label: "০১।", name: "বাংলা দুই অঙ্ক ও দাঁড়ি" },
+                  { value: "bn-padded-dot", label: "০২.", name: "বাংলা দুই অঙ্ক ও ডট" },
+                  { value: "bn-dot", label: "১.", name: "বাংলা সংখ্যা ও ডট" },
+                  { value: "en-padded-dot", label: "01.", name: "ইংরেজি দুই অঙ্ক ও ডট" },
+                  { value: "box", label: "০১", name: "কালো বক্স" },
+                  { value: "pointer", label: "১ ▶", name: "সংখ্যা ও তীর" },
+                ] as { value: CqNumberStyle; label: string; name: string }[]).map((style) => (
+                  <Button
+                    key={style.value}
+                    type="button"
+                    size="sm"
+                    variant={settings.sqNumberStyle === style.value ? "default" : "outline"}
+                    className="h-9 px-1"
+                    aria-label={`SQ নম্বর স্টাইল ${style.name}`}
+                    title={style.name}
+                    onClick={() => updateSetting("sqNumberStyle", style.value)}
+                  >
+                    <span className={`cq-number-control-preview ${style.value === "box" || style.value === "pointer" ? `cq-number-control-preview--${style.value}` : ""}`}>
+                      {style.label}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          <QuestionNumberGapControl value={settings.questionNumberGap} onCommit={(value) => updateSetting("questionNumberGap", value)} />
         </div>
 
         <div className="mb-3 space-y-2">
@@ -1774,6 +1799,17 @@ export default function QuestionPaperView() {
         </div>
 
         <div className="mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <Label htmlFor="equation-bold" className="text-sm">Equation bold</Label>
+            <Switch id="equation-bold" checked={settings.equationBold}
+              onCheckedChange={(value) => updateSetting("equationBold", value)} />
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="answer-line-fit" className="text-sm">Answer line auto fit</Label>
+            <Switch id="answer-line-fit" checked={settings.answerLineFit}
+              onCheckedChange={(value) => updateSetting("answerLineFit", value)} />
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Answers only: shrink to 8, then wrap. Adjusted sizes stay fixed when the main font changes.</p>
           <Label className="text-xs text-muted-foreground">ফন্ট সাইজ</Label>
           <div className="flex items-center gap-2 mt-1">
             <Button size="sm" variant="outline" onClick={() => updateSetting("fontSize", Math.max(10, settings.fontSize - 1))}>
@@ -1843,6 +1879,17 @@ export default function QuestionPaperView() {
               <Switch checked={settings.showDuplicateMarker} onCheckedChange={(v) => updateSetting("showDuplicateMarker", v)} />
             </div>
             <p className="paper-setting-help text-[10px] text-muted-foreground">একই প্রশ্ন একাধিকবার নির্বাচিত হলে সহজে শনাক্ত ও পরিবর্তন করা যাবে।</p>
+            <Button variant="outline" size="sm" className="mt-2 w-full" disabled={!redundantDuplicateIds.size} onClick={removeDuplicateQuestions}>
+              {"\u09a1\u09c1\u09aa\u09cd\u09b2\u09bf\u0995\u09c7\u099f \u09b8\u09b0\u09be\u09a8"} ({redundantDuplicateIds.size})
+            </Button>
+            {removedDuplicateQuestions && <Button variant="ghost" size="sm" className="w-full" onClick={() => {
+              setQuestions(previous => {
+                const currentRows = new Map(previous.map(question => [question.id, question]));
+                const originalIds = new Set(removedDuplicateQuestions.map(question => question.id));
+                return [...removedDuplicateQuestions.map(question => currentRows.get(question.id) || question), ...previous.filter(question => !originalIds.has(question.id))];
+              });
+              setRemovedDuplicateQuestions(null);
+            }}>{"\u09ab\u09bf\u09b0\u09bf\u09df\u09c7 \u0986\u09a8\u09c1\u09a8"}</Button>}
           </div>
           <div>
             <div className="flex items-center justify-between">
@@ -2110,7 +2157,13 @@ export default function QuestionPaperView() {
     </>
   );
 
+  if (settings.showAnswerSheet) retainedAnswers.current = true;
+  const renderAnswerSheet = settings.showAnswerSheet || retainedAnswers.current;
+  const isPrintPreview = settings.previewLayoutMode === "print" && !editingMode;
+
   return (
+    <EquationBoldContext.Provider value={settings.equationBold}>
+    <AnswerLineFitContext.Provider value={answerFitPreference}>
     <div
       className="paper-builder-shell xl:grid -m-4 md:-m-6 relative bg-[#eef1f4]"
       style={{ gridTemplateColumns: "minmax(0, 1fr) 256px", gap: "20px", padding: "16px 16px 0" }}
@@ -2127,23 +2180,18 @@ export default function QuestionPaperView() {
 
       {/* Mobile top toolbar */}
       {isMobile && (
-        <div className="flex items-center gap-2 p-2 border-b border-border bg-background sticky top-0 z-30">
+        <div className="paper-mobile-toolbar sticky top-0 z-30">
+          <div className="paper-mobile-toolbar-title">প্রশ্নপত্র প্রিভিউ</div>
           <Button variant="outline" size="sm" className="flex-1 font-heading text-xs" onClick={() => setSettingsOpen(true)}>
             <Settings className="h-3.5 w-3.5 mr-1" /> সেটিংস
           </Button>
-          {settings.showAnswerSheet && (
-            <Button variant="outline" size="sm" className="flex-1 font-heading text-xs" onClick={() => updateSetting("showAnswerSheet", !settings.showAnswerSheet)}>
-              📝 উত্তরমালা
-            </Button>
-          )}
-          <Button size="sm" className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading text-xs" onClick={handleDownload}>
+          <Button variant="outline" size="sm" className="paper-answer-toggle flex-1 font-heading text-xs" aria-pressed={settings.showAnswerSheet} onClick={() => updateSetting("showAnswerSheet", !settings.showAnswerSheet)}>
+            <CheckCircle className="h-3.5 w-3.5" /> উত্তরমালা
+          </Button>
+          <Button size="sm" className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading text-xs" onClick={handleDownload} disabled={printPreparing}>
             <Download className="h-3.5 w-3.5 mr-1" /> ডাউনলোড
           </Button>
-          {isAdmin && (
-            <Button variant="outline" size="sm" className="font-heading text-xs" onClick={handleDocxExport} disabled={docxExporting}>
-              {docxExporting ? "..." : "Word"}
-            </Button>
-          )}
+
         </div>
       )}
 
@@ -2152,22 +2200,7 @@ export default function QuestionPaperView() {
         .english-paper-sections .latex-renderer table { width: 100% !important; max-width: 100%; table-layout: auto; border-collapse: collapse; }
         .english-paper-sections .english-rearranging br { display: initial !important; }
         .english-paper-sections th, .english-paper-sections td { border: 1px solid #111; padding: 2px 6px; overflow-wrap: anywhere; }
-        @media print {
-          @page {
-            size: ${settings.paperSize} ${settings.paperOrientation};
-            margin-top: calc(10mm + ${settings.pageMarginTop}px);
-            margin-right: calc(10mm + ${settings.pageMarginRight}px);
-            margin-bottom: calc(10mm + ${settings.pageMarginBottom}px);
-            margin-left: calc(10mm + ${settings.pageMarginLeft}px);
-            ${settings.showPageNumbers ? `
-            @bottom-center {
-              content: counter(page);
-              font-family: Arial, sans-serif;
-              font-size: 11px;
-              color: #000;
-            }` : ""}
-          }
-        }
+        @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
       `}</style>
       <div className="paper-preview-scroll overflow-y-auto xl:h-[calc(100vh-80px)] bg-[#eef1f4]">
         {!isMobile && (
@@ -2194,14 +2227,14 @@ export default function QuestionPaperView() {
             }}>
               <Plus className="h-4 w-4 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
-            <Button className="paper-quick-settings-action flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-none" size="sm" onClick={handleOpenSmartBoard}>
+            <Button className="paper-quick-settings-action flex bg-[#0A1E38] hover:bg-[#153654] text-white shadow-none" size="sm" onClick={handleOpenSmartBoard}>
               <Tv className="h-4 w-4 mr-1" /> Smart Board-এ নিন
             </Button>
             </div>
           </div>
         )}
         {isMobile && (
-          <div className="mb-3 flex items-center gap-2">
+          <div className="paper-mobile-secondary-actions mb-3 flex items-center gap-2">
             <Button variant="outline" size="sm" className="text-xs" onClick={() => {
               sessionStorage.setItem("existingPaperQuestions", JSON.stringify(questions));
               sessionStorage.setItem("existingPaperMeta", JSON.stringify(meta));
@@ -2221,7 +2254,7 @@ export default function QuestionPaperView() {
             }}>
               <Plus className="h-3.5 w-3.5 mr-1" /> আরও প্রশ্ন যুক্ত করুন
             </Button>
-            <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleOpenSmartBoard}>
+            <Button size="sm" className="text-xs bg-[#0A1E38] hover:bg-[#153654] text-white" onClick={handleOpenSmartBoard}>
               <Tv className="h-3.5 w-3.5 mr-1" /> Smart Board
             </Button>
           </div>
@@ -2241,30 +2274,21 @@ export default function QuestionPaperView() {
           width: '100%',
           maxWidth: previewPaperWidth,
         }}>
-        {pagedPreviewPages.length > 0 && (
-          <div className={`paper-paged-preview paper-paged-print-source${settings.previewLayoutMode === "print" ? " paper-paged-preview--visible" : ""}`} aria-label="Print layout preview">
-            {pagedPreviewPages.map((pageHtml, pageIndex) => (
-              <div
-                className="paper-paged-preview-sheet"
-                key={`preview-page-${pageIndex}`}
-                style={{ height: `${previewPageHeight}px` }}
-              >
-                <div
-                  className="paper-paged-preview-slice"
-                  dangerouslySetInnerHTML={{ __html: pageHtml }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {isPrintPreview && previewPreparing && <div role="status" aria-live="off" className="paper-preview-progress pointer-events-none fixed right-3 bottom-3 z-50 flex items-center gap-1.5 rounded border border-slate-200 bg-white/95 px-2 py-1 text-[11px] text-slate-600 shadow-sm print:hidden">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-600" aria-hidden="true" />
+          <span>Preview</span><span ref={previewProgressRef} className="font-medium tabular-nums">{previewProgressValue.current}%</span>
+        </div>}
+        <PrintableDocument pages={pagedPreviewPages} visible={isPrintPreview}
+          widthMm={pageWidthMm} heightMm={pageHeightMm} showPageNumbers={settings.showPageNumbers} />
         <div
-          className={`paper-live-print-source${settings.previewLayoutMode === "print" ? " paper-live-preview-source" : ""}`}
-          style={settings.previewLayoutMode === "print" ? { width: `min(100vw, ${previewPaperWidth})` } : undefined}
+          className={`paper-live-print-source${isPrintPreview ? " paper-live-preview-source" : ""}`}
+          style={isPrintPreview ? { width: previewPaperWidth } : undefined}
         >
         <div
-          className={`font-paper${isEnglishVersion ? " paper-english-version" : ""}${settings.previewLayoutMode === "print" ? " paper-print-layout-preview" : ""}`}
+          className={`font-paper${isEnglishVersion ? " paper-english-version" : ""}${isPrintPreview ? " paper-print-layout-preview" : ""}`}
           ref={paperRef}
           data-print-paper
+          data-answers-hidden={!settings.showAnswerSheet || undefined}
           data-paper-version={isEnglishVersion ? "english" : "bangla"}
           data-content-align={settings.textAlign}
           style={{
@@ -2273,12 +2297,11 @@ export default function QuestionPaperView() {
             "--paper-print-font-size": `${settings.fontSize}px`,
             "--preview-page-height": `${previewPageHeight}px`,
             width: '100%',
-            // Screen-only magnification: default 14px looks like the former
-            // 16px preview, while print/PDF restores the real selected size.
+            // Preserve the existing Preview typography in both screen and PDF.
             fontSize: `${settings.fontSize * PREVIEW_FONT_SCALE}px`,
             lineHeight: isEnglishVersion ? 1.25 : 1.45,
-            userSelect: "none",
-            WebkitUserSelect: "none",
+            userSelect: editingMode ? "text" : "none",
+            WebkitUserSelect: editingMode ? "text" : "none",
             paddingTop: `${(isMobile ? 12 : 38) + settings.pageMarginTop}px`,
             paddingRight: `${(isMobile ? 10 : 38) + settings.pageMarginRight}px`,
             paddingBottom: `${(isMobile ? 12 : 38) + settings.pageMarginBottom}px`,
@@ -2290,14 +2313,14 @@ export default function QuestionPaperView() {
             fontFamily: isEnglishVersion && settings.fontLang === "bangla"
               ? "'Times New Roman', Times, serif"
               : settings.fontLang === "solaimanlipi"
-              ? "'SolaimanLipi', 'Arial', sans-serif"
+              ? "'Times New Roman', 'SolaimanLipi', serif"
               : settings.fontLang === "omicronbangla"
-              ? "'OmicronBangla', 'SolaimanLipi', 'Arial', sans-serif"
+              ? "'Times New Roman', 'OmicronBangla', 'SolaimanLipi', serif"
               : settings.fontLang === "kalpurush"
-              ? "'Kalpurush', 'Arial', sans-serif"
+              ? "'Times New Roman', 'Kalpurush', serif"
               : settings.fontLang === "timesnewroman"
               ? "'Times New Roman', 'Georgia', serif"
-              : "'SolaimanLipi', 'Arial', sans-serif",
+              : "'Times New Roman', 'SolaimanLipi', serif",
             textAlign: settings.textAlign,
             position: "relative",
             overflow: "visible",
@@ -2618,7 +2641,7 @@ export default function QuestionPaperView() {
 
             {settings.showInstruction && (
               <div className="paper-header-instructions">
-                {!isEnglishPaper && mcqQuestions.length > 0 && (
+                {!isEnglishPaper && mcqOnly && mcqQuestions.length > 0 && (
                   <p className={editableClass} data-editable="instruction" onClick={handleEditableClick} suppressContentEditableWarning>
                     <i><strong>{isEnglishVersion ? "Note:" : "দ্রষ্টব্য:"}</strong>{" "}{isEnglishVersion
                       ? "In the provided MCQ answer sheet, fill the circle corresponding to the correct answer for each question"
@@ -2641,6 +2664,7 @@ export default function QuestionPaperView() {
               </div>
             )}
           </header>
+
 
           <div
             className="combined-question-flow"
@@ -2669,6 +2693,16 @@ export default function QuestionPaperView() {
                   ? `stimulus:${normalizedStimulus}`
                   : null;
             };
+            const stimulusInstruction = (numbers: number[]) => {
+              const labels = numbers.map(n => paperNumber(n));
+              const listed = labels.length > 1
+                ? labels.slice(0, -1).join(", ") + (isEnglishVersion ? " and " : " \u0993 ") + labels[labels.length - 1]
+                : labels[0];
+              return isEnglishVersion
+                ? `Read the following stimulus and answer question${numbers.length > 1 ? "s" : ""} ${listed}:`
+                : `\u09a8\u09bf\u099a\u09c7\u09b0 \u0989\u09a6\u09cd\u09a6\u09c0\u09aa\u0995\u099f\u09bf \u09aa\u09dc\u09c7 ${listed} \u09a8\u09ae\u09cd\u09ac\u09b0 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8\u09c7\u09b0 \u0989\u09a4\u09cd\u09a4\u09b0 \u09a6\u09be\u0993\u0964`;
+            };
+            const stimulusNumbers = (key: string) => standalone.flatMap((q, i) => stimulusGroupKey(q) === key ? [i + 1] : []);
             // All MCQs must share one column-flow container. Splitting them
             // into standalone/group containers makes the visible sequence jump.
             const standalone = mcqQuestions;
@@ -2679,6 +2713,7 @@ export default function QuestionPaperView() {
 
             return (
             <div className="combined-question-section" style={{ marginTop: "6px", marginBottom: "8px" }}>
+                            {!mcqOnly && (<div data-section-header className="paper-part-heading paper-mcq-section-heading" style={{ marginTop: 0 }}><strong>{isEnglishVersion ? "Multiple Choice Section:" : "বহুনির্বাচনি অংশ:"}</strong><strong>{paperNumber(mcqQuestions.length)} × {paperNumber(1)} = {paperNumber(mcqQuestions.length)}</strong></div>)}
               {/* Regular standalone MCQs */}
               {standalone.length > 0 && (() => {
                 const cols = settings.columns;
@@ -2724,7 +2759,7 @@ export default function QuestionPaperView() {
                         <div key={`${q.id}-${itemIdx}`} className={`${editableClass} mcq-print-item ${isDuplicate ? "paper-duplicate-question" : ""} ${activeQuestionId === q.id ? "rounded-sm bg-black/[0.03] px-1 -mx-1 ring-1 ring-black/35" : ""}`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }} data-duplicate={isDuplicate || undefined} data-editable={`mcq-${q.id}`} onClick={(e) => handleEditableClick(e, q.id)} suppressContentEditableWarning>
                           {showStimulus && (
                             <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              {groupKey && <div style={{ fontWeight: 500 }}>{isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}</div>}
+                              {groupKey && <div className="mcq-stimulus-heading">{stimulusInstruction(stimulusNumbers(groupKey))}</div>}
                               <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
@@ -2736,18 +2771,18 @@ export default function QuestionPaperView() {
                                 {settings.showQuestionInfo && refStr && renderQuestionReference(refStr)}
                               </div>
 
-                              <div style={{ position: "relative", display: "grid", gridTemplateColumns: getMcqOptionGridColumns(q), gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
+                              <AutoFitQuestionGrid measurementKey={JSON.stringify([q.option_a, q.option_b, q.option_c, q.option_d, settings.fontSize, settings.fontLang, settings.optionStyle, settings.equationBold, settings.showAnswerSheet])} manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1} gap={8} style={{ position: "relative", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = optionLabels[oi];
                                   return (<span key={key} className="mcq-option-choice"><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} /></span>);
                                 })}
-                                {settings.showAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                {renderAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                              </AutoFitQuestionGrid>
                               </div>
-                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
-                            </div>
                           </div>
+                              {renderAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                         </div>
                       );
                     })}
@@ -2765,7 +2800,7 @@ export default function QuestionPaperView() {
                         <div key={`print-${q.id}-${itemIdx}`} className={`mcq-print-item ${isDuplicate ? "paper-duplicate-question" : ""}`} style={{ background: isDuplicate ? "rgba(255,200,0,0.15)" : undefined, marginBottom: `${settings.questionGap}px` }} data-duplicate={isDuplicate || undefined}>
                           {showStimulus && (
                             <div className="mcq-stimulus" style={{ marginBottom: "4px", fontStyle: "italic", padding: "4px 0" }}>
-                              {groupKey && <div style={{ fontWeight: 500 }}>{isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}</div>}
+                              {groupKey && <div className="mcq-stimulus-heading">{stimulusInstruction(stimulusNumbers(groupKey))}</div>}
                               <LatexRenderer text={q.stimulus_text || ""} />
                             </div>
                           )}
@@ -2777,18 +2812,18 @@ export default function QuestionPaperView() {
                                 {settings.showQuestionInfo && refStr && renderQuestionReference(refStr)}
                               </div>
 
-                              <div style={{ position: "relative", display: "grid", gridTemplateColumns: getMcqOptionGridColumns(q), gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
+                              <AutoFitQuestionGrid measurementKey={JSON.stringify([q.option_a, q.option_b, q.option_c, q.option_d, settings.fontSize, settings.fontLang, settings.optionStyle, settings.equationBold, settings.showAnswerSheet])} manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1} gap={8} style={{ position: "relative", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
                                 {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                   const val = q[key]; if (!val) return null;
                                   const cleaned = stripPTags(val);
                                   const label = optionLabels[oi];
                                   return (<span key={key} className="mcq-option-choice"><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} /></span>);
                                 })}
-                                {settings.showAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                {renderAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                              </AutoFitQuestionGrid>
                               </div>
-                              {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
-                            </div>
                           </div>
+                              {renderAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                         </div>
                       );
                     })}
@@ -2823,8 +2858,8 @@ export default function QuestionPaperView() {
 
                 return (
                   <div key={groupId} style={{ marginTop: "8px" }}>
-                    <p className={editableClass} style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 500 }} onClick={handleEditableClick} suppressContentEditableWarning>
-                      {isEnglishVersion ? "Read the following stimulus and answer the questions:" : "নিচের উদ্দীপকটি পড়ে পরবর্তী প্রশ্নগুলোর উত্তর দাও:"}
+                    <p className={`mcq-stimulus-heading ${editableClass}`} style={{ fontStyle: "italic", marginBottom: "4px", fontWeight: 700 }} onClick={handleEditableClick} suppressContentEditableWarning>
+                      {stimulusInstruction(groupQs.map((_, i) => groupBaseNum + i + 1))}
                     </p>
                     {stimulusHtml && (
                       <div style={{ marginBottom: "6px", padding: "4px 8px", borderLeft: "2px solid #000" }}>
@@ -2860,18 +2895,18 @@ export default function QuestionPaperView() {
                                   <span className="paper-question-number">{formatQuestionNumber(idx)}</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={trimLeadingRichTextWhitespace(q.question)} /></div>
-                                    <div style={{ position: "relative", display: "grid", gridTemplateColumns: getMcqOptionGridColumns(q), gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
+                                    <AutoFitQuestionGrid measurementKey={JSON.stringify([q.option_a, q.option_b, q.option_c, q.option_d, settings.fontSize, settings.fontLang, settings.optionStyle, settings.equationBold, settings.showAnswerSheet])} manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1} gap={8} style={{ position: "relative", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = optionLabels[oi];
                                         return (<span key={key} className="mcq-option-choice"><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} /></span>);
                                       })}
-                                      {settings.showAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                      {renderAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                    </AutoFitQuestionGrid>
                                     </div>
-                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
-                                  </div>
                                 </div>
+                              {renderAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                               </div>
                             );
                           })}
@@ -2907,18 +2942,18 @@ export default function QuestionPaperView() {
                                   <span className="paper-question-number">{formatQuestionNumber(idx)}</span>
                                   <div style={{ flex: 1 }}>
                                     <div className="mc-block-question"><LatexRenderer text={trimLeadingRichTextWhitespace(q.question)} /></div>
-                                    <div style={{ position: "relative", display: "grid", gridTemplateColumns: getMcqOptionGridColumns(q), gap: "0", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
+                                    <AutoFitQuestionGrid measurementKey={JSON.stringify([q.option_a, q.option_b, q.option_c, q.option_d, settings.fontSize, settings.fontLang, settings.optionStyle, settings.equationBold, settings.showAnswerSheet])} manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1} gap={8} style={{ position: "relative", rowGap: "0.35em", fontSize: "0.96em", lineHeight: 1.25, marginTop: "0", paddingRight: settings.showAnswerSheet ? "28px" : undefined }}>
                                       {(["option_a", "option_b", "option_c", "option_d"] as const).map((key, oi) => {
                                         const val = q[key]; if (!val) return null;
                                         const cleaned = stripPTags(val);
                                         const label = optionLabels[oi];
                                         return (<span key={key} className="mcq-option-choice"><span>{getOptionLabel(label)}</span><LatexRenderer text={cleaned} /></span>);
                                       })}
-                                      {settings.showAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                      {renderAnswerSheet && <CorrectAnswerBadge question={q} isEnglishVersion={isEnglishVersion} />}
+                                    </AutoFitQuestionGrid>
                                     </div>
-                                    {settings.showAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
-                                  </div>
                                 </div>
+                              {renderAnswerSheet && q.explanation && (<McqExplanation text={q.explanation} isEnglishVersion={isEnglishVersion} />)}
                               </div>
                             );
                           })}
@@ -2937,7 +2972,7 @@ export default function QuestionPaperView() {
               <div className="flex justify-between font-semibold"><span>{paperNumber(index+1)}. {questionTypeLabel(q.type)}</span>{questionMarks(q)>0 && <span>{paperNumber(questionMarks(q))}</span>}</div>
               {q.stimulus_text && <LatexRenderer text={q.stimulus_text} />}
               <LatexRenderer text={q.question} />
-              {settings.showAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
+              {renderAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
             </div>)}
           </div>}
 
@@ -2956,7 +2991,7 @@ export default function QuestionPaperView() {
 
                 <div className="flex gap-2">{englishItemLabel(section.type,index,section.items.length) && <span className="shrink-0">{englishItemLabel(section.type,index,section.items.length)}</span>}<LatexRenderer className="min-w-0 flex-1" text={q.question} /></div>
                 {section.type === 'mcq' && <AutoFitQuestionGrid className="ml-7" manualColumns={settings.mcqOptionLayouts[String(q.id)] ? getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1 : undefined} gap={16} maxColumns={getMcqOptionLayout(q) === "4x1" ? 4 : getMcqOptionLayout(q) === "2x2" ? 2 : 1}>{(['option_a','option_b','option_c','option_d'] as const).map((key,oi)=><div key={key}>({['i','ii','iii','iv'][oi]}) <LatexRenderer inline text={q[key] || ''} /></div>)}</AutoFitQuestionGrid>}
-                {settings.showAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
+                {renderAnswerSheet && (q.correct_answer || q.explanation) && <div className="paper-answer-block"><AnswerContent text={[q.correct_answer,q.explanation].filter(Boolean).join('<br/>')} /></div>}
               </div></Fragment>)}
               </AutoFitQuestionGrid>
             </div>)}
@@ -2985,8 +3020,7 @@ export default function QuestionPaperView() {
             return (
             <div className="combined-question-section" style={{ marginTop: "10px", marginBottom: "8px" }}>
               <div
-                data-section-header
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9em", marginBottom: "3px" }}
+                data-section-header className="paper-part-heading"
               >
                 <span
                   className={editableClass}
@@ -2995,7 +3029,7 @@ export default function QuestionPaperView() {
                   onClick={handleEditableClick}
                   suppressContentEditableWarning
                 >
-                  {isEnglishVersion ? "Answer the short questions:" : "সংক্ষিপ্ত প্রশ্ন গুলোর উত্তর লিখ:"}
+                  {isEnglishVersion ? "Answer the short questions:" : "সংক্ষিপ্ত প্রশ্নের অংশ:"}
                 </span>
                 <span className={editableClass} style={{ fontWeight: 600, fontSize: "0.95em" }} onClick={handleEditableClick} suppressContentEditableWarning>
                   {shortMarksLine}
@@ -3041,7 +3075,7 @@ export default function QuestionPaperView() {
                       suppressContentEditableWarning
                     >
                       <div style={{ display: "flex", alignItems: "flex-start", width: "100%" }}>
-                        <span className="paper-question-number">{formatQuestionNumber(num)}</span>
+                        <span className="paper-question-number">{formatQuestionNumber(num, settings.sqNumberStyle)}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {showStimulus && (
                             <div className="short-stimulus" style={{ marginBottom: "2px" }}>
@@ -3062,7 +3096,7 @@ export default function QuestionPaperView() {
                         </div>
                       </div>
 
-                      {settings.showAnswerSheet && (q.correct_answer || q.explanation) && (
+                      {renderAnswerSheet && (q.correct_answer || q.explanation) && (
                         <div className="paper-answer-block cq-reference-answer-sheet">
                           <div className="cq-reference-answer-title">
                             {isEnglishVersion ? `Answer to question ${num}` : `${paperNumber(num)} নং প্রশ্নের উত্তর`}
@@ -3083,6 +3117,7 @@ export default function QuestionPaperView() {
           {/* ===== CQ SECTION (3rd) ===== */}
           {!settings.chirkutHideQuestions && cqQuestions.length > 0 && (
             <div className="combined-question-section" style={{ marginTop: "10px", marginBottom: "8px" }}>
+              <div data-section-header className="paper-part-heading"><strong>{isEnglishVersion ? "Creative Question Section:" : "সৃজনশীল অংশ:"}</strong><strong>{paperNumber(settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length)} × {paperNumber(10)} = {paperNumber((settings.cqToAnswer > 0 ? Math.min(settings.cqToAnswer, cqQuestions.length) : cqQuestions.length) * 10)}</strong></div>
               {cqInstruction && (
                 <div style={{ fontSize: "0.9em", marginBottom: "4px" }}>
                   <span className={editableClass} style={{ fontWeight: 600 }} onClick={handleEditableClick} suppressContentEditableWarning>{cqInstruction}</span>
@@ -3180,8 +3215,11 @@ export default function QuestionPaperView() {
                             );
                           })()}
 
+
+                        </div>
+                      </div>
                           {/* CQ Answers when answer sheet is on */}
-                          {settings.showAnswerSheet && (() => {
+                          {renderAnswerSheet && (() => {
                             const cData2 = q.creative_data;
                             if (!cData2) return null;
                             const usesMath2 = isMathSubject || cData2.is_math === true;
@@ -3211,8 +3249,6 @@ export default function QuestionPaperView() {
                               </div>
                             );
                           })()}
-                        </div>
-                      </div>
                     </div>
                   );
                 })}
@@ -3321,7 +3357,7 @@ export default function QuestionPaperView() {
                         </div>
                       )}
                           {/* Descriptive Answers when answer sheet is on */}
-                          {settings.showAnswerSheet && (() => {
+                          {renderAnswerSheet && (() => {
                             const dd = q.creative_data;
                             const hasDescAns = dd && (dd.desc_ans_ka || dd.desc_ans_kha);
                             const hasExpl = q.explanation;
@@ -3410,7 +3446,7 @@ export default function QuestionPaperView() {
               </h3>
 
               <div className="paper-settings-sticky-actions flex gap-2 mb-4">
-                <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload}>
+                <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload} disabled={printPreparing}>
                   <Download className="h-4 w-4 mr-2" /> ডাউনলোড
                 </Button>
                 {isAdmin && (
@@ -3428,7 +3464,7 @@ export default function QuestionPaperView() {
 
       {/* ===== SETTINGS SHEET (Mobile) ===== */}
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl">
+        <SheetContent side="bottom" className="paper-mobile-settings max-h-[85dvh] overflow-y-auto rounded-t-[2px]">
           <SheetHeader className="pb-2">
             <SheetTitle className="font-heading flex items-center justify-center gap-2">
               <Settings className="h-4 w-4" /> সেটিংস
@@ -3439,7 +3475,7 @@ export default function QuestionPaperView() {
               <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold" onClick={() => { setSettingsOpen(false); handleDownload(); }}>
                 <Download className="h-4 w-4 mr-2" /> ডাউনলোড
               </Button>
-              {isAdmin && (
+              {isAdmin && !isMobile && (
                 <Button variant="outline" className="font-heading font-semibold" onClick={handleDocxExport} disabled={docxExporting}>
                   {docxExporting ? "তৈরি হচ্ছে..." : "Word"}
                 </Button>
@@ -3514,5 +3550,7 @@ export default function QuestionPaperView() {
         </DialogContent>
       </Dialog>
     </div>
+    </AnswerLineFitContext.Provider>
+    </EquationBoldContext.Provider>
   );
 }

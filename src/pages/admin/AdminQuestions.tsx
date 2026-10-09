@@ -1,7 +1,7 @@
 import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
 import LanguageQuestionForm from "@/components/LanguageQuestionForm";
 import { ALL_TYPES, BASE_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, suggestedLanguageTopics, languageRules } from "@/lib/languageQuestionTypes";
-import { questionHasNoAnswer, questionHasNoExplanation } from "@/lib/questionAnswers";
+import { questionHasNoAnswer, questionHasNoExplanation, questionHasIncompleteCqAnswers } from "@/lib/questionAnswers";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ const typeOptions = ALL_TYPES;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
 const SPECIAL_FILTER_OPTIONS = [
+  { id: "incomplete_cq_answers", label: "\u0985\u09b8\u09ae\u09cd\u09aa\u09c2\u09b0\u09cd\u09a3 \u0989\u09a4\u09cd\u09a4\u09b0 \u09b8\u09c3\u099c\u09a8\u09b6\u09c0\u09b2" },
   { id: "no_answer", label: "উত্তর ছাড়া প্রশ্ন" },
   { id: "no_explanation", label: "ব্যাখ্যা ছাড়া MCQ ও সংক্ষিপ্ত প্রশ্ন" },
   { id: "board", label: "রিপিটেড বোর্ড প্রশ্ন" },
@@ -61,6 +62,7 @@ const questionLatexIssueDetails = (question: any) => {
 const questionHasLatexIssues = (question: any) => questionLatexIssueDetails(question).length > 0;
 
 const specialFilterMatches = (question: any, filter: string) => {
+  if (filter === "incomplete_cq_answers") return questionHasIncompleteCqAnswers(question);
   const text = `${question.question || ""} ${question.option_a || ""} ${question.option_b || ""} ${question.option_c || ""} ${question.option_d || ""} ${question.stimulus_text || ""}`;
   const mathPattern = /\$.*?\$|\\frac|\\sqrt|\\sum|\\int|\\\[|\\\]|\\\(|\\\)|\\times|\\div|\\pm|\\leq|\\geq|\\neq|\\alpha|\\beta|\\theta|\\pi/i;
   if (filter === "board") {
@@ -209,6 +211,7 @@ export default function AdminQuestions() {
         let query = supabase.from("questions")
           .select("*, classes(name), subjects(name), chapters(name), teachers(full_name)", { count: offset === 0 ? "exact" : undefined })
           .order("created_at", { ascending: false });
+        if (filterSpecial === "incomplete_cq_answers") query = query.eq("type", "cq");
         if (filterClassId) query = query.eq("class_id", Number(filterClassId));
         if (filterSubjectId) query = query.eq("subject_id", Number(filterSubjectId));
         if (filterChapterId) query = query.eq("chapter_id", Number(filterChapterId));
