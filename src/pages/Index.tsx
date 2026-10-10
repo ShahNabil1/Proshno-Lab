@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
 import ReferenceHome from "@/components/ReferenceHome";
 import { motion } from "framer-motion";
@@ -15,6 +17,20 @@ const fadeUp = {
 };
 
 export default function Index() {
+  const { user, loading: authLoading } = useAuth();
+  const [homeRole, setHomeRole] = useState<{ userId: string; admin: boolean } | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase.from("user_roles").select("role").eq("user_id", user.id)
+      .then(({ data, error }) => {
+        if (!cancelled) setHomeRole({
+          userId: user.id,
+          admin: !!error || (data || []).some(row => row.role === "admin" || row.role === "developer"),
+        });
+      });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
 
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
@@ -42,7 +58,9 @@ export default function Index() {
   }, []);
 
 
-  // লগডইন থাকলেও ইউজার হোম পেইজ দেখতে পারবে (হেডারে ড্যাশবোর্ড বাটন থাকে)
+  if (authLoading) return null;
+  if (user && homeRole?.userId !== user.id) return null;
+  if (user && !homeRole?.admin) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="overflow-hidden">

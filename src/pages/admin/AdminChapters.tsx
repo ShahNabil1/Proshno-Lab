@@ -245,7 +245,11 @@ export default function AdminChapters() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     // Check if chapter has questions
-    const { count } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("chapter_id", deleteTarget.id);
+    const { count, error: questionCheckError } = await supabase.from("questions").select("id", { count: "exact", head: true }).eq("chapter_id", deleteTarget.id);
+    if (questionCheckError) {
+      toast.error("Question check failed: " + questionCheckError.message);
+      return;
+    }
     if (count && count > 0) {
       toast.error(`এই অধ্যায়ে ${count}টি প্রশ্ন আছে। আগে প্রশ্নগুলো মুছুন, তারপর অধ্যায় মুছতে পারবেন।`);
       setDeleteTarget(null);
@@ -920,7 +924,7 @@ export default function AdminChapters() {
           <AlertDialogHeader>
             <AlertDialogTitle style={{ fontFamily: FONT }}>অধ্যায় মুছে ফেলুন</AlertDialogTitle>
             <AlertDialogDescription style={{ fontFamily: FONT }}>
-              আপনি কি নিশ্চিত যে "<strong>{deleteTarget?.name}</strong>" অধ্যায়টি মুছে ফেলতে চান? এই অধ্যায়ের সকল প্রশ্নও মুছে যাবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।
+              আপনি কি নিশ্চিত যে "<strong>{deleteTarget?.name}</strong>" অধ্যায়টি মুছে ফেলতে চান? প্রশ্ন থাকলে অধ্যায়টি মোছা যাবে না। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

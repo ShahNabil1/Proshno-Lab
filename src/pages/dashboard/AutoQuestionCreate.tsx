@@ -72,6 +72,11 @@ export default function AutoQuestionCreate() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [generating, setGenerating] = useState(false);
   const [paygPhone, setPaygPhone] = useState("");
+  const [paygTrial, setPaygTrial] = useState(true);
+  useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "payg_all_chapters_trial").maybeSingle()
+      .then(({ data }) => setPaygTrial(data?.value !== false));
+  }, []);
 
   useEffect(() => {
     const paymentID = new URLSearchParams(window.location.search).get("paygPayment");
@@ -447,6 +452,10 @@ export default function AutoQuestionCreate() {
                 </div>
               </div>
 
+              {paygTrial && !unlimitedAccess && <div className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-slate-800">
+                <strong>Pay as you go: সব অধ্যায় থেকে প্রশ্ন তৈরি করুন</strong>
+                <p className="mt-1">প্যাকেজ ছাড়াই শ্রেণি, বিষয় ও অধ্যায় বেছে নিন। MCQ/SQ প্রতি প্রশ্ন ৳০.২৫, CQ ৳১। প্যাকেজে অন্তর্ভুক্ত হলে বাড়তি খরচ নেই। পেমেন্টের আগে মোট খরচ দেখবেন।</p>
+              </div>}
               {classId && subjectIds.length > 0 && hasAccess === false && (
                 <div className="mt-4 flex items-start gap-2.5 p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-base">
                   <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
@@ -627,6 +636,12 @@ export default function AutoQuestionCreate() {
                 {paygRequired && <div className="mt-5 border-t border-slate-300 pt-4 space-y-3">
                   <p className="text-sm text-slate-600">প্রতি প্রশ্ন অনুযায়ী চার্জ • MCQ/SQ/অন্যান্য ৳০.২৫, CQ ৳১</p>
                   <div className="flex items-center justify-between font-bold text-[#0A1E38]"><span>পরিশোধযোগ্য</span><span>৳{paygTotal.toLocaleString("bn-BD", { minimumFractionDigits: 2 })}</span></div>
+                  {paygTrial && <div className="rounded-md bg-white border border-slate-200 p-3 text-sm space-y-1">
+                    <p className="font-semibold">{selectedSubjects.map(s => s.name).join(", ")}</p>
+                    <p>{chapters.filter(c => chapterIds.includes(String(c.id))).map(c => c.name).join(", ")}</p>
+                    {activeTypes.map(t => <div key={t} className="flex justify-between"><span>{t.toUpperCase()} ? {counts[t]}</span><span>?{(counts[t] * (t === "cq" ? 1 : 0.25)).toLocaleString("bn-BD")}</span></div>)}
+                    <p className="text-xs text-slate-600">পর্যাপ্ত আলাদা প্রশ্ন নিশ্চিত হওয়ার পর পেমেন্ট শুরু হবে।</p>
+                  </div>}
                   <Input aria-label="পেমেন্টের মোবাইল নম্বর" inputMode="tel" autoComplete="tel" placeholder="মোবাইল নম্বর (01XXXXXXXXX)" value={paygPhone} onChange={e => setPaygPhone(e.target.value.replace(/[০-৯]/g, d => String("০১২৩৪৫৬৭৮৯".indexOf(d))))} />
                   <p className="text-xs text-slate-500">পেমেন্ট সফল হলে এই প্রশ্নপত্র খুলবে। প্যাকেজ কেনা হবে না।</p>
                 </div>}

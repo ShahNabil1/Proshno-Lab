@@ -2742,7 +2742,7 @@ main:has(.auto-create-workspace) .create-mode-switch, main:has(.auto-create-work
 /* Worked answers keep natural spacing; paper justification must not stretch
    short calculation steps across the full column. */
 .answer-content,
-[data-print-paper] .answer-content { text-align: left; text-align-last: auto; }
+[data-print-paper] .answer-content { text-align: inherit; text-align-last: auto; }
 
 /* Preserve mounted answer equations so subsequent on/off toggles only hide or
    reveal them rather than removing and rebuilding thousands of math nodes. */
@@ -2759,18 +2759,13 @@ main:has(.auto-create-workspace) .create-mode-switch, main:has(.auto-create-work
   font-size: 0.96em;
 }
 
-/* Justification stretches the gap before inline math when a long expression
-   wraps. Keep equation-bearing question blocks at their natural word spacing. */
-[data-print-paper][data-content-align="justify"] :is(.cq-stem-text, .cq-sub-question-text, .mc-block-question):has(.katex),
-[data-print-paper][data-content-align="justify"] :is(div, span):has(> .mc-block-question .katex) {
+/* Keep justification on prose; mathematical content uses natural spacing. */
+[data-print-paper][data-content-align="justify"] :is(.katex, .katex-display) {
   text-align: left !important;
   text-align-last: left !important;
   word-spacing: normal !important;
-}
-[data-print-paper][data-content-align="justify"] :is(.cq-stem-text, .cq-sub-question-text, .mc-block-question):has(.katex) > p {
-  text-align: left !important;
-  text-align-last: left !important;
-  word-spacing: normal !important;
+  letter-spacing: normal !important;
+  text-justify: none;
 }
 
 /* Option glyphs stay centered even when question prose uses left-aligned math. */

@@ -1,3 +1,4 @@
+import PaygTrialSetting from "@/components/admin/PaygTrialSetting";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -83,6 +84,7 @@ function ToggleSection({ title, description, icon: Icon, pages, hiddenPages, onT
 }
 
 export default function AdminAdvanced() {
+
   const [cloudBackup, setCloudBackup] = useState(false);
   const [hiddenPages, setHiddenPages] = useState<string[]>([]);
   const [adminHiddenPages, setAdminHiddenPages] = useState<string[]>([]);
@@ -164,6 +166,8 @@ export default function AdminAdvanced() {
           </div>
         </CardContent>
       </Card>
+
+      <PaygTrialSetting />
 
       <ToggleSection
         title="টিচার ড্যাশবোর্ড"
