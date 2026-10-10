@@ -43,7 +43,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   const navLinks = [
     { to: "/", label: "হোম" },
     { to: "/dashboard/create?mode=auto", label: "অটো প্রশ্ন তৈরি" },
-    { to: user ? "/dashboard" : "/login", label: "ড্যাশবোর্ড" },
+    ...(!user ? [{ to: "/login", label: "ড্যাশবোর্ড" }] : []),
     { to: "/pricing", label: "প্যাকেজ" },
     { to: "/helpline", label: "হেল্পলাইন" },
   ];

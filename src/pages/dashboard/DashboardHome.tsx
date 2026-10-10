@@ -1,13 +1,12 @@
 import { isNoPackagePreview } from "@/lib/adminExperiencePreview";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, PlusSquare, Tv, Database, CheckCircle2, CreditCard, ArrowRight, Pencil, Printer, MessageSquare, Megaphone, BadgeCheck } from "lucide-react";
+import { FileText, PlusSquare, Tv, Database, CheckCircle2, CreditCard, ArrowRight, Pencil, Printer, MessageSquare, Megaphone, User } from "lucide-react";
 import LatexRenderer from "@/components/LatexRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { readLocalGeneratedStats } from "@/lib/paperCounter";
 import { isSubscriptionActive } from "@/lib/subscriptionMatcher";
-import { brandMarkUrl } from "@/lib/brandAssets";
 
 const toBanglaNum = (n: number | string): string =>
   String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d]);
@@ -178,10 +177,14 @@ export default function DashboardHome() {
     <div className="mx-auto max-w-7xl space-y-6 pb-6 text-zinc-950">
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-[#0A1E38] p-5 text-white sm:p-6">
         <div className="flex min-w-0 items-center gap-3">
-          <img src={institute?.logo_url || brandMarkUrl} alt="প্রতিষ্ঠানের লোগো" className="h-14 w-14 shrink-0 rounded-full border border-white/20 bg-white object-cover ring-4 ring-white/10" />
+          {institute?.logo_url || user?.user_metadata?.avatar_url ? (
+            <img src={institute?.logo_url || user?.user_metadata?.avatar_url} alt={institute?.logo_url ? "প্রতিষ্ঠানের লোগো" : "প্রোফাইল ছবি"} className="h-14 w-14 shrink-0 rounded-full border border-white/20 bg-white object-cover ring-4 ring-white/10" />
+          ) : (
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 ring-4 ring-white/10"><User className="h-7 w-7 text-white" /></span>
+          )}
           <div className="min-w-0">
 
-            <h1 className="flex items-center gap-2 font-heading text-xl font-bold sm:text-2xl"><span>{institute?.name || "আমার ড্যাশবোর্ড"}</span>{institute?.name && <BadgeCheck className="h-6 w-6 shrink-0 fill-[#1877F2] text-white" strokeWidth={2.5} aria-label="ভেরিফাইড" />}</h1>
+            <h1 className="flex items-center gap-2 font-heading text-xl font-bold sm:text-2xl"><span>{institute?.name || "আমার ড্যাশবোর্ড"}</span>{institute?.name && <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" role="img" aria-label="ভেরিফাইড"><path fill="#0866FF" d="M12 2l2.4 1.7 2.9-.1.8 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-.8 2.8-2.9-.1L12 20l-2.4-1.7-2.9.1-.8-2.8-2.4-1.7.9-2.8-.9-2.8 2.4-1.7.8-2.8 2.9.1L12 2Z" /><path d="m8 11.1 2.5 2.5 5.5-5.5" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}</h1>
             <p className="mt-1 text-xs text-white/65">{[institute?.upazila, institute?.district].filter(Boolean).join(", ")}</p>
           </div>
         </div>

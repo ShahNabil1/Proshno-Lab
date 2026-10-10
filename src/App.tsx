@@ -67,7 +67,6 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminSuggestions from "./pages/admin/AdminSuggestions";
 import AdminAdvanced from "./pages/admin/AdminAdvanced";
-import AdminHomepageVideo from "./pages/admin/AdminHomepageVideo";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 const queryClient = new QueryClient();
 
@@ -142,7 +141,6 @@ const App = () => (
             <Route path="/admin/announcements" element={<AdminLayout><AdminAnnouncements /></AdminLayout>} />
             <Route path="/admin/reviews" element={<AdminLayout><AdminReviews /></AdminLayout>} />
             <Route path="/admin/analytics" element={<AdminLayout><AdminAnalytics /></AdminLayout>} />
-            <Route path="/admin/homepage-video" element={<AdminLayout><AdminHomepageVideo /></AdminLayout>} />
             <Route path="/admin/advanced" element={<AdminLayout><AdminAdvanced /></AdminLayout>} />
 
             <Route path="*" element={<Layout><NotFound /></Layout>} />

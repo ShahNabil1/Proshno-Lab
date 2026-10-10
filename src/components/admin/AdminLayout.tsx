@@ -24,7 +24,6 @@ const allSidebarItems = [
   { path: "/admin/topics", label: "টপিক", icon: Layers, group: "একাডেমিক ম্যানেজমেন্ট" },
 
   { path: "/admin/announcements", label: "অ্যানাউন্সমেন্ট", icon: MessageSquare, group: "কন্টেন্ট ম্যানেজমেন্ট" },
-  { path: "/admin/homepage-video", label: "হোমপেজ ভিডিও", icon: HelpCircle, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/reviews", label: "রিভিউ", icon: Star, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/coupons", label: "কুপন", icon: Tag, group: "কন্টেন্ট ম্যানেজমেন্ট" },
   { path: "/admin/packages", label: "প্যাকেজ", icon: Package, group: "কন্টেন্ট ম্যানেজমেন্ট" },

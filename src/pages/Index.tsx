@@ -7,7 +7,6 @@ import { Users, Star, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ReviewModal from "@/components/ReviewModal";
-import YouTubePlayer, { extractYouTubeId } from "@/components/YouTubePlayer";
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: (i: number) => ({
@@ -35,7 +34,6 @@ export default function Index() {
 
   const [reviews, setReviews] = useState<{id: number;name: string;designation: string;institution: string;image_url: string;rating: number;text: string;}[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [videoId, setVideoId] = useState<string | null>(null);
 
   const fetchReviews = async () => {
     try {
@@ -53,8 +51,7 @@ export default function Index() {
   };
   useEffect(() => {
     fetchReviews();
-    supabase.from("app_settings").select("value").eq("key", "homepage_video_url").maybeSingle()
-      .then(({ data }) => setVideoId(extractYouTubeId(String(data?.value ?? ""))));
+
   }, []);
 
 
@@ -65,31 +62,6 @@ export default function Index() {
   return (
     <div className="overflow-hidden">
       <ReferenceHome />
-
-      {/* ══════ VIDEO SHOWCASE ══════ */}
-      <section id="home-video" className="th-video-section" style={{padding: "56px 0", background: "#edf1f4", scrollMarginTop: 90}}>
-        <div className="container max-w-4xl">
-          <motion.div
-            initial="hidden" whileInView="visible" viewport={{ once: true }}
-            variants={fadeUp} custom={0} className="text-center mb-8"
-          >
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
-              কীভাবে কাজ করে দেখে নিন
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              মাত্র কয়েক ধাপে প্রিন্ট-প্রস্তুত প্রশ্নপত্র — সম্পূর্ণ প্রক্রিয়াটি ভিডিওতে দেখুন।
-            </p>
-          </motion.div>
-
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
-            {videoId ? (
-              <YouTubePlayer videoId={videoId} title={<><BrandLogo size={20} plate /> টিউটোরিয়াল</>} />
-            ) : (
-              <p className="text-center text-muted-foreground py-8">উপরের তিনটি ধাপ অনুসরণ করে সহজেই শুরু করুন।</p>
-            )}
-          </motion.div>
-        </div>
-      </section>
 
       {/* ══════ REVIEWS ══════ */}
       <section className="teacher-review-section py-10 md:py-14 border-t border-border/50">
