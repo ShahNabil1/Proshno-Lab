@@ -1,4 +1,3 @@
-import PaygTrialSetting from "@/components/admin/PaygTrialSetting";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -167,7 +166,6 @@ export default function AdminAdvanced() {
         </CardContent>
       </Card>
 
-      <PaygTrialSetting />
 
       <ToggleSection
         title="টিচার ড্যাশবোর্ড"

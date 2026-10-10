@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { isNoPackagePreview } from "@/lib/adminExperiencePreview";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,10 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
   const isGmail = (v: string) => /^[a-z0-9._%+-]+@gmail\.com$/.test(v.trim().toLowerCase());
 
   const handlePay = async () => {
+    if (isNoPackagePreview(user?.id)) {
+      toast.info("পরীক্ষামূলক মোডে আসল পেমেন্ট চালু হবে না। পেমেন্ট করতে পরীক্ষা বন্ধ করুন।");
+      return;
+    }
     if (!user) { toast.error("প্রথমে লগইন করুন"); return; }
     if (!name.trim() || !email.trim() || !phone.trim() || !institute.trim()) {
       toast.error("সকল তথ্য পূরণ করুন"); return;

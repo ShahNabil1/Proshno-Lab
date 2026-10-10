@@ -1,3 +1,4 @@
+import { isNoPackagePreview } from "@/lib/adminExperiencePreview";
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,7 @@ export default function Subscription() {
       supabase.from("subscriptions").select("*").eq("teacher_id", user.id).order("starts_at", { ascending: true }),
       supabase.from("pricing_packages").select("*").eq("is_active", true).order("sort_order"),
     ]).then(([subRes, pkgRes]) => {
-      setSubs(subRes.data || []);
+      setSubs(isNoPackagePreview(user.id) ? [] : subRes.data || []);
       setPackages((pkgRes.data as any[]) || []);
       setLoading(false);
     });
@@ -406,7 +407,7 @@ export default function Subscription() {
               // Refresh subs
               if (user) {
                 supabase.from("subscriptions").select("*").eq("teacher_id", user.id).order("starts_at", { ascending: true })
-                  .then(({ data }) => setSubs(data || []));
+                  .then(({ data }) => setSubs(isNoPackagePreview(user.id) ? [] : data || []));
               }
             }}
           />

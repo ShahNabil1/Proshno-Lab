@@ -48,7 +48,7 @@ const STEPS = [
 
 export default function AutoQuestionCreate() {
   const { user } = useAuth();
-  const { unlimited: unlimitedAccess } = useUnlimitedAccess();
+  const { unlimited: unlimitedAccess, noPackagePreview } = useUnlimitedAccess();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
 
@@ -71,12 +71,7 @@ export default function AutoQuestionCreate() {
 
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [paygPhone, setPaygPhone] = useState("");
-  const [paygTrial, setPaygTrial] = useState(true);
-  useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "payg_all_chapters_trial").maybeSingle()
-      .then(({ data }) => setPaygTrial(data?.value !== false));
-  }, []);
+
 
   useEffect(() => {
     const paymentID = new URLSearchParams(window.location.search).get("paygPayment");
@@ -138,6 +133,7 @@ export default function AutoQuestionCreate() {
   const filteredSubjects = filterSubjectsByVersion(subjects, classes, subjectVersion);
 
   useEffect(() => {
+    if (noPackagePreview) { setHasAccess(false); return; }
     if (unlimitedAccess) { setHasAccess(true); return; }
     if (!user?.id || !effectiveClassId || subjectIds.length === 0) { setHasAccess(null); return; }
     let cancel = false;
@@ -161,7 +157,7 @@ export default function AutoQuestionCreate() {
       setHasAccess(allAccess);
     })();
     return () => { cancel = true; };
-  }, [user?.id, effectiveClassId, subjectIds.join(","), classes, subjects, unlimitedAccess]);
+  }, [user?.id, effectiveClassId, subjectIds.join(","), classes, subjects, unlimitedAccess, noPackagePreview]);
 
   // Live counts per type based on selected chapters
   useEffect(() => {
@@ -231,21 +227,6 @@ export default function AutoQuestionCreate() {
   const step2Valid = activeTypes.length > 0;
   const totalMarks = useMemo(() => activeTypes.reduce((s, t) => s + counts[t] * (TYPE_MARKS[t] || 0), 0), [activeTypes, counts]);
   const totalQuestions = useMemo(() => activeTypes.reduce((s, t) => s + counts[t], 0), [activeTypes, counts]);
-  const paygTotal = activeTypes.reduce((sum, t) => sum + counts[t] * (t === "cq" ? 100 : 25), 0) / 100;
-  const paygRequired = hasAccess === false;
-  const startPayg = async () => {
-    if (!/^01[3-9]\d{8}$/.test(paygPhone.trim())) { toast.error("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন"); return; }
-    setGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("bkash-create-payment", { body: {
-        payg: { chapter_ids: chapterIds.map(Number), counts: Object.fromEntries(activeTypes.map(t => [t, counts[t]])) },
-        phone: paygPhone.trim(), teacher_name: user?.user_metadata?.full_name, institute_name: institute?.name, callback_origin: window.location.origin,
-      } });
-      if (error || data?.error || !data?.bkashURL) throw new Error(data?.error || error?.message || "পেমেন্ট শুরু করা যায়নি");
-      window.location.href = data.bkashURL;
-    } catch (e: any) { toast.error(e.message); setGenerating(false); }
-  };
-
   const goNext = () => {
     if (step === 1) {
       if (!step1Valid) { toast.error(hasAccess === false ? "এই বিষয়ের জন্য সাবস্ক্রিপশন নেই" : "সব ফিল্ড পূরণ করুন"); return; }
@@ -334,7 +315,6 @@ export default function AutoQuestionCreate() {
 
   return (
     <div className="auto-create-workspace max-w-5xl mx-auto space-y-5">
-      <p className="text-sm text-slate-600">{"\u09a1\u09c1\u09aa\u09cd\u09b2\u09bf\u0995\u09c7\u099f \u09ac\u09be\u09a6 \u09a6\u09bf\u09df\u09c7 \u09a8\u09bf\u09b0\u09cd\u09ac\u09be\u099a\u09bf\u09a4 \u09b8\u0982\u0996\u09cd\u09af\u0995 \u0986\u09b2\u09be\u09a6\u09be \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u09a8\u09c7\u0993\u09df\u09be \u09b9\u09ac\u09c7\u0964 \u09aa\u09b0\u09cd\u09af\u09be\u09aa\u09cd\u09a4 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8 \u09a8\u09be \u09a5\u09be\u0995\u09b2\u09c7 \u099c\u09be\u09a8\u09be\u09a8\u09cb \u09b9\u09ac\u09c7\u0964"}</p>
       {/* Stepper */}
       <div className="auto-stepper grid grid-cols-3 gap-2 sm:gap-3 mb-4">
         {STEPS.map(s => {
@@ -366,7 +346,6 @@ export default function AutoQuestionCreate() {
           {step === 1 && (
             <div>
               <h2 className="font-heading text-xl md:text-2xl font-bold text-slate-800 mb-1">ধাপ ১: শ্রেণি, বিষয় ও অধ্যায় নির্বাচন করুন</h2>
-              <p className="text-base text-slate-600 mb-6 font-normal">প্রথমে আপনার প্রয়োজনীয় শ্রেণি, বিষয় এবং কোন কোন অধ্যায় থেকে প্রশ্ন করতে চান তা সিলেক্ট করুন।</p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
                 <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
@@ -387,7 +366,7 @@ export default function AutoQuestionCreate() {
                 </div>
 
                 <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
-                  <Label className="mb-2.5 block font-bold text-base text-slate-800">বিষয় (একাধিক)</Label>
+                  <Label className="mb-2.5 block font-bold text-base text-slate-800">বিষয়</Label>
                   <SubjectPicker
                     value={subjectId}
                     values={subjectIds}
@@ -414,7 +393,7 @@ export default function AutoQuestionCreate() {
 
                 <div className="border border-slate-200 rounded-xl p-4 flex flex-col min-h-[160px] bg-slate-50/50 auto-selection-panel">
                   <div className="mb-2 flex items-center justify-between min-h-[28px]">
-                    <Label className="font-bold text-base text-slate-800">অধ্যায় (একাধিক)</Label>
+                    <Label className="font-bold text-base text-slate-800">অধ্যায়</Label>
                     {chapters.length > 0 && (
                       <button
                         type="button"
@@ -452,14 +431,10 @@ export default function AutoQuestionCreate() {
                 </div>
               </div>
 
-              {paygTrial && !unlimitedAccess && <div className="rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-slate-800">
-                <strong>Pay as you go: সব অধ্যায় থেকে প্রশ্ন তৈরি করুন</strong>
-                <p className="mt-1">প্যাকেজ ছাড়াই শ্রেণি, বিষয় ও অধ্যায় বেছে নিন। MCQ/SQ প্রতি প্রশ্ন ৳০.২৫, CQ ৳১। প্যাকেজে অন্তর্ভুক্ত হলে বাড়তি খরচ নেই। পেমেন্টের আগে মোট খরচ দেখবেন।</p>
-              </div>}
               {classId && subjectIds.length > 0 && hasAccess === false && (
                 <div className="mt-4 flex items-start gap-2.5 p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-base">
                   <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <span>প্যাকেজ ছাড়াও প্রশ্ন তৈরি করুন। MCQ, সংক্ষিপ্ত ও অন্যান্য প্রশ্ন ৳০.২৫; সৃজনশীল প্রশ্ন ৳১। <a href="/dashboard/subscription" className="text-[#0A1E38] font-bold underline">প্যাকেজ দেখুন</a></span>
+                  <span>এই বিষয়ে প্রশ্ন তৈরি করতে সক্রিয় প্যাকেজ প্রয়োজন। <a href="/dashboard/subscription" className="text-[#0A1E38] font-bold underline">প্যাকেজ দেখুন</a></span>
                 </div>
               )}
 
@@ -633,18 +608,7 @@ export default function AutoQuestionCreate() {
                   </div>
                 </dl>
                 {hasAccess === true && <div className="mt-4 border-t border-slate-300 pt-4 flex items-center justify-between text-sm"><span className="text-slate-600">আপনার প্যাকেজে অন্তর্ভুক্ত</span><span className="font-bold text-[#00858C]">অতিরিক্ত চার্জ ৳০</span></div>}
-                {paygRequired && <div className="mt-5 border-t border-slate-300 pt-4 space-y-3">
-                  <p className="text-sm text-slate-600">প্রতি প্রশ্ন অনুযায়ী চার্জ • MCQ/SQ/অন্যান্য ৳০.২৫, CQ ৳১</p>
-                  <div className="flex items-center justify-between font-bold text-[#0A1E38]"><span>পরিশোধযোগ্য</span><span>৳{paygTotal.toLocaleString("bn-BD", { minimumFractionDigits: 2 })}</span></div>
-                  {paygTrial && <div className="rounded-md bg-white border border-slate-200 p-3 text-sm space-y-1">
-                    <p className="font-semibold">{selectedSubjects.map(s => s.name).join(", ")}</p>
-                    <p>{chapters.filter(c => chapterIds.includes(String(c.id))).map(c => c.name).join(", ")}</p>
-                    {activeTypes.map(t => <div key={t} className="flex justify-between"><span>{t.toUpperCase()} ? {counts[t]}</span><span>?{(counts[t] * (t === "cq" ? 1 : 0.25)).toLocaleString("bn-BD")}</span></div>)}
-                    <p className="text-xs text-slate-600">পর্যাপ্ত আলাদা প্রশ্ন নিশ্চিত হওয়ার পর পেমেন্ট শুরু হবে।</p>
-                  </div>}
-                  <Input aria-label="পেমেন্টের মোবাইল নম্বর" inputMode="tel" autoComplete="tel" placeholder="মোবাইল নম্বর (01XXXXXXXXX)" value={paygPhone} onChange={e => setPaygPhone(e.target.value.replace(/[০-৯]/g, d => String("০১২৩৪৫৬৭৮৯".indexOf(d))))} />
-                  <p className="text-xs text-slate-500">পেমেন্ট সফল হলে এই প্রশ্নপত্র খুলবে। প্যাকেজ কেনা হবে না।</p>
-                </div>}
+                
               </div>
 
               <div className="flex justify-center gap-3 mt-8">
@@ -656,11 +620,11 @@ export default function AutoQuestionCreate() {
                   <ChevronLeft className="w-5 h-5" /> আগের ধাপে যান
                 </Button>
                 <Button
-                  onClick={paygRequired ? startPayg : generate}
+                  onClick={hasAccess === false ? () => navigate("/dashboard/subscription") : generate}
                   disabled={generating}
                   className="h-12 px-8 rounded-xl bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base shadow-sm gap-2 border border-[#0A1E38] cursor-pointer disabled:opacity-50"
                 >
-                  <FilePlus2 className="w-5 h-5" /> {generating ? "অপেক্ষা করুন..." : paygRequired ? "বিকাশে পেমেন্ট করে তৈরি করুন" : "প্রশ্ন তৈরি করুন"}
+                  <FilePlus2 className="w-5 h-5" /> {generating ? "অপেক্ষা করুন..." : hasAccess === false ? "Choose a package" : "প্রশ্ন তৈরি করুন"}
                 </Button>
               </div>
             </div>

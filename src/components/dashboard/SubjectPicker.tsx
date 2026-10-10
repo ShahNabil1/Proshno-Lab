@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Lock, Unlock, Scan } from "lucide-react";
+import { ChevronDown, Scan } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sortSubjects } from "@/lib/classOrder";
 import SubjectVersionTabs from "@/components/dashboard/SubjectVersionTabs";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { hasActiveAccess } from "@/lib/subscriptionMatcher";
-import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 import type {
   SubjectVersion,
   VersionedClass,
@@ -31,7 +27,6 @@ export default function SubjectPicker<T extends VersionedSubject>({
   value,
   values,
   subjects,
-  classes,
   version,
   disabled,
   placeholder = "বিষয় সিলেক্ট করুন",
@@ -41,68 +36,7 @@ export default function SubjectPicker<T extends VersionedSubject>({
   onVersionChange,
 }: SubjectPickerProps<T>) {
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();
-  const [unlockedSubjectIds, setUnlockedSubjectIds] = useState<Set<string>>(new Set());
-  const [hasFullAccess, setHasFullAccess] = useState(false);
-
   const orderedSubjects = useMemo(() => sortSubjects(subjects), [subjects]);
-
-  // Check which subjects are unlocked/purchased by this teacher
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-
-    const checkSubjectAccess = async () => {
-      if (isLocalMockAdminEnabled()) {
-        if (!cancelled) setHasFullAccess(true);
-        return;
-      }
-
-      try {
-        const [{ data: subs }, { data: perms }] = await Promise.all([
-          supabase
-            .from("subscriptions")
-            .select("plan, status")
-            .eq("teacher_id", user.id)
-            .eq("status", "active"),
-          supabase
-            .from("user_permissions")
-            .select("class_id, subject_id")
-            .eq("user_id", user.id),
-        ]);
-
-        if (cancelled) return;
-
-        const activePlans = (subs || []).map((s) => s.plan).filter(Boolean) as string[];
-        const permSet = new Set((perms || []).map((p: any) => `${p.class_id}-${p.subject_id}`));
-
-        const unlocked = new Set<string>();
-        orderedSubjects.forEach((sub) => {
-          const subId = String(sub.id);
-          if (permSet.has(`${sub.class_id}-${sub.id}`)) {
-            unlocked.add(subId);
-            return;
-          }
-          const cls = classes.find((c) => c.id === sub.class_id);
-          if (cls && activePlans.length > 0) {
-            if (hasActiveAccess(activePlans, cls.name, sub.name)) {
-              unlocked.add(subId);
-            }
-          }
-        });
-
-        setUnlockedSubjectIds(unlocked);
-      } catch {
-        // fail-safe
-      }
-    };
-
-    checkSubjectAccess();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, orderedSubjects, classes]);
 
   // Normalize selected IDs from props
   const selectedIds = useMemo(() => {
@@ -206,7 +140,6 @@ export default function SubjectPicker<T extends VersionedSubject>({
                   orderedSubjects.map((subject) => {
                     const subjectId = String(subject.id);
                     const isChecked = selectedIds.includes(subjectId);
-                    const isUnlocked = hasFullAccess || unlockedSubjectIds.has(subjectId);
 
                     return (
                       <div
@@ -237,24 +170,6 @@ export default function SubjectPicker<T extends VersionedSubject>({
                             {subject.name}
                           </span>
 
-                          {/* Minimal Unlock/Lock indicator */}
-                          {isUnlocked ? (
-                            <span
-                              title="আনলক করা বিষয়"
-                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[1px] bg-slate-100 text-slate-700 border border-slate-300 font-medium select-none shrink-0"
-                            >
-                              <Unlock className="h-3 w-3 text-emerald-600" />
-                              <span>আনলক</span>
-                            </span>
-                          ) : (
-                            <span
-                              title="লক করা বিষয় — সাবস্ক্রাইব করুন"
-                              className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[1px] bg-amber-50 text-amber-900 border border-amber-300 font-medium select-none shrink-0"
-                            >
-                              <Lock className="h-3 w-3 text-amber-700" />
-                              <span>লকড</span>
-                            </span>
-                          )}
                         </label>
                       </div>
                     );

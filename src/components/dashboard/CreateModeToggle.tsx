@@ -14,15 +14,15 @@ const items: {
   icon: React.ElementType;
 }[] = [
   {
+    id: "manual",
+    label: "প্রশ্ন তৈরি",
+    icon: FileEdit,
+  },  {
     id: "auto",
     label: "১ ক্লিকে অটো প্রশ্ন",
     icon: SlidersHorizontal,
   },
-  {
-    id: "manual",
-    label: "প্রশ্ন তৈরি",
-    icon: FileEdit,
-  },
+
 ];
 
 export default function CreateModeToggle({ mode, onChange }: Props) {

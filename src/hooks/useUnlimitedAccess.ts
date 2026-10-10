@@ -1,3 +1,4 @@
+import { useNoPackagePreview } from "@/lib/adminExperiencePreview";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
  */
 export function useUnlimitedAccess() {
   const { user } = useAuth();
+  const noPackagePreview = useNoPackagePreview(user?.id);
   const localMockAdmin = isLocalMockAdminEnabled();
   const [unlimited, setUnlimited] = useState(localMockAdmin);
   const [loading, setLoading] = useState(!localMockAdmin);
@@ -35,5 +37,5 @@ export function useUnlimitedAccess() {
     return () => { cancelled = true; };
   }, [user?.id, localMockAdmin]);
 
-  return { unlimited, loading };
+  return { unlimited: unlimited && !noPackagePreview, loading, noPackagePreview: unlimited && noPackagePreview };
 }

@@ -150,7 +150,8 @@ export default function ClassPicker({
                           name="class-radio-select"
                           checked={isSelected}
                           onChange={() => handleSelectDirect(clsId)}
-                          className="h-4 w-4 border-slate-300 text-[#0A1E38] focus:ring-[#0A1E38] cursor-pointer accent-[#0A1E38]"
+                          aria-label={cls.name}
+                          className="class-selection-box h-4 w-4 shrink-0 cursor-pointer"
                         />
                         <label
                           htmlFor={`class-radio-${cls.id}`}

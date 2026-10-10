@@ -337,7 +337,7 @@ export default function QuestionPaperView() {
     sqNumberStyle: "bn-padded-danda" as CqNumberStyle,
     questionNumberGap: 6,
     fontLang: "bangla",
-    fontSize: 14,
+    fontSize: 12,
     equationBold: true,
     answerLineFit: false,
     columns: 2 as ColumnCount,
@@ -459,6 +459,7 @@ export default function QuestionPaperView() {
         ...prev,
         questionNumberStyle: restoredSettings.questionNumberStyle
           ?? (isEnglishPaperMeta(parsedMeta) ? "en-padded-dot" : "bn-padded-danda"),
+        textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(parsedMeta.subjectName || "") ? "left" : "justify",
         ...restoredSettings,
       }));
       if (savedSettings) {
@@ -491,6 +492,7 @@ export default function QuestionPaperView() {
             ...prev,
             questionNumberStyle: loadedSettings.questionNumberStyle
               ?? (isEnglishPaperMeta(loadedMeta) ? "en-padded-dot" : "bn-padded-danda"),
+            textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(loadedMeta.subjectName || "") ? "left" : "justify",
             ...loadedSettings,
           }));
           const ids = data.question_ids as number[];

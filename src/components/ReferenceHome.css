@@ -171,3 +171,5 @@ button{cursor:pointer}
 .hero-version-note strong { color: #00767c; }
 .hero-version-note span { font-size: 14px; }
 @media(max-width:900px) { .hero-version-note { justify-content: center; } }
+
+.plh .pricing-cards{grid-template-columns:minmax(0,1fr);max-width:420px}

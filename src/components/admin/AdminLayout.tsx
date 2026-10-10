@@ -1,3 +1,4 @@
+import AdminExperiencePreview from "@/components/admin/AdminExperiencePreview";
 import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import {
@@ -234,7 +235,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
         </header>
-        <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 md:p-6">{children}</main>
+        <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 md:p-6"><AdminExperiencePreview admin />{children}</main>
       </div>
     </div>
   );

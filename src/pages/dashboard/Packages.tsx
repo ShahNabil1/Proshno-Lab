@@ -1,3 +1,4 @@
+import { isNoPackagePreview } from "@/lib/adminExperiencePreview";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export default function Packages() {
       .eq("teacher_id", user.id)
       .eq("status", "active");
 
-    const activePlans = (subs || [])
+    const activePlans = (isNoPackagePreview(user.id) ? [] : subs || [])
       .filter(s => !s.ends_at || new Date(s.ends_at) > new Date())
       .map(s => s.plan);
 

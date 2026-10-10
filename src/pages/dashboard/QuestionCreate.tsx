@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Flag, Save,
+  CheckCircle, MessageSquare, Search, Eye, AlertTriangle, Lock, Flag, Save,
   SlidersHorizontal, ChevronLeft, ChevronRight, RotateCcw,
   BookOpen, GraduationCap, Clock, Award, FileText, CheckCheck, Layers,
   ListFilter, CheckCircle2, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, School, HelpCircle, Filter, Scan
@@ -214,7 +214,7 @@ const latestQuestionYear = (question: QuestionRow): number => {
 
 export default function QuestionCreate({ onQuestionListChange }: { onQuestionListChange?: (open: boolean) => void }) {
   const { user } = useAuth();
-  const { unlimited: unlimitedAccess, loading: accessLoading } = useUnlimitedAccess();
+  const { unlimited: unlimitedAccess, loading: accessLoading, noPackagePreview } = useUnlimitedAccess();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const addToPaper = searchParams.get("add_to_paper") === "true";
@@ -256,6 +256,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     count: "100",
     ...draft?.form,
   }));
+  const [examModalOpen, setExamModalOpen] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
   const [customExamName, setCustomExamName] = useState(draft?.customExamName || false);
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: number; name: string }[]>([]);
@@ -492,6 +494,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   // Check access: user_permissions OR active subscriptions
   useEffect(() => {
+    if (noPackagePreview) { setHasSubscription(false); return; }
     if (unlimitedAccess) { setHasSubscription(true); return; }
     if (!user?.id || !effectiveClassId || selectedSubjectIds.length === 0) { setHasSubscription(false); return; }
 
@@ -532,7 +535,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return () => {
       cancelled = true;
     };
-  }, [user?.id, effectiveClassId, selectedSubjectIds.join(","), classes, subjects, unlimitedAccess]);
+  }, [user?.id, effectiveClassId, selectedSubjectIds.join(","), classes, subjects, unlimitedAccess, noPackagePreview]);
 
   // Load topics when chapters selected
   useEffect(() => {
@@ -1845,25 +1848,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       <Card className="border border-slate-200 shadow-[0_6px_28px_-16px_#0a1e3830] bg-white rounded-2xl overflow-hidden">
         <CardContent className="manual-form-fields p-3 sm:p-7 grid grid-cols-1 gap-3">
           {/* 1. Exam / Program Name */}
-          <div className="space-y-2">
-            <Select
-              value={customExamName ? "custom" : form.programName || DEFAULT_EXAM_NAME}
-              onValueChange={(value) => {
-                setCustomExamName(value === "custom");
-                setForm(previous => ({ ...previous, programName: value === "custom" ? "" : value }));
-              }}
-            >
-              <SelectTrigger aria-label="প্রোগ্রাম/পরীক্ষার নাম" className="h-12 rounded-lg border-slate-200 text-base text-slate-800 bg-white">
-                <SelectValue placeholder={DEFAULT_EXAM_NAME} />
-              </SelectTrigger>
-              <SelectContent>
-                {EXAM_NAME_OPTIONS.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-                <SelectItem value="custom">নিজে পরীক্ষার নাম লিখুন</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2" data-field-complete={!!form.programName.trim()}>
+            <Button variant="outline" className="w-full h-12 justify-between rounded-lg border-slate-200 text-base font-normal bg-white" onClick={() => setExamModalOpen(true)}>
+              <span className="truncate">{customExamName ? form.programName || DEFAULT_EXAM_NAME : form.programName || DEFAULT_EXAM_NAME}</span>
+              <Scan className="h-4 w-4 shrink-0 text-slate-500" />
+            </Button>
             {customExamName && <Input
               id="manual-exam-name"
-              placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন (খালি থাকলে ক্লাস টেস্ট)"
+              placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন"
               aria-label="পরীক্ষার নাম"
               value={form.programName}
               onChange={(e) => setForm({ ...form, programName: e.target.value })}
@@ -1872,7 +1864,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </div>
 
           {/* 2. Class Picker */}
-          <div>
+          <div data-field-complete={!!form.classId}>
             <ClassPicker
               value={form.classId}
               classes={selectableClasses}
@@ -1886,7 +1878,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </div>
 
           {/* 3. Subject Picker */}
-          <div onClick={!form.classId ? () => setWarningDialog("subject") : undefined}>
+          <div data-field-complete={selectedSubjectIds.length > 0} onClick={!form.classId ? () => setWarningDialog("subject") : undefined}>
             <SubjectPicker
               value={form.subjectId}
               values={form.subjectIds}
@@ -1913,6 +1905,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           </Button> : <>
           <div
             className=""
+            data-field-complete={form.chapterIds.length > 0}
             onClick={() => {
               if (selectedSubjectIds.length === 0) {
                 setWarningDialog("chapter");
@@ -1947,23 +1940,15 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           <>
           {/* 5. Type & Marks (Two-Column Grid) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
-            <div className="min-w-0">
-                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-                <SelectTrigger aria-label="প্রশ্নের ধরন" className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] text-base text-slate-800 bg-white">
-                  <SelectValue placeholder="টাইপ">{selectedSubjectIds.length === 0 ? "টাইপ" : (typeLabels[form.type] || questionTypeLabel(form.type))}</SelectValue>
-                </SelectTrigger>
-                <SelectContent className="rounded-lg border-slate-200">
-                  {(showEnglishBuilder ? ["all"] : scopedTypeOptions).map((t) => (
-                    <SelectItem key={t} value={t} className="text-base py-2">
-                      {showEnglishBuilder && t === "all" ? "\u09b8\u09ac \u09a7\u09b0\u09a8\u09c7\u09b0 \u09aa\u09cd\u09b0\u09b6\u09cd\u09a8" : typeLabels[t] || questionTypeLabel(t)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="min-w-0" data-field-complete={selectedSubjectIds.length > 0 && !!form.type}>
+                <Button variant="outline" className="w-full h-12 justify-between rounded-lg border-slate-200 text-base font-normal bg-white" onClick={() => setTypeModalOpen(true)}>
+                  <span className="truncate">{selectedSubjectIds.length === 0 ? "টাইপ" : form.type === "all" ? "সমন্বিত প্রশ্ন (সৃজঃ + বহু + সংক্ষিপ্ত + অন্যান্য)" : typeLabels[form.type] || questionTypeLabel(form.type)}</span>
+                  <Scan className="h-4 w-4 shrink-0 text-slate-500" />
+                </Button>
             </div>
 
             <div>
-              <div className="relative">
+              <div className="relative" data-field-complete={Number(form.count) >= 1 && Number(form.count) <= 200}>
                 <Input
                   type="number"
                   aria-label="প্রশ্নের সংখ্যা"
@@ -2023,19 +2008,54 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         </CardContent>
       </Card>
 
+      <Dialog open={examModalOpen} onOpenChange={setExamModalOpen}>
+        <DialogContent className="max-w-lg rounded-[6px] sm:rounded-[6px] border-[#b8c7d6] p-0 gap-0 overflow-hidden bg-[#f6f8fa]">
+          <DialogHeader className="bg-[#e3eaf0] border-b border-[#b8c7d6] px-5 py-4"><DialogTitle className="text-base font-bold text-[#0A1E38]">পরীক্ষার নাম নির্বাচন করুন</DialogTitle></DialogHeader>
+          <div className="p-3 space-y-1">
+            {[...EXAM_NAME_OPTIONS, "custom"].map(name => {
+              const selected = name === "custom" ? customExamName : !customExamName && (form.programName || DEFAULT_EXAM_NAME) === name;
+              return <button type="button" key={name} onClick={() => { setCustomExamName(name === "custom"); setForm(previous => ({ ...previous, programName: name === "custom" ? "" : name })); }} className={`w-full flex items-center gap-3 rounded-[4px] px-3 py-3 text-left text-base ${selected ? "bg-[#0A1E38]/5 text-[#0A1E38] font-bold" : "hover:bg-slate-100 text-slate-700"}`}>
+                <span className={`h-4 w-4 shrink-0 rounded-[3px] border flex items-center justify-center ${selected ? "bg-black border-black text-white" : "bg-white border-slate-400"}`}>{selected && <CheckCheck className="h-3 w-3" />}</span>
+                {name === "custom" ? "নিজে পরীক্ষার নাম লিখুন" : name}
+              </button>;
+            })}
+          </div>
+          <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-3 border-t border-[#b8c7d6]">
+            <Button variant="outline" className="rounded-[4px] bg-slate-100 border-[#b8c7d6]" onClick={() => setExamModalOpen(false)}>বন্ধ করুন</Button>
+            <Button className="rounded-[4px] bg-[#0A1E38] hover:bg-[#122B4D]" onClick={() => setExamModalOpen(false)}>নিশ্চিত করুন</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={typeModalOpen} onOpenChange={setTypeModalOpen}>
+        <DialogContent className="max-w-lg rounded-[6px] sm:rounded-[6px] border-[#b8c7d6] p-0 gap-0 overflow-hidden bg-[#f6f8fa]">
+          <DialogHeader className="bg-[#e3eaf0] border-b border-[#b8c7d6] px-5 py-4"><DialogTitle className="text-base font-bold text-[#0A1E38]">প্রশ্নের ধরন নির্বাচন করুন</DialogTitle></DialogHeader>
+          <div className="p-3 space-y-1">
+            {(showEnglishBuilder ? ["all"] : scopedTypeOptions.filter(t => !["short", "descriptive"].includes(t))).map(t => <button type="button" key={t} onClick={() => setForm(previous => ({ ...previous, type: t }))} className={`w-full flex items-center gap-3 rounded-[4px] px-3 py-3 text-left text-base ${form.type === t ? "bg-[#0A1E38]/5 text-[#0A1E38] font-bold" : "hover:bg-slate-100 text-slate-700"}`}>
+              <span className={`h-4 w-4 shrink-0 rounded-[3px] border flex items-center justify-center ${form.type === t ? "bg-black border-black text-white" : "bg-white border-slate-400"}`}>{form.type === t && <CheckCheck className="h-3 w-3" />}</span>
+              {t === "all" ? "সমন্বিত প্রশ্ন (সৃজঃ + বহু + সংক্ষিপ্ত + অন্যান্য)" : typeLabels[t] || questionTypeLabel(t)}
+            </button>)}
+          </div>
+          <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-3 border-t border-[#b8c7d6]">
+            <Button variant="outline" className="rounded-[4px] bg-slate-100 border-[#b8c7d6]" onClick={() => setTypeModalOpen(false)}>বন্ধ করুন</Button>
+            <Button className="rounded-[4px] bg-[#0A1E38] hover:bg-[#122B4D]" onClick={() => setTypeModalOpen(false)}>নিশ্চিত করুন</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Chapter Selection Dialog */}
       <Dialog open={chapterModalOpen} onOpenChange={setChapterModalOpen}>
-        <DialogContent className="max-w-lg rounded-lg border-slate-200 p-0 overflow-hidden bg-white">
-          <div className="flex items-center justify-between pl-5 pr-14 py-3.5 bg-slate-100 border-b border-slate-200">
+        <DialogContent className="chapter-selection-dialog max-w-lg rounded-[6px] sm:rounded-[6px] border-[#b8c7d6] p-0 overflow-hidden bg-[#f6f8fa]">
+          <div className="flex items-center justify-between pl-5 pr-14 py-3.5 bg-[#e3eaf0] border-b border-[#b8c7d6]">
             <div className="text-base font-bold text-slate-800">{showEnglishBuilder ? 'প্রশ্নের ধরন নির্বাচন করুন' : 'অধ্যায় নির্বাচন করুন'}</div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+              <span className="text-xs font-semibold text-slate-600 bg-white border border-[#b8c7d6] px-2 py-1 rounded-[4px]">
                 {toBanglaNum(showEnglishBuilder ? englishSections.length : form.chapterIds.length)} / {toBanglaNum(showEnglishBuilder ? englishBlocks.length : chapters.length)} টি সিলেক্টেড
               </span>
               <button
                 type="button"
                 onClick={showEnglishBuilder ? () => setEnglishSections(previous => previous.length === englishBlocks.length ? [] : englishBlocks.map((_, i) => i)) : toggleAllChapters}
-                className="text-xs font-bold text-[#0A1E38] hover:bg-slate-200 bg-white border border-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                className="text-xs font-bold text-[#0A1E38] hover:bg-slate-200 bg-white border border-[#b8c7d6] px-2.5 py-1 rounded-[4px] transition-colors cursor-pointer"
               >
                 {(showEnglishBuilder ? englishSections.length === englishBlocks.length : form.chapterIds.length === chapters.filter(c => hasSubscription || c.is_free).length && chapters.length > 0)
                   ? "সব আনসিলেক্ট"
@@ -2044,9 +2064,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             </div>
           </div>
           <div className="p-4">
-            <ScrollArea className="h-72 border border-slate-200 rounded-lg">
+            <ScrollArea className="h-72 border border-[#b8c7d6] rounded-[4px]">
               <div className="p-2 space-y-1">
-                {showEnglishBuilder ? englishBlocks.map((block, index) => <label key={block.title} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-base cursor-pointer ${englishSections.includes(index) ? 'bg-[#0A1E38]/5 border border-[#0A1E38]/25 font-semibold' : 'hover:bg-slate-50'}`}>
+                {showEnglishBuilder ? englishBlocks.map((block, index) => <label key={block.title} className={`flex items-center gap-3 px-3.5 py-2.5 rounded-[4px] text-base cursor-pointer ${englishSections.includes(index) ? 'bg-[#0A1E38]/5 border border-[#0A1E38]/25 font-semibold' : 'hover:bg-slate-50'}`}>
                   <Checkbox checked={englishSections.includes(index)} onCheckedChange={checked => setEnglishSections(previous => checked ? [...previous, index] : previous.filter(i => i !== index))} />
                   <span>{block.title.split(' (')[0]} {index < 3 ? [' - Q1 + Q2', ' - Q3 + Q4', ' - Q5 + Q6 + Q7'][index] : ''}</span>
                 </label>) : chapters.map((c) => {
@@ -2055,7 +2075,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   return (
                     <label
                       key={c.id}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-base select-none ${isLocked
+                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-[4px] transition-colors text-base select-none ${isLocked
                           ? "opacity-60 cursor-not-allowed bg-slate-100"
                           : isSelected
                             ? "bg-[#0A1E38]/5 text-[#0A1E38] font-semibold cursor-pointer border border-[#0A1E38]/25"
@@ -2069,17 +2089,17 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                       }}
                     >
                       {isLocked ? (
-                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                        <Lock aria-label="লক করা অধ্যায়" className="w-4 h-4 text-slate-500 shrink-0" />
                       ) : (
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleChapter(String(c.id))}
-                          className="rounded-lg border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
+                          className="rounded-[4px] border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
                         />
                       )}
-                      <span className={isLocked ? "text-slate-400" : ""}>{c.name}</span>
+                      <span className={isLocked ? "text-slate-500" : ""}>{c.name}</span>
                       {isLocked && (
-                        <span className="ml-auto text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-semibold">
+                        <span className="ml-auto text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-[4px] font-semibold">
                           প্যাকেজ প্রয়োজন
                         </span>
                       )}
@@ -2087,24 +2107,24 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   );
                 })}
                 {chapters.length === 0 && (
-                  <p className="text-center text-slate-400 py-8 text-base">কোনো অধ্যায় পাওয়া যায়নি</p>
+                  <p className="text-center text-slate-500 py-8 text-base">কোনো অধ্যায় পাওয়া যায়নি</p>
                 )}
               </div>
             </ScrollArea>
           </div>
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+          <div className="px-5 py-3 bg-slate-50 border-t border-[#b8c7d6] flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setChapterModalOpen(false)}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-base px-5 h-11 rounded-lg border border-slate-200 cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-base px-5 h-11 rounded-[4px] border border-[#b8c7d6] cursor-pointer"
             >
               বন্ধ করুন
             </Button>
             <Button
               type="button"
               onClick={() => setChapterModalOpen(false)}
-              className="bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base px-6 h-11 rounded-lg cursor-pointer border border-[#0A1E38]"
+              className="bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-base px-6 h-11 rounded-[4px] cursor-pointer border border-[#0A1E38]"
             >
               নিশ্চিত করুন
             </Button>
@@ -2113,14 +2133,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       </Dialog>
 
       <Dialog open={!!warningDialog} onOpenChange={() => setWarningDialog(null)}>
-        <DialogContent className="max-w-md rounded-lg border-slate-200">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">{warningDialog && warningMessages[warningDialog].title}</DialogTitle>
+        <DialogContent className="max-w-md rounded-[6px] sm:rounded-[6px] border-[#b8c7d6] bg-[#f6f8fa] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="bg-[#e3eaf0] border-b border-[#b8c7d6] px-5 py-4">
+            <DialogTitle className="text-left text-base font-bold text-[#0A1E38]">{warningDialog && warningMessages[warningDialog].title}</DialogTitle>
           </DialogHeader>
-          <p className="text-center text-base text-slate-600 py-2">{warningDialog && warningMessages[warningDialog].prerequisite}</p>
-          <DialogFooter className="flex gap-2 sm:gap-2">
-            <Button variant="outline" className="flex-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-base" onClick={() => setWarningDialog(null)}>সিলেক্ট করুন</Button>
-            <Button variant="outline" className="flex-1 bg-destructive/10 hover:bg-destructive/20 border-destructive/30 rounded-lg text-base" onClick={() => setWarningDialog(null)}>বন্ধ করুন</Button>
+          <p className="text-left text-base text-slate-600 px-5 py-6">{warningDialog && warningMessages[warningDialog].prerequisite}</p>
+          <DialogFooter className="grid grid-cols-2 gap-2 border-t border-[#b8c7d6] px-4 py-3 bg-[#f1f5f9]">
+            <Button variant="outline" className="h-10 bg-[#0A1E38] hover:bg-[#122B4D] border-[#0A1E38] text-white hover:text-white rounded-[4px] text-base font-bold" onClick={() => setWarningDialog(null)}>সিলেক্ট করুন</Button>
+            <Button variant="outline" className="h-10 bg-slate-100 hover:bg-slate-200 border-[#b8c7d6] rounded-[4px] text-base text-slate-700" onClick={() => setWarningDialog(null)}>বন্ধ করুন</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

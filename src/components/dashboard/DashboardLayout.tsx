@@ -1,3 +1,4 @@
+import AdminExperiencePreview from "@/components/admin/AdminExperiencePreview";
 ﻿import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
@@ -300,6 +301,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AnnouncementBar />
 
         <main className="flex-1 bg-white overflow-y-auto p-3 sm:p-4 md:p-6 lg:overflow-visible">
+          {isAdmin && <AdminExperiencePreview admin />}
           {children}
         </main>
       </div>
