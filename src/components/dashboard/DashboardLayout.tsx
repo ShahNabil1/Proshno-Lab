@@ -1,5 +1,5 @@
 import AdminExperiencePreview from "@/components/admin/AdminExperiencePreview";
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, PlusSquare, Tv, Database,
@@ -26,7 +26,14 @@ import {
 
 const CONFIRM_LEAVE_PATHS = ["/dashboard/view-paper", "/dashboard/create", "/dashboard/auto-create"];
 
-const baseSidebarGroups = [
+type SidebarItem = {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  requiresCloudBackup?: boolean;
+};
+
+const baseSidebarGroups: { label: string; items: SidebarItem[] }[] = [
   { label: "", items: [
     { path: "/dashboard", label: "এক নজরে", icon: LayoutDashboard },
     { path: "/dashboard/my-questions", label: "আমার প্রশ্নপত্র", icon: FileText },
@@ -63,8 +70,8 @@ function useDashboardHiddenPages() {
 
     const channel = supabase
       .channel("dashboard_hidden_pages_realtime")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings", filter: "key=eq.dashboard_hidden_pages" }, (payload) => {
-        const val = (payload.new as any)?.value;
+      .on<{ value: unknown }>("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings", filter: "key=eq.dashboard_hidden_pages" }, (payload) => {
+        const val = payload.new.value;
         if (Array.isArray(val)) setHiddenPages(val as string[]);
       })
       .subscribe();
@@ -93,6 +100,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { cloudBackupEnabled } = useCloudBackup();
   const hiddenPages = useDashboardHiddenPages();
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const startNewQuestionSet = () => {
+    sessionStorage.removeItem("questionCreateDraft");
+    sessionStorage.removeItem("questionCreateDraft:v2:manual");
+    setSidebarOpen(false);
+  };
   const needsLeaveConfirm = CONFIRM_LEAVE_PATHS.some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
@@ -106,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
-        if ((item as any).requiresCloudBackup && !cloudBackupEnabled) return false;
+        if (item.requiresCloudBackup && !cloudBackupEnabled) return false;
         if (hiddenPages.includes(item.path)) return false;
         return true;
       }),
@@ -135,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       });
 
     supabase.from("teachers").select("is_banned").eq("id", user.id).maybeSingle()
-      .then(({ data }) => setIsBanned(!!(data as any)?.is_banned));
+      .then(({ data }) => setIsBanned(!!data?.is_banned));
   }, [user, localMockAdmin]);
 
   // Redirect if current page is hidden
@@ -205,7 +217,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <nav aria-label="শিক্ষক কর্মক্ষেত্র" className="flex-1 overflow-y-auto px-3 py-3 space-y-3 lg:px-4 lg:py-4 lg:space-y-5 text-white" style={{ textRendering: "auto", fontFamily: "SolaimanLipi, Arial, sans-serif" }}>
-          {!hiddenPages.includes("/dashboard/create") && <Link to="/dashboard/create" onClick={() => setSidebarOpen(false)} className="sidebar-create-cta flex items-center justify-between rounded-lg bg-[#00B4BC] px-3 py-2 text-base lg:px-4 lg:py-3 lg:text-lg font-semibold text-[#07162b] transition-colors hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><span>১ ক্লিকে প্রশ্ন তৈরি</span><PlusSquare className="h-5 w-5" /></Link>}
+          {!hiddenPages.includes("/dashboard/create") && <Link to="/dashboard/create" onClick={startNewQuestionSet} className="sidebar-create-cta flex items-center justify-between rounded-lg bg-[#00B4BC] px-3 py-2 text-base lg:px-4 lg:py-3 lg:text-lg font-semibold text-[#07162b] transition-colors hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><span>১ ক্লিকে প্রশ্ন তৈরি</span><PlusSquare className="h-5 w-5" /></Link>}
           {sidebarGroups.map(group => {
             const links = <div className="space-y-1">{group.items.map(item => {
               const active = location.pathname === item.path;
@@ -290,7 +302,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   { path: '/dashboard/omr-evaluation', label: 'OMR মূল্যায়ন', icon: CheckCircle2 },
                   { path: '/dashboard/subscription', label: 'আমার সাবস্ক্রিপশন', icon: CreditCard },
                   { path: '/dashboard/institute', label: 'প্রতিষ্ঠান সেটিংস', icon: Building2 },
-                ].filter(item => !hiddenPages.includes(item.path)).map(item => <DropdownMenuItem key={item.path} asChild className="cursor-pointer rounded-lg px-3 py-2 text-base text-[#0A1E38] focus:bg-[#00B4BC]/10"><Link to={item.path} className="flex items-center gap-3"><item.icon className="h-4 w-4 text-[#00858C]" /><span>{item.label}</span></Link></DropdownMenuItem>)}
+                ].filter(item => !hiddenPages.includes(item.path)).map(item => <DropdownMenuItem key={item.path} asChild className="cursor-pointer rounded-lg px-3 py-2 text-base text-[#0A1E38] focus:bg-[#00B4BC]/10"><Link to={item.path} onClick={item.path === "/dashboard/create" ? startNewQuestionSet : undefined} className="flex items-center gap-3"><item.icon className="h-4 w-4 text-[#00858C]" /><span>{item.label}</span></Link></DropdownMenuItem>)}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={signOut} className="cursor-pointer justify-center gap-2 rounded-lg px-3 py-2 text-base text-rose-700 focus:bg-rose-50 focus:text-rose-700"><LogOut className="h-4 w-4" />লগআউট</DropdownMenuItem>
               </DropdownMenuContent>

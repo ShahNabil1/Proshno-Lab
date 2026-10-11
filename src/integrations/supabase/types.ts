@@ -465,6 +465,8 @@ export type Database = {
       }
       pricing_packages: {
         Row: {
+          duration_days: number | null
+          subject_ids: number[] | null
           class_name: string
           created_at: string
           id: number
@@ -476,6 +478,8 @@ export type Database = {
           type: string
         }
         Insert: {
+          duration_days?: number | null
+          subject_ids?: number[] | null
           class_name: string
           created_at?: string
           id?: never
@@ -487,6 +491,8 @@ export type Database = {
           type?: string
         }
         Update: {
+          duration_days?: number | null
+          subject_ids?: number[] | null
           class_name?: string
           created_at?: string
           id?: never

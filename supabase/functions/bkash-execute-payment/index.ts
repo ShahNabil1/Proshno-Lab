@@ -155,6 +155,9 @@ Deno.serve(async (req) => {
         bkash_payment_id: paymentRow.id,
       }).select("id").maybeSingle();
 
+      // Timed/custom packages use expiring subscriptions, never permanent grants.
+      if (pkg.duration_days != null || Array.isArray(pkg.subject_ids)) continue;
+
       const { data: classRow } = await admin.from("classes").select("id").eq("name", className).maybeSingle();
       if (!classRow) continue;
 

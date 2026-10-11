@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     if (ids.length > 0) {
       const { data: pkgs } = await admin
         .from("pricing_packages")
-        .select("id, class_name, subject_name, price")
+        .select("id, class_name, subject_name, price, duration_days, subject_ids")
         .in("id", ids);
       for (const sel of selected_packages) {
         const match = pkgs?.find((p: any) => p.id === Number(sel.id));
@@ -107,6 +107,8 @@ Deno.serve(async (req) => {
           class_name: match.class_name,
           subject_name: match.subject_name,
           price: Number(match.price),
+          duration_days: match.duration_days,
+          subject_ids: match.subject_ids,
         });
       }
     } else {

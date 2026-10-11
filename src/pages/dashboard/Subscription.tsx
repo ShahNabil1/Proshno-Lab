@@ -27,6 +27,7 @@ interface Sub {
 }
 
 interface PricingPkg {
+  duration_days?: number | null;
   id: number;
   class_name: string;
   subject_name: string;
@@ -141,7 +142,7 @@ export default function Subscription() {
 
   const goToCheckout = (pkg: PricingPkg) => {
     // For bundles, use the old checkout page
-    window.location.href = `/checkout?package=${pkg.id}&price=${pkg.price}&classes=${encodeURIComponent(pkg.class_name)}&subject=${encodeURIComponent(pkg.subject_name)}`;
+    window.location.href = `/checkout?id=${pkg.id}&package=${pkg.id}&price=${pkg.price}&classes=${encodeURIComponent(pkg.class_name)}&subject=${encodeURIComponent(pkg.subject_name)}`;
   };
 
   return (
@@ -287,7 +288,7 @@ export default function Subscription() {
                     <p className="text-xs text-muted-foreground mb-3">{pkg.subject_name}</p>
                     <div className="flex items-end gap-1 mb-3">
                       <span className="font-heading text-2xl font-bold text-primary">৳{toBanglaNum(pkg.price)}</span>
-                      <span className="text-xs text-muted-foreground mb-1">/ বছর</span>
+                      <span className="text-xs text-muted-foreground mb-1">/ {pkg.duration_days ? `${toBanglaNum(pkg.duration_days)} দিন` : "বছর"}</span>
                     </div>
                     <div className="space-y-1.5 mb-4">
                       {features.map((f, i) => (
@@ -376,7 +377,7 @@ export default function Subscription() {
                                 <div className="flex-1">
                                   <p className="text-sm font-heading font-bold mb-1">{pkg.subject_name}</p>
                                   <p className="text-lg font-heading font-bold text-primary">
-                                    ৳{toBanglaNum(pkg.price)}<span className="text-xs text-muted-foreground font-normal">/বছর</span>
+                                    ৳{toBanglaNum(pkg.price)}<span className="text-xs text-muted-foreground font-normal">/ {pkg.duration_days ? `${toBanglaNum(pkg.duration_days)} দিন` : "বছর"}</span>
                                   </p>
                                 </div>
                               </div>

@@ -9,9 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Loader2, Package, Filter, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ALL_SUBJECTS_LABEL, planCoversSelection } from "@/lib/subscriptionMatcher";
 
 interface PricingPackage {
   id: number;
+  duration_days: number | null;
+  subject_ids: number[] | null;
   type: string;
   class_name: string;
   subject_name: string;
@@ -22,6 +26,8 @@ interface PricingPackage {
 }
 
 const emptyForm = {
+  duration_days: 365,
+  subject_ids: [] as number[],
   type: "class" as string,
   class_name: "",
   subject_name: "সকল বিষয়",
@@ -37,22 +43,43 @@ export default function AdminPackages() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PricingPackage | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [classes, setClasses] = useState<{id:number;name:string}[]>([]);
+  const [subjects, setSubjects] = useState<{id:number;name:string;class_id:number}[]>([]);
+  const [allSubjects, setAllSubjects] = useState(true);
+  const [subjectsChanged, setSubjectsChanged] = useState(false);
   const [saving, setSaving] = useState(false);
   const [filterClass, setFilterClass] = useState("");
 
   const fetchPackages = async () => {
     const { data } = await supabase.from("pricing_packages").select("*").order("sort_order");
-    setPackages((data as any[]) || []);
+    setPackages(data || []);
     setLoading(false);
   };
 
-  useEffect(() => { fetchPackages(); }, []);
+  useEffect(() => {
+    fetchPackages();
+    Promise.all([
+      supabase.from("classes").select("id,name").order("id"),
+      supabase.from("subjects").select("id,name,class_id").order("id"),
+    ]).then(([c,s]) => {
+      if (c.error || s.error) toast.error("বিষয়ের তালিকা লোড হয়নি, পেজ রিফ্রেশ করুন");
+      setClasses(c.data || []); setSubjects(s.data || []);
+    });
+  }, []);
+  const availableSubjects = subjects.filter(subject => {
+    const cls = classes.find(c => c.id === subject.class_id);
+    return cls && form.class_name.trim() && planCoversSelection(`${form.class_name} - ${ALL_SUBJECTS_LABEL}`, cls.name, subject.name);
+  });
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setModalOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setAllSubjects(true); setSubjectsChanged(false); setModalOpen(true); };
 
   const openEdit = (pkg: PricingPackage) => {
     setEditing(pkg);
+    setSubjectsChanged(false);
+    setAllSubjects(pkg.subject_name === ALL_SUBJECTS_LABEL);
     setForm({
+      duration_days: pkg.duration_days || 365,
+      subject_ids: pkg.subject_ids || subjects.filter(s => pkg.subject_name.split(", ").includes(s.name)).map(s => s.id),
       type: pkg.type, class_name: pkg.class_name, subject_name: pkg.subject_name,
       price: pkg.price, sort_order: pkg.sort_order, is_active: pkg.is_active,
       is_coming_soon: pkg.is_coming_soon,
@@ -63,11 +90,20 @@ export default function AdminPackages() {
   const handleSave = async () => {
     if (!form.class_name.trim()) { toast.error("শ্রেণির নাম দিন"); return; }
     if (form.price <= 0) { toast.error("মূল্য সঠিক নয়"); return; }
+    if (!Number.isInteger(form.duration_days) || form.duration_days < 1 || form.duration_days > 36500) {
+      toast.error("মেয়াদ ১ থেকে ৩৬৫০০ দিনের মধ্যে দিন"); return;
+    }
+    const chosen = availableSubjects.filter(s => form.subject_ids.includes(s.id));
+    const preserveLegacySubject = editing && editing.subject_ids === null &&
+      form.class_name === editing.class_name && !subjectsChanged;
+    if (!allSubjects && !chosen.length && !preserveLegacySubject) { toast.error("অন্তত একটি বিষয় নির্বাচন করুন"); return; }
     setSaving(true);
     try {
       const payload = {
         type: form.type, class_name: form.class_name.trim(),
-        subject_name: form.subject_name.trim() || "সকল বিষয়",
+        subject_name: allSubjects ? ALL_SUBJECTS_LABEL : preserveLegacySubject ? editing.subject_name : [...new Set(chosen.map(s => s.name))].join(", "),
+        subject_ids: allSubjects || preserveLegacySubject ? null : chosen.map(s => s.id),
+        duration_days: form.duration_days,
         price: form.price, sort_order: form.sort_order,
         is_active: form.is_active, is_coming_soon: form.is_coming_soon,
       };
@@ -135,6 +171,7 @@ export default function AdminPackages() {
               <TableHead className="font-heading font-semibold">শ্রেণি</TableHead>
               <TableHead className="font-heading font-semibold">বিষয়</TableHead>
               <TableHead className="font-heading font-semibold">মূল্য</TableHead>
+              <TableHead className="font-heading font-semibold">মেয়াদ</TableHead>
               <TableHead className="font-heading font-semibold">ক্রম</TableHead>
               <TableHead className="font-heading font-semibold">স্ট্যাটাস</TableHead>
               <TableHead className="font-heading font-semibold">Coming Soon</TableHead>
@@ -152,6 +189,7 @@ export default function AdminPackages() {
                 <TableCell className="font-medium">{pkg.class_name}</TableCell>
                 <TableCell>{pkg.subject_name}</TableCell>
                 <TableCell className="font-semibold">৳{pkg.price}</TableCell>
+                <TableCell>{pkg.duration_days ? `${pkg.duration_days.toLocaleString("bn-BD")} দিন` : "১ বছর"}</TableCell>
                 <TableCell>{pkg.sort_order}</TableCell>
                 <TableCell><Switch checked={pkg.is_active} onCheckedChange={() => toggleActive(pkg)} /></TableCell>
                 <TableCell>
@@ -173,7 +211,7 @@ export default function AdminPackages() {
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">{editing ? "প্যাকেজ এডিট করুন" : "নতুন প্যাকেজ যোগ করুন"}</DialogTitle>
           </DialogHeader>
@@ -190,11 +228,23 @@ export default function AdminPackages() {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">শ্রেণি নাম</label>
-              <Input value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })} placeholder="যেমন: ষষ্ঠ শ্রেণি" />
+              <Input value={form.class_name} list="package-class-options" onChange={(e) => { setSubjectsChanged(true); setForm({ ...form, class_name: e.target.value, subject_ids: [] }); }} placeholder="যেমন: ষষ্ঠ শ্রেণি" />
+            </div>
+            <datalist id="package-class-options">{classes.map(c => <option key={c.id} value={c.name} />)}</datalist>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm"><Checkbox checked={allSubjects} onCheckedChange={v => { setSubjectsChanged(true); setAllSubjects(v === true); }} />{ALL_SUBJECTS_LABEL}</label>
+              {!allSubjects && <div className="max-h-48 overflow-y-auto rounded-md border p-3 space-y-2">
+                {availableSubjects.map(subject => <label key={subject.id} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={form.subject_ids.includes(subject.id)} onCheckedChange={checked => { setSubjectsChanged(true); setForm(previous => ({ ...previous, subject_ids: checked ? [...previous.subject_ids, subject.id] : previous.subject_ids.filter(id => id !== subject.id) })); }} />
+                  {subject.name}<span className="text-xs text-muted-foreground">({classes.find(c => c.id === subject.class_id)?.name})</span>
+                </label>)}
+                {!availableSubjects.length && <p className="text-sm text-muted-foreground">উপরে শ্রেণি নির্বাচন করুন</p>}
+              </div>}
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">বিষয় নাম</label>
-              <Input value={form.subject_name} onChange={(e) => setForm({ ...form, subject_name: e.target.value })} placeholder="সকল বিষয়" />
+              <label htmlFor="package-duration" className="text-sm font-medium mb-1 block">মেয়াদ (দিন)</label>
+              <Input id="package-duration" type="number" min={1} max={36500} value={form.duration_days} onChange={e => setForm({ ...form, duration_days: Number(e.target.value) })} />
+              <div className="flex gap-2 mt-2">{[30,90,180,365].map(days => <Button key={days} type="button" size="sm" variant="outline" onClick={() => setForm({ ...form, duration_days: days })}>{days.toLocaleString("bn-BD")} দিন</Button>)}</div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

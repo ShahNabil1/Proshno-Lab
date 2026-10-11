@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import CreateModeToggle, { type CreateMode } from "@/components/dashboard/CreateModeToggle";
 import QuestionCreate from "./QuestionCreate";
 import AutoQuestionCreate from "./AutoQuestionCreate";
@@ -7,6 +7,7 @@ import AutoQuestionCreate from "./AutoQuestionCreate";
 export default function QuestionCreateHub() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [manualQuestionListOpen, setManualQuestionListOpen] = useState(false);
   const raw = (params.get("mode") as CreateMode) || "manual";
   const mode: CreateMode = raw === "auto" ? "auto" : "manual";
@@ -33,7 +34,7 @@ export default function QuestionCreateHub() {
       {!forceManual && !(activeMode === "manual" && manualQuestionListOpen) && (
         <CreateModeToggle mode={activeMode} onChange={setMode} />
       )}
-      {activeMode === "manual" && <QuestionCreate onQuestionListChange={setManualQuestionListOpen} />}
+      {activeMode === "manual" && <QuestionCreate key={location.key} onQuestionListChange={setManualQuestionListOpen} />}
       {activeMode === "auto" && <AutoQuestionCreate />}
     </div>
   );

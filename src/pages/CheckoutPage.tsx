@@ -30,9 +30,15 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [allSubjects, setAllSubjects] = useState<string[]>([]);
+  const [durationDays, setDurationDays] = useState<number | null>(null);
   const [resolvedId, setResolvedId] = useState<number | null>(packageIdParam ? Number(packageIdParam) : null);
 
   const totalPrice = Math.max(0, packagePrice - discount);
+  useEffect(() => {
+    if (!resolvedId) return;
+    supabase.from("pricing_packages").select("duration_days").eq("id", resolvedId).maybeSingle()
+      .then(({ data }) => setDurationDays(data?.duration_days ?? null));
+  }, [resolvedId]);
 
   useEffect(() => {
     if (!user) return;
@@ -93,7 +99,7 @@ export default function CheckoutPage() {
           <img src={logoImg} alt="Proshno Lab" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
           <h1 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!</h1>
           <div className="flex justify-between text-sm text-muted-foreground mt-4">
-            <span>মেয়াদ — ১ বছর</span>
+            <span>মেয়াদ — {durationDays ? `${durationDays.toLocaleString("bn-BD")} দিন` : "১ বছর"}</span>
             <span>লিমিট — আনলিমিটেড প্রশ্ন তৈরি</span>
           </div>
         </div>

@@ -219,6 +219,13 @@ describe("hasActiveAccess", () => {
 });
 
 describe("isPackagePurchased", () => {
+  it("limits custom multi-subject packages to the selected class and subjects", () => {
+    const plan = "ষষ্ঠ শ্রেণি - গণিত, বিজ্ঞান";
+    expect(planCoversSelection(plan, "ষষ্ঠ শ্রেণি", "গণিত")).toBe(true);
+    expect(planCoversSelection(plan, "ষষ্ঠ শ্রেণি", "বিজ্ঞান")).toBe(true);
+    expect(planCoversSelection(plan, "ষষ্ঠ শ্রেণি", "English 1st Paper")).toBe(false);
+    expect(planCoversSelection(plan, "সপ্তম শ্রেণি", "গণিত")).toBe(false);
+  });
   const activePlans = ["ষষ্ঠ - দশম - সকল বিষয়"];
 
   it("marks individual subject packages within bundle range as purchased", () => {

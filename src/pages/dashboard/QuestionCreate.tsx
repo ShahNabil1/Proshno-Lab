@@ -1,3 +1,7 @@
+import QuestionBorderLoading from "@/components/dashboard/QuestionBorderLoading";
+import QuestionLoading from "@/components/dashboard/QuestionLoading";
+import { getCachedBrowserPage, fetchBrowserPage, fetchBrowserGroups, mergePageWithSelection, type BrowserScope, type BrowserPage, type BrowserFilters } from "@/lib/questionBrowser";
+import { fetchQuestionPages } from "@/lib/fetchQuestionPages";
 import { getQuestionDuplicateSignature } from "@/lib/questionDuplicates";
 import { createPortal } from "react-dom";
 import { englishBlocks } from '@/lib/englishFirstBuilder';
@@ -225,6 +229,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       return saved && (!user || saved.owner === user.id) ? saved : null;
     } catch { return null; }
   });
+  const [remoteScope, setRemoteScope] = useState<BrowserScope | null>(draft?.remoteScope || null);
+  const [remotePage, setRemotePage] = useState<BrowserPage<QuestionRow> | null>(draft?.remotePage || null);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [selectionLoading, setSelectionLoading] = useState(false);
+  const [pageError, setPageError] = useState(false);
+  const [pageRetry, setPageRetry] = useState(0);
+  const remoteQueryRef = useRef("");
+  const selectedIdsRef = useRef<Set<number>>(new Set(draft?.selectedIds || []));
   const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
   const [mobileToolbarTarget, setMobileToolbarTarget] = useState<HTMLElement | null>(null);
   useEffect(() => {
@@ -309,12 +321,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
   const [questionRows, setQuestions] = useState<QuestionRow[]>(draft?.questions || []);
   const questions = useMemo(() => {
+    if (remoteScope) return questionRows;
     const existing: QuestionRow[] = addToPaper
       ? JSON.parse(sessionStorage.getItem("existingPaperQuestions") || "[]") : [];
     const seen = new Set(existing.map(getQuestionDuplicateSignature).filter(Boolean));
     const existingIds = new Set(existing.map(q => q.id));
+    const years = new Map(questionRows.map(q => [q.id, latestQuestionYear(q)]));
     return [...questionRows]
-      .sort((a, b) => latestQuestionYear(b) - latestQuestionYear(a) || b.id - a.id)
+      .sort((a, b) => (years.get(b.id) || 0) - (years.get(a.id) || 0) || b.id - a.id)
       .filter(q => {
         if (existingIds.has(q.id)) return false;
         const key = getQuestionDuplicateSignature(q);
@@ -322,8 +336,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         if (key) seen.add(key);
         return true;
       });
-  }, [questionRows, addToPaper]);
+  }, [questionRows, addToPaper, remoteScope]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(draft?.selectedIds || []));
+  selectedIdsRef.current = selectedIds;
   const [existingQuestionIds, setExistingQuestionIds] = useState<Set<number>>(new Set());
   useEffect(() => {
     const allowedIds = new Set(questions.map(q => q.id));
@@ -370,7 +385,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   // Filter states for sidebar
   const [filterSearch, setFilterSearch] = useState<string>(draft?.filterSearch || "");
   const [filterType, setFilterType] = useState<string | null>(draft?.filterType || null);
-  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set(draft?.filterChapterIds || []));
+  const [filterChapterIds, setFilterChapterIds] = useState<Set<number>>(new Set((draft?.filterChapterIds?.length ? draft.filterChapterIds : draft?.remoteScope?.chapterIds || []).slice(0, 1)));
   const [filterTopicIds, setFilterTopicIds] = useState<Set<number>>(new Set(draft?.filterTopicIds || []));
   const [filterUntopicedChapterIds, setFilterUntopicedChapterIds] = useState<Set<number>>(new Set(draft?.filterUntopicedChapterIds || []));
   const [filterBoards, setFilterBoards] = useState<Set<string>>(new Set(draft?.filterBoards || []));
@@ -379,13 +394,70 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const [filterSchoolYear, setFilterSchoolYear] = useState<string>(draft?.filterSchoolYear || "");
   const [filterSpecial, setFilterSpecial] = useState<string | null>(draft?.filterSpecial || null);
   const [currentPage, setCurrentPage] = useState<number>(draft?.currentPage || 1);
+  const [debouncedSearch, setDebouncedSearch] = useState(filterSearch);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(filterSearch), 250);
+    return () => window.clearTimeout(timer);
+  }, [filterSearch]);
+  const remoteFilters = useMemo<BrowserFilters>(() => ({
+    search: debouncedSearch.trim(), type: filterType || remoteScope?.types[0] || "mcq", chapterIds: remoteScope ? [([...filterChapterIds].find(id => remoteScope.chapterIds.includes(id)) ?? remoteScope.chapterIds[0])].filter(id => id !== undefined) : [...filterChapterIds],
+    topicIds: [...filterTopicIds], untopicedChapterIds: [...filterUntopicedChapterIds],
+    boards: [...filterBoards], year: filterYear, schools: [...filterSchools],
+    schoolYear: filterSchoolYear, special: filterSpecial,
+  }), [debouncedSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds,
+    filterBoards, filterYear, filterSchools, filterSchoolYear, filterSpecial, remoteScope]);
+  useEffect(() => {
+    if (!remoteScope?.chapterIds.length) return;
+    const chapter = [...filterChapterIds].find(id => remoteScope.chapterIds.includes(id)) ?? remoteScope.chapterIds[0];
+    if (filterChapterIds.size !== 1 || !filterChapterIds.has(chapter)) {
+      setFilterChapterIds(new Set([chapter]));
+      setFilterTopicIds(new Set()); setFilterUntopicedChapterIds(new Set());
+      setCurrentPage(1);
+    }
+  }, [remoteScope, filterChapterIds]);
+  const remoteQueryKey = JSON.stringify([remoteScope, remoteFilters, currentPage, pageRetry]);
+  const browserActive = step === "questionSet" || step === "questionList";
+  useEffect(() => {
+    if (!showEnglishBuilder && !filterType) {
+      setFilterType(remoteScope?.types[0] || "mcq");
+      setCurrentPage(1);
+    }
+  }, [showEnglishBuilder, filterType, remoteScope]);
+  useEffect(() => {
+    if (!browserActive || !remoteScope || remoteQueryRef.current === remoteQueryKey) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const cached = getCachedBrowserPage<QuestionRow>(remoteScope, remoteFilters, currentPage, user?.id || "");
+      setPageLoading(!cached); setPageError(false);
+      try {
+        const data = cached || await fetchBrowserPage<QuestionRow>(remoteScope, remoteFilters, currentPage, user?.id || "");
+        if (cancelled) return;
+        remoteQueryRef.current = remoteQueryKey;
+        setRemotePage(data);
+        setQuestions(previous => mergePageWithSelection(previous, data.rows, selectedIdsRef.current));
+        if (currentPage > Math.max(1, Math.ceil(data.total / 20))) setCurrentPage(1);
+      } catch {
+        if (!cancelled) setPageError(true);
+      } finally {
+        if (!cancelled) setPageLoading(false);
+      }
+    }, 0);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [browserActive, remoteQueryKey, remoteScope, remoteFilters, currentPage, user?.id]);
+  useEffect(() => {
+    if (!browserActive || !remoteScope || !remotePage || pageLoading || pageError || !user?.id
+      || currentPage * 20 >= remotePage.total) return;
+    // Warm one successor only, and share pending requests with a Next click.
+    void fetchBrowserPage<QuestionRow>(remoteScope, remoteFilters, currentPage + 1, user.id)
+      .catch(() => { /* Speculative failures must not disturb the visible page. */ });
+  }, [browserActive, remoteScope, remotePage, remoteFilters, currentPage, pageLoading, pageError, user?.id]);
   const mainScrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!user) return;
     const saveDraft = () => {
       try {
         sessionStorage.setItem(draftKey, JSON.stringify({
-          owner: user.id, form, step, questions, selectedIds: [...selectedIds],
+          owner: user.id, form, step, questions, remoteScope, remotePage, selectedIds: [...selectedIds],
           customExamName, subjectVersion, englishSections, englishPreviewRows,
           filterSearch, filterType, filterChapterIds: [...filterChapterIds],
           filterTopicIds: [...filterTopicIds], filterUntopicedChapterIds: [...filterUntopicedChapterIds],
@@ -397,7 +469,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     const timer = window.setTimeout(saveDraft, 150);
     window.addEventListener("pagehide", saveDraft);
     return () => { window.clearTimeout(timer); window.removeEventListener("pagehide", saveDraft); };
-  }, [user, draftKey, form, step, questions, selectedIds, customExamName, subjectVersion,
+  }, [user, draftKey, form, step, questions, remoteScope, remotePage, selectedIds, customExamName, subjectVersion,
     englishSections, englishPreviewRows, filterSearch, filterType, filterChapterIds,
     filterTopicIds, filterUntopicedChapterIds, filterBoards, filterSchools,
     filterYear, filterSchoolYear, filterSpecial, currentPage]);
@@ -574,13 +646,13 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       ? f.subjectIds
       : (f.subjectId ? f.subjectId.split(",").map(s => s.trim()).filter(Boolean) : []);
 
-    const buildQuery = (from: number, to: number) => {
+    const buildQuery = (from: number, to: number, withCount: boolean) => {
       const subjectClassIds = Array.from(new Set(
         sIds
           .map((subjectId) => subjects.find((subject) => String(subject.id) === String(subjectId))?.class_id)
           .filter((classId): classId is number => Boolean(classId)),
       ));
-      let query = supabase.from("questions").select("*, chapters!inner(is_active)")
+      let query = supabase.from("questions").select("*, chapters!inner(is_active)", withCount ? { count: "exact" } : {})
         .in("class_id", subjectClassIds.length > 0 ? subjectClassIds : [Number(f.classId)])
         .in("subject_id", sIds.map(Number));
       if (!unlimitedAccess) query = query.eq("chapters.is_active", true);
@@ -596,15 +668,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
     // Show every matching database question. The 200 limit applies only when
     // the user selects questions for a paper, not while browsing/filtering.
-    const allRows: QuestionRow[] = [];
-    const pageSize = 1000;
-    for (let from = 0; from < 50000; from += pageSize) {
-      const { data, error } = await buildQuery(from, from + pageSize - 1);
+    const allRows = await fetchQuestionPages<QuestionRow>(async (from, to, withCount) => {
+      const { data, error, count } = await buildQuery(from, to, withCount);
       if (error) throw error;
-      const batch = (data || []) as QuestionRow[];
-      allRows.push(...batch);
-      if (batch.length < pageSize) break;
-    }
+      return { rows: (data || []) as QuestionRow[], count };
+    });
     if (showEnglishBuilder) {
       const types = new Set<string>(englishSections.flatMap(i => {
         const block = englishBlocks[i];
@@ -631,6 +699,30 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     const safeCount = Math.min(200, Math.max(1, parseInt(form.count || "100", 10) || 100));
     setLoading(true);
     try {
+      if (!addToPaper && !showEnglishBuilder) {
+        const scope: BrowserScope = {
+          classIds: [...new Set(selectedSubjects.map(subject => subject.class_id))],
+          subjectIds: selectedSubjectIds.map(Number), chapterIds: form.chapterIds.map(Number),
+          types: form.type === "all" ? [] : (typeDbValues[form.type] || [form.type]),
+          includeInactive: unlimitedAccess,
+        };
+        const initialFilters: BrowserFilters = {
+          search: "", type: scope.types[0] || "mcq",
+          chapterIds: [scope.chapterIds[0]], topicIds: [], untopicedChapterIds: [], boards: [], year: "",
+          schools: [], schoolYear: "", special: null,
+        };
+        setSelectedIds(new Set());
+        setFilterSearch(""); setDebouncedSearch(""); setFilterType(initialFilters.type);
+        setFilterChapterIds(new Set(initialFilters.chapterIds)); setFilterTopicIds(new Set());
+        setFilterUntopicedChapterIds(new Set()); setFilterBoards(new Set()); setFilterYear("");
+        setFilterSchools(new Set()); setFilterSchoolYear(""); setFilterSpecial(null);
+        setCurrentPage(1); setPageRetry(0);
+        remoteQueryRef.current = "";
+        setPageLoading(false); setPageError(false);
+        setRemoteScope(scope); setRemotePage(null); setQuestions([]);
+        setStep("questionSet");
+        return;
+      }
       const allRows = await fetchQuestionRows({
         ...form,
         count: safeCount,
@@ -645,8 +737,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         toast.info("এই ফিল্টারে কোনো নতুন প্রশ্ন পাওয়া যায়নি");
         return;
       }
-      const shuffled = filtered.sort(() => Math.random() - 0.5);
-      setQuestions(shuffled);
+      // The list is displayed by reference year, so random sorting is redundant.
+      setQuestions(filtered);
       setSelectedIds(new Set());
       // Set initial sidebar filter based on form type (if not "all")
       if (form.type !== "all") {
@@ -667,9 +759,32 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     }
   };
 
-  const handleAddQuestions = () => setStep("questionList");
+  const handleAddQuestions = () => {
+    if (remoteScope && !remotePage) setPageLoading(true);
+    setStep("questionList");
+  };
 
-  const toggleQuestion = (id: number) => {
+  const toggleQuestion = async (id: number) => {
+    if (selectionLoading || pageLoading) return;
+    let selectionPool = questions;
+    const target = questions.find(q => q.id === id);
+    if (remoteScope && target?.stimulus_group_id && !selectedIdsRef.current.has(id)) {
+      setSelectionLoading(true);
+      try {
+        const group = await fetchBrowserGroups<QuestionRow>(remoteScope, [target.stimulus_group_id]);
+        if (group.length > 200) { toast.warning("এই উদ্দীপকের সব প্রশ্ন নিলে ২০০ প্রশ্নের সীমা অতিক্রম করবে।"); return; }
+        const signatures = new Set<string>();
+        const rows = group.filter(q => {
+          const signature = getQuestionDuplicateSignature(q);
+          if (signatures.has(signature)) return false;
+          signatures.add(signature); return true;
+        });
+        selectionPool = mergePageWithSelection(questions, [...(remotePage?.rows || []), ...rows], selectedIdsRef.current);
+        setQuestions(selectionPool);
+      } catch {
+        toast.error("একই উদ্দীপকের প্রশ্ন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।"); return;
+      } finally { setSelectionLoading(false); }
+    }
     setSelectedIds((prev) => {
       const next = new Set(prev);
       const question = questions.find(q => q.id === id);
@@ -682,7 +797,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
       if (!showEnglishBuilder && question?.stimulus_group_id) {
         // Auto-select/deselect all questions in the same group
-        const groupQs = questions.filter(q => q.stimulus_group_id === question.stimulus_group_id);
+        const groupQs = selectionPool.filter(q => q.stimulus_group_id === question.stimulus_group_id);
         if (isAdding && next.size + groupQs.filter(gq => !next.has(gq.id)).length > 200) {
           toast.warning("এই গ্রুপটি নিলে ২০০ প্রশ্নের সীমা অতিক্রম করবে");
           return prev;
@@ -701,10 +816,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const selectedChapterNames = chapters
     .filter(c => form.chapterIds.includes(String(c.id)))
     .map(c => c.name);
-  const schoolList = useMemo(() => Array.from(new Set(
+  const schoolList = useMemo(() => remotePage ? remotePage.schools : Array.from(new Set(
     questions.flatMap(q => schoolNamesFromRefs(schoolQuestionRefs(q)))
-  )).sort((a, b) => a.localeCompare(b, "bn")), [questions]);
-  const boardYears = useMemo(() => Array.from(new Set(
+  )).sort((a, b) => a.localeCompare(b, "bn")), [questions, remotePage]);
+  const boardYears = useMemo(() => remotePage ? remotePage.boardYears : Array.from(new Set(
     questions.flatMap(question => {
       const refs = Array.isArray(question.board_references) ? question.board_references : [];
       return refs
@@ -712,8 +827,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         .map((ref: any) => normalizeYear(ref?.year))
         .filter(Boolean);
     })
-  )).sort((a, b) => Number(b) - Number(a)), [questions]);
-  const schoolYears = useMemo(() => Array.from(new Set(
+  )).sort((a, b) => Number(b) - Number(a)), [questions, remotePage]);
+  const schoolYears = useMemo(() => remotePage ? remotePage.schoolYears : Array.from(new Set(
     questions.flatMap(question => {
       const refs = schoolQuestionRefs(question);
       return refs
@@ -721,7 +836,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         .map(referenceYear)
         .filter(Boolean);
     })
-  )).sort((a, b) => Number(b) - Number(a)), [questions]);
+  )).sort((a, b) => Number(b) - Number(a)), [questions, remotePage]);
   const selectedTypeCounts = useMemo(() => {
     const counts = { mcq: 0, cq: 0, short: 0, descriptive: 0 };
     questions.forEach(question => {
@@ -731,12 +846,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return counts;
   }, [questions, selectedIds]);
   const totalTypeCounts = useMemo(() => {
+    if (remotePage) return { mcq: remotePage.types.mcq || 0, cq: remotePage.types.cq || 0,
+      short: remotePage.types.short || 0, descriptive: remotePage.types.descriptive || 0 };
     const counts = { mcq: 0, cq: 0, short: 0, descriptive: 0 };
     questions.forEach(question => {
       if (question.type in counts) counts[question.type as keyof typeof counts] += 1;
     });
     return counts;
-  }, [questions]);
+  }, [questions, remotePage]);
 
   // Apply all filters
   const getFilteredQuestions = () => {
@@ -819,18 +936,34 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return result;
   };
 
-  const filteredQuestions = useMemo(() => englishPreviewRows ? englishPreviewRows.filter(q => questions.some(item => item.id === q.id)) : getFilteredQuestions(), [englishPreviewRows, questions, filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterYear, filterSchools, filterSchoolYear, filterSpecial]);
-  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
-  const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const filteredQuestions = useMemo(() => remoteScope ? (remotePage?.rows || []) : englishPreviewRows ? englishPreviewRows.filter(q => questions.some(item => item.id === q.id)) : getFilteredQuestions(), [remoteScope, remotePage, englishPreviewRows, questions, filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterYear, filterSchools, filterSchoolYear, filterSpecial]);
+  const totalPages = Math.ceil((remoteScope ? remotePage?.total || 0 : filteredQuestions.length) / ITEMS_PER_PAGE);
+  const paginatedQuestions = remoteScope ? filteredQuestions : filteredQuestions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const selectablePageQuestions = paginatedQuestions.filter(q => !showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type));
   const pageSelectedCount = selectablePageQuestions.filter(q => selectedIds.has(q.id)).length;
-  const togglePageSelection = (checked: boolean) => {
+  const togglePageSelection = async (checked: boolean) => {
+    if (selectionLoading || pageLoading) return;
+    let selectionPool = questions;
+    if (remoteScope) {
+      const groups = [...new Set(selectablePageQuestions.map(q => q.stimulus_group_id).filter(Boolean))];
+      if (checked && groups.length) {
+        setSelectionLoading(true);
+        try {
+          const rows = await fetchBrowserGroups<QuestionRow>(remoteScope, groups);
+          if (rows.length > 200) { toast.warning("সর্বোচ্চ ২০০টি প্রশ্ন নির্বাচন করা যাবে।"); return; }
+          selectionPool = mergePageWithSelection(questions, [...(remotePage?.rows || []), ...rows], selectedIdsRef.current);
+          setQuestions(selectionPool);
+        } catch {
+          toast.error("একই উদ্দীপকের প্রশ্ন আনতে সমস্যা হয়েছে। আবার চেষ্টা করুন।"); return;
+        } finally { setSelectionLoading(false); }
+      }
+    }
     const ids = new Set(selectablePageQuestions.map(q => q.id));
     if (!showEnglishBuilder) {
       const groups = new Set(selectablePageQuestions.map(q => q.stimulus_group_id).filter(Boolean));
-      questions.forEach(q => { if (q.stimulus_group_id && groups.has(q.stimulus_group_id)) ids.add(q.id); });
+      selectionPool.forEach(q => { if (q.stimulus_group_id && groups.has(q.stimulus_group_id)) ids.add(q.id); });
     }
-    const next = new Set(selectedIds);
+    const next = new Set(selectedIdsRef.current);
     ids.forEach(id => { if (checked) next.add(id); else next.delete(id); });
     if (!showEnglishBuilder && next.size > 200) {
       toast.warning("এই পেজের সব প্রশ্ন নিলে ২০০ প্রশ্নের সীমা অতিক্রম করবে");
@@ -950,8 +1083,9 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   // ─── STEP 2: Question Set Header ───
   if (step === "questionSet") {
     const minutes = Number(form.count) || 100;
-    return <div className="max-w-[874px] mx-auto py-8 sm:py-12">
-      <div className="bg-white border border-slate-200 shadow-sm min-h-[630px] px-5 sm:px-6 py-8 flex flex-col">
+    return <div className="question-set-enter max-w-[874px] mx-auto py-8 sm:py-12">
+      <div className="relative overflow-hidden bg-white border border-slate-200 shadow-sm min-h-[630px] px-5 sm:px-6 py-8 flex flex-col">
+        {remoteScope && <QuestionBorderLoading ready={!!remotePage && !pageLoading} failed={pageError} />}
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-bold">{institute?.name || 'Institute'}</h2>
           <p>{form.programName.trim() || DEFAULT_EXAM_NAME}</p>
@@ -1030,7 +1164,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         <div className="question-filter-section border border-border rounded-lg p-3">
           <h4 className="question-filter-heading font-heading font-bold text-sm mb-2">টাইপ</h4>
           <div className="space-y-2">
-            {[{value:null,label:"All"}, ...scopedTypeOptions.filter(t=>t!=="all").map(value=>({value,label:questionTypeLabel(value)}))].map(opt => (
+            {scopedTypeOptions.filter(t=>t!=="all").map(value=>({value,label:questionTypeLabel(value)})).map(opt => (
               <label key={String(opt.value)} className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" name="filterType" checked={filterType === opt.value} onChange={() => setFilterType(opt.value)} className="accent-primary" />
                 {opt.label}
@@ -1044,20 +1178,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           const fmtBn = (n: number) => n.toLocaleString("bn-BD");
           // Chapter counts respect type filter only (so toggling chapters stays intuitive)
           const chapterPool = filterType ? questions.filter(q => q.type === filterType) : questions;
-          const chapterCount = (cid: number) => chapterPool.filter(q => q.chapter_id === cid).length;
+          const chapterCount = (cid: number) => remotePage ? remotePage.chapters[cid] || 0 : chapterPool.filter(q => q.chapter_id === cid).length;
           return (
             <div className="question-filter-section border border-border rounded-lg p-3">
               <div className="question-filter-heading flex items-center justify-between mb-3">
                 <h4 className="font-heading font-bold text-sm">অধ্যায়</h4>
-                {filterChapterIds.size > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setFilterChapterIds(new Set())}
-                    className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    ক্লিয়ার
-                  </button>
-                )}
+
               </div>
               <div className="space-y-1">
                 {chapters
@@ -1065,7 +1191,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   .map(c => {
                     const count = chapterCount(c.id);
                     const isActive = filterChapterIds.has(c.id);
-                    const disabled = count === 0;
+                    const disabled = false;
                     return (
                       <label
                         key={c.id}
@@ -1076,16 +1202,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                               : "cursor-pointer hover:bg-muted/60"
                           }`}
                       >
-                        <Checkbox
-                          disabled={disabled}
-                          checked={isActive}
-                          onCheckedChange={() => {
-                            if (disabled) return;
-                            setFilterChapterIds(prev => {
-                              const next = new Set(prev);
-                              next.has(c.id) ? next.delete(c.id) : next.add(c.id);
-                              return next;
-                            });
+                        <input type="radio" name="questionChapter" className="accent-[#00B4BC]"
+                          checked={isActive} disabled={disabled}
+                          onChange={() => {
+                            setFilterChapterIds(new Set([c.id]));
+                            setFilterTopicIds(new Set()); setFilterUntopicedChapterIds(new Set());
+                            setCurrentPage(1);
                           }}
                         />
                         <span className={`flex-1 leading-tight truncate ${isActive ? "font-medium text-foreground" : "text-foreground/90"}`}>
@@ -1118,11 +1240,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             if (filterChapterIds.size > 0 && !filterChapterIds.has(q.chapter_id)) return false;
             return true;
           });
-          const topicCount = (tid: number) => topicPool.filter(q => q.topic_id === tid).length;
+          const topicCount = (tid: number) => remotePage ? remotePage.topics[tid] || 0 : topicPool.filter(q => q.topic_id === tid).length;
           const untopicedCount = (cid: number) =>
-            topicPool.filter(q => q.chapter_id === cid && !q.topic_id).length;
+            remotePage ? remotePage.untopiced[cid] || 0 : topicPool.filter(q => q.chapter_id === cid && !q.topic_id).length;
           const chapterTopicTotal = (cid: number) =>
-            topicPool.filter(q => q.chapter_id === cid).length;
+            remotePage ? remotePage.topicChapters[cid] || 0 : topicPool.filter(q => q.chapter_id === cid).length;
           return (
             <div className="question-filter-section border border-border rounded-lg p-3">
               <div className="question-filter-heading flex items-center justify-between mb-3">
@@ -1376,7 +1498,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     onClick={handleViewPaper}
                     aria-label="প্রশ্নপত্র প্রিভিউ"
                     title="প্রিভিউ"
-                    disabled={selectedIds.size === 0}
+                    disabled={selectionLoading || selectedIds.size === 0}
                     className="question-preview-button"
                   >
                     <Eye className="h-5 w-5 shrink-0" /><span className="question-toolbar-action-label">প্রিভিউ</span>
@@ -1393,7 +1515,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 <label className="page-select-control flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-800" title="এই পেজে দেখানো প্রশ্নগুলো একসঙ্গে নির্বাচন করুন">
                   <Checkbox
                     aria-label="এই পেজের সব প্রশ্ন নির্বাচন"
-                    disabled={selectablePageQuestions.length === 0}
+                    disabled={selectionLoading || pageLoading || selectablePageQuestions.length === 0}
                     checked={selectablePageQuestions.length > 0 && pageSelectedCount === selectablePageQuestions.length ? true : pageSelectedCount > 0 ? "indeterminate" : false}
                     onCheckedChange={checked => togglePageSelection(checked === true)}
                   />
@@ -1467,13 +1589,13 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 };
 
                 const base = applyNonTypeFilters(questions);
-                const countByType = (t: string) => base.filter(q => q.type === t).length;
+                const countByType = (t: string) => remotePage ? (remotePage.filterTypes || remotePage.types)[t] || 0 : base.filter(q => q.type === t).length;
                 const fmt = (n: number) => n.toLocaleString("bn-BD");
                 const badges = [
                   { value: "mcq", label: "MCQ", count: countByType("mcq"), dot: "bg-[#00B4BC]" },
                   { value: "cq", label: "CQ", count: countByType("cq"), dot: "bg-[#00B4BC]" },
                   { value: "short", label: "SQ", count: countByType("short"), dot: "bg-[#00B4BC]" },
-                  { value: null, label: "মোট", count: countByType("mcq") + countByType("cq") + countByType("short"), dot: "bg-[#00B4BC]" },
+
                 ];
 
                 const hasAnyFilter = !!filterSearch.trim() || filterType !== null || filterChapterIds.size > 0 || filterTopicIds.size > 0
@@ -1481,9 +1603,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   || !!filterYear || !!filterSchoolYear || filterSpecial !== null;
 
                 const resetAllFilters = () => {
+                  setSelectedIds(new Set());
+                  setEnglishPreviewRows(null);
                   setFilterSearch("");
-                  setFilterType("mcq");
-                  setFilterChapterIds(new Set());
+                  setDebouncedSearch("");
+                  setFilterType(remoteScope?.types[0] || "mcq");
+                  setFilterChapterIds(new Set(remoteScope ? [remoteScope.chapterIds[0]] : form.chapterIds.slice(0, 1).map(Number)));
                   setFilterTopicIds(new Set());
                   setFilterUntopicedChapterIds(new Set());
                   setFilterBoards(new Set());
@@ -1559,7 +1684,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
     return (
       <>
-        <div className="question-builder lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+        <div className="question-builder question-set-enter lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
           {/* Main content - independently scrollable on desktop */}
           <div ref={mainScrollRef} className="space-y-4 lg:overflow-y-auto lg:pr-2 lg:-mr-2">
             {toolbarTarget ? createPortal(toolbarContent, toolbarTarget) : toolbarContent}
@@ -1575,7 +1700,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
 
             </div>
 
-            <div className="space-y-3">
+            <div className="relative min-h-[240px] space-y-3" aria-busy={pageLoading}>
+              {pageLoading && <QuestionLoading />}
+              {pageError && <div role="alert" className="p-6 text-center">
+                <p>প্রশ্ন আনতে সমস্যা হয়েছে।</p>
+                <Button variant="outline" onClick={() => setPageRetry(value => value + 1)}>আবার চেষ্টা করুন</Button>
+              </div>}
               {paginatedQuestions.map((q, idx) => {
                 if (showEnglishBuilder && /^(seen_passage|unseen_passage)/.test(q.type)) {
                   return <div key={q.id} className="rounded-lg border border-[#00B4BC]/20 border-l-4 border-l-[#00B4BC] bg-[#00B4BC]/5 p-4" data-passage-preview>
@@ -1597,6 +1727,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                     key={q.id}
                     onClick={() => toggleQuestion(q.id)}
                     data-selected={isSelected}
+                    data-question-type={q.type}
                     className={`question-select-card group relative overflow-hidden cursor-pointer border rounded-lg transition-all duration-150 ${isSelected
                         ? "border-[#00B4BC] shadow-none bg-[#00B4BC]/[0.03] ring-1 ring-[#00B4BC]/20"
                         : "border-slate-200 bg-white shadow-none"
@@ -1612,6 +1743,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Checkbox
                             checked={isSelected}
+                            disabled={selectionLoading || pageLoading}
                             onCheckedChange={() => toggleQuestion(q.id)}
                             onClick={(e) => e.stopPropagation()}
                             className="rounded-lg border-slate-400 data-[state=checked]:bg-[#0A1E38] data-[state=checked]:border-[#0A1E38]"
@@ -1735,18 +1867,18 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                   </Card>
                 );
               })}
-              {filteredQuestions.length === 0 && (
+              {(!remoteScope || (!pageLoading && !pageError)) && filteredQuestions.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">কোনো প্রশ্ন পাওয়া যায়নি</p>
               )}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 py-4">
+              <div className="flex items-center justify-center gap-2 py-4" aria-label="Question pages">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === 1}
+                  disabled={pageLoading || currentPage === 1}
                   onClick={() => { setCurrentPage(p => p - 1); scrollMainToTop(); }}
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" /> আগের
@@ -1763,10 +1895,11 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                           <Button
                             variant={p === currentPage ? "default" : "outline"}
                             size="sm"
-                            className="w-9 h-9 p-0"
+                            className="question-page-number w-9 h-9 p-0"
+                            aria-current={p === currentPage ? "page" : undefined}
                             onClick={() => { setCurrentPage(p); scrollMainToTop(); }}
                           >
-                            {p}
+                            <span>{String(p)}</span>
                           </Button>
                         </span>
                       );
@@ -1775,7 +1908,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === totalPages}
+                  disabled={pageLoading || currentPage >= totalPages}
                   onClick={() => { setCurrentPage(p => p + 1); scrollMainToTop(); }}
                 >
                   পরের <ChevronRight className="h-4 w-4 ml-1" />
