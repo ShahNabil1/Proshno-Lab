@@ -30,3 +30,9 @@ jobs:
       - name: Run full test suite
         if: success()
         run: npm test
+
+      - name: Run transactional CAPI queue checks
+        run: node tests/meta-capi-outbox.mjs
+
+      - name: Run server conversion and payment checks
+        run: npx --yes deno@2.9.6 test --allow-env tests/custom-package-payments.ts tests/meta-capi.test.ts tests/meta-capi-worker.test.ts

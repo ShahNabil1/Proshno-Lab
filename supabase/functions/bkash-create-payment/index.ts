@@ -1,3 +1,4 @@
+import { normalizeMarketingContext } from "../_shared/metaCapi.ts";
 import { preparePayg } from "../_shared/payg.ts";
 // bKash Tokenized Checkout: Create Payment
 // Called by frontend to initiate a bKash payment. Returns paymentID + bkashURL.
@@ -81,6 +82,7 @@ Deno.serve(async (req) => {
       institute_name,
       teacher_name,
       callback_origin,
+      marketing,
     } = body ?? {};
 
     if (!payg && !custom_package && (!Array.isArray(selected_packages) || selected_packages.length === 0)) {
@@ -217,6 +219,7 @@ Deno.serve(async (req) => {
       status: "initiated",
       bkash_response: createData,
       environment,
+      marketing_context: normalizeMarketingContext(marketing, req),
     };
     const { error: insErr } = reservedOrderId
       ? await admin.from("bkash_payments").update(paymentRecord).eq("id", reservedOrderId)

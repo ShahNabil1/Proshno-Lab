@@ -1,3 +1,4 @@
+import { createMetaEvent, isStandardMetaEvent } from "./metaEvents";
 type Params = Record<string, unknown>;
 type PixelFunction = ((...args: unknown[]) => void) & {
   callMethod?: (...args: unknown[]) => void;
@@ -40,28 +41,13 @@ export function initMetaPixel(): boolean {
   return true;
 }
 
-const standard: Record<string, string> = {
-  page_view: "PageView", sign_up: "CompleteRegistration", view_item: "ViewContent",
-  add_to_cart: "AddToCart", begin_checkout: "InitiateCheckout",
-  add_payment_info: "AddPaymentInfo", purchase: "Purchase", search: "Search", contact: "Contact",
-};
-const custom: Record<string, string> = {
-  login: "Login", paper_generate: "PaperGenerated", question_create: "QuestionCreated",
-  download: "PaperDownloaded", print: "PaperPrinted", button_click: "ButtonClick",
-  print_requested: "PrintRequested", payment_failed: "PaymentFailed", payment_cancelled: "PaymentCancelled",
-};
-
-export function trackMetaEvent(name: string, params: Params = {}): void {
+export function trackMetaEvent(name: string, params: Params = {}, suppliedEventId?: string): void {
   // Do not market internal admin activity or authentication callback pages.
   if (/^\/(admin(?:\/|$)|auth\/callback|reset-password)/.test(window.location.pathname)) return;
-  const mapped = standard[name] || custom[name];
-  if (!mapped) return;
-  const transaction = typeof params.transaction_id === "string" ? params.transaction_id : "";
-  if (name === "purchase" && (!transaction || !Number.isFinite(params.value) || Number(params.value) < 0)) return;
-  const registration = typeof params.registration_id === "string" ? params.registration_id : "";
-  const persistent = name === "purchase" || (name === "sign_up" && !!registration);
-  const eventId = name === "purchase" ? `purchase:${transaction}`
-    : name === "sign_up" && registration ? `registration:${registration}` : crypto.randomUUID();
+  const event = createMetaEvent(name, params, suppliedEventId);
+  if (!event) return;
+  const persistent = name === "purchase" || (name === "sign_up" && typeof params.registration_id === "string");
+  const eventId = event.event_id;
   const storageKey = `proshnolab:meta:${pixelId}:${eventId}`;
   if (persistent) {
     if (sent.has(eventId)) return;
@@ -69,18 +55,8 @@ export function trackMetaEvent(name: string, params: Params = {}): void {
   }
   try { if (!initMetaPixel()) return; } catch { return; }
 
-  // Allowlist business metadata. Never copy form fields, email, phone, or tokens.
-  const payload: Params = {};
-  for (const key of ["value", "currency", "content_name", "content_category", "content_ids", "contents", "num_items", "method", "question_type", "class_id", "subject_id", "channel", "format", "button_name", "location"]) {
-    if (params[key] !== undefined) payload[key] = params[key];
-  }
-  if (params.item_id !== undefined) { payload.content_ids = [String(params.item_id)]; payload.content_type = "product"; }
-  if (params.item_name !== undefined) payload.content_name = params.item_name;
-  if (params.item_category !== undefined) payload.content_category = params.item_category;
-  if (name === "sign_up") payload.status = true;
-  if (name === "search") payload.search_string = params.search_term;
   try {
-    window.fbq!(standard[name] ? "trackSingle" : "trackSingleCustom", pixelId, mapped, payload, { eventID: eventId });
+    window.fbq!(isStandardMetaEvent(name) ? "trackSingle" : "trackSingleCustom", pixelId, event.event_name, event.custom_data, { eventID: eventId });
     if (persistent) {
       sent.add(eventId);
       try { localStorage.setItem(storageKey, String(Date.now())); } catch { /* in-memory dedup remains */ }

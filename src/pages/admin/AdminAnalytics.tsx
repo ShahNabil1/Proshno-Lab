@@ -1,3 +1,4 @@
+import MetaCapiStatus from "@/components/admin/MetaCapiStatus";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,6 +132,7 @@ export default function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
+      <MetaCapiStatus />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-heading font-bold text-foreground">📊 এনালিটিক্স</h1>
         <div className="flex items-center gap-2 flex-wrap">

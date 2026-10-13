@@ -5,3 +5,7 @@ verify_jwt = false
 
 [functions.daily-summary]
 verify_jwt = false
+
+# Authenticated by its private Vault token, not public browser requests.
+[functions.meta-capi-worker]
+verify_jwt = false

@@ -1,3 +1,4 @@
+import { getMarketingContext } from "@/lib/marketingContext";
 import { analytics, trackEvent } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
@@ -123,6 +124,7 @@ export default function PaymentCallback() {
           institute_name: row.institute_name || undefined,
           teacher_name: row.teacher_name || undefined,
           callback_origin: window.location.origin,
+          marketing: getMarketingContext(),
         },
       });
       if (error) throw error;

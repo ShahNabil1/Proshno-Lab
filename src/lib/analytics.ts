@@ -1,3 +1,5 @@
+import { createMetaEvent, type MetaEvent } from "@/lib/metaEvents";
+import { getMarketingContext, type MarketingContext } from "@/lib/marketingContext";
 import { trackMetaEvent } from "@/lib/metaPixel";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,12 +16,14 @@ export function pushEvent(eventName: string, params: Record<string, any> = {}) {
 }
 
 // Send event to server-side tracking edge function
-async function sendServerEvent(eventName: string, params: Record<string, any> = {}) {
+async function sendServerEvent(eventName: string, params: Record<string, any> = {}, meta?: MetaEvent, marketing?: MarketingContext) {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     await supabase.functions.invoke("track-event", {
       body: {
         event_name: eventName,
+        event_id: meta?.event_id,
+        marketing,
         user_id: session?.user?.id || null,
         params,
         timestamp: new Date().toISOString(),
@@ -36,9 +40,12 @@ async function sendServerEvent(eventName: string, params: Record<string, any> = 
 
 // Track both client + server side
 export function trackEvent(eventName: string, params: Record<string, any> = {}) {
-  pushEvent(eventName, params);
-  trackMetaEvent(eventName, params);
-  sendServerEvent(eventName, params);
+  const excluded = /^\/(admin(?:\/|$)|auth\/callback|reset-password)/.test(window.location.pathname);
+  const meta = !excluded && import.meta.env.VITE_META_PIXEL_ENABLED !== "false" ? createMetaEvent(eventName, params) : undefined;
+  const marketing = meta ? getMarketingContext() : undefined;
+  pushEvent(eventName, { ...params, ...(meta ? { event_id: meta.event_id } : {}) });
+  if (meta) trackMetaEvent(eventName, params, meta.event_id);
+  void sendServerEvent(eventName, params, meta, marketing);
 }
 
 // Pre-built event helpers

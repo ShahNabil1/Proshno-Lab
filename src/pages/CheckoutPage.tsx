@@ -1,3 +1,4 @@
+import { getMarketingContext } from "@/lib/marketingContext";
 import { analytics } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
@@ -86,6 +87,7 @@ export default function CheckoutPage() {
           institute_name: institute.trim(),
           teacher_name: name.trim(),
           callback_origin: window.location.origin,
+          marketing: getMarketingContext(),
         },
       });
       if (error) throw error;
