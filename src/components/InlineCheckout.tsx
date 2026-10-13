@@ -1,4 +1,5 @@
 import { getMarketingContext } from "@/lib/marketingContext";
+import { paymentError } from "@/lib/paymentError";
 import { analytics } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -112,7 +113,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
           marketing: getMarketingContext(),
         },
       });
-      if (error) throw error;
+      if (error) throw await paymentError(error);
       if (data?.error) throw new Error(data.error);
       if (!data?.bkashURL) throw new Error("bKash URL পাওয়া যায়নি");
       analytics.addPaymentInfo(Number.isFinite(Number(data.amount)) ? Number(data.amount) : totalPrice);
