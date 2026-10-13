@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import InlineCheckout, { type SelectedPackageItem } from "@/components/InlineCheckout";
 import { builderRpc, validSubjects, type BuilderClass, type CustomQuote, type PackageVersion } from "@/lib/customPackages";
 const bn=(n:number)=>n.toLocaleString("bn-BD",{useGrouping:false,maximumFractionDigits:2});
@@ -31,4 +31,3 @@ export default function SubjectPackageCheckout({className,version}:{className:st
   {item&&!busy&&<InlineCheckout selectedPackages={[item]} onRemove={()=>{setAll(false);setIds([]);setQuote(null);}} onClearAll={()=>{setAll(false);setIds([]);setQuote(null);}}/>}
  </div>;
 }
-

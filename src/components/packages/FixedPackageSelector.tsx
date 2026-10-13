@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 
 import PackagePicker from "./PackagePicker";
 import PackageCheckoutDialog from "./PackageCheckoutDialog";
@@ -70,4 +70,3 @@ export default function FixedPackageSelector({packages,activePlans=[]}:{packages
     <PackageCheckoutDialog open={checkoutOpen} onOpenChange={setCheckoutOpen} selectedPackages={selectedList} onRemove={id=>setSelectedPkgs(prev=>{const next=new Map(prev);next.delete(id);return next;})} onClearAll={()=>{setSelectedPkgs(new Map());setCheckoutOpen(false);}} />
   </>;
 }
-

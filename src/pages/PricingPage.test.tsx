@@ -17,4 +17,3 @@ it("opens with the price list and a small custom package button",async()=>{
  fireEvent.click(screen.getByRole("button",{name:"মূল্য তালিকা"}));
  expect(screen.getAllByRole("table")).toHaveLength(5);
 });
-
