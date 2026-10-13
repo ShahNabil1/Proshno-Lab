@@ -67,6 +67,14 @@ Deno.serve(async (req) => {
     });
     const data = await res.json();
 
+    const { data: paymentRow, error: paymentError } = await admin.from("bkash_payments").select("*").eq("payment_id", paymentID).single();
+    if (paymentError || !paymentRow) return json({ error: "Payment missing" }, 404);
+    if (Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.some((p: unknown) => p !== null && typeof p === "object" && "kind" in p && p.kind === "custom") && data?.transactionStatus === "Completed") {
+      const { error } = await admin.rpc("complete_custom_payment", { payment_ref: paymentRow.id, receipt: data });
+      if (error) return json({ error: error.message }, 503);
+      return json({ ok: true, data, newStatus: "completed" });
+    }
+
     // Persist snapshot + reconcile status on the row
     const txStatus = String(data?.transactionStatus || data?.statusMessage || "").toLowerCase();
     const patch: Record<string, any> = { bkash_response: data };

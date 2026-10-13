@@ -1,10 +1,11 @@
+import { analytics, trackEvent } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import logoImg from "@/assets/logo.png";
+import BrandLockup from "@/components/BrandLockup";
 
 type Phase = "verifying" | "success" | "failed" | "cancelled";
 
@@ -21,6 +22,17 @@ export default function PaymentCallback() {
   const returnPath = isPayg ? `/dashboard/create?paygPayment=${encodeURIComponent(paymentID)}` : "/dashboard/subscription";
   const status = (params.get("status") || "").toLowerCase();
 
+  const trackCompletedPurchase = async () => {
+    try {
+      const { data: payment, error } = await supabase.from("bkash_payments")
+        .select("status, trx_id, amount").eq("payment_id", paymentID).maybeSingle();
+      if (!error && payment?.status === "completed" && payment.trx_id) {
+        const amount = Number(payment.amount);
+        if (Number.isFinite(amount) && amount >= 0) analytics.purchase(payment.trx_id, amount, "BDT");
+      }
+    } catch { /* Tracking must not delay access or change payment state. */ }
+  };
+
   useEffect(() => {
     (async () => {
       if (!paymentID) {
@@ -29,6 +41,7 @@ export default function PaymentCallback() {
         return;
       }
       if (status === "cancel" || status === "cancelled") {
+        trackEvent("payment_cancelled", { method: "bkash" });
         setPhase("cancelled");
         setMessage("আপনি পেমেন্ট বাতিল করেছেন");
         await supabase.from("bkash_payments")
@@ -38,6 +51,7 @@ export default function PaymentCallback() {
         return;
       }
       if (status === "failure" || status === "failed") {
+        trackEvent("payment_failed", { method: "bkash" });
         setPhase("failed");
         setMessage("বিকাশ থেকে পেমেন্ট ব্যর্থ হয়েছে");
         await supabase.from("bkash_payments")
@@ -54,6 +68,7 @@ export default function PaymentCallback() {
         });
         if (error) throw error;
         if (data?.status === "completed") {
+          void trackCompletedPurchase();
           setPhase("success");
           setTrxId(data.trxID || "");
           setTimeout(() => navigate(returnPath), 3000);
@@ -78,7 +93,7 @@ export default function PaymentCallback() {
       // Fetch original payment context
       const { data: row, error: rowErr } = await supabase
         .from("bkash_payments")
-        .select("selected_packages, coupon_code, payer_reference, institute_name, teacher_name")
+        .select("selected_packages, coupon_code, payer_reference, institute_name, teacher_name, status")
         .eq("payment_id", paymentID)
         .maybeSingle();
 
@@ -88,9 +103,20 @@ export default function PaymentCallback() {
         return;
       }
 
+      if (row.status === "completed") { void trackCompletedPurchase(); navigate(returnPath); return; }
+      // Retry the same initiated payment, avoiding a second charge while a
+      // verified custom payment is awaiting transactional access activation.
+      if (row.status === "initiated") {
+        const { data, error } = await supabase.functions.invoke("bkash-execute-payment", { body: { paymentID } });
+        if (error || data?.status !== "completed") throw new Error("পেমেন্ট যাচাই এখনও সম্পন্ন হয়নি। আবার চেষ্টা করুন অথবা সাপোর্টে যোগাযোগ করুন।");
+        void trackCompletedPurchase();
+        navigate(returnPath); return;
+      }
+      const customOrder = row.selected_packages.find(p => p && typeof p === "object" && !Array.isArray(p) && p.kind === "custom");
       const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
         body: {
-          selected_packages: isPayg ? undefined : row.selected_packages,
+          selected_packages: isPayg || customOrder ? undefined : row.selected_packages,
+          custom_package: customOrder,
           payg: isPayg ? { chapter_ids: (row.selected_packages[0] as any).chapter_ids, counts: (row.selected_packages[0] as any).counts } : undefined,
           coupon_code: row.coupon_code || undefined,
           phone: row.payer_reference,
@@ -111,7 +137,7 @@ export default function PaymentCallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full bg-card rounded-2xl shadow-card border p-8 text-center">
-        <img src={logoImg} alt="Proshno Lab" className="w-14 h-14 rounded-xl mx-auto mb-4 object-contain" />
+        <div className="mb-4 flex justify-center"><BrandLockup size={36} dark={false} /></div>
 
         {phase === "verifying" && (
           <>

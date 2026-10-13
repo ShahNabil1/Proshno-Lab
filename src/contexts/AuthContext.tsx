@@ -52,7 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       if (event === "SIGNED_IN") {
-        analytics.login("google");
+        const method = session?.user?.app_metadata?.provider || "email";
+        analytics.login(method);
+        // New OAuth accounts have matching creation/sign-in timestamps. Existing
+        // logins must never become a registration conversion.
+        const created = Date.parse(session?.user?.created_at || "");
+        const signedIn = Date.parse(session?.user?.last_sign_in_at || "");
+        if (method === "google" && Number.isFinite(created) && Math.abs(signedIn - created) < 10000 && Date.now() - created < 60000) {
+          analytics.signUp(method, session?.user?.id);
+        }
       } else if (event === "SIGNED_OUT") {
         analytics.buttonClick("sign_out", "auth");
       }

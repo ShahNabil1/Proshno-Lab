@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { analytics } from "@/lib/analytics";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
-import logoImg from "@/assets/logo.png";
+import BrandLockup from "@/components/BrandLockup";
 import bkashLogo from "@/assets/bkash-logo.webp";
 import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
@@ -34,6 +35,13 @@ export default function CheckoutPage() {
   const [resolvedId, setResolvedId] = useState<number | null>(packageIdParam ? Number(packageIdParam) : null);
 
   const totalPrice = Math.max(0, packagePrice - discount);
+  const trackedPackage = useRef<number | null>(null);
+  useEffect(() => {
+    if (!resolvedId || !user || trackedPackage.current === resolvedId) return;
+    trackedPackage.current = resolvedId;
+    analytics.viewItem(String(resolvedId), packageName || packageSubject, "subscription");
+    analytics.beginCheckout(totalPrice);
+  }, [resolvedId, user, packageName, packageSubject, totalPrice]);
   useEffect(() => {
     if (!resolvedId) return;
     supabase.from("pricing_packages").select("duration_days").eq("id", resolvedId).maybeSingle()
@@ -83,6 +91,7 @@ export default function CheckoutPage() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!data?.bkashURL) throw new Error("bKash URL পাওয়া যায়নি");
+      analytics.addPaymentInfo(Number.isFinite(Number(data.amount)) ? Number(data.amount) : totalPrice);
       window.location.href = data.bkashURL;
     } catch (err: any) {
       toast.error("সমস্যা হয়েছে: " + (err.message || "আবার চেষ্টা করুন"));
@@ -96,7 +105,7 @@ export default function CheckoutPage() {
     <div className="py-10 pt-28">
       <div className="container max-w-2xl">
         <div className="bg-card rounded-t-2xl border border-b-0 p-6 text-center">
-          <img src={logoImg} alt="Proshno Lab" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
+          <div className="mb-3 flex justify-center"><BrandLockup size={36} dark={false} /></div>
           <h1 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!</h1>
           <div className="flex justify-between text-sm text-muted-foreground mt-4">
             <span>মেয়াদ — {durationDays ? `${durationDays.toLocaleString("bn-BD")} দিন` : "১ বছর"}</span>

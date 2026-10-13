@@ -1,6 +1,6 @@
 import LatexRenderer from "@/components/LatexRenderer";
 import { answerLabelBangla, isCorrectOption } from "@/lib/answerKey";
-import logoImg from "@/assets/logo.png";
+import { brandMarkUrl } from "@/lib/brandAssets";
 import type { CSSProperties } from "react";
 
 export interface SmartBoardQuestion {
@@ -201,7 +201,7 @@ export default function QuestionSlide({
           style={{ fontSize: institutionFontSize, color: headerInstitutionColor, fontFamily: institutionFontFamily }}
         >
           <img
-            src={headerLogoUrl || meta?.instituteLogoUrl || logoImg}
+            src={headerLogoUrl || meta?.instituteLogoUrl || brandMarkUrl}
             alt="প্রতিষ্ঠানের লোগো"
             className="h-12 w-12 shrink-0 object-contain"
           />

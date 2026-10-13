@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -23,12 +24,13 @@ export default function EmailLogin() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        if (data.user?.identities?.length) analytics.signUp("email", data.user.id);
         toast.success("Check your email for verification link!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });

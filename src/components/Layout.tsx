@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { analytics } from "@/lib/analytics";
 import BrandLockup from "@/components/BrandLockup";
 
 
@@ -33,7 +32,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
   useEffect(() => {
     setMobileOpen(false);
-    analytics.pageView(location.pathname, document.title);
   }, [location.pathname]);
 
   const headerBg = isHeroPage ? "bg-[#0A1E38]/95 backdrop-blur-xl border-b border-white/10" : scrolled

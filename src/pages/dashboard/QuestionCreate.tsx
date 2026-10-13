@@ -1,5 +1,6 @@
 import QuestionBorderLoading from "@/components/dashboard/QuestionBorderLoading";
 import QuestionLoading from "@/components/dashboard/QuestionLoading";
+import { analytics } from "@/lib/analytics";
 import { getCachedBrowserPage, fetchBrowserPage, fetchBrowserGroups, mergePageWithSelection, type BrowserScope, type BrowserPage, type BrowserFilters } from "@/lib/questionBrowser";
 import { fetchQuestionPages } from "@/lib/fetchQuestionPages";
 import { getQuestionDuplicateSignature } from "@/lib/questionDuplicates";
@@ -32,7 +33,6 @@ import LatexRenderer from "@/components/LatexRenderer";
 import AutoFitQuestionGrid from "@/components/AutoFitQuestionGrid";
 import ReferenceBadges from "@/components/ReferenceBadges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
 import SubjectPicker from "@/components/dashboard/SubjectPicker";
@@ -573,33 +573,13 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     let cancelled = false;
 
     const checkAccess = async () => {
-      const [{ data: permData }, { data: subs }] = await Promise.all([
-        supabase
-          .from("user_permissions")
-          .select("id, subject_id")
-          .eq("user_id", user.id)
-          .eq("class_id", effectiveClassId)
-          .in("subject_id", selectedSubjectIds.map(Number)),
-        supabase
-          .from("subscriptions")
-          .select("plan")
-          .eq("teacher_id", user.id)
-          .eq("status", "active"),
-      ]);
-
-      if (cancelled) return;
-
-      const permSubjectIds = new Set((permData || []).map(p => String((p as any).subject_id)));
-      const selectedClass = classes.find(c => c.id === effectiveClassId);
-
-      const allHaveAccess = selectedSubjectIds.every(subId => {
-        if (permSubjectIds.has(subId)) return true;
-        const sub = subjects.find(s => String(s.id) === String(subId));
-        if (!selectedClass || !sub || !subs || subs.length === 0) return false;
-        return subs.some(s => planCoversSelection(s.plan || "", selectedClass.name, sub.name));
-      });
-
-      setHasSubscription(allHaveAccess);
+      const results = await Promise.all(selectedSubjectIds.map(async id => {
+        const subject = subjects.find(s => String(s.id) === String(id));
+        if (!subject) return false;
+        const { data, error } = await supabase.rpc("can_read_question", { _class_id: subject.class_id, _subject_id: subject.id });
+        return !error && data === true;
+      }));
+      if (!cancelled) setHasSubscription(results.every(Boolean));
     };
 
     checkAccess();
@@ -1055,6 +1035,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
         navigate("/dashboard/view-paper");
       }
     } else {
+      analytics.paperGenerate(String(form.classId), String(form.subjectId));
       savePaperDraft();
       navigate("/dashboard/view-paper");
     }

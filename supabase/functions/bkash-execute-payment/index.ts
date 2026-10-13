@@ -101,18 +101,28 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({ paymentID }),
     });
-    const execData = await execRes.json();
+    let execData = await execRes.json();
+    // A refreshed page may execute an already-settled payment. Query bKash
+    // before treating an ambiguous execute response as failure.
+    if (!(execData?.transactionStatus === "Completed" && execData?.trxID)) {
+      const queryRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/payment/status`, {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: token, "X-App-Key": BKASH_APP_KEY },
+        body: JSON.stringify({ paymentID }),
+      });
+      const queryData = await queryRes.json();
+      if (queryRes.ok && queryData?.transactionStatus === "Completed" && queryData?.trxID) execData = queryData;
+    }
 
     const txStatus = execData?.transactionStatus;
-    const isCompleted = execRes.ok && txStatus === "Completed" && execData?.trxID;
+    const isCompleted = txStatus === "Completed" && execData?.trxID;
 
     if (!isCompleted) {
       const msg = execData?.statusMessage || execData?.errorMessage || "পেমেন্ট সম্পন্ন হয়নি";
       await admin.from("bkash_payments").update({
-        status: "failed",
+        status: ["Failed", "Cancelled", "Expired"].includes(String(txStatus)) ? "failed" : "initiated",
         bkash_response: execData,
         error_message: msg,
-      }).eq("id", paymentRow.id);
+      }).eq("id", paymentRow.id).eq("status", "initiated");
       notifyTelegram({
         event_type: "payment_failed",
         title: "❌ পেমেন্ট Failed — bKash",
@@ -126,6 +136,19 @@ Deno.serve(async (req) => {
         link: { label: "Admin → Subscriptions", url: "https://proshnolab.com/admin/subscriptions" },
       });
       return json({ status: "failed", error: msg, details: execData }, 400);
+    }
+
+    if (Number(execData.amount) !== Number(paymentRow.amount) || execData.currency !== "BDT" || execData.paymentID !== paymentRow.payment_id) return json({ error: "Payment verification mismatch" }, 400);
+    const customOrder = Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.find((p: unknown) => p !== null && typeof p === "object" && "kind" in p && p.kind === "custom");
+    if (customOrder) {
+      const { data: subscriptionId, error } = await admin.rpc("complete_custom_payment", { payment_ref: paymentRow.id, receipt: execData });
+      if (error) {
+        // Keep the verified receipt so the admin query endpoint can retry
+        // activation; never mark settled money as a failed payment.
+        await admin.from("bkash_payments").update({ bkash_response: execData, trx_id: execData.trxID, error_message: "Access activation pending: " + error.message }).eq("id", paymentRow.id).eq("status", "initiated");
+        return json({ error: "Payment received; access activation pending. Retry or contact support." }, 503);
+      }
+      return json({ status: "completed", trxID: execData.trxID, kind: "custom", subscriptionId });
     }
 
     const paygOrder = Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.find((p: any) => p.kind === "payg");

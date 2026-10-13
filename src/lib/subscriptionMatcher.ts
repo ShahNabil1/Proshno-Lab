@@ -58,6 +58,7 @@ export const planCoversSelection = (
   className: string,
   subjectName: string,
 ): boolean => {
+  if (plan.startsWith("Custom #")) return false;
   const normalizedPlan = normalizeSubscriptionText(plan);
   const normalizedClass = normalizeSubscriptionText(className);
   const normalizedSubject = normalizeSubscriptionText(subjectName);

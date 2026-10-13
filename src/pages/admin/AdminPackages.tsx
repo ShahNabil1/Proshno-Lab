@@ -1,3 +1,4 @@
+import CustomPackagePricing from "@/components/admin/CustomPackagePricing";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const emptyForm = {
 };
 
 export default function AdminPackages() {
+  const [showCustomPricing, setShowCustomPricing] = useState(false);
   const [packages, setPackages] = useState<PricingPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -149,6 +151,9 @@ export default function AdminPackages() {
           <Plus className="w-4 h-4" /> নতুন প্যাকেজ
         </Button>
       </div>
+
+      <Button variant="outline" onClick={() => setShowCustomPricing(!showCustomPricing)}>Custom Package Pricing</Button>
+      {showCustomPricing && <CustomPackagePricing />}
 
       {(() => {
         const uniqueClasses = [...new Set(packages.map(p => p.class_name))].sort();

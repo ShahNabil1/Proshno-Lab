@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { analytics } from "@/lib/analytics";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { isNoPackagePreview } from "@/lib/adminExperiencePreview";
@@ -8,13 +9,14 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Check, ShoppingCart, X, Trash2, Loader2 } from "lucide-react";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
-import logoImg from "@/assets/logo.png";
+import BrandLockup from "@/components/BrandLockup";
 import bkashLogo from "@/assets/bkash-logo.webp";
 import { normalizeBdPhone, isValidBdPhone, BD_PHONE_ERROR } from "@/lib/phone";
 
 const WHATSAPP_NUMBER = "8801758018668";
 
 export interface SelectedPackageItem {
+  custom_selection?: import("@/lib/customPackages").CustomSelection;
   id: number;
   class_name: string;
   subject_name: string;
@@ -48,6 +50,19 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
 
   const totalPackagePrice = selectedPackages.reduce((sum, p) => sum + p.price, 0);
   const totalPrice = Math.max(0, totalPackagePrice - discount);
+  const trackedSelection = useRef("");
+  useEffect(() => {
+    if (!selectedPackages.length || isNoPackagePreview(user?.id)) return;
+    const selection = selectedPackages.map(p => `${p.id}:${p.subject_name}:${p.price}`).sort().join("|");
+    if (trackedSelection.current === selection) return;
+    trackedSelection.current = selection;
+    selectedPackages.forEach(p => {
+      const id = p.custom_selection ? `custom:${p.custom_selection.class_id}:${[...p.custom_selection.subject_ids].sort((a,b)=>a-b).join("-")}` : String(p.id);
+      analytics.viewItem(id, `${p.class_name} - ${p.subject_name}`, "subscription");
+      analytics.addToCart(id, `${p.class_name} - ${p.subject_name}`, p.price);
+    });
+    analytics.beginCheckout(totalPackagePrice);
+  }, [selectedPackages, totalPackagePrice, user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -61,6 +76,8 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
       }
     });
   }, [user]);
+
+  useEffect(() => { setDiscount(0); setCouponApplied(false); }, [totalPackagePrice]);
 
   const sanitizeEmail = (v: string) =>
     v.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, "").toLowerCase();
@@ -84,7 +101,8 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
     try {
       const { data, error } = await supabase.functions.invoke("bkash-create-payment", {
         body: {
-          selected_packages: selectedPackages.map(p => ({ id: p.id, class_name: p.class_name, subject_name: p.subject_name, price: p.price })),
+          selected_packages: selectedPackages.filter(p => !p.custom_selection).map(p => ({ id: p.id, class_name: p.class_name, subject_name: p.subject_name, price: p.price })),
+          custom_package: selectedPackages.find(p => p.custom_selection)?.custom_selection,
           coupon_code: couponApplied ? coupon.trim().toUpperCase() : undefined,
           phone: phone.trim(),
           institute_name: institute.trim(),
@@ -95,6 +113,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!data?.bkashURL) throw new Error("bKash URL পাওয়া যায়নি");
+      analytics.addPaymentInfo(Number.isFinite(Number(data.amount)) ? Number(data.amount) : totalPrice);
       window.location.href = data.bkashURL;
     } catch (err: any) {
       toast.error("সমস্যা হয়েছে: " + (err.message || "আবার চেষ্টা করুন"));
@@ -107,7 +126,7 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
   return (
     <div className="space-y-0">
       <div className="bg-card rounded-t-2xl border border-b-0 p-6 text-center">
-        <img src={logoImg} alt="Proshno Lab" className="w-12 h-12 rounded-xl mx-auto mb-3 object-contain" />
+        <div className="mb-3 flex justify-center"><BrandLockup size={36} dark={false} /></div>
         <h2 className="font-heading text-2xl md:text-3xl font-extrabold text-primary">
           প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!
         </h2>
@@ -183,7 +202,8 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
               try {
                 const { data, error } = await supabase.from("coupons").select("*").eq("code", coupon.trim().toUpperCase()).eq("is_active", true).maybeSingle();
                 if (error || !data) { toast.error("কুপন কোড সঠিক নয়"); return; }
-                const c = data as any;
+                const c = data;
+                if (selectedPackages.some(p => p.custom_selection) && c.applicable_packages?.length && !c.applicable_packages.includes("Custom Package__Selected Subjects")) { toast.error("এই কুপন কাস্টম প্যাকেজের জন্য প্রযোজ্য নয়"); return; }
                 if (c.expires_at && new Date(c.expires_at) < new Date()) { toast.error("কুপনের মেয়াদ শেষ"); return; }
                 if (c.use_limit !== null && c.used_count >= c.use_limit) { toast.error("কুপনের ব্যবহার সীমা শেষ"); return; }
                 if (totalPackagePrice < c.min_purchase) { toast.error(`ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন`); return; }

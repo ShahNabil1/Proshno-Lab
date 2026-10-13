@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 
 const allPackageOptions = [
+  "Custom Package__Selected Subjects",
   "ষষ্ঠ - দশম__সকল বিষয়",
   "ষষ্ঠ - দ্বাদশ__সকল বিষয়",
   "ষষ্ঠ শ্রেণি__সকল বিষয়", "ষষ্ঠ শ্রেণি__গণিত", "ষষ্ঠ শ্রেণি__বিজ্ঞান", "ষষ্ঠ শ্রেণি__তথ্য ও যোগাযোগ প্রযুক্তি",

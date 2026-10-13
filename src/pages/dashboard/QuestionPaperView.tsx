@@ -1,3 +1,4 @@
+import { trackEvent } from "@/lib/analytics";
 import { paperPdfFilename } from "@/lib/paperPdfFilename";
 import PrintableDocument from "@/components/paper/PrintableDocument";
 import { flushSync } from "react-dom";
@@ -785,6 +786,7 @@ export default function QuestionPaperView() {
       document.title = paperPdfFilename(meta?.subjectName, settings.showAnswerSheet || settings.chirkutHideQuestions).replace(/\.pdf$/, "");
       window.addEventListener("afterprint", restoreTitle, { once: true });
       try {
+        trackEvent("print_requested", { format: "pdf_or_print" });
         window.print();
       } catch (error) {
         window.removeEventListener("afterprint", restoreTitle);
@@ -835,6 +837,7 @@ export default function QuestionPaperView() {
         meta,
         settings,
       });
+      trackEvent("download", { format: "docx" });
       toast.success("Word (.docx) ফাইল সফলভাবে তৈরি হয়েছে!");
     } catch (error) {
       console.error("DOCX export failed:", error);

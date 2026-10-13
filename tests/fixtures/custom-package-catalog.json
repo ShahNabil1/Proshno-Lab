@@ -1,0 +1,1580 @@
+{
+  "classes": [
+    {
+      "id": 11,
+      "name": "নবম-দশম শ্রেণি"
+    },
+    {
+      "id": 31,
+      "name": "Class 9-10 (Eglish Version)"
+    },
+    {
+      "id": 32,
+      "name": "সপ্তম শ্রেণি"
+    },
+    {
+      "id": 33,
+      "name": "অষ্টম শ্রেণি"
+    },
+    {
+      "id": 34,
+      "name": "ষষ্ঠ শ্রেণি"
+    },
+    {
+      "id": 35,
+      "name": "চতুর্থ শ্রেণি"
+    },
+    {
+      "id": 36,
+      "name": "পঞ্চম শ্রেণি"
+    },
+    {
+      "id": 37,
+      "name": "তৃতীয় শ্রেণি"
+    },
+    {
+      "id": 38,
+      "name": "একাদশ-দ্বাদশ"
+    },
+    {
+      "id": 39,
+      "name": "Class 8 (Eglish Version)"
+    },
+    {
+      "id": 40,
+      "name": "Class 7 (Eglish Version)"
+    },
+    {
+      "id": 41,
+      "name": "Class 6 (Eglish Version)"
+    },
+    {
+      "id": 42,
+      "name": "Class 5 (Eglish Version)"
+    },
+    {
+      "id": 43,
+      "name": "Class 4 (Eglish Version)"
+    },
+    {
+      "id": 44,
+      "name": "Class 3 (Eglish Version)"
+    }
+  ],
+  "subjects": [
+    {
+      "class_id": 11,
+      "id": 71,
+      "name": "বাংলা ১ম পত্র",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 11,
+      "id": 72,
+      "name": "বাংলা ২য় পত্র",
+      "subject_code": "১০২"
+    },
+    {
+      "class_id": 11,
+      "id": 74,
+      "name": "সাধারন গণিত",
+      "subject_code": "১০৯"
+    },
+    {
+      "class_id": 11,
+      "id": 75,
+      "name": "বিজ্ঞান",
+      "subject_code": "১২৭"
+    },
+    {
+      "class_id": 11,
+      "id": 109,
+      "name": "হিসাববিজ্ঞান",
+      "subject_code": "১৪৬"
+    },
+    {
+      "class_id": 11,
+      "id": 110,
+      "name": "ব্যবসায় উদ্যোগ",
+      "subject_code": "১৪৩"
+    },
+    {
+      "class_id": 11,
+      "id": 111,
+      "name": "ফিন্যান্স ও ব্যাংকিং",
+      "subject_code": "১৫২"
+    },
+    {
+      "class_id": 11,
+      "id": 77,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১১১"
+    },
+    {
+      "class_id": 11,
+      "id": 76,
+      "name": "সামাজিক বিজ্ঞান",
+      "subject_code": "১৫০"
+    },
+    {
+      "class_id": 11,
+      "id": 122,
+      "name": "হিন্দু ধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১১২"
+    },
+    {
+      "class_id": 31,
+      "id": 126,
+      "name": "Mathemathis",
+      "subject_code": "136"
+    },
+    {
+      "class_id": 38,
+      "id": 197,
+      "name": "পদার্থবিজ্ঞান ১ম পত্র",
+      "subject_code": "১৭৪"
+    },
+    {
+      "class_id": 38,
+      "id": 198,
+      "name": "রসায়ন ১ম পত্র",
+      "subject_code": "১৭৬"
+    },
+    {
+      "class_id": 38,
+      "id": 200,
+      "name": "উচ্চতর গণিত ১ম পত্র",
+      "subject_code": "২৬৫"
+    },
+    {
+      "class_id": 38,
+      "id": 201,
+      "name": "বাংলা ১ম পত্র",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 38,
+      "id": 202,
+      "name": "বাংলা ২য় পত্র",
+      "subject_code": "১০২"
+    },
+    {
+      "class_id": 38,
+      "id": 203,
+      "name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "subject_code": "২৭৫"
+    },
+    {
+      "class_id": 38,
+      "id": 204,
+      "name": "পদার্থবিজ্ঞান ২য় পত্র",
+      "subject_code": "১৭৫"
+    },
+    {
+      "class_id": 38,
+      "id": 205,
+      "name": "রসায়ন ২য় পত্র",
+      "subject_code": "১৭৭"
+    },
+    {
+      "class_id": 38,
+      "id": 206,
+      "name": "জীববিজ্ঞান ২য় পত্র",
+      "subject_code": "১৭৯"
+    },
+    {
+      "class_id": 38,
+      "id": 207,
+      "name": "উচ্চতর গণিত ২য় পত্র",
+      "subject_code": "২৬৬"
+    },
+    {
+      "class_id": 38,
+      "id": 208,
+      "name": "পৌরনীতি ও সুশাসন ১ম পত্র",
+      "subject_code": "২৬৯"
+    },
+    {
+      "class_id": 38,
+      "id": 199,
+      "name": "জীববিজ্ঞান ১ম পত্র",
+      "subject_code": "১৭৮"
+    },
+    {
+      "class_id": 33,
+      "id": 148,
+      "name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "subject_code": "১৫৪"
+    },
+    {
+      "class_id": 33,
+      "id": 141,
+      "name": "বাংলা ১ম পত্র",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 33,
+      "id": 142,
+      "name": "বাংলা ২য় পত্র",
+      "subject_code": "১০২"
+    },
+    {
+      "class_id": 33,
+      "id": 149,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১১১"
+    },
+    {
+      "class_id": 33,
+      "id": 144,
+      "name": "English 2nd Paper",
+      "subject_code": "108"
+    },
+    {
+      "class_id": 33,
+      "id": 143,
+      "name": "English 1st Paper",
+      "subject_code": "107"
+    },
+    {
+      "class_id": 33,
+      "id": 145,
+      "name": "গণিত",
+      "subject_code": "১০৯"
+    },
+    {
+      "class_id": 33,
+      "id": 146,
+      "name": "বিজ্ঞান",
+      "subject_code": "১২৭"
+    },
+    {
+      "class_id": 33,
+      "id": 147,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১৫০"
+    },
+    {
+      "class_id": 33,
+      "id": 153,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১১২"
+    },
+    {
+      "class_id": 33,
+      "id": 150,
+      "name": "কৃষিশিক্ষা",
+      "subject_code": "১৩৪"
+    },
+    {
+      "class_id": 33,
+      "id": 154,
+      "name": "গার্হস্থ্য বিজ্ঞান",
+      "subject_code": "১৫১"
+    },
+    {
+      "class_id": 33,
+      "id": 151,
+      "name": "শারীরিক শিক্ষা ও স্বাস্থ্য",
+      "subject_code": "১৪৭"
+    },
+    {
+      "class_id": 33,
+      "id": 152,
+      "name": "কর্ম ও জীবনমুখী শিক্ষা",
+      "subject_code": "১৫৫"
+    },
+    {
+      "class_id": 32,
+      "id": 138,
+      "name": "কর্ম ও জীবনমুখী শিক্ষা",
+      "subject_code": "১৫৫"
+    },
+    {
+      "class_id": 32,
+      "id": 133,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১৫০"
+    },
+    {
+      "class_id": 34,
+      "id": 161,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১৫০"
+    },
+    {
+      "class_id": 36,
+      "id": 180,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১০৫"
+    },
+    {
+      "class_id": 37,
+      "id": 196,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৭"
+    },
+    {
+      "class_id": 35,
+      "id": 187,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১০৫"
+    },
+    {
+      "class_id": 35,
+      "id": 186,
+      "name": "প্রাথমিক বিজ্ঞান",
+      "subject_code": "১০৪"
+    },
+    {
+      "class_id": 35,
+      "id": 185,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 35,
+      "id": 184,
+      "name": "প্রাথমিক গণিত",
+      "subject_code": "১০৩"
+    },
+    {
+      "class_id": 35,
+      "id": 183,
+      "name": "বাংলা",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 35,
+      "id": 188,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৬"
+    },
+    {
+      "class_id": 35,
+      "id": 189,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৭"
+    },
+    {
+      "class_id": 43,
+      "id": 262,
+      "name": "Islamic Studies",
+      "subject_code": "106"
+    },
+    {
+      "class_id": 43,
+      "id": 261,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "105"
+    },
+    {
+      "class_id": 43,
+      "id": 259,
+      "name": "Elementary Mathematics",
+      "subject_code": "103"
+    },
+    {
+      "class_id": 43,
+      "id": 260,
+      "name": "Elementary Science",
+      "subject_code": "104"
+    },
+    {
+      "class_id": 43,
+      "id": 258,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 41,
+      "id": 249,
+      "name": "Physical Education and Health",
+      "subject_code": "147"
+    },
+    {
+      "class_id": 41,
+      "id": 247,
+      "name": "Islamic Studies",
+      "subject_code": "111"
+    },
+    {
+      "class_id": 41,
+      "id": 244,
+      "name": "Science",
+      "subject_code": "127"
+    },
+    {
+      "class_id": 41,
+      "id": 246,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "150"
+    },
+    {
+      "class_id": 41,
+      "id": 248,
+      "name": "Agriculture Studies",
+      "subject_code": "134"
+    },
+    {
+      "class_id": 41,
+      "id": 243,
+      "name": "Mathematics",
+      "subject_code": "109"
+    },
+    {
+      "class_id": 41,
+      "id": 245,
+      "name": "Information and Communication Technology",
+      "subject_code": "154"
+    },
+    {
+      "class_id": 41,
+      "id": 250,
+      "name": "Home Science",
+      "subject_code": "151"
+    },
+    {
+      "class_id": 41,
+      "id": 251,
+      "name": "Arts and Crafts",
+      "subject_code": "148"
+    },
+    {
+      "class_id": 41,
+      "id": 252,
+      "name": "Work and Life Oriented Education",
+      "subject_code": "155"
+    },
+    {
+      "class_id": 40,
+      "id": 239,
+      "name": "Physical Education and Health",
+      "subject_code": "147"
+    },
+    {
+      "class_id": 39,
+      "id": 230,
+      "name": "Home Science",
+      "subject_code": "151"
+    },
+    {
+      "class_id": 39,
+      "id": 229,
+      "name": "Physical Education and Health",
+      "subject_code": "147"
+    },
+    {
+      "class_id": 39,
+      "id": 231,
+      "name": "Arts and Crafts",
+      "subject_code": "148"
+    },
+    {
+      "class_id": 39,
+      "id": 228,
+      "name": "Agriculter Studies",
+      "subject_code": "134"
+    },
+    {
+      "class_id": 39,
+      "id": 227,
+      "name": "Islamic Studies",
+      "subject_code": "111"
+    },
+    {
+      "class_id": 39,
+      "id": 232,
+      "name": "Work and Life Oriented Education",
+      "subject_code": "155"
+    },
+    {
+      "class_id": 39,
+      "id": 225,
+      "name": "Information and Communication Technology",
+      "subject_code": "154"
+    },
+    {
+      "class_id": 39,
+      "id": 223,
+      "name": "Mathematics",
+      "subject_code": "109"
+    },
+    {
+      "class_id": 39,
+      "id": 226,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "105"
+    },
+    {
+      "class_id": 39,
+      "id": 224,
+      "name": "Science",
+      "subject_code": "127"
+    },
+    {
+      "class_id": 31,
+      "id": 211,
+      "name": "Information and Communication Technology",
+      "subject_code": "154"
+    },
+    {
+      "class_id": 11,
+      "id": 121,
+      "name": "কৃষিশিক্ষা",
+      "subject_code": "১৩৪"
+    },
+    {
+      "class_id": 11,
+      "id": 123,
+      "name": "গার্হস্থ্য বিজ্ঞান",
+      "subject_code": "১৫১"
+    },
+    {
+      "class_id": 11,
+      "id": 104,
+      "name": "পদার্থবিজ্ঞান",
+      "subject_code": "১৩৬"
+    },
+    {
+      "class_id": 11,
+      "id": 105,
+      "name": "রসায়ন",
+      "subject_code": "১৩৭"
+    },
+    {
+      "class_id": 11,
+      "id": 106,
+      "name": "জীববিজ্ঞান",
+      "subject_code": "১৩৮"
+    },
+    {
+      "class_id": 11,
+      "id": 107,
+      "name": "উচ্চতর গণিত",
+      "subject_code": "১২৬"
+    },
+    {
+      "class_id": 11,
+      "id": 108,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১৫০"
+    },
+    {
+      "class_id": 11,
+      "id": 113,
+      "name": "বাংলাদেশের ইতিহাস ও বিশ্বসভ্যতা",
+      "subject_code": "১৫৩"
+    },
+    {
+      "class_id": 11,
+      "id": 114,
+      "name": "ভূগোল ও পরিবেশ",
+      "subject_code": "১১০"
+    },
+    {
+      "class_id": 11,
+      "id": 115,
+      "name": "পৌরনীতি ও নাগরিকতা",
+      "subject_code": "১৪০"
+    },
+    {
+      "class_id": 11,
+      "id": 116,
+      "name": "অর্থনীতি",
+      "subject_code": "১৪১"
+    },
+    {
+      "class_id": 11,
+      "id": 119,
+      "name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "subject_code": "১৫৪"
+    },
+    {
+      "class_id": 32,
+      "id": 129,
+      "name": "English 1st Paper",
+      "subject_code": "107"
+    },
+    {
+      "class_id": 32,
+      "id": 127,
+      "name": "বাংলা ১ম পত্র",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 32,
+      "id": 130,
+      "name": "English 2nd Paper",
+      "subject_code": "108"
+    },
+    {
+      "class_id": 32,
+      "id": 128,
+      "name": "বাংলা ২য় পত্র",
+      "subject_code": "১০২"
+    },
+    {
+      "class_id": 32,
+      "id": 140,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১১২"
+    },
+    {
+      "class_id": 32,
+      "id": 139,
+      "name": "গার্হস্থ্য বিজ্ঞান",
+      "subject_code": "১৫১"
+    },
+    {
+      "class_id": 32,
+      "id": 137,
+      "name": "শারীরিক শিক্ষা ও স্বাস্থ্য",
+      "subject_code": "১৪৭"
+    },
+    {
+      "class_id": 32,
+      "id": 136,
+      "name": "কৃষিশিক্ষা",
+      "subject_code": "১৩৪"
+    },
+    {
+      "class_id": 32,
+      "id": 135,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১১১"
+    },
+    {
+      "class_id": 32,
+      "id": 134,
+      "name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "subject_code": "১৫৪"
+    },
+    {
+      "class_id": 32,
+      "id": 132,
+      "name": "বিজ্ঞান",
+      "subject_code": "১২৭"
+    },
+    {
+      "class_id": 32,
+      "id": 131,
+      "name": "গণিত",
+      "subject_code": "১০৯"
+    },
+    {
+      "class_id": 34,
+      "id": 165,
+      "name": "শারীরিক শিক্ষা ও স্বাস্থ্য",
+      "subject_code": "১৪৭"
+    },
+    {
+      "class_id": 34,
+      "id": 166,
+      "name": "কর্ম ও জীবনমুখী শিক্ষা",
+      "subject_code": "১৫৫"
+    },
+    {
+      "class_id": 34,
+      "id": 167,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১১২"
+    },
+    {
+      "class_id": 34,
+      "id": 168,
+      "name": "গার্হস্থ্য বিজ্ঞান",
+      "subject_code": "১৫১"
+    },
+    {
+      "class_id": 34,
+      "id": 156,
+      "name": "বাংলা ২য় পত্র",
+      "subject_code": "১০২"
+    },
+    {
+      "class_id": 34,
+      "id": 155,
+      "name": "বাংলা ১ম পত্র",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 34,
+      "id": 158,
+      "name": "English 2nd Paper",
+      "subject_code": "108"
+    },
+    {
+      "class_id": 34,
+      "id": 159,
+      "name": "গণিত",
+      "subject_code": "১০৯"
+    },
+    {
+      "class_id": 34,
+      "id": 160,
+      "name": "বিজ্ঞান",
+      "subject_code": "১২৭"
+    },
+    {
+      "class_id": 34,
+      "id": 157,
+      "name": "English 1st Paper",
+      "subject_code": "107"
+    },
+    {
+      "class_id": 34,
+      "id": 162,
+      "name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "subject_code": "১৫৪"
+    },
+    {
+      "class_id": 34,
+      "id": 163,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১১১"
+    },
+    {
+      "class_id": 34,
+      "id": 164,
+      "name": "কৃষিশিক্ষা",
+      "subject_code": "১৩৪"
+    },
+    {
+      "class_id": 36,
+      "id": 178,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 36,
+      "id": 176,
+      "name": "বাংলা",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 36,
+      "id": 177,
+      "name": "প্রাথমিক গণিত",
+      "subject_code": "১০৩"
+    },
+    {
+      "class_id": 36,
+      "id": 179,
+      "name": "প্রাথমিক বিজ্ঞান",
+      "subject_code": "১০৪"
+    },
+    {
+      "class_id": 36,
+      "id": 181,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৬"
+    },
+    {
+      "class_id": 37,
+      "id": 193,
+      "name": "প্রাথমিক বিজ্ঞান",
+      "subject_code": "১০৪"
+    },
+    {
+      "class_id": 36,
+      "id": 182,
+      "name": "হিন্দুধর্ম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৭"
+    },
+    {
+      "class_id": 37,
+      "id": 190,
+      "name": "বাংলা",
+      "subject_code": "১০১"
+    },
+    {
+      "class_id": 37,
+      "id": 195,
+      "name": "ইসলাম ও নৈতিক শিক্ষা",
+      "subject_code": "১০৬"
+    },
+    {
+      "class_id": 37,
+      "id": 194,
+      "name": "বাংলাদেশ ও বিশ্বপরিচয়",
+      "subject_code": "১০৫"
+    },
+    {
+      "class_id": 37,
+      "id": 191,
+      "name": "প্রাথমিক গণিত",
+      "subject_code": "১০৩"
+    },
+    {
+      "class_id": 37,
+      "id": 192,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 44,
+      "id": 265,
+      "name": "Elementary Science",
+      "subject_code": "108"
+    },
+    {
+      "class_id": 44,
+      "id": 264,
+      "name": "Elementary Mathematics",
+      "subject_code": "103"
+    },
+    {
+      "class_id": 44,
+      "id": 263,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 44,
+      "id": 267,
+      "name": "Islamic Studies",
+      "subject_code": "106"
+    },
+    {
+      "class_id": 44,
+      "id": 266,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "105"
+    },
+    {
+      "class_id": 42,
+      "id": 255,
+      "name": "Elementary Science",
+      "subject_code": "104"
+    },
+    {
+      "class_id": 42,
+      "id": 256,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "105"
+    },
+    {
+      "class_id": 42,
+      "id": 253,
+      "name": "English for Today",
+      "subject_code": "102"
+    },
+    {
+      "class_id": 42,
+      "id": 254,
+      "name": "Elementary Mathematics",
+      "subject_code": "103"
+    },
+    {
+      "class_id": 42,
+      "id": 257,
+      "name": "Islamic studies",
+      "subject_code": "106"
+    },
+    {
+      "class_id": 40,
+      "id": 237,
+      "name": "Islamic Studies",
+      "subject_code": "111"
+    },
+    {
+      "class_id": 40,
+      "id": 238,
+      "name": "Agriculture Studies",
+      "subject_code": "134"
+    },
+    {
+      "class_id": 40,
+      "id": 236,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "150"
+    },
+    {
+      "class_id": 40,
+      "id": 241,
+      "name": "Arts and Crafts",
+      "subject_code": "148"
+    },
+    {
+      "class_id": 40,
+      "id": 240,
+      "name": "Home Science",
+      "subject_code": "151"
+    },
+    {
+      "class_id": 40,
+      "id": 242,
+      "name": "Work and Life Oriented Education",
+      "subject_code": "155"
+    },
+    {
+      "class_id": 40,
+      "id": 235,
+      "name": "Information and Communication Technology",
+      "subject_code": "154"
+    },
+    {
+      "class_id": 40,
+      "id": 234,
+      "name": "Science",
+      "subject_code": "127"
+    },
+    {
+      "class_id": 40,
+      "id": 233,
+      "name": "Mathematics",
+      "subject_code": "109"
+    },
+    {
+      "class_id": 31,
+      "id": 210,
+      "name": "English Second Paper",
+      "subject_code": "108"
+    },
+    {
+      "class_id": 31,
+      "id": 209,
+      "name": "English First Paper",
+      "subject_code": "107"
+    },
+    {
+      "class_id": 31,
+      "id": 212,
+      "name": "Physics",
+      "subject_code": "136"
+    },
+    {
+      "class_id": 31,
+      "id": 215,
+      "name": "Bangladesh and Global Studies",
+      "subject_code": "150"
+    },
+    {
+      "class_id": 31,
+      "id": 216,
+      "name": "Islamic Studies",
+      "subject_code": "111"
+    },
+    {
+      "class_id": 31,
+      "id": 217,
+      "name": "Agriculture Studies",
+      "subject_code": "134"
+    },
+    {
+      "class_id": 31,
+      "id": 213,
+      "name": "Chemistry",
+      "subject_code": "137"
+    },
+    {
+      "class_id": 31,
+      "id": 218,
+      "name": "Home Science",
+      "subject_code": "151"
+    },
+    {
+      "class_id": 31,
+      "id": 220,
+      "name": "Accounting",
+      "subject_code": "146"
+    },
+    {
+      "class_id": 31,
+      "id": 219,
+      "name": "Science",
+      "subject_code": "127"
+    },
+    {
+      "class_id": 31,
+      "id": 214,
+      "name": "Biology",
+      "subject_code": "138"
+    },
+    {
+      "class_id": 31,
+      "id": 221,
+      "name": "Finance and Banking",
+      "subject_code": "152"
+    },
+    {
+      "class_id": 31,
+      "id": 222,
+      "name": "Business Entrepreneurship",
+      "subject_code": "143"
+    },
+    {
+      "class_id": 38,
+      "id": 298,
+      "name": "ভূগোল ১ম পত্র",
+      "subject_code": "১২৫"
+    },
+    {
+      "class_id": 38,
+      "id": 280,
+      "name": "উৎপাদন ব্যবস্থাপনা ও বিপণন ২য় পত্র",
+      "subject_code": "২৮৭"
+    },
+    {
+      "class_id": 38,
+      "id": 279,
+      "name": "উৎপাদন ব্যবস্থাপনা ও বিপণন ১ম পত্র",
+      "subject_code": "২৮৬"
+    },
+    {
+      "class_id": 38,
+      "id": 275,
+      "name": "ব্যবসায় সংগঠন ও ব্যবস্থাপনা ২য় পত্র",
+      "subject_code": "২৭৮"
+    },
+    {
+      "class_id": 38,
+      "id": 274,
+      "name": "ব্যবসায় সংগঠন ও ব্যবস্থাপনা ১ম পত্র",
+      "subject_code": "২৭৭"
+    },
+    {
+      "class_id": 38,
+      "id": 273,
+      "name": "হিসাববিজ্ঞান ২য় পত্র",
+      "subject_code": "২৫৪"
+    },
+    {
+      "class_id": 38,
+      "id": 272,
+      "name": "হিসাববিজ্ঞান ১ম পত্র",
+      "subject_code": "২৫৩"
+    },
+    {
+      "class_id": 38,
+      "id": 299,
+      "name": "ভূগোল ২য় পত্র",
+      "subject_code": "১২৬"
+    },
+    {
+      "class_id": 38,
+      "id": 283,
+      "name": "অর্থনীতি ২য় পত্র",
+      "subject_code": "১১০"
+    },
+    {
+      "class_id": 38,
+      "id": 282,
+      "name": "অর্থনীতি ১ম পত্র",
+      "subject_code": "১০৯"
+    },
+    {
+      "class_id": 38,
+      "id": 281,
+      "name": "পৌরনীতি ও সুশাসন ২য় পত্র",
+      "subject_code": "২৭০"
+    },
+    {
+      "class_id": 38,
+      "id": 292,
+      "name": "কৃষি শিক্ষা ১ম পত্র",
+      "subject_code": "২৩৯"
+    },
+    {
+      "class_id": 38,
+      "id": 293,
+      "name": "কৃষি শিক্ষা ২য় পত্র",
+      "subject_code": "২৪০"
+    },
+    {
+      "class_id": 38,
+      "id": 294,
+      "name": "মনোবিজ্ঞান ১ম পত্র",
+      "subject_code": "১২৩"
+    },
+    {
+      "class_id": 38,
+      "id": 296,
+      "name": "পরিসংখ্যান ১ম পত্র",
+      "subject_code": "১২৯"
+    },
+    {
+      "class_id": 38,
+      "id": 297,
+      "name": "পরিসংখ্যান ২য় পত্র",
+      "subject_code": "১৩০"
+    },
+    {
+      "class_id": 38,
+      "id": 300,
+      "name": "ইসলাম শিক্ষা ১ম পত্র",
+      "subject_code": "২৪৯"
+    },
+    {
+      "class_id": 38,
+      "id": 301,
+      "name": "ইসলাম শিক্ষা ২য় পত্র",
+      "subject_code": "২৫০"
+    },
+    {
+      "class_id": 38,
+      "id": 302,
+      "name": "সমাজবিজ্ঞান ১ম পত্র",
+      "subject_code": "১১৭"
+    },
+    {
+      "class_id": 38,
+      "id": 304,
+      "name": "যুক্তিবিদ্যা ১ম পত্র",
+      "subject_code": "১২১"
+    },
+    {
+      "class_id": 38,
+      "id": 305,
+      "name": "যুক্তিবিদ্যা ২য় পত্র",
+      "subject_code": "১২২"
+    },
+    {
+      "class_id": 38,
+      "id": 306,
+      "name": "গার্হস্থ্য বিজ্ঞান ১ম পত্র",
+      "subject_code": "২৭৩"
+    },
+    {
+      "class_id": 38,
+      "id": 307,
+      "name": "গার্হস্থ্য বিজ্ঞান ২য় পত্র",
+      "subject_code": "২৭৪"
+    },
+    {
+      "class_id": 38,
+      "id": 308,
+      "name": "সমাজকর্ম ১ম পত্র",
+      "subject_code": "২৭১"
+    },
+    {
+      "class_id": 38,
+      "id": 309,
+      "name": "সমাজকর্ম ২য় পত্র",
+      "subject_code": "২৭২"
+    },
+    {
+      "class_id": 38,
+      "id": 303,
+      "name": "সমাজবিজ্ঞান ২য় পত্র",
+      "subject_code": "১১৮"
+    },
+    {
+      "class_id": 38,
+      "id": 310,
+      "name": "ইসলামের ইতিহাস ও সংস্কৃতি ১ম পত্র",
+      "subject_code": "২৬৭"
+    },
+    {
+      "class_id": 38,
+      "id": 311,
+      "name": "ইসলামের ইতিহাস ও সংস্কৃতি ২য় পত্র",
+      "subject_code": "২৬৮"
+    },
+    {
+      "class_id": 38,
+      "id": 278,
+      "name": "ফিন্যান্স, ব্যাংকিং ও বিমা ২য় পত্র",
+      "subject_code": "২৯৩"
+    },
+    {
+      "class_id": 38,
+      "id": 277,
+      "name": "ফিন্যান্স, ব্যাংকিং ও বিমা ১ম পত্র",
+      "subject_code": "২৯২"
+    },
+    {
+      "class_id": 38,
+      "id": 295,
+      "name": "মনোবিজ্ঞান ২য় পত্র",
+      "subject_code": "১২৪"
+    },
+    {
+      "class_id": 38,
+      "id": 312,
+      "name": "ইতিহাস ১ম পত্র",
+      "subject_code": null
+    },
+    {
+      "class_id": 38,
+      "id": 313,
+      "name": "ইতিহাস ২য় পত্র",
+      "subject_code": null
+    }
+  ],
+  "packages": [
+    {
+      "class_name": "সপ্তম শ্রেণি",
+      "duration_days": null,
+      "id": 8,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 21,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "সপ্তম শ্রেণি",
+      "duration_days": null,
+      "id": 9,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 22,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "সপ্তম শ্রেণি",
+      "duration_days": null,
+      "id": 10,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 23,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "অষ্টম শ্রেণি",
+      "duration_days": null,
+      "id": 12,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 31,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "অষ্টম শ্রেণি",
+      "duration_days": null,
+      "id": 13,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 32,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "অষ্টম শ্রেণি",
+      "duration_days": null,
+      "id": 14,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 33,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "নবম-দশম শ্রেণি",
+      "duration_days": null,
+      "id": 16,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 41,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "নবম-দশম শ্রেণি",
+      "duration_days": null,
+      "id": 17,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 42,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "নবম-দশম শ্রেণি",
+      "duration_days": null,
+      "id": 18,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 43,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "একাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 20,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 51,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "একাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 21,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 52,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "একাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 22,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 53,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "দ্বাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 24,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 61,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "দ্বাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 25,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 62,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "দ্বাদশ শ্রেণি",
+      "duration_days": null,
+      "id": 26,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 63,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "একাদশ-দ্বাদশ শ্রেণি",
+      "duration_days": 365,
+      "id": 19,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 1990,
+      "sort_order": 50,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "bundle"
+    },
+    {
+      "class_name": "নবম-দশম শ্রেনি",
+      "duration_days": null,
+      "id": 27,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 1499,
+      "sort_order": 0,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "bundle"
+    },
+    {
+      "class_name": "ষষ্ঠ - দশম",
+      "duration_days": null,
+      "id": 1,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 3499,
+      "sort_order": 1,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "bundle"
+    },
+    {
+      "class_name": "ষষ্ঠ শ্রেণি",
+      "duration_days": null,
+      "id": 3,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 10,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "সপ্তম শ্রেণি",
+      "duration_days": null,
+      "id": 7,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 20,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "অষ্টম শ্রেণি",
+      "duration_days": null,
+      "id": 11,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 30,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "নবম-দশম শ্রেণি",
+      "duration_days": null,
+      "id": 15,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 1499,
+      "sort_order": 40,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "ষষ্ঠ শ্রেণি",
+      "duration_days": null,
+      "id": 4,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 11,
+      "subject_ids": null,
+      "subject_name": "গণিত",
+      "type": "class"
+    },
+    {
+      "class_name": "ষষ্ঠ শ্রেণি",
+      "duration_days": null,
+      "id": 5,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 12,
+      "subject_ids": null,
+      "subject_name": "বিজ্ঞান",
+      "type": "class"
+    },
+    {
+      "class_name": "ষষ্ঠ শ্রেণি",
+      "duration_days": null,
+      "id": 6,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 249,
+      "sort_order": 13,
+      "subject_ids": null,
+      "subject_name": "তথ্য ও যোগাযোগ প্রযুক্তি",
+      "type": "class"
+    },
+    {
+      "class_name": "ষষ্ঠ - দ্বাদশ",
+      "duration_days": null,
+      "id": 2,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 4499,
+      "sort_order": 2,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "bundle"
+    },
+    {
+      "class_name": "Class 9-10 (Eglish Version)",
+      "duration_days": 365,
+      "id": 31,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 1499,
+      "sort_order": 0,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "Class 8 (Eglish Version)",
+      "duration_days": 365,
+      "id": 32,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 0,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "Class 7 (Eglish Version)",
+      "duration_days": 365,
+      "id": 33,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 0,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "Class 6 (Eglish Version)",
+      "duration_days": 365,
+      "id": 34,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 999,
+      "sort_order": 0,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    },
+    {
+      "class_name": "দ্বাদশ শ্রেণি",
+      "duration_days": 365,
+      "id": 23,
+      "is_active": true,
+      "is_coming_soon": false,
+      "price": 1990,
+      "sort_order": 60,
+      "subject_ids": null,
+      "subject_name": "সকল বিষয়",
+      "type": "class"
+    }
+  ]
+}

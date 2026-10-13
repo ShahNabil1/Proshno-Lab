@@ -47,6 +47,8 @@ async function getBkashToken(): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  let reservedOrderId: number | null = null;
+  let cleanupReservedOrder: (() => Promise<void>) | null = null;
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -65,11 +67,15 @@ Deno.serve(async (req) => {
     const user = userData.user;
 
     const admin = createClient(supabaseUrl, serviceKey);
+    cleanupReservedOrder = async () => {
+      if (reservedOrderId) await admin.from("bkash_payments").update({ status: "failed", error_message: "Payment creation interrupted" }).eq("id", reservedOrderId).is("payment_id", null);
+    };
 
     const body = await req.json();
     const {
       selected_packages,
       payg,
+      custom_package,
       coupon_code,
       phone,
       institute_name,
@@ -77,7 +83,7 @@ Deno.serve(async (req) => {
       callback_origin,
     } = body ?? {};
 
-    if (!payg && (!Array.isArray(selected_packages) || selected_packages.length === 0)) {
+    if (!payg && !custom_package && (!Array.isArray(selected_packages) || selected_packages.length === 0)) {
       return json({ error: "প্যাকেজ সিলেক্ট করুন" }, 400);
     }
     if (!phone || !/^01[3-9]\d{8}$/.test(String(phone))) {
@@ -87,16 +93,25 @@ Deno.serve(async (req) => {
     // Compute amount server-side using DB prices
     let baseAmount = 0;
     const resolvedPackages: any[] = [];
-    if (payg) {
+    if (custom_package) {
+      if (payg || (Array.isArray(selected_packages) && selected_packages.length)) return json({ error: "Custom packages must be purchased separately" }, 400);
+      const { data: order, error } = await admin.rpc("quote_custom_package", { selection: custom_package, buyer: user.id });
+      if (error) return json({ error: error.message }, 400);
+      if (order.owned_subject_ids.length) return json({ error: "You already own selected subjects. Remove them before purchasing.", owned_subject_ids: order.owned_subject_ids }, 409);
+      baseAmount = Number(order.price);
+      resolvedPackages.push(order);
+    } else if (payg) {
       const order = await preparePayg(admin, payg);
       baseAmount = order.price;
       resolvedPackages.push(order);
     } else {
     const ids = selected_packages.map((p: any) => Number(p.id)).filter(Boolean);
+    if (ids.length !== selected_packages.length || new Set(ids).size !== ids.length) return json({ error: "Invalid or duplicate package IDs" }, 400);
     if (ids.length > 0) {
       const { data: pkgs } = await admin
         .from("pricing_packages")
         .select("id, class_name, subject_name, price, duration_days, subject_ids")
+        .eq("is_active", true).eq("is_coming_soon", false)
         .in("id", ids);
       for (const sel of selected_packages) {
         const match = pkgs?.find((p: any) => p.id === Number(sel.id));
@@ -112,11 +127,7 @@ Deno.serve(async (req) => {
         });
       }
     } else {
-      // Fallback: trust client-provided prices only when no id (should not happen)
-      for (const sel of selected_packages) {
-        baseAmount += Number(sel.price ?? 0);
-        resolvedPackages.push(sel);
-      }
+      return json({ error: "Valid package IDs are required" }, 400);
     }
 
     }
@@ -128,6 +139,7 @@ Deno.serve(async (req) => {
       const code = String(coupon_code).trim().toUpperCase();
       const { data: c } = await admin.from("coupons").select("*").eq("code", code).eq("is_active", true).maybeSingle();
       if (!c) return json({ error: "কুপন কোড সঠিক নয়" }, 400);
+      if (custom_package && Array.isArray(c.applicable_packages) && c.applicable_packages.length && !c.applicable_packages.includes("Custom Package__Selected Subjects")) return json({ error: "This coupon does not apply to custom packages" }, 400);
       if (c.expires_at && new Date(c.expires_at) < new Date()) return json({ error: "কুপনের মেয়াদ শেষ" }, 400);
       if (c.use_limit !== null && c.used_count >= c.use_limit) return json({ error: "কুপনের ব্যবহার সীমা শেষ" }, 400);
       if (baseAmount < Number(c.min_purchase ?? 0)) return json({ error: `ন্যূনতম ক্রয় ৳${c.min_purchase} প্রয়োজন` }, 400);
@@ -137,7 +149,7 @@ Deno.serve(async (req) => {
       } else {
         discount = Number(c.discount_value);
       }
-      discount = Math.min(discount, baseAmount);
+      discount = Math.max(0, Math.min(discount, baseAmount));
       normalizedCoupon = code;
     }
 
@@ -145,6 +157,17 @@ Deno.serve(async (req) => {
     if (finalAmount <= 0) return json({ error: "পরিশোধযোগ্য পরিমাণ শূন্য" }, 400);
 
     const merchantInvoiceNumber = `PL${user.id.slice(0, 8)}${Date.now().toString(36).toUpperCase()}`;
+
+    const environment = BKASH_BASE_URL.includes("sandbox") ? "sandbox" : "live";
+    if (custom_package) {
+      const { data: orderId, error } = await admin.rpc("reserve_custom_payment", { context: {
+        user_id: user.id, merchant_invoice_number: merchantInvoiceNumber, amount: finalAmount, discount,
+        coupon_code: normalizedCoupon, selected_packages: resolvedPackages, payer_reference: String(phone),
+        institute_name: institute_name || null, teacher_name: teacher_name || null, teacher_email: user.email || null, environment,
+      } });
+      if (error) return json({ error: error.message }, 409);
+      reservedOrderId = orderId;
+    }
 
     // Get bKash token
     const token = await getBkashToken();
@@ -174,12 +197,12 @@ Deno.serve(async (req) => {
 
     if (!createRes.ok || !createData.paymentID || !createData.bkashURL) {
       console.error("bKash create failed", createData);
+      if (reservedOrderId) await admin.from("bkash_payments").update({ status: "failed", bkash_response: createData, error_message: "Gateway creation failed" }).eq("id", reservedOrderId);
       return json({ error: `bKash create ব্যর্থ: ${createData?.statusMessage || createData?.errorMessage || "Unknown"}`, details: createData }, 502);
     }
 
     // Persist initiated row
-    const environment = BKASH_BASE_URL.includes("sandbox") ? "sandbox" : "live";
-    const { error: insErr } = await admin.from("bkash_payments").insert({
+    const paymentRecord = {
       user_id: user.id,
       payment_id: createData.paymentID,
       merchant_invoice_number: merchantInvoiceNumber,
@@ -194,7 +217,10 @@ Deno.serve(async (req) => {
       status: "initiated",
       bkash_response: createData,
       environment,
-    });
+    };
+    const { error: insErr } = reservedOrderId
+      ? await admin.from("bkash_payments").update(paymentRecord).eq("id", reservedOrderId)
+      : await admin.from("bkash_payments").insert(paymentRecord);
     if (insErr) {
       console.error("Persist initiated payment failed", insErr);
       return json({ error: "ডাটাবেসে পেমেন্ট সংরক্ষণ ব্যর্থ" }, 500);
@@ -203,6 +229,7 @@ Deno.serve(async (req) => {
     return json({ paymentID: createData.paymentID, bkashURL: createData.bkashURL });
   } catch (e: any) {
     console.error("bkash-create-payment error", e);
+    if (cleanupReservedOrder) await cleanupReservedOrder();
     return json({ error: e.message ?? "Unknown error" }, 500);
   }
 });

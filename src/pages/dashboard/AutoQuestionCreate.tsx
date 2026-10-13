@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import { selectUniqueQuestions } from "@/lib/selectUniqueQuestions";
 import { ALL_TYPES, LANGUAGE_TYPE_LABELS, allowedQuestionTypes, isLanguageType } from "@/lib/languageQuestionTypes";
 import { useEffect, useMemo, useState } from "react";
@@ -15,7 +16,6 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, ChevronLeft, ChevronRight, FilePlus2, BookOpen, ListChecks, FileText, Lock, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import { useUnlimitedAccess } from "@/hooks/useUnlimitedAccess";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
 import SubjectPicker from "@/components/dashboard/SubjectPicker";
@@ -82,6 +82,7 @@ export default function AutoQuestionCreate() {
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(data.questions));
       sessionStorage.setItem("viewPaperContext", JSON.stringify(data.context));
       sessionStorage.setItem("viewPaperMeta", JSON.stringify({ ...data.meta, purchaseMode: "payg" }));
+      analytics.paperGenerate(String(data.context?.classId || ""), String(data.context?.subjectId || ""));
       navigate("/dashboard/view-paper");
     }).finally(() => setGenerating(false));
   }, [user?.id, navigate]);
@@ -138,23 +139,13 @@ export default function AutoQuestionCreate() {
     if (!user?.id || !effectiveClassId || subjectIds.length === 0) { setHasAccess(null); return; }
     let cancel = false;
     (async () => {
-      const [{ data: perm }, { data: subs }] = await Promise.all([
-        supabase.from("user_permissions").select("id, subject_id").eq("user_id", user.id).eq("class_id", effectiveClassId).in("subject_id", subjectIds.map(Number)),
-        supabase.from("subscriptions").select("plan").eq("teacher_id", user.id).eq("status", "active"),
-      ]);
-      if (cancel) return;
-      const permSubIds = new Set((perm || []).map((p: any) => String(p.subject_id)));
-      const cls = classes.find(c => c.id === effectiveClassId);
-      if (!cls || !subs) { setHasAccess(false); return; }
-
-      const allAccess = subjectIds.every(subId => {
-        if (permSubIds.has(subId)) return true;
-        const sub = subjects.find(s => String(s.id) === subId);
-        if (!sub) return false;
-        return subs.some(s => planCoversSelection(s.plan || "", cls.name, sub.name));
-      });
-
-      setHasAccess(allAccess);
+      const results = await Promise.all(subjectIds.map(async id => {
+        const subject = subjects.find(s => String(s.id) === id);
+        if (!subject) return false;
+        const { data, error } = await supabase.rpc("can_read_question", { _class_id: subject.class_id, _subject_id: subject.id });
+        return !error && data === true;
+      }));
+      if (!cancel) setHasAccess(results.every(Boolean));
     })();
     return () => { cancel = true; };
   }, [user?.id, effectiveClassId, subjectIds.join(","), classes, subjects, unlimitedAccess, noPackagePreview]);
@@ -305,6 +296,7 @@ export default function AutoQuestionCreate() {
         topicNames: [],
       }));
       toast.success(`${toBanglaNum(picked.length)}টি প্রশ্ন জেনারেট হয়েছে!`);
+      analytics.paperGenerate(String(effectiveClassId), subjectIds.join(","));
       navigate("/dashboard/view-paper");
     } catch (e: any) {
       toast.error("জেনারেট ব্যর্থ: " + (e?.message || ""));

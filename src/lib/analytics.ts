@@ -1,3 +1,4 @@
+import { trackMetaEvent } from "@/lib/metaPixel";
 import { supabase } from "@/integrations/supabase/client";
 
 declare global {
@@ -36,6 +37,7 @@ async function sendServerEvent(eventName: string, params: Record<string, any> = 
 // Track both client + server side
 export function trackEvent(eventName: string, params: Record<string, any> = {}) {
   pushEvent(eventName, params);
+  trackMetaEvent(eventName, params);
   sendServerEvent(eventName, params);
 }
 
@@ -47,14 +49,20 @@ export const analytics = {
   login: (method: string) =>
     trackEvent("login", { method }),
 
-  signUp: (method: string) =>
-    trackEvent("sign_up", { method }),
+  signUp: (method: string, registrationId?: string) =>
+    trackEvent("sign_up", { method, registration_id: registrationId }),
 
   viewItem: (itemId: string, itemName: string, category: string) =>
     trackEvent("view_item", { item_id: itemId, item_name: itemName, item_category: category }),
 
   beginCheckout: (value: number, currency = "BDT") =>
     trackEvent("begin_checkout", { value, currency }),
+
+  addToCart: (itemId: string, itemName: string, value: number) =>
+    trackEvent("add_to_cart", { item_id: itemId, item_name: itemName, value, currency: "BDT" }),
+
+  addPaymentInfo: (value: number) =>
+    trackEvent("add_payment_info", { value, currency: "BDT", method: "bkash" }),
 
   purchase: (transactionId: string, value: number, currency = "BDT") =>
     trackEvent("purchase", { transaction_id: transactionId, value, currency }),
