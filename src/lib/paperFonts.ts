@@ -1,4 +1,6 @@
-export const UNICODE_PAPER_FONTS = [
+import { ENGLISH_PAPER_FONTS } from "./englishPaperFonts";
+
+const BENGALI_PAPER_FONTS = [
   {
     "id": "anek-bangla",
     "label": "Anek Bangla",
@@ -171,8 +173,11 @@ export const UNICODE_PAPER_FONTS = [
   }
 ] as const;
 
+export const UNICODE_PAPER_FONTS = [...BENGALI_PAPER_FONTS, ...ENGLISH_PAPER_FONTS] as const;
+
 export function paperFontFamily(id: string): string {
  const font = UNICODE_PAPER_FONTS.find(f => f.id === id);
+ if (font && ENGLISH_PAPER_FONTS.some(f => f.id === id)) return `"${font.family}", "Times New Roman", "SolaimanLipi", serif`;
  if (font) return `"Times New Roman", "${font.family}", "SolaimanLipi", serif`;
  if (id === "timesnewroman") return "\"Times New Roman\", Georgia, serif";
  if (id === "kalpurush") return "\"Times New Roman\", Kalpurush, serif";

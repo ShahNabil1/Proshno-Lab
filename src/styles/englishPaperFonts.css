@@ -1,0 +1,51 @@
+@font-face { font-family: "Calluna Sans"; src: url("/fonts/english/latin-calluna-sans-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Calluna Sans"; src: url("/fonts/english/latin-calluna-sans-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Calluna Sans"; src: url("/fonts/english/latin-calluna-sans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Calluna Sans"; src: url("/fonts/english/latin-calluna-sans-700-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("/fonts/english/latin-geist-variable-italic.woff2") format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("/fonts/english/latin-geist-variable.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("/fonts/english/latin-liberation-sans-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("/fonts/english/latin-liberation-sans-700-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("/fonts/english/latin-liberation-sans-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("/fonts/english/latin-liberation-sans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "AKONY"; src: url("/fonts/english/latin-akony-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lora"; src: url("/fonts/english/latin-lora-variable-italic.woff2") format("woff2"); font-weight: 400 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lora"; src: url("/fonts/english/latin-lora-variable.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("/fonts/english/latin-open-sans-variable-italic.woff2") format("woff2"); font-weight: 300 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("/fonts/english/latin-open-sans-variable.woff2") format("woff2"); font-weight: 300 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Roboto Slab"; src: url("/fonts/english/latin-roboto-slab-variable.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-700-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-500-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Ronzino"; src: url("/fonts/english/latin-ronzino-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ortica Angular"; src: url("/fonts/english/latin-ortica-angular-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ortica Linear"; src: url("/fonts/english/latin-ortica-linear-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ortica Linear"; src: url("/fonts/english/latin-ortica-linear-300.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Ortica Linear"; src: url("/fonts/english/latin-ortica-linear-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-700-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-800.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-800-italic.woff2") format("woff2"); font-weight: 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-300.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-300-italic.woff2") format("woff2"); font-weight: 300; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-500-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans Condensed"; src: url("/fonts/english/latin-open-sans-condensed-600-italic.woff2") format("woff2"); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-700-italic.woff2") format("woff2"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-800.woff2") format("woff2"); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-800-italic.woff2") format("woff2"); font-weight: 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-300.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-300-italic.woff2") format("woff2"); font-weight: 300; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-500-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans SemiCondensed"; src: url("/fonts/english/latin-open-sans-semicondensed-600-italic.woff2") format("woff2"); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "Anek Latin"; src: url("/fonts/english/latin-anek-latin-variable.woff2") format("woff2"); font-weight: 100 800; font-style: normal; font-display: swap; }
