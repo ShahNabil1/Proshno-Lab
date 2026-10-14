@@ -176,6 +176,8 @@ const BENGALI_PAPER_FONTS = [
 export const UNICODE_PAPER_FONTS = [...BENGALI_PAPER_FONTS, ...ENGLISH_PAPER_FONTS] as const;
 
 export function paperFontFamily(id: string): string {
+ if (id === "arial") return "Arial, SolaimanLipi, sans-serif";
+ if (id === "georgia") return "Georgia, SolaimanLipi, serif";
  const font = UNICODE_PAPER_FONTS.find(f => f.id === id);
  if (font && ENGLISH_PAPER_FONTS.some(f => f.id === id)) return `"${font.family}", "Times New Roman", "SolaimanLipi", serif`;
  if (font) return `"Times New Roman", "${font.family}", "SolaimanLipi", serif`;
@@ -186,5 +188,7 @@ export function paperFontFamily(id: string): string {
 }
 
 export function paperWordFont(id: string): string {
+ if (id === "arial") return "Arial";
+ if (id === "georgia") return "Georgia";
  return UNICODE_PAPER_FONTS.find(f => f.id === id)?.family || (id === "kalpurush" ? "Kalpurush" : id === "timesnewroman" ? "Times New Roman" : "SolaimanLipi");
 }
