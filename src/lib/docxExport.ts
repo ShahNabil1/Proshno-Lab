@@ -1,3 +1,4 @@
+import { paperWordFont } from "./paperFonts";
 import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from './englishPaperSections';
 import { languageSubject, patternGrade } from './languageQuestionTypes';
 import { isLanguageType, questionMarks, questionTypeLabel } from "@/lib/languageQuestionTypes";
@@ -743,12 +744,7 @@ export async function exportPaperToDocx({
   const isEnglish = languageSubject(meta.subjectName || "") === "english1" || /english|eglish|ইংলিশ/i.test(
     String(meta.className || "")
   );
-  const font =
-    settings.fontLang === "kalpurush"
-      ? "Kalpurush"
-      : settings.fontLang === "timesnewroman"
-      ? "Times New Roman"
-      : "SolaimanLipi";
+  const font = paperWordFont(settings.fontLang);
 
   const fontSize = Math.round((Number(settings.fontSize) || 14) * 1.5);
   const headingSize = fontSize + 8;

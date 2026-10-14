@@ -1,3 +1,4 @@
+import { UNICODE_PAPER_FONTS, paperFontFamily } from "@/lib/paperFonts";
 import { trackEvent } from "@/lib/analytics";
 import { paperPdfFilename } from "@/lib/paperPdfFilename";
 import PrintableDocument from "@/components/paper/PrintableDocument";
@@ -1436,7 +1437,7 @@ export default function QuestionPaperView() {
               <label className="flex items-center justify-between text-xs">লেখার রং<input type="color" value={settings.questionReferenceTextColor} className="h-8 w-12 cursor-pointer rounded border p-1" onChange={(event) => updateSetting("questionReferenceTextColor", event.target.value)} /></label>
               <div>
                 <Label className="text-[10px] text-muted-foreground">রেফারেন্স ফন্ট</Label>
-                <Select value={settings.questionReferenceFontFamily} onValueChange={(value) => updateSetting("questionReferenceFontFamily", value)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem></SelectContent></Select>
+                <Select value={settings.questionReferenceFontFamily} onValueChange={(value) => updateSetting("questionReferenceFontFamily", value)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem>{UNICODE_PAPER_FONTS.map(font => <SelectItem key={font.id} value={font.family}>{font.label}</SelectItem>)}</SelectContent></Select>
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">রেফারেন্স ফন্ট সাইজ</Label>
@@ -1786,6 +1787,7 @@ export default function QuestionPaperView() {
               <SelectItem value="omicronbangla">Bangla — OmicronLab</SelectItem>
               <SelectItem value="kalpurush">কালপুরুষ</SelectItem>
               <SelectItem value="timesnewroman">Times New Roman</SelectItem>
+              {UNICODE_PAPER_FONTS.map(font => <SelectItem key={font.id} value={font.id}>{font.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -2033,7 +2035,7 @@ export default function QuestionPaperView() {
               <div className="flex gap-1">{(["left","center","right"] as const).map(align => <Button key={align} size="sm" variant={settings.headerAlign === align ? "default" : "outline"} className="h-7 flex-1 text-[10px]" onClick={() => updateSetting("headerAlign", align)}>{align}</Button>)}</div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">হেডার ফন্ট পরিবর্তন</Label>
-                <Select value={settings.headerFontFamily} onValueChange={(v) => updateSetting("headerFontFamily", v)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem></SelectContent></Select>
+                <Select value={settings.headerFontFamily} onValueChange={(v) => updateSetting("headerFontFamily", v)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem>{UNICODE_PAPER_FONTS.map(font => <SelectItem key={font.id} value={font.family}>{font.label}</SelectItem>)}</SelectContent></Select>
               </div>
               <div className="grid grid-cols-2 gap-1"><Button size="sm" variant={settings.headerBold ? "default" : "outline"} className="h-7 font-bold" onClick={() => updateSetting("headerBold", !settings.headerBold)}>B</Button><Button size="sm" variant={settings.headerItalic ? "default" : "outline"} className="h-7 italic" onClick={() => updateSetting("headerItalic", !settings.headerItalic)}>I</Button></div>
               <Input className="h-8 text-xs" type="url" placeholder="Attached URL" value={settings.headerLink} onChange={(e) => updateSetting("headerLink", e.target.value)} />
@@ -2053,7 +2055,7 @@ export default function QuestionPaperView() {
               <div className="flex gap-1">{(["left", "center", "right"] as const).map(align => <Button key={align} size="sm" variant={settings.footerAlign === align ? "default" : "outline"} className="h-7 flex-1 text-[10px]" onClick={() => updateSetting("footerAlign", align)}>{align}</Button>)}</div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">ফুটার ফন্ট পরিবর্তন</Label>
-                <Select value={settings.footerFontFamily} onValueChange={(v) => updateSetting("footerFontFamily", v)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem></SelectContent></Select>
+                <Select value={settings.footerFontFamily} onValueChange={(v) => updateSetting("footerFontFamily", v)}><SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="inherit">ডিফল্ট</SelectItem><SelectItem value="SolaimanLipi">সোলায়মান লিপি</SelectItem><SelectItem value="OmicronBangla">Bangla — OmicronLab</SelectItem><SelectItem value="Kalpurush">কালপুরুষ</SelectItem><SelectItem value="Noto Serif Bengali">নোটো সেরিফ বাংলা</SelectItem><SelectItem value="Arial">Arial</SelectItem><SelectItem value="Times New Roman">Times New Roman</SelectItem><SelectItem value="Georgia">Georgia</SelectItem>{UNICODE_PAPER_FONTS.map(font => <SelectItem key={font.id} value={font.family}>{font.label}</SelectItem>)}</SelectContent></Select>
               </div>
               <div className="grid grid-cols-2 gap-1"><Button size="sm" variant={settings.footerBold ? "default" : "outline"} className="h-7 font-bold" onClick={() => updateSetting("footerBold", !settings.footerBold)}>B</Button><Button size="sm" variant={settings.footerItalic ? "default" : "outline"} className="h-7 italic" onClick={() => updateSetting("footerItalic", !settings.footerItalic)}>I</Button></div>
               <Input className="h-8 text-xs" type="url" placeholder="Attached URL" value={settings.footerLink} onChange={(e) => updateSetting("footerLink", e.target.value)} />
@@ -2317,15 +2319,7 @@ export default function QuestionPaperView() {
             boxShadow: "0 4px 18px rgba(30, 41, 59, 0.07)",
             fontFamily: isEnglishVersion && settings.fontLang === "bangla"
               ? "'Times New Roman', Times, serif"
-              : settings.fontLang === "solaimanlipi"
-              ? "'Times New Roman', 'SolaimanLipi', serif"
-              : settings.fontLang === "omicronbangla"
-              ? "'Times New Roman', 'OmicronBangla', 'SolaimanLipi', serif"
-              : settings.fontLang === "kalpurush"
-              ? "'Times New Roman', 'Kalpurush', serif"
-              : settings.fontLang === "timesnewroman"
-              ? "'Times New Roman', 'Georgia', serif"
-              : "'Times New Roman', 'SolaimanLipi', serif",
+              : paperFontFamily(settings.fontLang),
             textAlign: settings.textAlign,
             position: "relative",
             overflow: "visible",

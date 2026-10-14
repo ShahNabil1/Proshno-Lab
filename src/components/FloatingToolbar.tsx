@@ -1,3 +1,4 @@
+import { UNICODE_PAPER_FONTS } from "@/lib/paperFonts";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
@@ -32,6 +33,7 @@ const FONT_FAMILIES = [
   { label: "Arial", value: "Arial, sans-serif" },
   { label: "Georgia", value: "Georgia, serif" },
   { label: "Times New Roman", value: "'Times New Roman', serif" },
+  ...UNICODE_PAPER_FONTS.map(font => ({ label: font.label, value: `"${font.family}", sans-serif` })),
 ];
 
 
