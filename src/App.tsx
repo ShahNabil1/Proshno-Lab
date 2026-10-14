@@ -14,9 +14,6 @@ import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
-import MCQPage from "./pages/MCQPage";
-import CQPage from "./pages/CQPage";
-import ShortPage from "./pages/ShortPage";
 
 import PricingPage from "./pages/PricingPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -89,9 +86,6 @@ const App = () => (
             <Route element={<AuthCallback />} path="/auth/callback" />
             <Route element={<Layout><Register /></Layout>} path="/register" />
             <Route element={<Layout><Profile /></Layout>} path="/profile" />
-            <Route element={<Layout><MCQPage /></Layout>} path="/questions/mcq" />
-            <Route element={<Layout><CQPage /></Layout>} path="/questions/cq" />
-            <Route element={<Layout><ShortPage /></Layout>} path="/questions/short" />
             
             <Route element={<Layout><PricingPage /></Layout>} path="/pricing" />
             <Route element={<Layout><CheckoutPage /></Layout>} path="/checkout" />
