@@ -36,3 +36,11 @@ Implementation is prepared and tested. Database settings default to disabled, an
 - Real database SHA-256 output checked against a known test vector.
 
 To stop new CAPI activity, set database `enabled=false`. The browser Pixel is controlled separately by `VITE_META_PIXEL_ENABLED`.
+
+## Confirmed signup leads — 14 October 2026
+
+New accounts created after the Lead migration and confirmed by Supabase generate exactly one server-only `Lead` with ID `lead:<account UUID>`, alongside the existing `CompleteRegistration`. Existing accounts, repeat sign-ins, confirmation timestamp updates and historical registrations are not replayed. A unique outbox key prevents repeated Lead delivery from the same signup. Browser-authored Lead ingestion remains blocked; no second browser Lead is emitted.
+
+The Lead uses existing approved hashed email/account matching and authenticated signup browser context when received while pending. Delivery is delayed at least 30 seconds to allow context enrichment and then uses the existing retry worker. Successful delivery clears matching data. Lead and CompleteRegistration represent the same person at distinct event types and must not be added together as unique customers. Ads Manager's Lead result still depends on attribution and its selected date range.
+
+Validation: 31 SQL checks passed, including new confirmations, duplicate/reconfirmation prevention, no backfill, disabled settings, context enrichment, spoof rejection, existing Purchase retry and queue permissions. Migration deployed to production; real Lead delivery awaits the next legitimate new signup. No fake accounts or fabricated conversions were sent.
