@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MarketingOverview from "@/components/admin/MarketingOverview";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, FileText, BookOpen, Layers, CreditCard, TrendingUp, CalendarDays, Activity } from "lucide-react";
@@ -47,12 +48,14 @@ export default function AdminHome() {
       countQuestions(),
       supabase.from("classes").select("id", { count: "exact", head: true }),
       supabase.from("subjects").select("id", { count: "exact", head: true }),
-      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active")
+        .or(`starts_at.is.null,starts_at.lte.${now.toISOString()}`)
+        .or(`ends_at.is.null,ends_at.gt.${now.toISOString()}`),
       countQuestions(todayStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
       countQuestions(monthStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
-      supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").gte("created_at", monthStart),
+      supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").eq("environment", "live").or("coupon_code.is.null,coupon_code.not.ilike.PLTEST%").gte("created_at", monthStart),
     ]).then(([t, q, c, s, as, tq, tt, mq, mt, mp]) => {
       setStats({
         teachers: t.count || 0, questions: q, classes: c.count || 0, subjects: s.count || 0,
@@ -72,7 +75,8 @@ export default function AdminHome() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-heading text-2xl font-bold">Admin Dashboard</h1>
+      <MarketingOverview />
+      <h2 className="font-heading text-xl font-bold">একাডেমিক ও প্ল্যাটফর্ম ওভারভিউ</h2>
 
       {/* Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -96,7 +100,7 @@ export default function AdminHome() {
             <CreditCard className="w-6 h-6 text-[#00B4BC]" />
           </div>
           <div>
-            <p className="text-sm text-white/70">রিয়েল-টাইম একটিভ সাবস্ক্রিপশন</p>
+            <p className="text-sm text-white/70">বর্তমানে সক্রিয় সাবস্ক্রিপশন</p>
             <p className="text-4xl font-heading font-bold text-white">{stats.activeSubscriptions}</p>
           </div>
         </CardContent>
