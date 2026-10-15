@@ -27,6 +27,7 @@ import ExplanationToggle from "@/components/ExplanationToggle";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { sortClasses, sortSubjects, sortChapters } from "@/lib/classOrder";
 import AdminQuestionDuplicates from "@/pages/admin/AdminQuestionDuplicates";
+import BulkExplanationDialog from "@/components/admin/BulkExplanationDialog";
 
 const typeOptions = ALL_TYPES;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -868,7 +869,9 @@ export default function AdminQuestions() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-heading text-2xl font-bold">প্রশ্ন ম্যানেজমেন্ট</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <BulkExplanationDialog isSubjectAllowed={isSubjectAllowed} onSaved={invalidateQuestions} />
+          <BulkExplanationDialog answerMode isSubjectAllowed={isSubjectAllowed} onSaved={invalidateQuestions} />
           <Button variant="outline" onClick={() => setDuplicateModeOpen(true)} className="gap-2 border-amber-300 text-amber-800 hover:bg-amber-50">
             <Trash2 className="w-4 h-4" /> Duplicate Cleanup
           </Button>

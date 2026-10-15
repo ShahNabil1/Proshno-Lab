@@ -62,11 +62,11 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [packageId, setPackageId] = useState("");
-  const [classId, setClassId] = useState("");
+  const [classIds, setClassIds] = useState<string[]>([]);
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
 
   const [startsAt, setStartsAt] = useState(toDateInput(new Date()));
-  const [endsAt, setEndsAt] = useState(toDateInput(addMonths(new Date(), 12)));
+  const [endsAt, setEndsAt] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -74,10 +74,10 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
   useEffect(() => {
     if (!open) return;
     setTerm(""); setResults([]); setCustomer(null);
-    setMode("package"); setPackageId(""); setClassId(""); setSubjectIds([]);
+    setMode("package"); setPackageId(""); setClassIds([]); setSubjectIds([]);
     setAmount(""); setNote("");
     setStartsAt(toDateInput(new Date()));
-    setEndsAt(toDateInput(addMonths(new Date(), 12)));
+    setEndsAt("");
 
     Promise.all([
       supabase.from("pricing_packages").select("id, class_name, subject_name, price").eq("is_active", true).order("sort_order"),
@@ -108,8 +108,8 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
   }, [term]);
 
   const classSubjects = useMemo(
-    () => subjects.filter(s => String(s.class_id) === classId),
-    [subjects, classId],
+    () => subjects.filter(s => classIds.includes(String(s.class_id))),
+    [subjects, classIds],
   );
 
   const toggleSubject = (id: string, checked: boolean) =>
@@ -124,20 +124,25 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
   const selectedPackage = packages.find(p => String(p.id) === packageId) || null;
   const className = mode === "package"
     ? selectedPackage?.class_name || ""
-    : classes.find(c => String(c.id) === classId)?.name || "";
+    : classes.filter(c => classIds.includes(String(c.id))).map(c => c.name).join(" / ");
   const subjectLabel = mode === "package"
     ? selectedPackage?.subject_name || ""
     : allSubjectsSelected
       ? ALL_SUBJECTS_LABEL
       : selectedSubjects.map(s => s.name).join(", ");
-  const plan = className && subjectLabel ? `${className} - ${subjectLabel}` : "";
+  const customPlans = classes.filter(c => classIds.includes(String(c.id))).map(c => {
+    const available = subjects.filter(s => s.class_id === c.id);
+    const selected = selectedSubjects.filter(s => s.class_id === c.id);
+    return selected.length ? `${c.name} - ${selected.length === available.length ? ALL_SUBJECTS_LABEL : selected.map(s => s.name).join(", ")}` : "";
+  }).filter(Boolean);
+  const plans = mode === "custom" ? customPlans : className && subjectLabel ? [`${className} - ${subjectLabel}`] : [];
+  const plan = plans.join("; ");
 
   // What the grant will unlock, so the admin can sanity-check before saving.
   const preview = useMemo(() => {
     if (!plan) return null;
     if (mode === "custom") {
-      const cls = classes.find(c => String(c.id) === classId);
-      return { classNames: cls ? [cls.name] : [], subjectCount: selectedSubjects.length };
+      return { classNames: classes.filter(c => classIds.includes(String(c.id))).map(c => c.name), subjectCount: selectedSubjects.length };
     }
     const targets = resolvePlanClasses(className, classes);
     const wantsAll = subjectLabel.includes(ALL_SUBJECTS_LABEL);
@@ -146,7 +151,7 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
       .filter(s => wantsAll || sameLabel(s.name, subjectLabel))
       .length;
     return { classNames: targets.map(c => c.name), subjectCount };
-  }, [plan, mode, className, subjectLabel, classId, selectedSubjects, classes, subjects]);
+  }, [plan, mode, className, subjectLabel, classIds, selectedSubjects, classes, subjects]);
 
   const totalDays = useMemo(() => {
     const start = new Date(`${startsAt}T00:00:00`).getTime();
@@ -158,6 +163,7 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
   const handleGrant = async () => {
     if (!customer) { toast.error("ইমেইল দিয়ে গ্রাহক খুঁজে সিলেক্ট করুন"); return; }
     if (mode === "custom" && selectedSubjects.length === 0) { toast.error("অন্তত একটি বিষয় সিলেক্ট করুন"); return; }
+    if (mode === "custom" && customPlans.length !== classIds.length) { toast.error("প্রতিটি শ্রেণি থেকে অন্তত একটি বিষয় সিলেক্ট করুন"); return; }
     if (!plan) { toast.error("প্যাকেজ সিলেক্ট করুন"); return; }
 
     const startDate = new Date(`${startsAt}T00:00:00`);
@@ -173,16 +179,16 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
 
     setSaving(true);
     try {
-      const { error: subError } = await supabase.from("subscriptions").insert({
+      const { error: subError } = await supabase.from("subscriptions").insert(plans.map((grantPlan, index) => ({
         teacher_id: customer.id,
-        plan,
+        plan: grantPlan,
         status: "active",
         starts_at: startDate.toISOString(),
         ends_at: endDate.toISOString(),
         source: "manual",
-        amount: amountValue,
+        amount: index === 0 ? amountValue : null,
         note: note.trim() || null,
-      });
+      })));
       if (subError) {
         if (/does not exist|Could not find the/i.test(subError.message || "")) {
           throw new Error("ডেটাবেস আপডেট করা হয়নি — supabase/migrations/20260918020000_manual_subscription_payments.sql মাইগ্রেশনটি চালান");
@@ -201,8 +207,7 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
       };
 
       if (mode === "custom") {
-        const cls = classes.find(c => String(c.id) === classId);
-        if (cls) selectedSubjects.forEach(s => push(cls.id, s.id));
+        selectedSubjects.forEach(s => push(s.class_id, s.id));
       } else {
         const wantsAll = subjectLabel.includes(ALL_SUBJECTS_LABEL);
         resolvePlanClasses(className, classes).forEach(cls => {
@@ -341,14 +346,20 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
               </Select>
             ) : (
               <div className="space-y-3">
-                <Select value={classId} onValueChange={v => { setClassId(v); setSubjectIds([]); }}>
-                  <SelectTrigger><SelectValue placeholder="শ্রেণি সিলেক্ট করুন" /></SelectTrigger>
-                  <SelectContent>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">শ্রেণি — একাধিক সিলেক্ট করা যাবে ({classIds.length}টি বাছাই করা হয়েছে)</p>
+                  <div className="grid grid-cols-2 gap-2 rounded-lg border p-3">
                     {classes.map(c => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox checked={classIds.includes(String(c.id))} onCheckedChange={checked => {
+                          setClassIds(prev => checked === true ? [...prev, String(c.id)] : prev.filter(id => id !== String(c.id)));
+                          if (checked !== true) setSubjectIds(prev => prev.filter(id => !subjects.some(s => String(s.id) === id && s.class_id === c.id)));
+                        }} />
+                        {c.name}
+                      </label>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -382,7 +393,7 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
                             checked={subjectIds.includes(String(s.id))}
                             onCheckedChange={v => toggleSubject(String(s.id), v === true)}
                           />
-                          <span>{s.name}</span>
+                          <span>{classes.find(c => c.id === s.class_id)?.name} — {s.name}</span>
                         </label>
                       ))
                     )}
@@ -403,20 +414,32 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">শুরু</span>
-                <Input type="date" value={startsAt} onChange={e => setStartsAt(e.target.value)} />
+                <Input aria-label="শুরুর তারিখ" type="date" value={startsAt} onChange={e => setStartsAt(e.target.value)} />
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">শেষ</span>
-                <Input type="date" value={endsAt} onChange={e => setEndsAt(e.target.value)} />
+                <Input aria-label="শেষের তারিখ" type="date" min={startsAt} value={endsAt} onChange={e => setEndsAt(e.target.value)} />
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="grant-duration-days" className="text-xs shrink-0">মেয়াদ (দিন)</Label>
+              <Input id="grant-duration-days" type="number" min="1" step="1" placeholder="যেমন: ৩০" className="w-36" value={totalDays ?? ""} onChange={e => {
+                const days = Number(e.target.value);
+                if (!startsAt || !Number.isInteger(days) || days < 1) { setEndsAt(""); return; }
+                const end = new Date(`${startsAt}T00:00:00`);
+                end.setDate(end.getDate() + days - 1);
+                setEndsAt(toDateInput(end));
+              }} />
+            </div>
+            <p className="text-xs text-muted-foreground">মেয়াদ বেছে নিন, দিনের সংখ্যা লিখুন অথবা শেষের তারিখ পরিবর্তন করুন।</p>
             <div className="flex flex-wrap gap-2">
               {DURATIONS.map(d => (
                 <Button
                   key={d.label}
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant={endsAt && endsAt === toDateInput(addMonths(new Date(`${startsAt}T00:00:00`), d.months)) ? "default" : "outline"}
+                  disabled={!startsAt}
                   onClick={() => setEndsAt(toDateInput(addMonths(new Date(`${startsAt}T00:00:00`), d.months)))}
                 >
                   {d.label}
@@ -474,7 +497,7 @@ export default function AdminGrantAccessDialog({ open, onOpenChange, onGranted }
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>বাতিল</Button>
-          <Button className="gradient-green text-white border-0" onClick={handleGrant} disabled={saving || !customer || !plan}>
+          <Button className="gradient-green text-white border-0" onClick={handleGrant} disabled={saving || !customer || !plan || totalDays === null || (mode === "custom" && customPlans.length !== classIds.length)}>
             {saving ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> সেভ হচ্ছে...</> : "অ্যাক্সেস দিন"}
           </Button>
         </DialogFooter>

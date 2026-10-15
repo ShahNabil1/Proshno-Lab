@@ -5,6 +5,9 @@
  */
 
 export const CLASS_LEVELS: { label: string; level: number }[] = [
+  { label: "তৃতীয়", level: 3 },
+  { label: "চতুর্থ", level: 4 },
+  { label: "পঞ্চম", level: 5 },
   { label: "ষষ্ঠ", level: 6 },
   { label: "সপ্তম", level: 7 },
   { label: "অষ্টম", level: 8 },
@@ -18,7 +21,7 @@ export const ALL_SUBJECTS_LABEL = "সকল বিষয়";
 
 /** Normalize plan / class strings for comparison. */
 export const normalizeSubscriptionText = (value: string): string =>
-  (value || "")
+  (value || "").normalize("NFC")
     .trim()
     .replace(/শ্রেণি/g, "")
     .replace(/[–—]/g, "-")
@@ -31,7 +34,7 @@ export const normalizeSubscriptionText = (value: string): string =>
 export const extractClassLevels = (value: string): number[] => {
   const normalized = normalizeSubscriptionText(value);
   const levels = CLASS_LEVELS
-    .filter(({ label }) => normalized.includes(label))
+    .filter(({ label }) => normalized.includes(normalizeSubscriptionText(label)))
     .map(({ level }) => level);
 
   // Range like "ষষ্ঠ - দশম" → expand to inclusive range

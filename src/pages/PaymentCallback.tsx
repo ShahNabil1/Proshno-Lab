@@ -8,7 +8,7 @@ import { Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import BrandLockup from "@/components/BrandLockup";
 
-type Phase = "verifying" | "success" | "failed" | "cancelled";
+type Phase = "verifying" | "success" | "failed" | "cancelled" | "pending";
 
 export default function PaymentCallback() {
   const [params] = useSearchParams();
@@ -78,6 +78,12 @@ export default function PaymentCallback() {
           setMessage(data?.error || "পেমেন্ট নিশ্চিত করা যায়নি");
         }
       } catch (e: any) {
+        const details = await e?.context?.json?.().catch(() => null);
+        if (details?.status === "activation_pending" || details?.activationPending || details?.kind === "activation_pending") {
+          setPhase("pending");
+          setMessage("\u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f \u09aa\u09be\u0993\u09df\u09be \u0997\u09c7\u099b\u09c7\u0964 \u0985\u09cd\u09af\u09be\u0995\u09cd\u09b8\u09c7\u09b8 \u099a\u09be\u09b2\u09c1 \u09b9\u099a\u09cd\u099b\u09c7\u0964 \u0986\u09ac\u09be\u09b0 \u09aa\u09c7\u09ae\u09c7\u09a8\u09cd\u099f \u0995\u09b0\u09a4\u09c7 \u09b9\u09ac\u09c7 \u09a8\u09be\u0964");
+          return;
+        }
         setPhase("failed");
         setMessage(e?.message || "সার্ভার এরর");
       }
@@ -104,10 +110,9 @@ export default function PaymentCallback() {
         return;
       }
 
-      if (row.status === "completed") { void trackCompletedPurchase(); navigate(returnPath); return; }
       // Retry the same initiated payment, avoiding a second charge while a
       // verified custom payment is awaiting transactional access activation.
-      if (row.status === "initiated") {
+      if (row.status === "initiated" || row.status === "completed") {
         const { data, error } = await supabase.functions.invoke("bkash-execute-payment", { body: { paymentID } });
         if (error || data?.status !== "completed") throw new Error("পেমেন্ট যাচাই এখনও সম্পন্ন হয়নি। আবার চেষ্টা করুন অথবা সাপোর্টে যোগাযোগ করুন।");
         void trackCompletedPurchase();
@@ -164,13 +169,13 @@ export default function PaymentCallback() {
           </>
         )}
 
-        {(phase === "failed" || phase === "cancelled") && (
+        {(phase === "failed" || phase === "cancelled" || phase === "pending") && (
           <>
             <div className="w-16 h-16 rounded-full bg-red-100 mx-auto mb-4 flex items-center justify-center">
               <X className="w-9 h-9 text-red-600" />
             </div>
             <h2 className="font-heading text-2xl font-bold mb-1 text-red-700">
-              {phase === "cancelled" ? "পেমেন্ট বাতিল" : "পেমেন্ট ব্যর্থ"}
+              {phase === "pending" ? "\u0985\u09cd\u09af\u09be\u0995\u09cd\u09b8\u09c7\u09b8 \u099a\u09be\u09b2\u09c1 \u09b9\u099a\u09cd\u099b\u09c7" : phase === "cancelled" ? "পেমেন্ট বাতিল" : "পেমেন্ট ব্যর্থ"}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">{message}</p>
             <div className="flex gap-2 justify-center">

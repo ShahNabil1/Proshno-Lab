@@ -2,6 +2,8 @@
 // Called by /payment/callback after user returns from bKash. Finalizes payment
 // and provisions subscriptions + user_permissions on success.
 
+import { activateFixedPayment } from "../_shared/fixedPayment.ts";
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
@@ -83,7 +85,12 @@ Deno.serve(async (req) => {
 
     // Idempotent: already completed → return existing success
     if (paymentRow.status === "completed") {
-      return json({ status: "completed", trxID: paymentRow.trx_id, alreadyProcessed: true });
+      const fixed = Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.length > 0 && paymentRow.selected_packages.every((p: any) => !p.kind);
+      if (!fixed) return json({ status: "completed", trxID: paymentRow.trx_id, alreadyProcessed: true });
+      const result = await activateFixedPayment(admin, paymentRow, paymentRow.bkash_response);
+      if (result.ok) return json({ status: "completed", trxID: paymentRow.trx_id, alreadyProcessed: true });
+      if (!result.verificationRequired) return json({ status: "activation_pending", error: "Payment received; access activation pending. Retry verification.", ...result }, 503);
+      // Old completed rows may lack a receipt. Re-query the gateway below.
     }
     if (paymentRow.status === "failed" || paymentRow.status === "cancelled") {
       return json({ status: paymentRow.status, error: paymentRow.error_message ?? "পেমেন্ট ব্যর্থ" }, 400);
@@ -91,7 +98,7 @@ Deno.serve(async (req) => {
 
     // Execute against bKash
     const token = await getBkashToken();
-    const execRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/execute`, {
+    const execRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/${paymentRow.status === "completed" ? "payment/status" : "execute"}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -146,7 +153,7 @@ Deno.serve(async (req) => {
         // Keep the verified receipt so the admin query endpoint can retry
         // activation; never mark settled money as a failed payment.
         await admin.from("bkash_payments").update({ bkash_response: execData, trx_id: execData.trxID, error_message: "Access activation pending: " + error.message }).eq("id", paymentRow.id).eq("status", "initiated");
-        return json({ error: "Payment received; access activation pending. Retry or contact support." }, 503);
+        return json({ status: "activation_pending", error: "Payment received; access activation pending. Retry or contact support." }, 503);
       }
       return json({ status: "completed", trxID: execData.trxID, kind: "custom", subscriptionId });
     }
@@ -159,67 +166,11 @@ Deno.serve(async (req) => {
       return json({ status: "completed", trxID: execData.trxID, kind: "payg" });
     }
 
-    // Success — provision subscriptions and permissions
-    const selectedPkgs = Array.isArray(paymentRow.selected_packages) ? paymentRow.selected_packages : [];
-    const endsAt = new Date();
-    endsAt.setFullYear(endsAt.getFullYear() + 1);
+    const selectedPkgs = paymentRow.selected_packages;
+    const activated = await activateFixedPayment(admin, paymentRow, execData);
+    if (!activated.ok) return json({ status: "activation_pending", error: "Payment received; access activation pending. Retry verification.", ...activated }, 503);
 
-    for (const pkg of selectedPkgs) {
-      const className = pkg.class_name as string;
-      const subjectName = pkg.subject_name as string;
-      const planName = `${className} - ${subjectName}`;
-
-      const { data: subIns } = await admin.from("subscriptions").insert({
-        teacher_id: user.id,
-        plan: planName,
-        status: "active",
-        starts_at: new Date().toISOString(),
-        ends_at: endsAt.toISOString(),
-        bkash_payment_id: paymentRow.id,
-      }).select("id").maybeSingle();
-
-      // Timed/custom packages use expiring subscriptions, never permanent grants.
-      if (pkg.duration_days != null || Array.isArray(pkg.subject_ids)) continue;
-
-      const { data: classRow } = await admin.from("classes").select("id").eq("name", className).maybeSingle();
-      if (!classRow) continue;
-
-      if (subjectName === "সকল বিষয়" || subjectName.includes("সকল বিষয়")) {
-        const { data: allSubjects } = await admin.from("subjects").select("id").eq("class_id", classRow.id);
-        for (const sub of allSubjects ?? []) {
-          const { data: existing } = await admin.from("user_permissions").select("id")
-            .eq("user_id", user.id).eq("class_id", classRow.id).eq("subject_id", sub.id).maybeSingle();
-          if (!existing) {
-            await admin.from("user_permissions").insert({ user_id: user.id, class_id: classRow.id, subject_id: sub.id });
-          }
-        }
-      } else {
-        const { data: subjectRow } = await admin.from("subjects").select("id")
-          .eq("class_id", classRow.id).eq("name", subjectName).maybeSingle();
-        if (subjectRow) {
-          const { data: existing } = await admin.from("user_permissions").select("id")
-            .eq("user_id", user.id).eq("class_id", classRow.id).eq("subject_id", subjectRow.id).maybeSingle();
-          if (!existing) {
-            await admin.from("user_permissions").insert({ user_id: user.id, class_id: classRow.id, subject_id: subjectRow.id });
-          }
-        }
-      }
-    }
-
-    // Increment coupon usage
-    if (paymentRow.coupon_code) {
-      await admin.rpc("increment_coupon_usage", { coupon_code: paymentRow.coupon_code });
-    }
-
-    await admin.from("bkash_payments").update({
-      status: "completed",
-      trx_id: execData.trxID,
-      payer_account: execData.payerAccount ?? null,
-      customer_msisdn: execData.customerMsisdn ?? null,
-      bkash_response: execData,
-    }).eq("id", paymentRow.id);
-
-    notifyTelegram({
+    if (paymentRow.status !== "completed") notifyTelegram({
       event_type: "payment_success",
       title: "✅ পেমেন্ট Success — bKash",
       fields: [

@@ -22,7 +22,7 @@ await db.exec(`
  CREATE TABLE public.classes(id bigint PRIMARY KEY,name text);
  CREATE TABLE public.subjects(id bigint PRIMARY KEY,class_id bigint REFERENCES classes(id),name text,subject_code text);
  CREATE TABLE public.pricing_packages(id bigint PRIMARY KEY,type text,class_name text,subject_name text,price integer,is_active boolean,is_coming_soon boolean,subject_ids bigint[],duration_days integer,sort_order integer);
- CREATE TABLE public.bkash_payments(id bigserial PRIMARY KEY,user_id uuid,payment_id text UNIQUE,merchant_invoice_number text,amount numeric,discount numeric DEFAULT 0,coupon_code text,selected_packages jsonb,status text DEFAULT 'initiated',trx_id text,bkash_response jsonb,error_message text,payer_reference text,institute_name text,teacher_name text,teacher_email text,environment text);
+ CREATE TABLE public.bkash_payments(id bigserial PRIMARY KEY,user_id uuid,payment_id text UNIQUE,merchant_invoice_number text,amount numeric,discount numeric DEFAULT 0,coupon_code text,selected_packages jsonb,status text DEFAULT 'initiated',trx_id text,bkash_response jsonb,error_message text,payer_reference text,institute_name text,teacher_name text,teacher_email text,environment text,created_at timestamptz DEFAULT now(),payer_account text,customer_msisdn text);
  CREATE TABLE public.subscriptions(id bigserial PRIMARY KEY,teacher_id uuid REFERENCES teachers(id),plan text,status text,starts_at timestamptz,ends_at timestamptz,bkash_payment_id bigint REFERENCES bkash_payments(id));
  CREATE TABLE public.user_permissions(user_id uuid,class_id bigint,subject_id bigint);
  CREATE TABLE public.questions(id bigint PRIMARY KEY,class_id bigint,subject_id bigint,teacher_id uuid);
@@ -44,6 +44,9 @@ for (const p of fixture.packages) await db.query('INSERT INTO pricing_packages V
 const fixedBefore = await db.query('SELECT * FROM pricing_packages ORDER BY id');
 await db.exec(await read('supabase/migrations/20261012010000_custom_package_duration.sql'));
 await db.exec(await read('supabase/migrations/20261012120000_custom_package_builder.sql'));
+await db.exec(await read('supabase/migrations/20261015140000_fixed_package_subject_access.sql'));
+await db.exec(await read('supabase/migrations/20261015141000_primary_class_bundle_ranges.sql'));
+await db.exec(await read('supabase/migrations/20261015142000_atomic_fixed_payment_activation.sql'));
 await db.exec(await read('supabase/migrations/20261012120100_custom_package_pricing_seed.sql'));
 check((await db.query('SELECT * FROM pricing_packages ORDER BY id')).rows, fixedBefore.rows);
 check((await db.query('SELECT count(*)::int AS n FROM custom_package_pricing')).rows[0].n,9);
@@ -131,5 +134,48 @@ for(const plan of ['ষষ্ঠ শ্রেণি - সকল বিষয়'
 }
 for(const [cid,sid] of [[34,159],[32,131],[33,145],[11,104],[38,197],[39,223]]) check((await db.query('SELECT can_read_question($1,$2) AS access',[cid,sid])).rows[0].access,true);
 check((await db.query('SELECT * FROM pricing_packages ORDER BY id')).rows,fixedBefore.rows);
+// Fixed checkout snapshots take precedence over display names.
+await db.query("UPDATE subscriptions SET status='expired' WHERE teacher_id=$1", [buyer]);
+const fixedPayment = (await db.query("INSERT INTO bkash_payments(user_id,payment_id,status,selected_packages) VALUES($1,'fixed-ids','completed',$2::jsonb) RETURNING id", [buyer, JSON.stringify([{id:999,class_name:'SSC',subject_name:'Science bundle',subject_ids:[104,105]}])])).rows[0].id;
+const fixedSub = (await db.query("INSERT INTO subscriptions(teacher_id,plan,status,starts_at,ends_at,bkash_payment_id) VALUES($1,'SSC - Science bundle','active',now(),now()+interval '30 days',$2) RETURNING id",[buyer,fixedPayment])).rows[0].id;
+for (const [cid,sid,expected] of [[11,104,true],[11,105,true],[11,106,false],[31,104,false],[31,212,false]]) check((await db.query('SELECT can_read_question($1,$2) AS access',[cid,sid])).rows[0].access,expected);
+await db.query("UPDATE subscriptions SET ends_at=now()-interval '1 day' WHERE id=$1",[fixedSub]);
+check((await db.query('SELECT can_read_question(11,104) AS access')).rows[0].access,false);
+await db.query("UPDATE subscriptions SET ends_at=now()+interval '1 day', starts_at=now()+interval '1 hour' WHERE id=$1",[fixedSub]);
+check((await db.query('SELECT can_read_question(11,104) AS access')).rows[0].access,false);
+await db.query("SELECT set_config('test.uid',$1,false)",[other]);
+check((await db.query('SELECT can_read_question(11,104) AS access')).rows[0].access,false);
+// Reproduce the paid third-to-twelfth all-subjects bundle without manual grants.
+check((await db.query('SELECT extract_class_levels($1) AS levels',['তৃতীয় - দ্বাদশ - সকল বিষয়'])).rows[0].levels,[3,4,5,6,7,8,9,10,11,12]);
+for (const label of ['তৃতীয়', 'চতুর্থ', 'পঞ্চম']) check((await db.query('SELECT plan_covers_selection($1,$2,$3) AS access',['তৃতীয় - দ্বাদশ - সকল বিষয়',label,'Mathematics'])).rows[0].access,true);
+await db.query("SELECT set_config('test.uid',$1,false)",[buyer]);
+await db.query("UPDATE subscriptions SET status='expired' WHERE teacher_id=$1",[buyer]);
+await db.query("INSERT INTO subscriptions(teacher_id,plan,status,starts_at,ends_at) VALUES($1,$2,'active',now(),now()+interval '365 days')",[buyer,'তৃতীয় - দ্বাদশ - সকল বিষয়']);
+for(const [cid,sid] of [[34,159],[32,131],[33,145],[11,104],[38,197]]) check((await db.query('SELECT can_read_question($1,$2) AS access',[cid,sid])).rows[0].access,true);
+// Fixed payments: atomic activation, recovery, expiry and service-only writes.
+const fixedItem={id:999,class_name:'SSC',subject_name:'Display label',duration_days:30,subject_ids:[104,105]};
+const fixedRef=(await db.query("INSERT INTO bkash_payments(user_id,payment_id,amount,coupon_code,selected_packages,created_at) VALUES($1,'atomic-fixed',500,'TEST',$2::jsonb,now()-interval '2 days') RETURNING id",[buyer,JSON.stringify([fixedItem])])).rows[0].id;
+const fixedReceipt={paymentID:'atomic-fixed',amount:'500',currency:'BDT',transactionStatus:'Completed',trxID:'fixed-trx'};
+const finishFixed=(id=fixedRef,r=fixedReceipt)=>db.query('SELECT complete_fixed_payment($1,$2::jsonb)',[id,JSON.stringify(r)]);
+await reject('SELECT complete_fixed_payment($1,$2::jsonb)',[fixedRef,JSON.stringify({...fixedReceipt,amount:'1'})]);
+await Promise.all([finishFixed(),finishFixed()]);
+check((await db.query('SELECT count(*)::int AS n FROM subscriptions WHERE bkash_payment_id=$1',[fixedRef])).rows[0].n,1);
+check((await db.query("SELECT uses FROM coupon_counter WHERE code='TEST'")).rows[0].uses,2);
+check((await db.query('SELECT status,error_message,access_checked_at IS NOT NULL AS checked FROM bkash_payments WHERE id=$1',[fixedRef])).rows[0],{status:'completed',error_message:null,checked:true});
+check((await db.query(`SELECT extract(epoch from ends_at-starts_at)/86400 AS days, starts_at<now()-interval '1 day' AS historical FROM subscriptions WHERE bkash_payment_id=$1`,[fixedRef])).rows[0],{days:'30.0000000000000000',historical:true});
+await db.query("UPDATE subscriptions SET status='cancelled' WHERE bkash_payment_id=$1",[fixedRef]);
+await finishFixed();
+check((await db.query('SELECT status FROM subscriptions WHERE bkash_payment_id=$1',[fixedRef])).rows[0].status,'cancelled');
+const brokenRef=(await db.query("INSERT INTO bkash_payments(user_id,payment_id,amount,selected_packages) VALUES($1,'broken-fixed',500,$2::jsonb) RETURNING id",[buyer,JSON.stringify([fixedItem,{...fixedItem,subject_ids:[999999]}])])).rows[0].id;
+await reject('SELECT complete_fixed_payment($1,$2::jsonb)',[brokenRef,JSON.stringify({...fixedReceipt,paymentID:'broken-fixed'})]);
+check((await db.query('SELECT count(*)::int AS n FROM subscriptions WHERE bkash_payment_id=$1',[brokenRef])).rows[0].n,0);
+check((await db.query('SELECT status FROM bkash_payments WHERE id=$1',[brokenRef])).rows[0].status,'initiated');
+const recoveryRef=(await db.query("INSERT INTO bkash_payments(user_id,payment_id,amount,status,selected_packages,created_at) VALUES($1,'old-fixed',500,'completed',$2::jsonb,now()-interval '2 years') RETURNING id",[buyer,JSON.stringify([fixedItem])])).rows[0].id;
+await finishFixed(recoveryRef,{...fixedReceipt,paymentID:'old-fixed'});
+check((await db.query('SELECT ends_at<now() AS expired FROM subscriptions WHERE bkash_payment_id=$1',[recoveryRef])).rows[0].expired,true);
+check((await db.query("SELECT uses FROM coupon_counter WHERE code='TEST'")).rows[0].uses,2);
+await db.exec('SET ROLE authenticated');
+await reject('SELECT complete_fixed_payment($1,$2::jsonb)',[fixedRef,JSON.stringify(fixedReceipt)]);
+await db.exec('RESET ROLE');
 console.log(`Custom Package Builder: ${checks} SQL checks passed (pricing, versions, groups, tampering, ownership, activation, expiry, RLS, coupons, fixed packages and bundles).`);
 await db.close();

@@ -1,3 +1,4 @@
+import { activateFixedPayment } from "../_shared/fixedPayment.ts";
 // bKash Tokenized Checkout: Query Payment Status
 // Safety-net endpoint for admin/user to reconcile stuck "initiated" rows.
 
@@ -46,9 +47,9 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData.user) return json({ error: "Unauthorized" }, 401);
 
-    // Admin-only
-    const { data: isAdmin } = await userClient.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
-    if (!isAdmin) return json({ error: "Forbidden" }, 403);
+    // Only the business owner may query other users' payment receipts.
+    const { data: isOwner, error: ownerError } = await userClient.rpc("is_business_owner");
+    if (ownerError || !isOwner) return json({ error: "Forbidden" }, 403);
 
     const admin = createClient(supabaseUrl, serviceKey);
     const { paymentID } = await req.json();
@@ -74,6 +75,15 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 503);
       return json({ ok: true, data, newStatus: "completed" });
     }
+
+    const fixed = Array.isArray(paymentRow.selected_packages) && paymentRow.selected_packages.length > 0 && paymentRow.selected_packages.every((p: any) => !p.kind);
+    if (fixed && data?.transactionStatus === "Completed") {
+      const result = await activateFixedPayment(admin, paymentRow, data);
+      if (!result.ok) return json({ error: "Payment received; access activation pending", ...result }, 503);
+      return json({ ok: true, data, newStatus: "completed" });
+    }
+    // Never downgrade a payment that was already settled.
+    if (paymentRow.status === "completed") return json({ ok: res.ok, data, newStatus: "completed" }, res.ok ? 200 : 502);
 
     // Persist snapshot + reconcile status on the row
     const txStatus = String(data?.transactionStatus || data?.statusMessage || "").toLowerCase();

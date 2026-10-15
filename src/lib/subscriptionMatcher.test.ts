@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  CLASS_LEVELS,
   normalizeSubscriptionText,
   extractClassLevels,
   planCoversSelection,
@@ -243,5 +244,14 @@ describe("isPackagePurchased", () => {
 
   it("returns false with no active plans", () => {
     expect(isPackagePurchased({ class_name: "ষষ্ঠ শ্রেণি", subject_name: "বিজ্ঞান" }, [])).toBe(false);
+  });
+});
+
+describe("primary-to-secondary bundles", () => {
+  it("covers every class in the paid third-to-twelfth bundle", () => {
+    expect(extractClassLevels("তৃতীয় - দ্বাদশ - সকল বিষয়")).toEqual([3,4,5,6,7,8,9,10,11,12]);
+    for (const { label } of CLASS_LEVELS) {
+      expect(planCoversSelection("তৃতীয় - দ্বাদশ - সকল বিষয়", label, "Mathematics")).toBe(true);
+    }
   });
 });
