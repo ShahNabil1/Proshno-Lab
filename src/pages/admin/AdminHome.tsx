@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { isBusinessOwner } from "@/lib/ownerAccess";
 import { useEffect, useState } from "react";
 import MarketingOverview from "@/components/admin/MarketingOverview";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +20,8 @@ interface Stats {
 }
 
 export default function AdminHome() {
+  const { user } = useAuth();
+  const isOwner = isBusinessOwner(user);
   const [stats, setStats] = useState<Stats>({
     teachers: 0, questions: 0, classes: 0, subjects: 0,
     activeSubscriptions: 0, todayQuestions: 0, todayTeachers: 0,
@@ -48,14 +52,14 @@ export default function AdminHome() {
       countQuestions(),
       supabase.from("classes").select("id", { count: "exact", head: true }),
       supabase.from("subjects").select("id", { count: "exact", head: true }),
-      supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active")
+      isOwner ? supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "active")
         .or(`starts_at.is.null,starts_at.lte.${now.toISOString()}`)
-        .or(`ends_at.is.null,ends_at.gt.${now.toISOString()}`),
+        .or(`ends_at.is.null,ends_at.gt.${now.toISOString()}`) : Promise.resolve({ count: 0 }),
       countQuestions(todayStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
       countQuestions(monthStart),
       supabase.from("teachers").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
-      supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").eq("environment", "live").or("coupon_code.is.null,coupon_code.not.ilike.PLTEST%").gte("created_at", monthStart),
+      isOwner ? supabase.from("bkash_payments").select("id", { count: "exact", head: true }).eq("status", "completed").eq("environment", "live").or("coupon_code.is.null,coupon_code.not.ilike.PLTEST%").gte("created_at", monthStart) : Promise.resolve({ count: 0 }),
     ]).then(([t, q, c, s, as, tq, tt, mq, mt, mp]) => {
       setStats({
         teachers: t.count || 0, questions: q, classes: c.count || 0, subjects: s.count || 0,
@@ -64,7 +68,7 @@ export default function AdminHome() {
         monthQuestions: mq, monthTeachers: mt.count || 0, monthPurchases: mp.count || 0,
       });
     }).catch((error) => console.error("Admin dashboard statistics failed to load", error));
-  }, []);
+  }, [isOwner]);
 
   const overviewCards = [
     { label: "শিক্ষক", value: stats.teachers, icon: Users, color: "text-[#0A1E38]" },
@@ -75,7 +79,7 @@ export default function AdminHome() {
 
   return (
     <div className="space-y-8">
-      <MarketingOverview />
+      {isOwner && <MarketingOverview />}
       <h2 className="font-heading text-xl font-bold">একাডেমিক ও প্ল্যাটফর্ম ওভারভিউ</h2>
 
       {/* Overview */}
@@ -94,7 +98,7 @@ export default function AdminHome() {
       </div>
 
       {/* Active Subscriptions */}
-      <Card className="border-[#0A1E38] bg-[#0A1E38] text-white">
+      {isOwner && <Card className="border-[#0A1E38] bg-[#0A1E38] text-white">
         <CardContent className="p-5 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-[#00B4BC]/15">
             <CreditCard className="w-6 h-6 text-[#00B4BC]" />
@@ -104,7 +108,7 @@ export default function AdminHome() {
             <p className="text-4xl font-heading font-bold text-white">{stats.activeSubscriptions}</p>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Daily & Monthly Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -135,7 +139,7 @@ export default function AdminHome() {
               <Activity className="w-4 h-4" />
               <h3 className="font-heading font-semibold text-base">এই মাসের অ্যাক্টিভিটি</h3>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className={`grid ${isOwner ? "grid-cols-3" : "grid-cols-2"} gap-3`}>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground">প্রশ্ন</p>
                 <p className="text-2xl font-heading font-bold text-primary">{stats.monthQuestions}</p>
@@ -144,10 +148,10 @@ export default function AdminHome() {
                 <p className="text-xs text-muted-foreground">শিক্ষক</p>
                 <p className="text-2xl font-heading font-bold text-[#0A1E38]">{stats.monthTeachers}</p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-3">
+              {isOwner && <div className="rounded-lg bg-muted/50 p-3">
                 <p className="text-xs text-muted-foreground">পারচেজ</p>
                 <p className="text-2xl font-heading font-bold text-[#0A1E38]">{stats.monthPurchases}</p>
-              </div>
+              </div>}
             </div>
           </CardContent>
         </Card>

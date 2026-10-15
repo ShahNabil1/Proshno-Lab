@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+import { isBusinessOwner, isOwnerOnlyAdminPath } from "@/lib/ownerAccess";
+
 import BrandLockup from "@/components/BrandLockup";
 import { Button } from "@/components/ui/button";
 import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
@@ -95,11 +97,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
+  const isOwner = isBusinessOwner(user);
+  if (!isOwner && isOwnerOnlyAdminPath(location.pathname)) return <Navigate to="/admin" replace />;
+
   // Filter sidebar items based on allowed_pages, developer role, and admin hidden pages
   const visibleItems = (allowedPages
     ? allSidebarItems.filter(item => allowedPages.includes(item.path))
     : allSidebarItems
   )
+    .filter(item => isOwner || !isOwnerOnlyAdminPath(item.path))
     .filter(item => !(item as any).developerOnly || isDeveloper)
     .filter(item => isDeveloper || !adminHiddenPages.includes(item.path));
 
