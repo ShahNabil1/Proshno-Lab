@@ -118,9 +118,12 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
     lastYield = performance.now();
     if (isCancelled?.()) throw new DOMException("Pagination cancelled", "AbortError");
   };
+  onProgress?.(2);
+  await new Promise<void>(resolve => setTimeout(resolve, 0));
   const host = document.createElement('div');
   host.className = 'paper-pagination-measure';
   document.body.append(host);
+  try {
   const template = source.cloneNode(true) as HTMLElement;
   template.classList.remove('paper-print-layout-preview');
   template.classList.add('paper-paged-snapshot-source');
@@ -151,7 +154,12 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
     if (display === 'contents') Array.from(element.children).forEach(child => collect(child as HTMLElement));
     else if (hasContent(element)) pending.push(element.cloneNode(true) as HTMLElement);
   };
-  Array.from(flow.children).forEach(element => collect(element as HTMLElement));
+  const flowChildren = Array.from(flow.children);
+  for (let index = 0; index < flowChildren.length; index++) {
+    collect(flowChildren[index] as HTMLElement);
+    onProgress?.(2 + Math.floor(8 * (index + 1) / Math.max(1, flowChildren.length)));
+    await yieldWork();
+  }
   flow.replaceChildren();
   flow.classList.add('paper-explicit-columns');
   Object.assign(flow.style, { columnCount: 'auto', columnRule: 'none', display: 'grid',
@@ -170,7 +178,6 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
     report(10 + 75 * completedWork / totalWork);
   };
   report(10);
-  try {
     while (pending.length) {
       await yieldWork();
       const page = template.cloneNode(true) as HTMLElement;

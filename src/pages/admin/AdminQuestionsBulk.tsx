@@ -1,4 +1,5 @@
-import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
+import { resolveQuestionChapters } from "@/lib/bulkChapterRouting";
+import { PATTERN_CHAPTER_PREFIX, patternChapterName } from "@/lib/languagePatternChapters";
 import { allowedQuestionTypes, isLanguageType, languageSubject, patternGrade } from "@/lib/languageQuestionTypes";
 import EnglishFirstUpload from '@/components/admin/bulk/EnglishFirstUpload';
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -114,29 +115,26 @@ export default function AdminQuestionsBulk() {
     return { total: parsed.length, valid, invalid, dup };
   }, [parsed]);
 
-  /** Marks in-batch duplicates + duplicates already saved in the selected chapter. */
+  /** Duplicate checks use each row's destination chapter. */
   const applyDedupe = async (items: ParsedQuestion[]) => {
-    const marked = markBatchDuplicates(items);
-    if(chapterId.startsWith(PATTERN_CHAPTER_PREFIX)) return marked;
-    try {
+    const marked = markBatchDuplicates(resolveQuestionChapters(items, chapters, chapterId));
+    const matches = new Map<string, ParsedQuestion>();
+    const chapterIds = [...new Set(marked.filter(q => q.chapterId && !q.errors.length).map(q => q.chapterId!))];
+    for (const targetId of chapterIds) {
+      const rows = marked.filter(q => q.chapterId === targetId);
       const sigs = new Set<string>();
       const PAGE = 1000;
       for (let from = 0; from < 20000; from += PAGE) {
-        const { data, error } = await supabase
-          .from("questions")
+        const { data, error } = await supabase.from("questions")
           .select("id, type, question, option_a, option_b, option_c, option_d, creative_data")
-          .eq("chapter_id", Number(chapterId))
-          .eq("type", type)
-          .order("id")
-          .range(from, from + PAGE - 1);
-        if (error || !data || data.length === 0) break;
-        data.forEach((r: any) => sigs.add(questionSignature(r)));
+          .eq("chapter_id", targetId).eq("type", type).order("id").range(from, from + PAGE - 1);
+        if (error || !data?.length) break;
+        data.forEach((row: any) => sigs.add(questionSignature(row)));
         if (data.length < PAGE) break;
       }
-      return markDbDuplicates(marked, sigs);
-    } catch {
-      return marked;
+      markDbDuplicates(rows, sigs).forEach(q => matches.set(q.tempId, q));
     }
+    return marked.map(q => matches.get(q.tempId) || q);
   };
 
   const loadItems = async (items: ParsedQuestion[], label: string) => {
@@ -147,7 +145,7 @@ export default function AdminQuestionsBulk() {
   };
 
   const handleExcelFiles = async (files: File[]) => {
-    if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
+    if (!classId || !subjectId) { toast.error("প্রথমে শ্রেণী ও বিষয় সিলেক্ট করুন"); return; }
     if (files.length > MAX_EXCEL_FILES) {
       toast.error(`একসাথে সর্বোচ্চ ${MAX_EXCEL_FILES}টি Excel বা CSV ফাইল আপলোড করা যাবে`);
       return;
@@ -163,7 +161,7 @@ export default function AdminQuestionsBulk() {
   };
 
   const handlePaste = async () => {
-    if (!contextValid) { toast.error("প্রথমে শ্রেণী/বিষয়/অধ্যায় সিলেক্ট করুন"); return; }
+    if (!classId || !subjectId) { toast.error("প্রথমে শ্রেণী ও বিষয় সিলেক্ট করুন"); return; }
     const items = parsePastedText(pasteText, type, isMathSubject).map(q=>isLanguageType(q.type)?{...q,creative_data:{marks:bulkMarks}}:q);
     if (items.length === 0) { toast.error("Text থেকে প্রশ্ন detect করা যায়নি — i আইকনে ফরম্যাট দেখুন"); return; }
     await loadItems(items, "detect হয়েছে");
@@ -205,7 +203,7 @@ export default function AdminQuestionsBulk() {
   };
 
   const doSave = async () => {
-    const valid = parsed.filter((q) => q.errors.length === 0 && !q.duplicate);
+    const valid = resolveQuestionChapters(parsed, chapters, chapterId).filter((q) => q.errors.length === 0 && !q.duplicate);
     if (valid.length === 0) { toast.error("কোনো valid প্রশ্ন নেই"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Login required"); return; }
@@ -214,49 +212,32 @@ export default function AdminQuestionsBulk() {
     setCancelled(false);
     setSaving(true); setProgress(0); setFailedChunks([]); setInsertedCount(0);
 
-    // Resolve every Excel topic once. Existing topics are reused; missing ones
-    // are created in one batch under the currently selected chapter.
+    // Topics belong to the destination chapter, even in multi-chapter imports.
     const topicIds = new Map<string, number>();
-    let resolvedChapterId = Number(chapterId);
+    const topicMapKey = (targetId: number, name: string) => `${targetId}:${topicKey(name)}`;
     try {
-      resolvedChapterId = await ensurePatternChapter(chapterId,Number(subjectId));
-      if(chapterId.startsWith(PATTERN_CHAPTER_PREFIX)) {
-        setChapters(cs=>cs.some(c=>c.id===resolvedChapterId)?cs:[...cs,{id:resolvedChapterId,name:patternChapterName(chapterId,chapters)}]);
-        setChapterId(String(resolvedChapterId));
-      }
-      const { data: currentTopics, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, name")
-        .eq("chapter_id", resolvedChapterId);
+      const targetIds = [...new Set(valid.map(q => q.chapterId!))];
+      if (targetIds.some(id => !chapters.some(chapter => chapter.id === id))) throw new Error("অধ্যায় বদলে গেছে; আবার Parse করে Preview মিলিয়ে নিন");
+      const { data: currentTopics, error: topicsError } = await supabase.from("topics")
+        .select("id, name, chapter_id").in("chapter_id", targetIds);
       if (topicsError) throw topicsError;
-
-      (currentTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
-      const missingByKey = new Map<string, string>();
-      valid.forEach((question) => {
+      (currentTopics || []).forEach(item => topicIds.set(topicMapKey(item.chapter_id, item.name), item.id));
+      const missing = new Map<string, { name: string; chapter_id: number }>();
+      valid.forEach(question => {
         if (!question.topicName) return;
-        const key = topicKey(question.topicName);
-        if (key && !topicIds.has(key) && !missingByKey.has(key)) {
-          missingByKey.set(key, question.topicName.trim().replace(/\s+/g, " "));
-        }
+        const key = topicMapKey(question.chapterId!, question.topicName);
+        if (!topicIds.has(key)) missing.set(key, { name: question.topicName.trim().replace(/\s+/g, " "), chapter_id: question.chapterId! });
       });
-
-      if (missingByKey.size > 0) {
-        const { data: createdTopics, error: createError } = await supabase
-          .from("topics")
-          .insert([...missingByKey.values()].map((name) => ({ name, chapter_id: resolvedChapterId })))
-          .select("id, name");
-        if (createError) throw createError;
-        (createdTopics || []).forEach((item) => topicIds.set(topicKey(item.name), item.id));
-        setTopics((previous) => [...previous, ...(createdTopics || [])]);
+      if (missing.size) {
+        const { data: created, error } = await supabase.from("topics").insert([...missing.values()]).select("id, name, chapter_id");
+        if (error) throw error;
+        (created || []).forEach(item => topicIds.set(topicMapKey(item.chapter_id, item.name), item.id));
+        setTopics(previous => [...previous, ...(created || []).filter(item => String(item.chapter_id) === chapterId)]);
       }
-
-      const unresolvedTopic = valid.find((question) => question.topicName && !topicIds.has(topicKey(question.topicName)));
-      if (unresolvedTopic?.topicName) {
-        throw new Error(`"${unresolvedTopic.topicName}" টপিকটি তৈরি করা যায়নি`);
-      }
+      if (valid.some(q => q.topicName && !topicIds.has(topicMapKey(q.chapterId!, q.topicName)))) throw new Error("প্রশ্নের টপিক খুঁজে পাওয়া যায়নি");
     } catch (error: any) {
       setSaving(false);
-      toast.error(`টপিক তৈরি/খোঁজা যায়নি: ${error?.message || "অজানা ত্রুটি"}`);
+      toast.error(error?.message || "অধ্যায় বা টপিক খুঁজে পাওয়া যায়নি");
       return;
     }
 
@@ -266,7 +247,10 @@ export default function AdminQuestionsBulk() {
     const stimulusGroups = new Map<string, string>();
 
     repeatedStimuli.forEach((stimulusKey) => {
-      stimulusGroups.set(stimulusKey, crypto.randomUUID());
+      valid.filter(q => normalizeStimulusKey(q.stimulus) === stimulusKey).forEach(q => {
+        const key = `${q.chapterId}:${stimulusKey}`;
+        if (!stimulusGroups.has(key)) stimulusGroups.set(key, crypto.randomUUID());
+      });
     });
 
     const chunks: FailedChunk[] = [];
@@ -281,12 +265,12 @@ export default function AdminQuestionsBulk() {
           return toDbPayload(isLanguageType(q.type) ? {...q,creative_data:q.creative_data || {marks:bulkMarks}} : q, {
             class_id: Number(classId),
             subject_id: Number(subjectId),
-            chapter_id: resolvedChapterId,
+            chapter_id: q.chapterId!,
             topic_id: q.topicName
-              ? (topicIds.get(topicKey(q.topicName)) || null)
-              : (topicId && topicId !== "__none__" ? Number(topicId) : null),
+              ? (topicIds.get(topicMapKey(q.chapterId!, q.topicName)) || null)
+              : (String(q.chapterId) === chapterId && topicId && topicId !== "__none__" ? Number(topicId) : null),
             teacher_id: user.id,
-            stimulus_group_id: stimulusGroups.get(stimulusKey) || null,
+            stimulus_group_id: stimulusGroups.get(`${q.chapterId}:${stimulusKey}`) || null,
           });
         }),
       });
@@ -380,21 +364,21 @@ export default function AdminQuestionsBulk() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div>
               <Label>শ্রেণী *</Label>
-              <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterId(""); setTopicId(""); }}>
+              <Select value={classId} onValueChange={(v) => { setClassId(v); setSubjectId(""); setChapterId(""); setTopicId(""); setParsed([]); }}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <Label>বিষয় *</Label>
-              <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterId(""); setTopicId(""); }} disabled={!classId}>
+              <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setChapterId(""); setTopicId(""); setParsed([]); }} disabled={!classId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{subjects.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label>অধ্যায় *</Label>
-              <Select value={chapterId} onValueChange={(v) => { setChapterId(v); setTopicId(""); }} disabled={!subjectId}>
+              <Label>{["mcq", "cq", "short"].includes(type) ? "অধ্যায় (ডিফল্ট)" : "অধ্যায় *"}</Label>
+              <Select value={chapterId} onValueChange={(v) => { setChapterId(v); setTopicId(""); setParsed([]); }} disabled={!subjectId}>
                 <SelectTrigger><SelectValue placeholder="বাছাই" /></SelectTrigger>
                 <SelectContent>{chapters.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}{suggestedChapters.map(name=><SelectItem key={name} value={PATTERN_CHAPTER_PREFIX+name}>{name}</SelectItem>)}</SelectContent>
               </Select>
@@ -419,6 +403,9 @@ export default function AdminQuestionsBulk() {
               </Select>
             </div>
           </div>
+          {["mcq", "cq", "short"].includes(type) && <p className="text-sm text-muted-foreground">
+            টেমপ্লেটে অধ্যায়ের নাম দিলে সেটিই ব্যবহার হবে। না লিখলে উপরে বাছাই করা অধ্যায়ে প্রশ্ন যাবে। একই আপলোডে একাধিক অধ্যায় দেওয়া যাবে।
+          </p>}
           {subjectId && chapters.length === 0 && suggestedChapters.length === 0 && (
             <p className="text-sm text-amber-700" role="status">
               এই বিষয়ের কোনো অধ্যায় পাওয়া যায়নি। প্রশ্ন আপলোডের আগে অধ্যায় ম্যানেজমেন্ট থেকে অন্তত একটি অধ্যায় যোগ করুন।
@@ -468,6 +455,7 @@ export default function AdminQuestionsBulk() {
               <p className="text-xs text-muted-foreground">
                 টেমপ্লেট ডাউনলোড করে ভরে আপলোড করুন। HTML/LaTeX/Cloudinary ছবি URL cell-এ ব্যবহার করা যাবে।
                 ব্যাখ্যা, বোর্ড ও বিশ্ববিদ্যালয় রেফারেন্স (একাধিক: <span className="font-mono">ঢাকা-২০২৩, যশোর-২০২২</span>) কলামও আছে।
+                {["mcq", "cq", "short"].includes(type) && " অধ্যায় কলামে নির্বাচিত বিষয়ের অধ্যায়ের নাম বা নম্বর লিখুন; ফাঁকা রাখলে ডিফল্ট অধ্যায় ব্যবহার হবে।"}
                 {type === "cq" && isMathSubject ? " গণিত/উচ্চতর গণিতের জন্য ৩ প্রশ্নের (ক/খ/গ) CQ টেমপ্লেট ডাউনলোড হবে।" : ""}
               </p>
             </TabsContent>
@@ -476,7 +464,7 @@ export default function AdminQuestionsBulk() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <Label className="flex items-center gap-1">
                   {TYPE_LABELS[type]} পেস্ট করুন
-                  <PasteGuide type={type} isMath={isMathSubject} englishFirst={isEnglishFirst} onInsert={(s) => setPasteText(s)} />
+                  <PasteGuide type={type} isMath={isMathSubject} englishFirst={isEnglishFirst} chapterNames={chapters.map(c => c.name)} onInsert={(s) => setPasteText(s)} />
                 </Label>
                 <span className="text-xs text-muted-foreground">
                   {isLanguageType(type)
@@ -486,6 +474,10 @@ export default function AdminQuestionsBulk() {
                     : "উদ্দীপক • ল্যাটেক্স • চিত্র • অপশন • উত্তর • ব্যাখ্যা • বোর্ড/বিশ্ববিদ্যালয় রেফারেন্স — সবই সাপোর্টেড"}
                 </span>
               </div>
+              {["mcq", "cq", "short"].includes(type) && <div className="rounded-lg border bg-sky-50/50 p-3 text-sm space-y-1">
+                <p>প্রশ্নগুলোর আগে আলাদা লাইনে <code>অধ্যায়: অধ্যায়ের নাম</code> অথবা <code>Chapter: অধ্যায়ের নাম</code> লিখুন। নিচের সব প্রশ্ন সেই অধ্যায়ে যাবে, পরের অধ্যায়ের লাইন পর্যন্ত।</p>
+                <p className="text-xs text-muted-foreground">অধ্যায়ের পূর্ণ নাম, নামের অংশ (নম্বর বাদ দিয়ে), অথবা অধ্যায় নম্বর দিতে পারবেন। নাম না মিললে বা একই নামে একাধিক অধ্যায় থাকলে Preview-তে দেখাবে; ওই প্রশ্ন সেভ হবে না। i বাটনে অধ্যায়সহ নমুনা আছে।</p>
+              </div>}
               {isLanguageType(type) && <div className="mb-3"><Label>প্রতি প্রশ্নসেটের মোট নম্বর (প্যাসেজ হলে ০)</Label><input aria-label="প্রতি প্রশ্নসেটের মোট নম্বর" className="border rounded p-2 ml-2" type="number" min="0" step="0.5" value={bulkMarks} onChange={e=>setBulkMarks(Math.max(0,Number(e.target.value)||0))} /></div>}
                 <Textarea
                 value={pasteText} onChange={(e) => setPasteText(e.target.value)}
@@ -548,6 +540,9 @@ export default function AdminQuestionsBulk() {
                 <div key={q.tempId} className={`p-3 flex items-start gap-3 ${q.errors.length ? "bg-red-50/50" : q.duplicate ? "bg-amber-50/60" : ""}`}>
                   <div className="text-xs text-muted-foreground w-8">#{i + 1}</div>
                   <div className="flex-1 min-w-0">
+                    <Badge variant="outline" className="mb-1 mr-1 text-[10px]">
+                      অধ্যায়: {q.resolvedChapterName || q.chapterName || "নির্ধারিত হয়নি"}
+                    </Badge>
                     {q.topicName && (
                       <Badge variant="outline" className="mb-1 mr-1 text-[10px] border-sky-300 text-sky-800">
                         টপিক: {q.topicName}

@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { normalizeAnswerKey } from "@/lib/answerKey";
 import { languagePasteVariants } from "@/lib/languagePasteGuides";
 import { ENGLISH_FIRST_MCQ } from "@/lib/englishFirstTemplates";
+import { splitChapterSections } from "@/lib/bulkChapterRouting";
 
 export type QType = string;
 
@@ -20,6 +21,9 @@ export type ParsedQuestion = {
   tempId: string;
   type: QType;
   topicName?: string;
+  chapterName?: string;
+  chapterId?: number;
+  resolvedChapterName?: string;
   stimulus?: string;
   question: string;
   option_a?: string;
@@ -128,6 +132,11 @@ export function downloadTemplate(type: QType, isMath = false, englishFirst = fal
   rows[0].push("টপিক (ঐচ্ছিক — না থাকলে অটো তৈরি হবে)");
   sample.push("উদাহরণ টপিক");
   notes.unshift("টপিক: প্রতিটি প্রশ্নের টপিক লিখুন। নির্বাচিত অধ্যায়ে না থাকলে আপলোডের সময় অটো তৈরি হবে।");
+  if (["mcq", "cq", "short"].includes(type)) {
+    rows[0].push("অধ্যায় (ঐচ্ছিক — না লিখলে ডিফল্ট অধ্যায়)");
+    sample.push("");
+    notes.unshift("অধ্যায়: নির্বাচিত বিষয়ের অধ্যায়ের নাম বা নম্বর লিখুন। ফাঁকা রাখলে dashboard-এ নির্বাচিত অধ্যায় ব্যবহার হবে। না মিললে Preview-তে ত্রুটি দেখাবে; নতুন অধ্যায় তৈরি হবে না।");
+  }
 
   const data = [...rows, sample, Array(rows[0].length).fill("")];
   const ws = XLSX.utils.aoa_to_sheet(data);
@@ -181,8 +190,8 @@ export function buildLanguageTemplate(type: QType, englishFirst = false) {
 export function buildEnglishFirstMcqTemplate() {
   const q = parsePastedText(ENGLISH_FIRST_MCQ,'mcq')[0];
   const wb = XLSX.utils.book_new();
-  const headers = ["উদ্দীপক (Seen Passage)","প্রশ্ন*","অপশন ক*","অপশন খ*","অপশন গ*","অপশন ঘ*","সঠিক উত্তর* (a/b/c/d)","ব্যাখ্যা","ছবি URL","বোর্ড","বছর",...REF_COLS,"টপিক (ঐচ্ছিক)"];
-  const ws = XLSX.utils.aoa_to_sheet([headers,[q.stimulus,q.question,q.option_a,q.option_b,q.option_c,q.option_d,q.correct_answer,'','','','','','','']]);
+  const headers = ["উদ্দীপক (Seen Passage)","প্রশ্ন*","অপশন ক*","অপশন খ*","অপশন গ*","অপশন ঘ*","সঠিক উত্তর* (a/b/c/d)","ব্যাখ্যা","ছবি URL","বোর্ড","বছর",...REF_COLS,"টপিক (ঐচ্ছিক)","অধ্যায় (ঐচ্ছিক — না লিখলে ডিফল্ট অধ্যায়)"];
+  const ws = XLSX.utils.aoa_to_sheet([headers,[q.stimulus,q.question,q.option_a,q.option_b,q.option_c,q.option_d,q.correct_answer,'','','','','','','','']]);
   ws['!cols'] = headers.map((_,i)=>({wch:i===0?65:30}));
   XLSX.utils.book_append_sheet(wb,ws,'Questions');
   const notes = XLSX.utils.aoa_to_sheet([['নির্দেশনা'],['প্রতি সারিতে একটি MCQ এবং চারটি অপশন দিন; সঠিক উত্তর a/b/c/d হবে।'],['উদ্দীপক কলামে সংশ্লিষ্ট Seen Passage দিন; টপিক কলামে Lesson-এর নাম দিন।'],['নমুনা নিজের প্রশ্ন দিয়ে বদলান বা মুছে ফেলুন।']]);
@@ -201,16 +210,17 @@ export async function parseExcelFile(file: File, type: QType, isMath = false): P
   const headerText = header.join("|");
   const marksColumn = header.findIndex(value => /মোট নম্বর|total marks/i.test(value));
   const topicColumn = header.findIndex((value) => /(?:^|\s)(?:topic|টপিক)(?:\s|$|\()/i.test(value));
+  const chapterColumn = header.findIndex(value => /^(?:chapter|অধ্যায়|অধ্যায়)(?:\s|$|\()/iu.test(value));
   // Header wins when recognizable (old/new templates both work), else fall back to subject
   const mathSheet = type === "cq"
     ? (/প্রশ্ন ঘ/.test(headerText) ? false : /জ্ঞান, ২|প্রশ্ন গ/.test(headerText) ? true : isMath)
     : false;
   const body = rows.slice(1).filter((r) => r.some((c) => s(c)));
   return body.map((r) => {
-    const cells = [...r];
-    const topicName = topicColumn >= 0 ? s(cells.splice(topicColumn, 1)[0]) : "";
-    const adjustedMarksColumn = marksColumn - (topicColumn >= 0 && topicColumn < marksColumn ? 1 : 0);
-    const marksRaw = marksColumn >= 0 ? cells.splice(adjustedMarksColumn,1)[0] : 0;
+    const cells = r.filter((_, index) => ![topicColumn, chapterColumn, marksColumn].includes(index));
+    const topicName = topicColumn >= 0 ? s(r[topicColumn]) : "";
+    const chapterName = chapterColumn >= 0 ? s(r[chapterColumn]) : "";
+    const marksRaw = marksColumn >= 0 ? r[marksColumn] : 0;
     const question = rowToQuestion(cells, type, mathSheet);
     if (isLanguageType(type)) {
       const marks = Number(String(marksRaw).replace(/[০-৯]/g,c=>String("০১২৩৪৫৬৭৮৯".indexOf(c))));
@@ -218,6 +228,7 @@ export async function parseExcelFile(file: File, type: QType, isMath = false): P
       if (!Number.isFinite(marks) || marks < 0) question.errors.push("মোট নম্বর সঠিক নয়");
     }
     if (topicName) question.topicName = topicName;
+    if (chapterName) question.chapterName = chapterName;
     return question;
   });
 }
@@ -448,9 +459,11 @@ function attachCommon(q: ParsedQuestion, f: Record<string, string>) {
 export function parsePastedText(text: string, type: QType, isMath = false): ParsedQuestion[] {
   const norm = text.replace(/\r\n/g, "\n").trim();
   if (!norm) return [];
-  const blocks = splitBlocks(norm, type);
-  const out = blocks.map((b) => blockToQuestion(b, type, isMath)).filter(Boolean) as ParsedQuestion[];
-  return out;
+  const sections = ["mcq", "cq", "short"].includes(type) ? splitChapterSections(norm) : [{ text: norm }];
+  return sections.flatMap(section => splitBlocks(section.text.trim(), type)
+    .map(block => blockToQuestion(block, type, isMath))
+    .filter((question): question is ParsedQuestion => question !== null)
+    .map(question => section.chapterName === undefined ? question : { ...question, chapterName: section.chapterName }));
 }
 
 function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQuestion | null {
@@ -576,7 +589,7 @@ export function parsedSignature(q: ParsedQuestion) {
 export function markBatchDuplicates(items: ParsedQuestion[]): ParsedQuestion[] {
   const seen = new Set<string>();
   return items.map((q) => {
-    const sig = parsedSignature(q);
+    const sig = `${q.chapterId ?? q.chapterName ?? ""}|${parsedSignature(q)}`;
     if (seen.has(sig)) return { ...q, duplicate: "batch" as const };
     seen.add(sig);
     return { ...q, duplicate: undefined };

@@ -21,7 +21,7 @@ describe("responsive print pagination", () => {
     const progress: number[] = [];
     const pages = await buildPrintablePages(paper(), layout, undefined, percent => progress.push(percent));
     expect(pages.join("")).toContain("Worked answer");
-    expect(progress[0]).toBe(10);
+    expect(progress[0]).toBe(2);
     expect(progress.some(percent => percent > 10 && percent < 100)).toBe(true);
     expect(progress.at(-1)).toBe(100);
     expect(progress).toEqual([...progress].sort((a, b) => a - b));

@@ -259,14 +259,15 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     return () => onQuestionListChange?.(false);
   }, [step, onQuestionListChange]);
   const [form, setForm] = useState(() => ({
-    programName: DEFAULT_EXAM_NAME,
+    programName: "",
     classId: "",
     subjectId: "",
     subjectIds: [] as string[],
     chapterIds: [] as string[],
-    type: "mcq",
+    type: "",
     count: "100",
     ...draft?.form,
+    ...(draft?.step === "form" ? { programName: "", type: "" } : {}),
   }));
   const [examModalOpen, setExamModalOpen] = useState(false);
   const [typeModalOpen, setTypeModalOpen] = useState(false);
@@ -297,21 +298,12 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       setForm(previous => ({ ...previous, chapterIds: chapters.filter(c => hasSubscription || c.is_free).map(c => String(c.id)) }));
     }
   }, [showEnglishBuilder, chapters, hasSubscription]);
-  const defaultTypeSubjectKey = useRef("");
-  useEffect(() => {
-    const key = selectedSubjects.map(subject => subject.id).sort((a, b) => a - b).join(",");
-    if (key === defaultTypeSubjectKey.current) return;
-    defaultTypeSubjectKey.current = key;
-    if (selectedSubjects.some(subject => languageSubject(subject.name) === "english1")) {
-      setForm(previous => ({ ...previous, type: "all" }));
-    }
-  }, [selectedSubjects]);
   const scopedTypeOptions = ["all", ...new Set(selectedSubjects.flatMap(sub=> {
     const cls=classes.find(c=>c.id===sub.class_id)?.name || "";
     const chosen=chapters.filter(c=>form.chapterIds.includes(String(c.id)) && c.subject_id===sub.id);
     return chosen.length?chosen.flatMap(c=>allowedQuestionTypes(cls,sub.name,c.name)):allowedQuestionTypes(cls,sub.name);
   }))];
-  useEffect(()=> {if(selectedSubjects.length && !scopedTypeOptions.includes(form.type)) setForm(f=>({...f,type:"all"}));},[form.classId,selectedSubjects,form.chapterIds,chapters]);
+  useEffect(()=> {if(selectedSubjects.length && form.type && !scopedTypeOptions.includes(form.type)) setForm(f=>({...f,type:""}));},[form.classId,selectedSubjects,form.chapterIds,chapters]);
   const effectiveClassId = selectedSubject?.class_id || Number(form.classId || 0);
   const selectableClasses = useMemo(
     () => classes.filter((item) => !/english|eglish|version|ইংলিশ/i.test(item.name || "")),
@@ -664,6 +656,16 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   };
 
   const handleCreateQuestionSet = async () => {
+    if (!form.programName.trim()) {
+      toast.error("পরীক্ষার ধরন নির্বাচন করুন");
+      setExamModalOpen(true);
+      return;
+    }
+    if (!form.type) {
+      toast.error("প্রশ্নের টাইপ নির্বাচন করুন");
+      setTypeModalOpen(true);
+      return;
+    }
     if (!form.classId) {
       toast.error("শ্রেণী নির্বাচন করুন");
       return;
@@ -1964,17 +1966,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           {/* 1. Exam / Program Name */}
           <div className="space-y-2" data-field-complete={!!form.programName.trim()}>
             <Button variant="outline" className="w-full h-12 justify-between rounded-lg border-slate-200 text-base font-normal bg-white" onClick={() => setExamModalOpen(true)}>
-              <span className="truncate">{customExamName ? form.programName || DEFAULT_EXAM_NAME : form.programName || DEFAULT_EXAM_NAME}</span>
+              <span className="truncate">{form.programName || "পরীক্ষার ধরন নির্বাচন করুন"}</span>
               <Scan className="h-4 w-4 shrink-0 text-slate-500" />
             </Button>
-            {customExamName && <Input
-              id="manual-exam-name"
-              placeholder="প্রোগ্রাম/পরীক্ষার নাম লিখুন"
-              aria-label="পরীক্ষার নাম"
-              value={form.programName}
-              onChange={(e) => setForm({ ...form, programName: e.target.value })}
-              className="h-12 rounded-lg border-slate-200 focus:border-[#0A1E38] focus:ring-1 focus:ring-[#0A1E38] text-base text-slate-800 placeholder:text-slate-500 bg-white"
-            />}
+
           </div>
 
           {/* 2. Class Picker */}
@@ -2056,7 +2051,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
             <div className="min-w-0" data-field-complete={selectedSubjectIds.length > 0 && !!form.type}>
                 <Button variant="outline" className="w-full h-12 justify-between rounded-lg border-slate-200 text-base font-normal bg-white" onClick={() => setTypeModalOpen(true)}>
-                  <span className="truncate">{selectedSubjectIds.length === 0 ? "টাইপ" : form.type === "all" ? "সমন্বিত প্রশ্ন (সৃজঃ + বহু + সংক্ষিপ্ত + অন্যান্য)" : typeLabels[form.type] || questionTypeLabel(form.type)}</span>
+                  <span className="truncate">{!form.type ? "প্রশ্নের টাইপ নির্বাচন করুন" : form.type === "all" ? "সমন্বিত প্রশ্ন (সৃজঃ + বহু + সংক্ষিপ্ত + অন্যান্য)" : typeLabels[form.type] || questionTypeLabel(form.type)}</span>
                   <Scan className="h-4 w-4 shrink-0 text-slate-500" />
                 </Button>
             </div>
@@ -2112,7 +2107,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <Button
               className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
+              disabled={loading || !form.programName.trim() || !form.type || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
               title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>
@@ -2127,16 +2122,28 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           <DialogHeader className="bg-[#e3eaf0] border-b border-[#b8c7d6] px-5 py-4"><DialogTitle className="text-base font-bold text-[#0A1E38]">পরীক্ষার নাম নির্বাচন করুন</DialogTitle></DialogHeader>
           <div className="p-3 space-y-1">
             {[...EXAM_NAME_OPTIONS, "custom"].map(name => {
-              const selected = name === "custom" ? customExamName : !customExamName && (form.programName || DEFAULT_EXAM_NAME) === name;
+              const selected = name === "custom" ? customExamName : !customExamName && form.programName === name;
               return <button type="button" key={name} onClick={() => { setCustomExamName(name === "custom"); setForm(previous => ({ ...previous, programName: name === "custom" ? "" : name })); }} className={`w-full flex items-center gap-3 rounded-[4px] px-3 py-3 text-left text-base ${selected ? "bg-[#0A1E38]/5 text-[#0A1E38] font-bold" : "hover:bg-slate-100 text-slate-700"}`}>
                 <span className={`h-4 w-4 shrink-0 rounded-[3px] border flex items-center justify-center ${selected ? "bg-black border-black text-white" : "bg-white border-slate-400"}`}>{selected && <CheckCheck className="h-3 w-3" />}</span>
                 {name === "custom" ? "নিজে পরীক্ষার নাম লিখুন" : name}
               </button>;
             })}
+            {customExamName && <div className="px-3 pb-3 pt-1">
+              <Input
+                autoFocus
+                id="manual-exam-name"
+                placeholder="পরীক্ষার নাম লিখুন"
+                aria-label="পরীক্ষার নাম"
+                value={form.programName}
+                onChange={(e) => setForm(previous => ({ ...previous, programName: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === "Enter" && form.programName.trim()) { e.preventDefault(); setExamModalOpen(false); } }}
+                className="h-12 rounded-[2px] border-slate-200 text-base bg-white"
+              />
+            </div>}
           </div>
           <DialogFooter className="grid grid-cols-2 gap-2 px-4 py-3 border-t border-[#b8c7d6]">
             <Button variant="outline" className="rounded-[4px] bg-slate-100 border-[#b8c7d6]" onClick={() => setExamModalOpen(false)}>বন্ধ করুন</Button>
-            <Button className="rounded-[4px] bg-[#0A1E38] hover:bg-[#122B4D]" onClick={() => setExamModalOpen(false)}>নিশ্চিত করুন</Button>
+            <Button className="rounded-[4px] bg-[#0A1E38] hover:bg-[#122B4D]" disabled={!form.programName.trim()} onClick={() => setExamModalOpen(false)}>নিশ্চিত করুন</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

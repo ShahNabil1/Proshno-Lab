@@ -30,7 +30,7 @@ import AdminQuestionDuplicates from "@/pages/admin/AdminQuestionDuplicates";
 import BulkExplanationDialog from "@/components/admin/BulkExplanationDialog";
 
 const typeOptions = ALL_TYPES;
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 300, 500];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
 const SPECIAL_FILTER_OPTIONS = [
   { id: "incomplete_cq_answers", label: "\u0985\u09b8\u09ae\u09cd\u09aa\u09c2\u09b0\u09cd\u09a3 \u0989\u09a4\u09cd\u09a4\u09b0 \u09b8\u09c3\u099c\u09a8\u09b6\u09c0\u09b2" },

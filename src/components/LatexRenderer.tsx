@@ -159,7 +159,6 @@ function LatexRenderer({ text, className = "", inline = false, italicMathVariabl
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root || !root.closest(".answer-content")) return;
-    const lines = prepareAnswerLines(root);
     if (fittedLayout.current !== answerFit.layoutKey) {
       fittedSizes.current.clear(); fittedLayout.current = answerFit.layoutKey;
     }
@@ -168,6 +167,7 @@ function LatexRenderer({ text, className = "", inline = false, italicMathVariabl
       root.querySelectorAll<HTMLElement>(".answer-fit-line").forEach(line => { line.style.removeProperty("font-size"); line.classList.remove("answer-fit-single"); });
       return;
     }
+    const lines = prepareAnswerLines(root);
     let disposed = false;
     let frame = 0;
     const measure = () => {

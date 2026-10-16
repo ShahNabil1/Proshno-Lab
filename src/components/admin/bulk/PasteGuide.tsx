@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Info, Copy, ClipboardPaste, Check } from "lucide-react";
+import { Info, Copy, ClipboardPaste, Check, Download } from "lucide-react";
 import { toast } from "sonner";
 import { QType, TYPE_LABELS } from "@/lib/bulkQuestions";
 import { languagePasteVariants, LANGUAGE_PASTE_RULES, withPasteReferences } from "@/lib/languagePasteGuides";
@@ -201,17 +201,22 @@ const RULES = [
   "একই প্রশ্ন আগে থেকেই থাকলে বা লিস্টে দুইবার থাকলে সেটি ডুপ্লিকেট হিসেবে মার্ক হয়ে স্কিপ হবে।",
 ];
 
-export default function PasteGuide({ type, isMath = false, englishFirst = false, onInsert }: { type: QType; isMath?: boolean; englishFirst?: boolean; onInsert?: (sample: string) => void }) {
+export default function PasteGuide({ type, isMath = false, englishFirst = false, chapterNames = [], onInsert }: { type: QType; isMath?: boolean; englishFirst?: boolean; chapterNames?: string[]; onInsert?: (sample: string) => void }) {
   const variants = useMemo(() => {
     const list = (type==='mcq' && englishFirst ? [{id:'seen-mcq',label:'Seen Passage MCQ',desc:'উদ্দীপকে সংশ্লিষ্ট Seen Passage দিন। প্রতিটি MCQ-এর চারটি অপশন ও সঠিক উত্তর দিন।',sample:withPasteReferences(ENGLISH_FIRST_MCQ)}] : undefined) || languagePasteVariants(type,englishFirst)?.map(v=>({...v,sample:withPasteReferences(v.sample)})) || PASTE_VARIANTS[type] || [{
       id: "question-set", label: TYPE_LABELS[type] || "প্রশ্নসেট",
       desc: "উপপ্রশ্নসহ সম্পূর্ণ প্রশ্নসেট একসঙ্গে লিখুন। টেবিল HTML হিসেবে দেওয়া যাবে। আলাদা প্রশ্নসেটের মাঝে --- দিন।",
       sample: `১. Complete the following question set.\n(a) First question or blank ...\n(b) Second question or blank ...\nউত্তর: (a) First answer; (b) Second answer\n\n---\n\n২. Complete the next question set.\n(a) First question or blank ...\n(b) Second question or blank ...`,
     }];
-    if (type !== "cq") return list;
-    // গণিত/উচ্চতর গণিতে শুধু ৩ প্রশ্নের (ক/খ/গ) ভ্যারিয়েন্টগুলোই দেখানো হয়
-    return isMath ? list.filter((v) => v.id.startsWith("math")) : list.filter((v) => !v.id.startsWith("math"));
-  }, [type, isMath, englishFirst]);
+    const filtered = type !== "cq" ? list : isMath
+      ? list.filter(v => v.id.startsWith("math")) : list.filter(v => !v.id.startsWith("math"));
+    if (!["mcq", "cq", "short"].includes(type)) return filtered;
+    return [...filtered, {
+      id: "with-chapters", label: "অধ্যায়সহ টেমপ্লেট",
+      desc: "নির্বাচিত বিষয়ের অধ্যায়ের নাম বসান। প্রতিটি অধ্যায়ের নিচে এক বা একাধিক প্রশ্ন লিখুন। না লিখলে dashboard-এর ডিফল্ট অধ্যায় ব্যবহার হবে।",
+      sample: `অধ্যায়: ${chapterNames[0] || "প্রথম অধ্যায়ের সঠিক নাম"}\n${filtered[0].sample}\n\nঅধ্যায়: ${chapterNames[1] || "অন্য অধ্যায়ের সঠিক নাম"}\n${filtered[0].sample}`,
+    }];
+  }, [type, isMath, englishFirst, chapterNames]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(variants[0].id);
   const current = useMemo(() => variants.find((v) => v.id === active) || variants[0], [variants, active]);
@@ -223,6 +228,15 @@ export default function PasteGuide({ type, isMath = false, englishFirst = false,
     setCopied(true);
     toast.success("নমুনা কপি হয়েছে");
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([current.sample], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${type}_${current.id}_template.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -270,6 +284,9 @@ export default function PasteGuide({ type, isMath = false, englishFirst = false,
         <div className="flex flex-wrap gap-2">
           <Button type="button" size="sm" variant="outline" onClick={copy} className="gap-1">
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />} কপি করুন
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={download} className="gap-1">
+            <Download className="w-4 h-4" /> নমুনা ডাউনলোড (.txt)
           </Button>
           {onInsert && (
             <Button

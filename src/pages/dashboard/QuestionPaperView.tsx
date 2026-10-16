@@ -1,3 +1,5 @@
+import { normalizeQuestionReferenceSettings } from "@/lib/questionReferenceSettings";
+import PaperLoading from "@/components/paper/PaperLoading";
 import PaperFontPicker from "@/components/paper/PaperFontPicker";
 import { paperFontFamily } from "@/lib/paperFonts";
 import { trackEvent } from "@/lib/analytics";
@@ -222,14 +224,14 @@ const AnswerContent = memo(({ text, className = "" }: { text: string; className?
 ));
 
 // Print-friendly MCQ explanation.
-const McqExplanation = ({ text, isEnglishVersion = false }: { text: string; isEnglishVersion?: boolean }) => (
+const McqExplanation = memo(({ text, isEnglishVersion = false }: { text: string; isEnglishVersion?: boolean }) => (
   <div className="mcq-explanation" style={{ position: "relative", marginTop: "9px", padding: "20px 8px 6px", border: "1px solid #777", borderRadius: "4px", fontSize: "0.9em", lineHeight: 1.5, breakInside: "avoid" }}>
     <div style={{ position: "absolute", top: "-1px", left: "-1px", padding: "1px 6px 2px", borderRadius: "3px 0 3px 0", background: "#050505", color: "#fff", fontWeight: 700, lineHeight: 1.25 }}>
       {isEnglishVersion ? "Explanation" : "ব্যাখ্যা"}
     </div>
     <AnswerContent text={text} />
   </div>
-);
+));
 
 function QuestionNumberGapControl({ value, onCommit }: { value: number; onCommit: (value: number) => void }) {
   const [draft, setDraft] = useState(value);
@@ -278,6 +280,7 @@ export default function QuestionPaperView() {
   const { user } = useAuth();
   const paperRef = useRef<HTMLDivElement>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
+  const [paperLoading, setPaperLoading] = useState(true);
   const [removedDuplicateQuestions, setRemovedDuplicateQuestions] = useState<QuestionRow[] | null>(null);
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const autoSaveInFlight = useRef(false);
@@ -422,6 +425,10 @@ export default function QuestionPaperView() {
   }), [settings.answerLineFit, settings.fontSize, settings.columns, settings.columnGap, settings.paperSize, settings.manualSectionColumns]);
 
   useEffect(() => {
+    let cancelled = false;
+    setPaperLoading(true);
+    const loadPaper = async () => {
+      try {
     const paperId = searchParams.get("paper_id") || searchParams.get("id");
     const qData = sessionStorage.getItem("viewPaperQuestions");
     const mData = sessionStorage.getItem("viewPaperMeta");
@@ -464,6 +471,8 @@ export default function QuestionPaperView() {
           ?? (isEnglishPaperMeta(parsedMeta) ? "en-padded-dot" : "bn-padded-danda"),
         textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(parsedMeta.subjectName || "") ? "left" : "justify",
         ...restoredSettings,
+        ...normalizeQuestionReferenceSettings(restoredSettings),
+        showChapterName: parsedMeta.chapterNames.length === 1,
       }));
       if (savedSettings) {
         sessionStorage.removeItem("viewPaperSettings");
@@ -478,7 +487,7 @@ export default function QuestionPaperView() {
     } else if (paperId) {
       // Load saved paper from DB
       setCurrentPaperId(paperId);
-      supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
+      await supabase.from("saved_papers").select("*").eq("id", paperId).maybeSingle()
         .then(async ({ data }) => {
           if (!data) return;
           if (!isPaperMeta(data.meta)) { toast.error("প্রশ্নপত্রের তথ্য সঠিক নয়।"); return; }
@@ -497,10 +506,12 @@ export default function QuestionPaperView() {
               ?? (isEnglishPaperMeta(loadedMeta) ? "en-padded-dot" : "bn-padded-danda"),
             textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(loadedMeta.subjectName || "") ? "left" : "justify",
             ...loadedSettings,
+            ...normalizeQuestionReferenceSettings(loadedSettings),
+            showChapterName: loadedMeta.chapterNames.length === 1,
           }));
           const ids = data.question_ids as number[];
           if (ids.length > 0) {
-            supabase.from("questions").select("*").in("id", ids)
+            await supabase.from("questions").select("*").in("id", ids)
               .then(({ data: qData }) => {
                 if (qData) {
                   const qMap = new Map(qData.map(q => [q.id, q]));
@@ -510,6 +521,14 @@ export default function QuestionPaperView() {
           }
         });
     }
+      } catch {
+        toast.error("প্রশ্নপত্র লোড করা যায়নি। আবার চেষ্টা করুন।");
+      } finally {
+        if (!cancelled) setPaperLoading(false);
+      }
+    };
+    void loadPaper();
+    return () => { cancelled = true; };
   }, [searchParams]);
 
   // Check admin/developer role for admin-only features like Word (.docx) export
@@ -771,17 +790,21 @@ export default function QuestionPaperView() {
   }, [editingMode, handleCloseToolbar]);
 
   const [printPreparing, setPrintPreparing] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const handleDownload = async () => {
     if (!paperRef.current || printPreparing) return;
     setPrintPreparing(true);
+    setDownloadProgress(0);
     try {
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       paperRef.current.querySelectorAll<HTMLElement>("[contenteditable]").forEach(el => { el.contentEditable = "false"; });
       handleCloseToolbar();
       // Commit the completed shared pages before invoking native print.
-      const pages = await preparePrintablePages();
+      const pages = await preparePrintablePages(undefined, percent => setDownloadProgress(Math.min(95, Math.round(percent * 0.95))));
       if (!pages.length) throw new Error("No printable pages are available");
       flushSync(() => setPagedPreviewPages(pages));
       await waitForPrintableAssets(document.querySelector<HTMLElement>('.paper-paged-print-source')!);
+      setDownloadProgress(100);
       const previousTitle = document.title;
       const restoreTitle = () => { document.title = previousTitle; };
       // Chrome uses the page title as its suggested Save as PDF filename.
@@ -1143,7 +1166,7 @@ export default function QuestionPaperView() {
   };
 
   const updateSetting = <K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings(prev => ({ ...prev, ...(key === "showQuestionInfo" && value ? normalizeQuestionReferenceSettings(prev) : {}), [key]: value }));
   };
 
   const renderQuestionReference = (text: string, flex = false) => {
@@ -1154,8 +1177,9 @@ export default function QuestionPaperView() {
         <span style={{
           display: "inline-block",
           padding: style === "bracket" || style === "underline" ? "0 2px" : "1px 5px",
-          border: style === "outline" ? `1px solid ${color}` : undefined,
-          borderBottom: style === "underline" ? `1px solid ${color}` : undefined,
+          borderStyle: style === "outline" || style === "underline" ? "solid" : "none",
+          borderColor: color,
+          borderWidth: style === "outline" ? "1px" : style === "underline" ? "0 0 1px" : "0",
           borderRadius: style === "filled" || style === "black" || style === "outline" ? "2px" : undefined,
           background: style === "filled" ? color : style === "black" ? "#000" : "transparent",
           color: settings.questionReferenceTextColor,
@@ -1198,7 +1222,7 @@ export default function QuestionPaperView() {
   const [pagedPreviewPages, setPagedPreviewPages] = useState<string[]>([]);
 
   const printableCache = useRef(new Map<string, string[]>());
-  const printablePending = useRef(new Map<string, { promise: Promise<string[]>; required: boolean }>());
+  const printablePending = useRef(new Map<string, { promise: Promise<string[]>; required: boolean; progress: number; listeners: Set<(percent: number) => void> }>());
   const [previewPreparing, setPreviewPreparing] = useState(false);
   const previewProgressRef = useRef<HTMLSpanElement>(null);
   const previewProgressValue = useRef(0);
@@ -1226,12 +1250,20 @@ export default function QuestionPaperView() {
       const pending = printablePending.current.get(key);
       if (pending) {
         if (!isCancelled) pending.required = true;
-        const pages = await pending.promise;
-        onProgress?.(100);
-        return pages;
+        if (onProgress) pending.listeners.add(onProgress);
+        onProgress?.(pending.progress);
+        try {
+          const pages = await pending.promise;
+          onProgress?.(100);
+          return pages;
+        } finally { if (onProgress) pending.listeners.delete(onProgress); }
       }
-      const entry = { promise: Promise.resolve([] as string[]), required: !isCancelled };
-      entry.promise = buildPrintablePages(paper, layout, () => !entry.required && Boolean(isCancelled?.()), onProgress);
+      const entry = { promise: Promise.resolve([] as string[]), required: !isCancelled, progress: 10, listeners: new Set<(percent: number) => void>() };
+      if (onProgress) entry.listeners.add(onProgress);
+      entry.promise = buildPrintablePages(paper, layout, () => !entry.required && Boolean(isCancelled?.()), percent => {
+        entry.progress = 10 + Math.round(percent * 0.9);
+        entry.listeners.forEach(listener => listener(entry.progress));
+      });
       printablePending.current.set(key, entry);
       let pages: string[];
       try { pages = await entry.promise; }
@@ -1243,17 +1275,20 @@ export default function QuestionPaperView() {
   }, [settings, pageWidthMm, pageHeightMm, isEnglishPaper]);
 
   useEffect(() => {
-    if (editingMode || !meta || !questions.length) return;
+    if (editingMode || !meta || !questions.length) {
+      setPreviewPreparing(false);
+      return;
+    }
     let cancelled = false;
     showPreviewProgress(0);
-    setPreviewPreparing(true);
+    setPreviewPreparing(settings.previewLayoutMode === "print");
     const timer = window.setTimeout(() => {
       preparePrintablePages(() => cancelled, percent => { if (!cancelled) showPreviewProgress(percent); }).then(pages => {
-        if (!cancelled) { setPagedPreviewPages(pages); setPreviewPreparing(false); }
+        if (!cancelled) { if (settings.previewLayoutMode === "print") setPagedPreviewPages(pages); setPreviewPreparing(false); }
       }).catch(error => {
         if (!cancelled) { setPreviewPreparing(false); console.error("Printable pagination failed", error); }
       });
-    }, settings.previewLayoutMode === "print" ? 180 : 500);
+    }, settings.previewLayoutMode === "print" ? 180 : 2500);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [settings.previewLayoutMode, preparePrintablePages, questions, meta, isEnglishVersion, paginationRevision, showPreviewProgress, editingMode]);
 
@@ -1324,6 +1359,8 @@ export default function QuestionPaperView() {
     updateSetting("showSetCode", true);
     toast.success("প্রশ্ন শাফল করা হয়েছে — নতুন সেট তৈরী!");
   }, []);
+
+  if (paperLoading) return <PaperLoading />;
 
   if (!meta) {
     return (
@@ -1409,7 +1446,7 @@ export default function QuestionPaperView() {
           </div>
           {([
             { key: "showImportantQ" as const, label: "গুরুত্বপূর্ণ প্রশ্ন" },
-            { key: "showQuestionInfo" as const, label: "প্রশ্নের তথ্য" },
+            { key: "showQuestionInfo" as const, label: "প্রশ্নের রেফারেন্স" },
             { key: "showStudentInfo" as const, label: "শিক্ষার্থীর তথ্য" },
             { key: "showMarksBox" as const, label: "প্রাপ্ত নম্বর ঘর" },
             { key: "showSubjectCode" as const, label: "বিষয় কোড" },
@@ -1438,7 +1475,7 @@ export default function QuestionPaperView() {
               <label className="flex items-center justify-between text-xs">লেখার রং<input type="color" value={settings.questionReferenceTextColor} className="h-8 w-12 cursor-pointer rounded border p-1" onChange={(event) => updateSetting("questionReferenceTextColor", event.target.value)} /></label>
               <div>
                 <Label className="text-[10px] text-muted-foreground">রেফারেন্স ফন্ট</Label>
-                <PaperFontPicker familyValue label="প্রশ্নের তথ্যের ফন্ট নির্বাচন" value={settings.questionReferenceFontFamily} onChange={v => updateSetting("questionReferenceFontFamily", v)} />
+                <PaperFontPicker familyValue label="প্রশ্নের রেফারেন্সের ফন্ট নির্বাচন" value={settings.questionReferenceFontFamily} onChange={v => updateSetting("questionReferenceFontFamily", v)} />
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">রেফারেন্স ফন্ট সাইজ</Label>
@@ -2188,7 +2225,7 @@ export default function QuestionPaperView() {
             <CheckCircle className="h-3.5 w-3.5" /> উত্তরমালা
           </Button>
           <Button size="sm" className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading text-xs" onClick={handleDownload} disabled={printPreparing}>
-            <Download className="h-3.5 w-3.5 mr-1" /> ডাউনলোড
+            <Download className="h-3.5 w-3.5 mr-1" /> {printPreparing ? "প্রস্তুত হচ্ছে…" : "ডাউনলোড"}
           </Button>
 
         </div>
@@ -2273,6 +2310,11 @@ export default function QuestionPaperView() {
           width: '100%',
           maxWidth: previewPaperWidth,
         }}>
+        {printPreparing && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A1E38]/25 backdrop-blur-sm print:hidden">
+          <div className="w-[440px] max-w-[92vw] max-h-[95vh] overflow-y-auto rounded-lg border bg-white shadow-xl">
+            <PaperLoading download progress={downloadProgress} />
+          </div>
+        </div>}
         {isPrintPreview && previewPreparing && <div role="status" aria-live="off" className="paper-preview-progress pointer-events-none fixed right-3 bottom-3 z-50 flex items-center gap-1.5 rounded border border-slate-200 bg-white/95 px-2 py-1 text-[11px] text-slate-600 shadow-sm print:hidden">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-600" aria-hidden="true" />
           <span>Preview</span><span ref={previewProgressRef} className="font-medium tabular-nums">{previewProgressValue.current}%</span>
@@ -3438,7 +3480,7 @@ export default function QuestionPaperView() {
 
               <div className="paper-settings-sticky-actions flex gap-2 mb-4">
                 <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold shadow-sm" onClick={handleDownload} disabled={printPreparing}>
-                  <Download className="h-4 w-4 mr-2" /> ডাউনলোড
+                  <Download className="h-4 w-4 mr-2" /> {printPreparing ? "প্রস্তুত হচ্ছে…" : "ডাউনলোড"}
                 </Button>
                 {isAdmin && (
                   <Button variant="outline" className="font-heading font-semibold text-[#082f57] border-[#082f57] hover:bg-[#082f57]/5" onClick={handleDocxExport} disabled={docxExporting}>
@@ -3464,7 +3506,7 @@ export default function QuestionPaperView() {
           <div className="px-2 pb-4">
             <div className="flex gap-2 mb-4">
               <Button className="flex-1 min-w-0 px-2 bg-[#082f57] hover:bg-[#062542] text-white border-0 font-heading font-semibold" onClick={() => { setSettingsOpen(false); handleDownload(); }}>
-                <Download className="h-4 w-4 mr-2" /> ডাউনলোড
+                <Download className="h-4 w-4 mr-2" /> {printPreparing ? "প্রস্তুত হচ্ছে…" : "ডাউনলোড"}
               </Button>
               {isAdmin && !isMobile && (
                 <Button variant="outline" className="font-heading font-semibold" onClick={handleDocxExport} disabled={docxExporting}>
