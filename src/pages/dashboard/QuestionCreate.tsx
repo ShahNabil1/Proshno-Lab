@@ -959,6 +959,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   useEffect(() => { if (firstFilterRender.current) { firstFilterRender.current = false; return; } setCurrentPage(1); }, [filterSearch, filterType, filterChapterIds, filterTopicIds, filterUntopicedChapterIds, filterBoards, filterSchools, filterYear, filterSchoolYear, filterSpecial]);
 
   const savePaperDraft = () => {
+    // A new paper must not inherit another paper's personal edits or settings.
+    sessionStorage.removeItem("viewPaperSettings");
     const selectedQuestions = questions.filter(q => selectedIds.has(q.id) && (!showEnglishBuilder || !/^(seen_passage|unseen_passage)/.test(q.type)));
     const normalizePassage = (text: string) => text.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
     const selected = showEnglishBuilder ? questions.filter(q => selectedQuestions.includes(q) || (

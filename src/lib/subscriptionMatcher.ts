@@ -68,6 +68,8 @@ export const planCoversSelection = (
 
   const subjectMatches =
     normalizedPlan.includes(normalizedSubject) ||
+    (["সাধারন গণিত", "সাধারণ গণিত", "গণিত"].includes(normalizedSubject) &&
+      /(?:^| - )(?:সাধারন গণিত|সাধারণ গণিত|গণিত)$/.test(normalizedPlan)) ||
     normalizedPlan.includes(ALL_SUBJECTS_LABEL);
   if (!subjectMatches) return false;
 

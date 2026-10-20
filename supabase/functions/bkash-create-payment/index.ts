@@ -1,5 +1,6 @@
 import { normalizeMarketingContext } from "../_shared/metaCapi.ts";
 import { preparePayg } from "../_shared/payg.ts";
+import { CheckoutRecoveryError, recoverCustomCheckout } from "../_shared/customCheckoutRecovery.ts";
 // bKash Tokenized Checkout: Create Payment
 // Called by frontend to initiate a bKash payment. Returns paymentID + bkashURL.
 
@@ -162,12 +163,23 @@ Deno.serve(async (req) => {
 
     const environment = BKASH_BASE_URL.includes("sandbox") ? "sandbox" : "live";
     if (custom_package) {
+      const recovery = await recoverCustomCheckout(admin, user.id, resolvedPackages[0], finalAmount, normalizedCoupon, environment, async paymentID => {
+        const token = await getBkashToken();
+        const response = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/payment/status`, {
+          method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: token, "X-App-Key": BKASH_APP_KEY },
+          body: JSON.stringify({ paymentID }), signal: AbortSignal.timeout(10_000),
+        });
+        if (!response.ok) throw new Error("Gateway query unavailable");
+        return response.json();
+      });
+      if (recovery.resume) return json({ ...recovery.resume, resumed: true });
       const { data: orderId, error } = await admin.rpc("reserve_custom_payment", { context: {
         user_id: user.id, merchant_invoice_number: merchantInvoiceNumber, amount: finalAmount, discount,
         coupon_code: normalizedCoupon, selected_packages: resolvedPackages, payer_reference: String(phone),
         institute_name: institute_name || null, teacher_name: teacher_name || null, teacher_email: user.email || null, environment,
+        verified_unpaid_payment_ids: recovery.verifiedUnpaidIds,
       } });
-      if (error) return json({ error: error.message }, 409);
+      if (error) return json({ error: error.message, code: /unfinished|progress/i.test(error.message) ? "PAYMENT_CREATION_IN_PROGRESS" : undefined }, 409);
       reservedOrderId = orderId;
     }
 
@@ -231,6 +243,7 @@ Deno.serve(async (req) => {
 
     return json({ paymentID: createData.paymentID, bkashURL: createData.bkashURL });
   } catch (e: any) {
+    if (e instanceof CheckoutRecoveryError) return json({ error: e.code, code: e.code }, e.status);
     console.error("bkash-create-payment error", e);
     if (cleanupReservedOrder) await cleanupReservedOrder();
     return json({ error: e.message ?? "Unknown error" }, 500);

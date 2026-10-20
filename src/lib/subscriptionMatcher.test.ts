@@ -89,6 +89,20 @@ describe("activePlanNames", () => {
   });
 });
 
+describe("general math package aliases", () => {
+  it("covers the shared ninth-tenth general math book with either spelling", () => {
+    for (const subject of ["সাধারন গণিত", "সাধারণ গণিত"]) {
+      expect(planCoversSelection("ষষ্ঠ - দশম - গণিত", "নবম-দশম শ্রেণি", subject)).toBe(true);
+    }
+  });
+  it("keeps higher math, English version and other classes outside the alias", () => {
+    expect(planCoversSelection("ষষ্ঠ - দশম - গণিত", "নবম-দশম শ্রেণি", "উচ্চতর গণিত")).toBe(false);
+    expect(planCoversSelection("ষষ্ঠ - দশম - গণিত", "SSC (Eglish Version)", "Mathemathis")).toBe(false);
+    expect(planCoversSelection("ষষ্ঠ - অষ্টম - গণিত", "নবম-দশম শ্রেণি", "সাধারন গণিত")).toBe(false);
+    expect(planCoversSelection("নবম-দশম - উচ্চতর গণিত", "নবম-দশম শ্রেণি", "সাধারন গণিত")).toBe(false);
+  });
+});
+
 describe("normalizeSubscriptionText", () => {
   it("trims and removes 'শ্রেণি'", () => {
     expect(normalizeSubscriptionText("  ষষ্ঠ শ্রেণি - বিজ্ঞান  ")).toBe("ষষ্ঠ - বিজ্ঞান");

@@ -10,6 +10,19 @@ import { toast } from "sonner";
 import { Eye, Search, Package, User, Mail, Phone, CreditCard, Calendar, Hash, CheckCircle2, RefreshCw, Loader2, CalendarPlus, Banknote } from "lucide-react";
 import { planCoversSelection } from "@/lib/subscriptionMatcher";
 import AdminGrantAccessDialog from "@/components/admin/AdminGrantAccessDialog";
+import SubscriptionReports from "@/components/admin/SubscriptionReports";
+import SubscriptionSms from "@/components/admin/SubscriptionSms";
+import { expiresWithin, remainingDays, normalizeBDPhone, reportingStart } from "@/lib/subscriptionReports";
+
+async function allRows(query: () => any): Promise<any[]> {
+  const rows: any[] = [];
+  for (let offset=0;;offset+=500) {
+    const {data,error}=await query().range(offset,offset+499);
+    if(error) throw error;
+    rows.push(...(data || []));
+    if(!data || data.length<500) return rows;
+  }
+}
 
 interface PricingPackageRow { id: number; class_name: string; subject_name: string; is_active: boolean; }
 interface TeacherRow { id: string; full_name: string; email: string; }
@@ -155,20 +168,25 @@ export default function AdminSubscriptions() {
   const [selectedUser, setSelectedUser] = useState<GroupedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [grantOpen, setGrantOpen] = useState(false);
+  const [expiryFilter,setExpiryFilter]=useState("all");
+  const [periodFilter,setPeriodFilter]=useState("all");
+  const [smsUsers,setSmsUsers]=useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    try {
     const [subsRes, teachersRes, payRes, pkgsRes] = await Promise.all([
-      supabase.from("subscriptions").select("*").order("created_at", { ascending: false }),
-      supabase.from("teachers").select("id, full_name, email"),
-      supabase.from("bkash_payments").select("*").order("created_at", { ascending: false }),
-      supabase.from("pricing_packages").select("id, class_name, subject_name, is_active").eq("is_active", true),
+      allRows(()=>supabase.from("subscriptions").select("*").order("id")),
+      allRows(()=>supabase.from("teachers").select("id, full_name, email").order("id")),
+      allRows(()=>supabase.from("bkash_payments").select("*").order("created_at", { ascending: false }).order("id",{ascending:false})),
+      allRows(()=>supabase.from("pricing_packages").select("id, class_name, subject_name, is_active").eq("is_active", true).order("id")),
     ]);
-    setSubscriptions((subsRes.data as SubscriptionRow[]) || []);
-    setTeachers((teachersRes.data as TeacherRow[]) || []);
-    setPayments((payRes.data as BkashPaymentRow[]) || []);
-    setPackages((pkgsRes.data as PricingPackageRow[]) || []);
-    setLoading(false);
+    setSubscriptions(subsRes as SubscriptionRow[]);
+    setTeachers(teachersRes as TeacherRow[]);
+    setPayments(payRes as BkashPaymentRow[]);
+    setPackages(pkgsRes as PricingPackageRow[]);
+    } catch {toast.error("সম্পূর্ণ রিপোর্ট লোড হয়নি। রিফ্রেশ করে আবার চেষ্টা করুন।");}
+    finally {setLoading(false);}
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -190,7 +208,7 @@ export default function AdminSubscriptions() {
       const teacher = teacherMap.get(tid) || { id: tid, full_name: "—", email: "—" };
       const userSubs = subscriptions.filter(s => s.teacher_id === tid);
       const userPayments = payments.filter(p => p.user_id === tid);
-      const latestPhone = userPayments[0]?.payer_reference || "—";
+      const latestPhone = userPayments.flatMap(p=>[p.payer_reference,p.customer_msisdn,p.payer_account]).map(normalizeBDPhone).find(Boolean) || "—";
       const totalPaid = userPayments.filter(p => p.status === "completed").reduce((s, p) => s + Number(p.amount), 0);
       const activeCount = userSubs.filter(s => getSubStatus(s) === "active").length;
       const manualSubs = userSubs.filter(isManualSub);
@@ -200,15 +218,15 @@ export default function AdminSubscriptions() {
   }, [teachers, subscriptions, payments]);
 
   const filtered = useMemo(() => {
-    if (!debouncedSearch.trim()) return grouped;
     const q = debouncedSearch.toLowerCase();
-    return grouped.filter(g =>
+    return grouped.filter(g => (!q || (
       g.teacher.full_name.toLowerCase().includes(q) ||
       g.teacher.email.toLowerCase().includes(q) ||
       g.latestPhone.includes(q) ||
       g.payments.some(p => p.trx_id?.toLowerCase().includes(q) || p.merchant_invoice_number.toLowerCase().includes(q))
-    );
-  }, [grouped, debouncedSearch]);
+    )) && (expiryFilter==="all" || g.subscriptions.some(s=>expiryFilter==="expired"?getSubStatus(s)==="expired":expiresWithin(s,Number(expiryFilter))))
+      && (periodFilter==="all" || g.subscriptions.some(s=>Date.parse(s.created_at)>=reportingStart(Number(periodFilter)) && Date.parse(s.created_at)<=Date.now())));
+  }, [grouped, debouncedSearch,expiryFilter,periodFilter]);
 
   const manualSubs = useMemo(() => subscriptions.filter(isManualSub), [subscriptions]);
   const manualTotal = useMemo(() => manualSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0), [manualSubs]);
@@ -226,6 +244,8 @@ export default function AdminSubscriptions() {
         </div>
       </div>
 
+      <SubscriptionReports subscriptions={subscriptions} payments={payments} teachers={teachers} onFind={email=>{setSearch(email);setExpiryFilter("all");setPeriodFilter("all");}} />
+
       <Card>
         <CardContent className="p-4">
           <div className="relative">
@@ -236,6 +256,13 @@ export default function AdminSubscriptions() {
               onChange={e => setSearch(e.target.value)}
               className="pl-10 border-primary/30 focus-visible:ring-primary"
             />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <label>মেয়াদ <select className="rounded border bg-background p-2" value={expiryFilter} onChange={e=>setExpiryFilter(e.target.value)}><option value="all">সব</option><option value="7">৭ দিনের মধ্যে শেষ</option><option value="15">১৫ দিনের মধ্যে শেষ</option><option value="30">৩০ দিনের মধ্যে শেষ</option><option value="expired">মেয়াদ শেষ হয়েছে</option></select></label>
+            <label>নতুন সাবস্ক্রিপশন <select className="rounded border bg-background p-2" value={periodFilter} onChange={e=>setPeriodFilter(e.target.value)}><option value="all">সব সময়</option><option value="1">আজ</option><option value="7">গত ৭ দিন</option><option value="30">গত ৩০ দিন</option></select></label>
+            <Button size="sm" variant="outline" onClick={()=>setSmsUsers(new Set(filtered.filter(g=>normalizeBDPhone(g.latestPhone)).slice(0,20).map(g=>g.teacher.id)))}>তালিকা থেকে প্রথম ২০ জন SMS-এর জন্য নিন</Button>
+            <Button size="sm" variant="ghost" onClick={()=>setSmsUsers(new Set())}>নির্বাচন সরান</Button>
+            <a className="font-semibold text-primary underline" href="#subscription-sms">SMS লিখুন ({smsUsers.size} জন নির্বাচিত)</a>
           </div>
         </CardContent>
       </Card>
@@ -264,6 +291,7 @@ export default function AdminSubscriptions() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>SMS</TableHead>
                 <TableHead>নাম</TableHead>
                 <TableHead>ইমেইল</TableHead>
                 <TableHead>ফোন</TableHead>
@@ -275,13 +303,14 @@ export default function AdminSubscriptions() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">লোড হচ্ছে...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">কোনো ডাটা পাওয়া যায়নি</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">কোনো ডাটা পাওয়া যায়নি</TableCell></TableRow>
               ) : filtered.map(g => {
                 const lastPay = g.payments[0];
                 return (
                   <TableRow key={g.teacher.id}>
+                    <TableCell><input type="checkbox" aria-label={`${g.teacher.email} SMS নির্বাচন`} checked={smsUsers.has(g.teacher.id)} disabled={!normalizeBDPhone(g.latestPhone)} onChange={e=>{setSmsUsers(previous=>{const next=new Set(previous);if(e.target.checked)next.add(g.teacher.id);else next.delete(g.teacher.id);return next;});}} /></TableCell>
                     <TableCell className="font-medium">{g.teacher.full_name}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{g.teacher.email}</TableCell>
                     <TableCell className="text-sm">{g.latestPhone}</TableCell>
@@ -296,6 +325,7 @@ export default function AdminSubscriptions() {
                           ম্যানুয়াল {g.manualSubs.length}
                         </Badge>
                       )}
+                      <div className="mt-2 max-w-72 space-y-1 text-xs">{g.subscriptions.map(s=><p key={s.id}>{s.plan} — {getSubStatus(s)==="expired"?"মেয়াদ শেষ":getSubStatus(s)==="active"?(s.ends_at?`${remainingDays(s.ends_at)} দিন বাকি`:"নির্দিষ্ট শেষ তারিখ নেই"):subStatusConfig[getSubStatus(s)].label}{s.ends_at && ` · ${new Date(s.ends_at).toLocaleDateString("bn-BD",{timeZone:"Asia/Dhaka"})}`}</p>)}</div>
                     </TableCell>
                     <TableCell>
                       {lastPay ? (
@@ -317,6 +347,8 @@ export default function AdminSubscriptions() {
           </Table>
         </CardContent>
       </Card>
+
+      <SubscriptionSms recipients={grouped.filter(g=>smsUsers.has(g.teacher.id) && normalizeBDPhone(g.latestPhone)).map(g=>({name:g.teacher.full_name,email:g.teacher.email,phone:normalizeBDPhone(g.latestPhone)!}))} />
 
       <Card>
         <CardContent className="p-4 space-y-3">

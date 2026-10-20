@@ -30,6 +30,8 @@ export const isEnglishVersionClass = (name: string): boolean =>
   /english|eglish|ইংলিশ/i.test(name || "");
 
 export const getClassLevelKey = (name: string): string => {
+  if (/\bssc\b/i.test(name || "")) return "9-10";
+  if (/\bhsc\b/i.test(name || "")) return "11-12";
   let normalized = (name || "").replace(/[০-৯]/g, (digit) =>
     String(BANGLA_DIGITS.indexOf(digit)),
   );

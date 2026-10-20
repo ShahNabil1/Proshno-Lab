@@ -81,6 +81,7 @@ export default function AutoQuestionCreate() {
       if (error || data?.error) { toast.error(data?.error || "পেমেন্টের প্রশ্নপত্র লোড করা যায়নি"); return; }
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(data.questions));
       sessionStorage.setItem("viewPaperContext", JSON.stringify(data.context));
+      sessionStorage.removeItem("viewPaperSettings");
       sessionStorage.setItem("viewPaperMeta", JSON.stringify({ ...data.meta, purchaseMode: "payg" }));
       analytics.paperGenerate(String(data.context?.classId || ""), String(data.context?.subjectId || ""));
       navigate("/dashboard/view-paper");
@@ -280,6 +281,7 @@ export default function AutoQuestionCreate() {
       const selectedChapterNames = selectedChapters.map(c => c.name);
       sessionStorage.setItem("viewPaperQuestions", JSON.stringify(picked));
       sessionStorage.setItem("viewPaperContext", JSON.stringify({ classId: String(effectiveClassId), subjectId: subjectIds.join(","), chapterIds: ids.map(String) }));
+      sessionStorage.removeItem("viewPaperSettings");
       sessionStorage.setItem("viewPaperMeta", JSON.stringify({
         instituteName: institute?.name || "আপনার প্রতিষ্ঠানের নাম",
         instituteUpazila: institute?.upazila || "",

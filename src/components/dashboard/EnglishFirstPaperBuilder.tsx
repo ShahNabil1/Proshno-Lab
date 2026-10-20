@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BuilderQuestion, blockCandidates, englishBlocks, plainText } from '@/lib/englishFirstBuilder';
-import { Info } from 'lucide-react';
+import { Info, BookOpen, X } from 'lucide-react';
+import { Anchor as PopoverAnchor } from '@radix-ui/react-popover';
 
 export default function EnglishFirstPaperBuilder<T extends BuilderQuestion>({ initialQuestions, onPreview, chapters, topics, enabledBlocks }: { initialQuestions: T[]; enabledBlocks: number[]; onPreview: (rows: T[]) => void; chapters: { id: number; name: string }[]; topics: { id: number; name: string; chapter_id: number }[] }) {
   const [pool] = useState<T[]>(initialQuestions);
+  const [sourceHint, setSourceHint] = useState<string | null>(null);
   const [choices, setChoices] = useState<Record<number, string>>({});
   const [activeType, setActiveType] = useState<Record<number, string>>({});
   const [activeLesson, setActiveLesson] = useState<Record<number, number>>({});
@@ -56,11 +58,33 @@ export default function EnglishFirstPaperBuilder<T extends BuilderQuestion>({ in
           </PopoverContent></Popover> : <span className="shrink-0">{block.marks} নম্বর</span>}
         </div>
         <div className="border border-slate-400 rounded p-2 space-y-2">
-          {block.needs.map(([type, count], j) => <label key={type} className="flex gap-2 items-center text-sm cursor-pointer">
-            <input type="checkbox" name={`block-type-${i}`} disabled={(i < 3 || i === 5) && !sourceRows(i).length} checked={activeType[i] === type} onChange={() => { const next = activeType[i] === type ? '' : type; setActiveType(prev => ({ ...prev, [i]: next })); preview(i, sourceRows(i), next); }} />
+          {block.needs.map(([type, count], j) => <Popover key={type} open={sourceHint === `${i}:${type}`} onOpenChange={open => { if (!open) setSourceHint(null); }}>
+          <PopoverAnchor asChild><label className="flex gap-2 items-center text-sm cursor-pointer">
+            <input type="checkbox" name={`block-type-${i}`} checked={activeType[i] === type} onChange={() => {
+              const rows = sourceRows(i);
+              if (activeType[i] !== type && (i < 3 || i === 5) && !rows.length) {
+                setSourceHint(`${i}:${type}`);
+                return;
+              }
+              setSourceHint(null);
+              const next = activeType[i] === type ? '' : type;
+              setActiveType(prev => ({ ...prev, [i]: next }));
+              preview(i, rows, next);
+            }} />
             <span className="text-lg font-bold text-slate-800 shrink-0">Q{i < 3 ? [1, 3, 5][i] + j : i + 5}</span>
             <span>{({ mcq: 'MCQ', answering_questions: 'Answering Questions', gap_filling: 'Gap Filling', vocabulary: 'Vocabulary', information_transfer: 'Information Transfer', true_false: 'True/False', writing_summary: 'Writing Summary', poem_questions: 'Poems' } as Record<string, string>)[type] || type.replace(/_/g, ' ')}</span>
-          </label>)}
+          </label></PopoverAnchor>
+          <PopoverContent side="top" align="start" sideOffset={8} collisionPadding={12} onOpenAutoFocus={event => event.preventDefault()} className="w-72 max-w-[calc(100vw-24px)] rounded-2xl border-teal-100 bg-white p-3.5 shadow-xl shadow-slate-900/10">
+            <div className="flex items-start gap-3" role="status">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600"><BookOpen className="h-4 w-4" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900">{i === 2 ? 'আগে Passage বেছে নিন' : 'আগে Unit ও Lesson বেছে নিন'}</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">{i === 2 ? 'অনুগ্রহ করে নিচের তালিকা থেকে Passage নির্বাচন করুন।' : 'অনুগ্রহ করে নিচের তালিকা থেকে Unit ও Lesson নির্বাচন করুন।'}</p>
+              </div>
+              <button type="button" aria-label="নির্দেশনা বন্ধ করুন" onClick={() => setSourceHint(null)} className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"><X className="h-3.5 w-3.5" /></button>
+            </div>
+          </PopoverContent>
+          </Popover>)}
         </div>
         <div className="space-y-2 pl-2">
           {i === 2 ? candidates[i].map((c, index) => <label key={c.key} className="flex gap-2 items-start text-sm cursor-pointer">

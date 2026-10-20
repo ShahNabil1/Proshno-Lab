@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, ArrowRight } from "lucide-react";
 import { isEnglishVersionClass } from "@/lib/subjectVersion";
 
-export default function PricingPage() {
+export default function PricingPage({ embedded = false }: { embedded?: boolean }) {
  const [search,setSearch]=useSearchParams();
  const subjectClass=search.get("class");
  const [custom,setCustom]=useState(false);
@@ -22,7 +22,7 @@ export default function PricingPage() {
  const [error,setError]=useState(false);
  useEffect(()=>{let cancelled=false;supabase.from("pricing_packages").select("*").eq("is_active",true).order("sort_order").then(({data,error})=>{if(!cancelled){setPackages(data||[]);setError(!!error);}});return()=>{cancelled=true;};},[]);
  const buy=(p:FixedPricingPackage)=>{setSelected([{id:p.id,class_name:p.class_name,subject_name:p.subject_name,price:p.price}]);setCheckout(true);};
- return <div className="min-h-screen bg-[#f3f4f6] px-3 pb-12 pt-24 text-[#292929]">
+ return <div className={embedded ? "text-[#292929]" : "min-h-screen bg-[#f3f4f6] px-3 pb-12 pt-24 text-[#292929]"}>
   <div className="mx-auto max-w-[760px] border border-[#e5e7eb] bg-white px-4 py-8 sm:px-5">
    <h1 className="text-center font-heading text-2xl font-bold sm:text-3xl">প্রশ্ন তৈরির — স্মার্ট প্যাকেজ !!!</h1>
    <p className="mt-1 text-center text-lg">{subjectClass?"বিষয় - চেক আউট":"মূল্য তালিকা"}</p>

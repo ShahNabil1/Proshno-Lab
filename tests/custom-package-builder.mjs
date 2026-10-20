@@ -48,6 +48,7 @@ await db.exec(await read('supabase/migrations/20261015140000_fixed_package_subje
 await db.exec(await read('supabase/migrations/20261015141000_primary_class_bundle_ranges.sql'));
 await db.exec(await read('supabase/migrations/20261015142000_atomic_fixed_payment_activation.sql'));
 await db.exec(await read('supabase/migrations/20261012120100_custom_package_pricing_seed.sql'));
+await db.exec(await read('supabase/migrations/20261020152818_custom_checkout_retry_recovery.sql'));
 check((await db.query('SELECT * FROM pricing_packages ORDER BY id')).rows, fixedBefore.rows);
 check((await db.query('SELECT count(*)::int AS n FROM custom_package_pricing')).rows[0].n,9);
 await db.query("SELECT set_config('test.uid',$1,false),set_config('test.role','authenticated',false)",[buyer]);
@@ -102,6 +103,17 @@ const order=await quote(11,[104,105],'Science');
 const context={user_id:buyer,merchant_invoice_number:'reserve-test',amount:order.price,discount:0,selected_packages:[order],payer_reference:'01700000000',environment:'sandbox'};
 const reservation=(await db.query('SELECT reserve_custom_payment($1::jsonb) AS id',[JSON.stringify(context)])).rows[0].id;
 await reject('SELECT reserve_custom_payment($1::jsonb)',[JSON.stringify({...context,merchant_invoice_number:'second-tab'})]);
+// Fresh in-flight reservations cannot be bypassed, even by a verified-ID list.
+await reject('SELECT reserve_custom_payment($1::jsonb)',[JSON.stringify({...context,verified_unpaid_payment_ids:[reservation]})]);
+// An old gateway attempt only stops blocking after a server-side status check.
+await db.query("UPDATE bkash_payments SET payment_id='abandoned-custom' WHERE id=$1",[reservation]);
+await reject('SELECT reserve_custom_payment($1::jsonb)',[JSON.stringify(context)]);
+const retried=(await db.query('SELECT reserve_custom_payment($1::jsonb) AS id',[JSON.stringify({...context,merchant_invoice_number:'retry',verified_unpaid_payment_ids:[reservation]})])).rows[0].id;
+check((await db.query('SELECT status FROM bkash_payments WHERE id=$1',[reservation])).rows[0].status,'initiated');
+await db.query("UPDATE bkash_payments SET status='cancelled' WHERE id=$1",[retried]);
+// A saved transaction still blocks a second payment, irrespective of an ID list.
+await db.query("UPDATE bkash_payments SET trx_id='settled-money' WHERE id=$1",[reservation]);
+await reject('SELECT reserve_custom_payment($1::jsonb)',[JSON.stringify({...context,verified_unpaid_payment_ids:[reservation]})]);
 await db.query("UPDATE bkash_payments SET status='cancelled' WHERE id=$1",[reservation]);
 checks++;
 await db.exec("INSERT INTO coupon_counter(code) VALUES('TEST');");

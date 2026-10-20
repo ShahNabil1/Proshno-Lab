@@ -6,6 +6,18 @@ import { fetchBrowserPage, mergePageWithSelection, type BrowserScope, type Brows
 const scope: BrowserScope = { classIds: [1], subjectIds: [2], chapterIds: [3], types: [], includeInactive: false };
 const filters: BrowserFilters = { search: "", type: null, chapterIds: [], topicIds: [], untopicedChapterIds: [], boards: [], year: "", schools: [], schoolYear: "", special: null };
 describe("session question page cache", () => {
+  it("fetches corrected questions once the cached page expires", async () => {
+    const rpc = vi.mocked(supabase.rpc);
+    const clock = vi.spyOn(Date, "now");
+    try {
+      clock.mockReturnValue(100_000);
+      rpc.mockResolvedValueOnce({ data: { rows: [{ id: 97399, question: "old" }], total: 1 }, error: null } as never);
+      await fetchBrowserPage(scope, filters, 1, "expired-page");
+      clock.mockReturnValue(130_001);
+      rpc.mockResolvedValueOnce({ data: { rows: [{ id: 97399, question: "corrected" }], total: 1 }, error: null } as never);
+      expect((await fetchBrowserPage<{question:string}>(scope, filters, 1, "expired-page")).rows[0].question).toBe("corrected");
+    } finally { clock.mockRestore(); }
+  });
   it("reuses loaded pages while separating accounts, pages and filters", async () => {
     const rpc = vi.mocked(supabase.rpc);
     rpc.mockResolvedValue({ data: { rows: [{ id: 7 }], total: 1 }, error: null } as never);

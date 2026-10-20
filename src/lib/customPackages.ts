@@ -73,8 +73,8 @@ export async function builderRpc<K extends keyof BuilderRpc>(name: K, args: Buil
 }
 
 export const defaultPricing = (level: string) => ({
-  normal_price: ["6", "7", "8"].includes(level) ? 299 : 449,
-  special_price: 490,
+  normal_price: 199,
+  special_price: 199,
   caps: ["6", "7", "8"].includes(level)
     ? { "2": 549, "3": 749, "4": 899 }
     : level === "9-10"

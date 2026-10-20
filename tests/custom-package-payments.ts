@@ -33,6 +33,7 @@ function setup(scenario:Scenario={}) {
    if(url.includes('/rpc/is_business_owner')) return scenario.ownerCheckFails ? respond({message:'Owner check failed'},500) : respond(scenario.ownerAllowed !== false);
    if(url.includes('/rpc/has_role')) return respond(true);
    if(url.includes('/coupons')) return respond({code:'TEST',is_active:true,expires_at:scenario.couponExpired?'2000-01-01':null,use_limit:10,used_count:0,min_purchase:0,discount_type:'fixed',discount_value:100,max_discount:null,applicable_packages:null});
+   if(url.includes('/bkash_payments') && url.includes('user_id=eq.')) return respond([]);
    if(url.includes('/bkash_payments') && scenario.worker && (!init?.method || init.method==='GET')) return respond([{...payment,selected_packages:[{id:1,class_name:'SSC',subject_name:'Bundle',subject_ids:[104,105]}],bkash_response:scenario.missingReceipt?null:receipt}]);
    if(url.endsWith('/functions/v1/notify-telegram')) return respond({ok:true});
    if(url.includes('/bkash_payments')) return init?.method==='PATCH' || init?.method==='POST' ? respond(null) : respond({...payment,status:scenario.completed?'completed':'initiated',bkash_response:scenario.missingReceipt?null:receipt,trx_id:scenario.completed?receipt.trxID:null,selected_packages:scenario.fixed?[{id:1,class_name:'SSC',subject_name:'Bundle',subject_ids:[104,105],duration_days:365}]:payment.selected_packages});

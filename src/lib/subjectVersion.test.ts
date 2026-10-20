@@ -21,6 +21,19 @@ const subjects = [
 ];
 
 describe("subject version grouping", () => {
+  it("includes SSC and HSC English-version subjects under their shared class levels", () => {
+    const liveClasses = [
+      { id: 11, name: "নবম-দশম শ্রেণি" },
+      { id: 31, name: "SSC (Eglish Version)" },
+      { id: 38, name: "একাদশ-দ্বাদশ" },
+      { id: 69, name: "HSC (Eglish Version)" },
+    ];
+    expect(getClassLevelKey(liveClasses[1].name)).toBe("9-10");
+    expect(getClassLevelKey(liveClasses[3].name)).toBe("11-12");
+    expect(getRelatedVersionClassIds(11, liveClasses)).toEqual([11, 31]);
+    expect(getRelatedVersionClassIds(38, liveClasses)).toEqual([38, 69]);
+    expect(getRelatedVersionClassIds(69, liveClasses)).toEqual([38, 69]);
+  });
   it("matches Bangla and English labels for the same class level", () => {
     expect(getClassLevelKey(classes[0].name)).toBe("9-10");
     expect(getClassLevelKey(classes[2].name)).toBe("9-10");

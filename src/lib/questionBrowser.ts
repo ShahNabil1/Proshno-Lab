@@ -23,9 +23,11 @@ export function mergePageWithSelection<T extends { id: number }>(
 ): T[] {
   return [...new Map([...cached.filter(q => selectedIds.has(q.id)), ...page].map(q => [q.id, q])).values()];
 }
-const pageCache = new Map<string, BrowserPage<unknown>>();
+type CachedPage = { data: BrowserPage<unknown>; expiresAt: number };
+const pageCache = new Map<string, CachedPage>();
 const pendingPages = new Map<string, Promise<BrowserPage<unknown>>>();
-const cachePrefix = "questionBrowserPage:v1:";
+const cachePrefix = "questionBrowserPage:v2:";
+const cacheLifetimeMs = 30_000;
 function pageCacheKey(scope: BrowserScope, filters: BrowserFilters, page: number, owner: string) {
   return cachePrefix + JSON.stringify([owner, scope, filters, page]);
 }
@@ -36,12 +38,17 @@ export function getCachedBrowserPage<T>(scope: BrowserScope, filters: BrowserFil
     try {
       const stored = sessionStorage.getItem(key);
       if (stored) {
-        const parsed = JSON.parse(stored) as BrowserPage<unknown>;
-        if (Array.isArray(parsed.rows) && typeof parsed.total === "number") cached = parsed;
+        const parsed = JSON.parse(stored) as CachedPage;
+        if (Array.isArray(parsed.data?.rows) && typeof parsed.data?.total === "number" && typeof parsed.expiresAt === "number") cached = parsed;
       }
     } catch { /* Storage can be unavailable; memory caching still works. */ }
   }
-  return (cached as BrowserPage<T>) || null;
+  if (!cached || cached.expiresAt <= Date.now()) {
+    pageCache.delete(key);
+    try { sessionStorage.removeItem(key); } catch { /* Storage may be unavailable. */ }
+    return null;
+  }
+  return cached.data as BrowserPage<T>;
 }
 export async function fetchBrowserPage<T>(scope: BrowserScope, filters: BrowserFilters, page: number, owner = ""): Promise<BrowserPage<T>> {
   // Cache only authenticated callers and keep each account's pages separate.
@@ -52,12 +59,13 @@ export async function fetchBrowserPage<T>(scope: BrowserScope, filters: BrowserF
   const pending = pendingPages.get(key);
   if (pending) return pending as Promise<BrowserPage<T>>;
   const request = requestBrowserPage<T>(scope, filters, page).then(result => {
-    pageCache.set(key, result);
+    const entry = { data: result, expiresAt: Date.now() + cacheLifetimeMs };
+    pageCache.set(key, entry);
     if (pageCache.size > 80) pageCache.delete(pageCache.keys().next().value!);
     try {
       const keys = Object.keys(sessionStorage).filter(item => item.startsWith(cachePrefix));
       if (keys.length >= 40) sessionStorage.removeItem(keys[0]);
-      sessionStorage.setItem(key, JSON.stringify(result));
+      sessionStorage.setItem(key, JSON.stringify(entry));
     } catch { /* Quota failures do not affect question browsing. */ }
     return result;
   }).finally(() => pendingPages.delete(key));

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Subscription from "./Subscription";
+import { MemoryRouter } from "react-router-dom";
 
 vi.mock("@/contexts/AuthContext",()=>{
   const user={id:"test-teacher"};
@@ -23,13 +24,14 @@ function choose(field:string,value:string) {
   fireEvent.click(screen.getByRole("radio",{name:value}));
 }
 async function fixed() {
-  render(<Subscription />);
+  render(<MemoryRouter><Subscription /></MemoryRouter>);
   fireEvent.click(await screen.findByRole("tab",{name:"রেডিমেড প্যাকেজ"}));
 }
 describe("compact subscription workspace",()=>{
   it("shows one workspace at a time instead of all package sections",async()=>{
-    render(<Subscription />);
-    expect(await screen.findByRole("tabpanel",{name:"নিজের প্যাকেজ"})).toBeVisible();
+    render(<MemoryRouter><Subscription /></MemoryRouter>);
+    expect(await screen.findByRole("tabpanel",{name:"প্যাকেজ ও মূল্য"})).toBeVisible();
+    expect(screen.getByRole("heading",{name:"১। শিক্ষক/টিউটর প্যাকেজ"})).toBeVisible();
     expect(screen.queryByRole("tabpanel",{name:"রেডিমেড প্যাকেজ"})).toBeNull();
     fireEvent.click(screen.getByRole("tab",{name:"আমার প্ল্যান"}));
     expect(screen.getByRole("tabpanel",{name:"আমার প্ল্যান"})).toBeVisible();

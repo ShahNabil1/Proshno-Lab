@@ -18,18 +18,8 @@ const BKASH_APP_SECRET = Deno.env.get("BKASH_APP_SECRET")!;
 const BKASH_USERNAME = Deno.env.get("BKASH_USERNAME")!;
 const BKASH_PASSWORD = Deno.env.get("BKASH_PASSWORD")!;
 
-async function notifyTelegram(payload: Record<string, unknown>) {
-  try {
-    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-telegram`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-      },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) { console.error("notifyTelegram failed", e); }
-}
+// All payment kinds enqueue Telegram events transactionally in the database.
+// Delivery and retries belong to payment-telegram-worker, including recovery.
 
 let cachedToken: { id_token: string; expires_at: number } | null = null;
 
@@ -130,18 +120,6 @@ Deno.serve(async (req) => {
         bkash_response: execData,
         error_message: msg,
       }).eq("id", paymentRow.id).eq("status", "initiated");
-      notifyTelegram({
-        event_type: "payment_failed",
-        title: "❌ পেমেন্ট Failed — bKash",
-        fields: [
-          { label: "👤 User", value: user.email },
-          { label: "🏫 Institute", value: paymentRow.institute_name },
-          { label: "💰 Amount", value: `৳${paymentRow.amount}` },
-          { label: "🆔 Payment ID", value: paymentRow.payment_id },
-          { label: "⚠️ Reason", value: msg },
-        ],
-        link: { label: "Admin → Subscriptions", url: "https://proshnolab.com/admin/subscriptions" },
-      });
       return json({ status: "failed", error: msg, details: execData }, 400);
     }
 
@@ -166,25 +144,9 @@ Deno.serve(async (req) => {
       return json({ status: "completed", trxID: execData.trxID, kind: "payg" });
     }
 
-    const selectedPkgs = paymentRow.selected_packages;
     const activated = await activateFixedPayment(admin, paymentRow, execData);
     if (!activated.ok) return json({ status: "activation_pending", error: "Payment received; access activation pending. Retry verification.", ...activated }, 503);
 
-    if (paymentRow.status !== "completed") notifyTelegram({
-      event_type: "payment_success",
-      title: "✅ পেমেন্ট Success — bKash",
-      fields: [
-        { label: "👤 Teacher", value: paymentRow.teacher_name || user.email },
-        { label: "📧 Email", value: user.email },
-        { label: "📱 Phone", value: paymentRow.phone },
-        { label: "🏫 Institute", value: paymentRow.institute_name },
-        { label: "💰 Amount", value: `৳${execData.amount}` },
-        { label: "🧾 TrxID", value: execData.trxID },
-        { label: "🎟️ Coupon", value: paymentRow.coupon_code || "—" },
-        { label: "📦 Packages", value: selectedPkgs.map((p: any) => `${p.class_name} — ${p.subject_name}`).join(" | ") },
-      ],
-      link: { label: "Admin → Subscriptions", url: "https://proshnolab.com/admin/subscriptions" },
-    });
 
     return json({ status: "completed", trxID: execData.trxID, amount: execData.amount });
   } catch (e: any) {

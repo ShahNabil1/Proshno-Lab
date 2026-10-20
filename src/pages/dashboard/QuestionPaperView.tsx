@@ -1,4 +1,6 @@
 import { normalizeQuestionReferenceSettings } from "@/lib/questionReferenceSettings";
+import { usePaperInlineEdits } from "@/hooks/usePaperInlineEdits";
+import type { PaperInlineEdits } from "@/lib/paperInlineEdits";
 import PaperLoading from "@/components/paper/PaperLoading";
 import PaperFontPicker from "@/components/paper/PaperFontPicker";
 import { paperFontFamily } from "@/lib/paperFonts";
@@ -285,6 +287,9 @@ export default function QuestionPaperView() {
   const [meta, setMeta] = useState<PaperMeta | null>(null);
   const autoSaveInFlight = useRef(false);
   const [currentPaperId, setCurrentPaperId] = useState<string | null>(null);
+  const [cloudSaveState, setCloudSaveState] = useState<"pending" | "saving" | "saved" | "error">("pending");
+  const cloudSaveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestCloudSave = useRef<(() => Promise<unknown>) | null>(null);
   const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
@@ -304,6 +309,7 @@ export default function QuestionPaperView() {
 
   // Settings
   const [settings, setSettings] = useState({
+    inlineEdits: {} as PaperInlineEdits,
     showAnswerSheet: false,
     showChirkutAnswer: false,
     chirkutHideQuestions: false,
@@ -471,6 +477,7 @@ export default function QuestionPaperView() {
           ?? (isEnglishPaperMeta(parsedMeta) ? "en-padded-dot" : "bn-padded-danda"),
         textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(parsedMeta.subjectName || "") ? "left" : "justify",
         ...restoredSettings,
+        inlineEdits: restoredSettings.inlineEdits && typeof restoredSettings.inlineEdits === "object" ? restoredSettings.inlineEdits : {},
         ...normalizeQuestionReferenceSettings(restoredSettings),
         showChapterName: parsedMeta.chapterNames.length === 1,
       }));
@@ -506,6 +513,7 @@ export default function QuestionPaperView() {
               ?? (isEnglishPaperMeta(loadedMeta) ? "en-padded-dot" : "bn-padded-danda"),
             textAlign: /\u0997\u09a3\u09bf\u09a4|math/i.test(loadedMeta.subjectName || "") ? "left" : "justify",
             ...loadedSettings,
+            inlineEdits: loadedSettings.inlineEdits && typeof loadedSettings.inlineEdits === "object" ? loadedSettings.inlineEdits : {},
             ...normalizeQuestionReferenceSettings(loadedSettings),
             showChapterName: loadedMeta.chapterNames.length === 1,
           }));
@@ -622,14 +630,21 @@ export default function QuestionPaperView() {
     toast.info("MCQ নির্বাচন করা হয়েছে—4x1, 2x2 বা 1x4 বেছে নিন");
   }, [questions]);
 
+  const updateInlineEdits = useCallback((inlineEdits: PaperInlineEdits) => {
+    setSettings(previous => ({ ...previous, inlineEdits }));
+  }, []);
+  const editRenderKey = useMemo(() => [settings, questions, meta, editingMode], [settings, questions, meta, editingMode]);
+  const captureInlineEdits = usePaperInlineEdits(paperRef, activeEditEl, settings.inlineEdits, updateInlineEdits, editRenderKey);
+
   const handleCloseToolbar = useCallback(() => {
+    captureInlineEdits();
     if (activeEditEl) {
       activeEditEl.contentEditable = "false";
     }
     setActiveEditEl(null);
     setActiveQuestionId(null);
     if (activeEditEl) setPaginationRevision(value => value + 1);
-  }, [activeEditEl]);
+  }, [activeEditEl, captureInlineEdits]);
 
   const handleMcqOptionAdjustChange = useCallback((enabled: boolean) => {
     setMcqOptionAdjusting(enabled);
@@ -874,7 +889,7 @@ export default function QuestionPaperView() {
 
   // Every newly generated paper is saved once, regardless of cloud-backup preferences.
   useEffect(() => {
-    if (!user || !meta || !questions.length || currentPaperId || autoSaveInFlight.current) return;
+    if (paperLoading || !user || !meta || !questions.length || currentPaperId || autoSaveInFlight.current) return;
     if (new URLSearchParams(window.location.search).has("paper_id")) return;
     const timer = window.setTimeout(async () => {
       if (autoSaveInFlight.current) return;
@@ -904,7 +919,49 @@ export default function QuestionPaperView() {
       }
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [user, meta, questions, settings, currentPaperId]);
+  }, [user, meta, questions, settings, currentPaperId, paperLoading]);
+
+  const persistPaperChanges = useCallback((paperSettings = settings) => {
+    if (!user || !meta || !currentPaperId || paperLoading) return Promise.resolve(false);
+    const owner = user.id, id = currentPaperId;
+    const payload = {
+      institution_name: meta.instituteName || "", exam_name: meta.programName || "",
+      class_name: meta.className || "", subject_name: meta.subjectName || "",
+      chapter_names: meta.chapterNames || [], question_ids: questions.map(q => q.id),
+      meta: meta as any, settings: paperSettings as any,
+    };
+    // Serialize writes so a slow older request cannot overwrite a newer edit.
+    cloudSaveQueue.current = cloudSaveQueue.current.catch(() => {}).then(async () => {
+      setCloudSaveState("saving");
+      const { error } = await supabase.from("saved_papers").update(payload)
+        .eq("id", id).eq("teacher_id", owner).select("id").single();
+      if (error) { setCloudSaveState("error"); return false; }
+      setCloudSaveState("saved"); return true;
+    }).catch(() => { setCloudSaveState("error"); return false; });
+    return cloudSaveQueue.current;
+  }, [user?.id, meta, currentPaperId, paperLoading, questions, settings]);
+
+  useEffect(() => {
+    if (paperLoading || !meta || !questions.length) return;
+    // Keep the same edited draft on refresh and while adding more questions.
+    sessionStorage.setItem("viewPaperQuestions", JSON.stringify(questions));
+    sessionStorage.setItem("viewPaperMeta", JSON.stringify(meta));
+    sessionStorage.setItem("viewPaperSettings", JSON.stringify(settings));
+    if (!currentPaperId) return;
+    setCloudSaveState("pending");
+    latestCloudSave.current = () => persistPaperChanges();
+    const timer = window.setTimeout(() => { void persistPaperChanges(); }, 700);
+    return () => window.clearTimeout(timer);
+  }, [paperLoading, meta, questions, settings, currentPaperId, persistPaperChanges]);
+
+  useEffect(() => () => { void latestCloudSave.current?.(); }, []);
+
+  const handleSaveEdits = async () => {
+    const inlineEdits = captureInlineEdits();
+    const saved = await persistPaperChanges({ ...settings, inlineEdits });
+    if (saved) toast.success("এডিটসহ প্রশ্নপত্র আমার প্রশ্ন-এ সেভ হয়েছে।");
+    else toast.error("সেভ হয়নি। সংযোগ পরীক্ষা করে আবার সেভ করুন।");
+  };
   /* Sort questions by type priority: MCQ(1) → Short(2) → CQ(3) → Descriptive(4) */
   const typePriority: Record<string, number> = { mcq: 1, short: 2, cq: 3, descriptive: 4 };
   const sortedQuestions = [...questions].sort(
@@ -2239,6 +2296,14 @@ export default function QuestionPaperView() {
         @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; }
       `}</style>
       <div className="paper-preview-scroll overflow-y-auto xl:h-[calc(100vh-80px)] bg-[#eef1f4]">
+        <div className="paper-save-controls mb-3 flex flex-wrap items-center justify-end gap-3 print:hidden" role="status">
+          <span className={`text-xs ${cloudSaveState === "error" ? "text-red-700" : "text-slate-600"}`}>
+            {cloudSaveState === "saved" ? "এডিটসহ আমার প্রশ্ন-এ সেভ হয়েছে" : cloudSaveState === "error" ? "সেভ হয়নি — আবার চেষ্টা করুন" : "সেভ হচ্ছে…"}
+          </span>
+          <Button size="sm" variant="outline" onClick={handleSaveEdits} disabled={!currentPaperId || cloudSaveState === "saving" || paperLoading}>
+            <Save className="mr-1 h-4 w-4" /> সেভ করুন
+          </Button>
+        </div>
         {!isMobile && (
           <div className="paper-quick-settings mb-4 mx-auto" style={{ maxWidth: previewPaperWidth }}>
             <div className="paper-quick-settings-title">কুইক সেটিংস</div>
@@ -2300,7 +2365,7 @@ export default function QuestionPaperView() {
           <Alert className="mb-4 border-[#ccd8e6] bg-[#eef3f9] text-[#0c2340]">
             <Pencil className="h-4 w-4 text-[#102E56]" />
             <AlertDescription className="text-xs" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
-              এডিটিং মোড অন করা হয়েছে। আপনি এখন সরাসরি প্রশ্নে ক্লিক করে যেকোনো লেখা পরিবর্তন করতে পারবেন। মনে রাখবেন, এই পরিবর্তনগুলো ডাটাবেসে সেভ হবে না। তাই এডিট শেষ করে প্রশ্নটি অবশ্যই ডাউনলোড করে নিন।
+              প্রশ্নে ক্লিক করে লেখা পরিবর্তন করুন। এডিটসহ প্রশ্নপত্র আপনার “আমার প্রশ্ন”-এ অটো সেভ হবে; পরে আবার খুলে এডিট করতে পারবেন।
             </AlertDescription>
           </Alert>
         )}

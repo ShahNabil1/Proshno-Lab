@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PricingPage from "@/pages/PricingPage";
 import CustomPackageBuilder from "@/components/CustomPackageBuilder";
 import PackagePicker from "@/components/packages/PackagePicker";
 import PackageCheckoutDialog from "@/components/packages/PackageCheckoutDialog";
@@ -20,7 +21,7 @@ const bn=(n:number)=>n.toLocaleString("bn-BD");
 const money=(n:number)=>`৳${bn(n)}`;
 const daysLeft=(end:string)=>Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/86400000));
 const date=(value:string)=>new Date(value).toLocaleDateString("bn-BD",{day:"numeric",month:"short",year:"numeric"});
-type View="custom"|"fixed"|"plans";
+type View="pricing"|"custom"|"fixed"|"plans";
 
 export default function Subscription() {
   const {user}=useAuth();
@@ -28,7 +29,7 @@ export default function Subscription() {
   const [packages,setPackages]=useState<PricingPkg[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
-  const [view,setView]=useState<View>("custom");
+  const [view,setView]=useState<View>("pricing");
   const [version,setVersion]=useState("bangla");
   const [kind,setKind]=useState("class");
   const [className,setClassName]=useState("");
@@ -74,10 +75,11 @@ export default function Subscription() {
       <div><h1 className="flex items-center gap-2 font-heading text-xl font-bold"><Crown className="h-5 w-5 text-[#00B4BC]" />আমার সাবস্ক্রিপশন</h1><p className="mt-1 text-xs text-white/70">শ্রেণি ও বিষয় বেছে আপনার প্রয়োজনের প্যাকেজ নিন</p></div>
       <button className="rounded-lg border border-white/20 px-3 py-2 text-xs hover:bg-white/10" onClick={()=>setView("plans")}>{activeSubs.length?`${bn(activeSubs.length)}টি সক্রিয় প্ল্যান` : "কোনো সক্রিয় প্ল্যান নেই"}</button>
     </div>
-    <div role="tablist" aria-label="প্যাকেজের ধরন" className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
-      {([{id:"custom",label:"নিজের প্যাকেজ"},{id:"fixed",label:"রেডিমেড প্যাকেজ"},{id:"plans",label:"আমার প্ল্যান"}] as const).map(t=><button key={t.id} id={`subscription-tab-${t.id}`} role="tab" aria-selected={view===t.id} aria-controls={`subscription-panel-${t.id}`} tabIndex={view===t.id?0:-1} onClick={()=>setView(t.id)} onKeyDown={e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();const tabs:View[]=["custom","fixed","plans"];const next=tabs[(tabs.indexOf(view)+(e.key==="ArrowRight"?1:2))%3];setView(next);document.getElementById(`subscription-tab-${next}`)?.focus();}}} className={`min-h-11 rounded-lg px-2 text-sm font-semibold transition-colors ${view===t.id?"bg-white text-[#0A1E38] shadow-sm":"text-slate-500 hover:text-slate-800"}`}>{t.label}</button>)}
+    <div role="tablist" aria-label="প্যাকেজের ধরন" className="grid grid-cols-2 gap-1 sm:grid-cols-4 rounded-xl bg-slate-100 p-1">
+      {([{id:"pricing",label:"প্যাকেজ ও মূল্য"},{id:"custom",label:"নিজের প্যাকেজ"},{id:"fixed",label:"রেডিমেড প্যাকেজ"},{id:"plans",label:"আমার প্ল্যান"}] as const).map(t=><button key={t.id} id={`subscription-tab-${t.id}`} role="tab" aria-selected={view===t.id} aria-controls={`subscription-panel-${t.id}`} tabIndex={view===t.id?0:-1} onClick={()=>setView(t.id)} onKeyDown={e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();const tabs:View[]=["pricing","custom","fixed","plans"];const next=tabs[(tabs.indexOf(view)+(e.key==="ArrowRight"?1:3))%4];setView(next);document.getElementById(`subscription-tab-${next}`)?.focus();}}} className={`min-h-11 rounded-lg px-2 text-sm font-semibold transition-colors ${view===t.id?"bg-white text-[#0A1E38] shadow-sm":"text-slate-500 hover:text-slate-800"}`}>{t.label}</button>)}
     </div>
     {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+    {view==="pricing" && <div role="tabpanel" id="subscription-panel-pricing" aria-labelledby="subscription-tab-pricing"><PricingPage embedded /></div>}
     <div role="tabpanel" id="subscription-panel-custom" aria-labelledby="subscription-tab-custom" hidden={view!=="custom"}><CustomPackageBuilder /></div>
     <div role="tabpanel" id="subscription-panel-fixed" aria-labelledby="subscription-tab-fixed" hidden={view!=="fixed"}>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">

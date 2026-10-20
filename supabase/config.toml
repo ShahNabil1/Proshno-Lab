@@ -13,3 +13,11 @@ verify_jwt = false
 # Private scheduler token or service-role authorization is checked inside the worker.
 [functions.payment-access-reconcile]
 verify_jwt = false
+
+# Only the private scheduler credential or service-role key can drain this queue.
+[functions.payment-telegram-worker]
+verify_jwt = false
+
+# User JWT plus an explicit business-owner check inside the function.
+[functions.admin-subscription-sms]
+verify_jwt = true

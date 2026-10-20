@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_sms_gateway DROP CONSTRAINT admin_sms_gateway_provider_check; ALTER TABLE public.admin_sms_gateway ADD CONSTRAINT admin_sms_gateway_provider_check CHECK (provider IN ('bulksmsbd','bulksmsdhaka')); ALTER TABLE public.admin_sms_gateway ALTER COLUMN provider SET DEFAULT 'bulksmsdhaka';

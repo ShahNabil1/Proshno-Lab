@@ -4,6 +4,7 @@ import { normalizeAnswerKey } from "@/lib/answerKey";
 import { languagePasteVariants } from "@/lib/languagePasteGuides";
 import { ENGLISH_FIRST_MCQ } from "@/lib/englishFirstTemplates";
 import { splitChapterSections } from "@/lib/bulkChapterRouting";
+import { cleanCqStem } from "@/lib/cleanCqStem";
 
 export type QType = string;
 
@@ -271,9 +272,9 @@ function rowToQuestion(r: any[], type: QType, isMath = false): ParsedQuestion {
     const agh = isMath ? "" : cells[8];
     const [img, expl, boardRefs, uniRefs] = [rest[0] || "", rest[1] || "", rest[2] || "", rest[3] || ""];
     const imgTag = wrapImg(img);
-    const finalStem = [stem, imgTag].filter(Boolean).join("\n");
+    const finalStem = cleanCqStem([stem, imgTag].filter(Boolean).join("\n"), { q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: qgh });
     q.stimulus = finalStem || undefined;
-    q.question = (stem || qk).slice(0, 100);
+    q.question = (finalStem || qk).slice(0, 100);
     q.creative_data = isMath
       ? { is_math: true, stem: finalStem, q_ka: qk, q_kha: qkh, q_ga: qg, ans_ka: ak, ans_kha: akh, ans_ga: ag }
       : {
@@ -493,8 +494,8 @@ function blockToQuestion(block: string, type: QType, isMath: boolean): ParsedQue
   }
 
   if (type === "cq") {
-    const stem = [multiline(f.stimulus || "") || leadText, img].filter(Boolean).join("\n");
     const qk = multiline(opts.a || ""), qkh = multiline(opts.b || ""), qg = multiline(opts.c || ""), qgh = multiline(opts.d || "");
+    const stem = cleanCqStem([multiline(f.stimulus || "") || leadText, img].filter(Boolean).join("\n"), { q_ka: qk, q_kha: qkh, q_ga: qg, q_gha: isMath ? "" : qgh });
     q.stimulus = stem || undefined;
     q.question = (stripTags(stem) || stripTags(qk)).trim().slice(0, 100);
     // গণিত/উচ্চতর গণিত: সবসময় ৩ প্রশ্নের (ক/খ/গ) ফরম্যাট — ভুলে ঘ) দেওয়া থাকলে সেটি উপেক্ষা করা হয়
@@ -632,6 +633,14 @@ export function toDbPayload(q: ParsedQuestion, ctx: {
     p.explanation = q.explanation || null;
   } else if (q.type === "cq" || q.type === "descriptive") {
     p.creative_data = q.creative_data || {};
+    if (q.type === "cq") {
+      const stem = cleanCqStem(p.creative_data.stem || "", p.creative_data);
+      if (stem !== p.creative_data.stem) {
+        p.creative_data = { ...p.creative_data, stem };
+        p.stimulus_text = cleanCqStem(q.stimulus || "", q.creative_data);
+        p.question = stripTags(stem).trim().slice(0, 100) || "প্রশ্ন";
+      }
+    }
     p.explanation = q.explanation || null;
   } else if ((q.type === "short" || isLanguageType(q.type))) {
     p.explanation = q.explanation || null;

@@ -47,6 +47,7 @@ export default function DashboardHome() {
   const [recentQuestions, setRecentQuestions] = useState<any[]>([]);
   const [institute, setInstitute] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -139,6 +140,7 @@ export default function DashboardHome() {
       .limit(20)
       .then(({ data }) => {
         const rows = isNoPackagePreview(user.id) ? [] : data || [];
+        setSubscriptionLoaded(true);
         setSubscription(
           rows.find((s) => isSubscriptionActive(s)) ??
           rows.find((s) => s.status === "active") ??
@@ -160,9 +162,7 @@ export default function DashboardHome() {
   }, [user]);
 
 
-  const isSubActive =
-    subscription?.status === "active" ||
-    (subscription && isSubscriptionActive(subscription));
+  const isSubActive = Boolean(subscription && isSubscriptionActive(subscription));
 
   const shortcuts = [
     { to: "/dashboard/smartboard", label: "স্মার্টবোর্ড", icon: Tv },
@@ -190,6 +190,11 @@ export default function DashboardHome() {
         </div>
         <Link to="/dashboard/institute" className={`rounded-lg border border-white/25 bg-white/5 px-4 py-2 text-sm text-white transition-colors hover:bg-white/15 ${focusStyle}`}>প্রতিষ্ঠান সেটিংস</Link>
       </section>
+
+      {subscriptionLoaded && !isSubActive && <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#00B4BC]/30 bg-[#00B4BC]/5 p-5">
+        <div><h2 className="font-heading text-lg font-bold">আপনার প্রয়োজনের প্যাকেজ বেছে নিন</h2><p className="mt-1 text-sm text-zinc-600">শ্রেণি ও বিষয় অনুযায়ী মূল্য তুলনা করুন। চাইলে আগে ফ্রি প্রশ্ন তৈরি করে দেখুন।</p></div>
+        <Link to="/dashboard/subscription" className="rounded-lg bg-[#00B4BC] px-5 py-3 text-sm font-semibold text-[#07162b] hover:bg-[#2ac8ce]">প্যাকেজ ও মূল্য দেখুন →</Link>
+      </section>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
