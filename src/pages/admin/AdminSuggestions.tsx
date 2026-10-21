@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Plus, Trash2, ArrowUp, ArrowDown, Edit, Eye, FileText, Search } from "lucide-react";
 import LatexRenderer from "@/components/LatexRenderer";
 import { sortClasses, sortChapters } from "@/lib/classOrder";
@@ -167,11 +167,11 @@ export default function AdminSuggestions() {
 
   const handleSave = async () => {
     if (!title.trim() || !classId || !subjectId) {
-      toast({ title: "শিরোনাম, শ্রেণী ও বিষয় আবশ্যক", variant: "destructive" });
+      toast.error("শিরোনাম, শ্রেণী ও বিষয় আবশ্যক");
       return;
     }
     if (selectedQuestionIds.length === 0) {
-      toast({ title: "অন্তত একটি প্রশ্ন যোগ করুন", variant: "destructive" });
+      toast.error("অন্তত একটি প্রশ্ন যোগ করুন");
       return;
     }
 
@@ -187,11 +187,11 @@ export default function AdminSuggestions() {
 
     if (editing) {
       const { error } = await supabase.from("suggestions").update(payload).eq("id", editing.id);
-      if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+      if (error) { toast.error("আপডেট ব্যর্থ", { description: error.message }); return; }
       suggestionId = editing.id;
     } else {
       const { data, error } = await supabase.from("suggestions").insert(payload).select("id").single();
-      if (error) { toast({ title: "তৈরি ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+      if (error) { toast.error("তৈরি ব্যর্থ", { description: error.message }); return; }
       suggestionId = data.id;
     }
 
@@ -203,14 +203,14 @@ export default function AdminSuggestions() {
       );
     }
 
-    toast({ title: editing ? "সাজেশন আপডেট হয়েছে" : "সাজেশন তৈরি হয়েছে" });
+    toast.success(editing ? "সাজেশন আপডেট হয়েছে" : "সাজেশন তৈরি হয়েছে");
     setDialogOpen(false);
     fetchAll();
   };
 
   const handleDelete = async (id: number) => {
     await supabase.from("suggestions").delete().eq("id", id);
-    toast({ title: "সাজেশন মুছে ফেলা হয়েছে" });
+    toast.success("সাজেশন মুছে ফেলা হয়েছে");
     fetchAll();
   };
 
