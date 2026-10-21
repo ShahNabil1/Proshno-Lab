@@ -2134,7 +2134,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
           <div className="p-3 space-y-1">
             {[...EXAM_NAME_OPTIONS, "custom"].map(name => {
               const selected = name === "custom" ? customExamName : !customExamName && form.programName === name;
-              return <button type="button" key={name} onClick={() => { setCustomExamName(name === "custom"); setForm(previous => ({ ...previous, programName: name === "custom" ? "" : name })); }} className={`w-full flex items-center gap-3 rounded-[4px] px-3 py-3 text-left text-base ${selected ? "bg-[#0A1E38]/5 text-[#0A1E38] font-bold" : "hover:bg-slate-100 text-slate-700"}`}>
+              return <button type="button" key={name} onClick={() => { setCustomExamName(name === "custom"); setForm(previous => ({ ...previous, programName: name === "custom" ? "" : name })); }} className={`w-full flex items-center gap-3 rounded-[4px] px-3 py-3 text-left text-base ${name === "custom" ? `!mt-3 border-2 font-bold shadow-sm ${selected ? "border-[#00858C] bg-teal-100 text-teal-950 ring-2 ring-teal-500/15" : "border-teal-300 bg-teal-50 text-teal-900 hover:border-teal-500 hover:bg-teal-100"}` : selected ? "bg-[#0A1E38]/5 text-[#0A1E38] font-bold" : "hover:bg-slate-100 text-slate-700"}`}>
                 <span className={`h-4 w-4 shrink-0 rounded-[3px] border flex items-center justify-center ${selected ? "bg-black border-black text-white" : "bg-white border-slate-400"}`}>{selected && <CheckCheck className="h-3 w-3" />}</span>
                 {name === "custom" ? "নিজে পরীক্ষার নাম লিখুন" : name}
               </button>;
