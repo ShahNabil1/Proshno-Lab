@@ -260,20 +260,19 @@ export default function InlineCheckout({ selectedPackages, onRemove, onClearAll 
 
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 text-center">
           <p className="font-heading font-bold text-primary text-sm mb-1">
-            হোয়াটসঅ্যাপে যোগাযোগ করে প্যাকেজ নেয়ার জন্য নিচের বাটনে ক্লিক করুন।
+            নগদ, রকেট, কার্ড বা অন্য মাধ্যমে পেমেন্ট?
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            (আমি প্যাকেজের বিস্তারিত পড়েছি এবং{" "}
-            <Link to="/terms" className="text-primary hover:underline">শর্তাবলীতে</Link> সম্মত হয়েছি)
+            নির্বাচিত প্যাকেজের তথ্যসহ WhatsApp-এ যোগাযোগ করুন। পেমেন্টের নির্দেশনা ও যাচাইয়ের পর প্যাকেজ সক্রিয় করা হবে।
           </p>
-          <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white border-0 font-heading rounded-xl h-11 px-8" asChild>
+          <Button className="w-full bg-[#128C7E] hover:bg-[#0c7165] text-white border-0 font-heading rounded-xl min-h-11 h-auto whitespace-normal px-4 py-3" asChild>
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`আমি ${selectedPackages.map(p => `${p.class_name} - ${p.subject_name}`).join(", ")} প্যাকেজ কিনতে চাই।`)}`}
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`নগদ, রকেট, কার্ড বা অন্য মাধ্যমে পেমেন্ট করতে চাই।\nপ্যাকেজ: ${selectedPackages.map(p => `${p.class_name} - ${p.subject_name} (৳${p.price})`).join(", ")}\nমোট মূল্য: ৳${totalPackagePrice}${couponApplied ? `\nকুপন: ${coupon.toUpperCase()} — ছাড় ৳${discount}` : ""}\nপ্রদেয়: ৳${totalPrice}\nপেমেন্টের পদ্ধতি ও নির্দেশনা জানাবেন।`)}`}
               target="_blank"
               rel="noopener noreferrer"
             >
               <WhatsAppIcon />
-              WhatsApp এ যোগাযোগ করুন
+              অন্য মাধ্যমে পেমেন্ট — WhatsApp
             </a>
           </Button>
         </div>
