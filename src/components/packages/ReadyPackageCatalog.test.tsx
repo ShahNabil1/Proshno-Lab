@@ -12,7 +12,8 @@ afterEach(cleanup);
 
 it("shows authoritative subject prices instead of the obsolete 249 taka fallback", async () => {
   render(<ReadyPackageCatalog packages={[]} selected={new Set()} onSelect={vi.fn()} />);
-  const teacherTable = screen.getAllByRole("table")[0];
+  expect(screen.getAllByRole("heading", { level: 2 })[0]).toHaveTextContent("১। কোচিং সেন্টার/বড় প্রতিষ্ঠান প্যাকেজ");
+  const teacherTable = within(screen.getByRole("heading", { name: /শিক্ষক\/টিউটর প্যাকেজ/ }).closest("section")!).getByRole("table");
   const sixth = within(teacherTable).getByRole("row", { name: /ষষ্ঠ/ });
   const higher = within(teacherTable).getByRole("row", { name: /একাদশ/ });
   await waitFor(() => expect(within(sixth).getByText("২৯৯/-")).toBeVisible());
