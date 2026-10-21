@@ -51,8 +51,8 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
       <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", headerBg)}>
         <div className="container flex items-center justify-between gap-2 h-16 lg:h-[76px]">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2 lg:gap-3 group min-w-0 flex-1">
-            <span className="lg:hidden"><BrandLockup size={30} /></span>
+          <Link to="/" className="flex items-center gap-2 lg:gap-3 group shrink-0 lg:flex-1">
+            <span className="lg:hidden"><BrandLockup size={24} /></span>
             <span className="hidden lg:inline-flex"><BrandLockup size={40} /></span>
           </Link>
 
@@ -81,7 +81,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
           {/* Right side */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="lg:hidden inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-lg border border-teal-300/40 bg-[#00B4BC] px-2.5 text-[13px] font-bold text-[#07162b] hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">প্যাকেজ ও মূল্য</Link>
+            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="lg:hidden inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-lg border border-teal-300/40 bg-[#00B4BC] px-2.5 text-[13px] font-bold text-[#07162b] hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="প্যাকেজ ও মূল্য">প্যাকেজ</Link>
             {user ? (
               <>
                 <Link to="/dashboard">
@@ -99,7 +99,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
+                  className="hidden sm:inline-flex h-9 w-9 text-white/70 hover:text-white hover:bg-white/10"
                   onClick={signOut}
                   aria-label="Logout"
                 >
@@ -107,13 +107,13 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
                 </Button>
               </>
             ) : (
-              <Link to="/login">
+              <Link to="/login" aria-label="লগইন">
                 <Button
                   size="sm"
                   className="bg-white text-[#0A1E38] hover:bg-slate-100 border-0 font-heading font-bold px-3 sm:px-5 h-9 sm:h-10 rounded-lg gap-1.5 sm:gap-2 shadow-sm text-[13px] sm:text-sm"
                 >
                   <User className="w-4 h-4 shrink-0" />
-                  লগইন
+                  <span className="hidden min-[400px]:inline">লগইন</span>
                 </Button>
               </Link>
             )}
@@ -175,7 +175,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
               <ul className="space-y-2.5 text-sm">
                 <li><Link to="/" className="text-white/80 hover:text-white transition-colors">হোম</Link></li>
                 <li><Link to="/dashboard/create?mode=auto" className="text-white/80 hover:text-white transition-colors">অটো প্রশ্ন তৈরি</Link></li>
-                <li><Link to="/pricing" className="text-white/80 hover:text-white transition-colors">প্যাকেজ ও মূল্য</Link></li>
+                <li><Link to="/pricing" className="text-white/80 hover:text-white transition-colors" aria-label="প্যাকেজ ও মূল্য">প্যাকেজ</Link></li>
                 <li><Link to="/helpline" className="text-white/80 hover:text-white transition-colors">হেল্পলাইন</Link></li>
               </ul>
             </div>
