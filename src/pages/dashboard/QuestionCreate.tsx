@@ -4,6 +4,7 @@ import { analytics } from "@/lib/analytics";
 import { getCachedBrowserPage, fetchBrowserPage, fetchBrowserGroups, mergePageWithSelection, type BrowserScope, type BrowserPage, type BrowserFilters } from "@/lib/questionBrowser";
 import { fetchQuestionPages } from "@/lib/fetchQuestionPages";
 import { getQuestionDuplicateSignature } from "@/lib/questionDuplicates";
+import { addToPaperForm } from "@/lib/addToPaperContext";
 import { createPortal } from "react-dom";
 import { englishBlocks } from '@/lib/englishFirstBuilder';
 import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
@@ -224,6 +225,8 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   const addToPaper = searchParams.get("add_to_paper") === "true";
   const draftKey = `questionCreateDraft:v2:${addToPaper ? "add" : "manual"}`;
   const [draft] = useState<any>(() => {
+    // Add mode always starts from the current paper, never an older add-session draft.
+    if (addToPaper) return null;
     try {
       const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");
       return saved && (!user || saved.owner === user.id) ? saved : null;
@@ -347,21 +350,23 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   useEffect(() => {
     if (addToPaper) {
       const raw = sessionStorage.getItem("existingPaperQuestions");
-      if (raw) {
-        const ids = (JSON.parse(raw) as QuestionRow[]).map(q => q.id);
+      const parsedExisting=raw ? JSON.parse(raw) : [];
+      const existing=Array.isArray(parsedExisting)?parsedExisting:[];
+      if (Array.isArray(existing)) {
+        const ids = (existing as QuestionRow[]).map(q => q.id);
         setExistingQuestionIds(new Set(ids));
       }
       // Auto-fill form from context and skip to question list
       const ctxRaw = sessionStorage.getItem("existingPaperContext");
-      if (ctxRaw && !autoSkipDone) {
-        const ctx = JSON.parse(ctxRaw);
+      if ((ctxRaw || existing.length) && !autoSkipDone) {
+        const ctx = (ctxRaw ? JSON.parse(ctxRaw) : null) || {};
+        const meta = JSON.parse(sessionStorage.getItem("existingPaperMeta") || "{}") || {};
         setForm(prev => ({
           ...prev,
-          classId: ctx.classId || "",
-          subjectId: ctx.subjectId || "",
-          chapterIds: ctx.chapterIds || [],
-          type: "all",
+          ...addToPaperForm(ctx,meta,existing),
         }));
+        setStep("form");
+        setRemoteScope(null);setRemotePage(null);setQuestions([]);setSelectedIds(new Set());
         setAutoSkipDone(true);
       }
     }
@@ -656,7 +661,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   };
 
   const handleCreateQuestionSet = async () => {
-    if (!form.programName.trim()) {
+    if (!addToPaper && !form.programName.trim()) {
       toast.error("পরীক্ষার ধরন নির্বাচন করুন");
       setExamModalOpen(true);
       return;
