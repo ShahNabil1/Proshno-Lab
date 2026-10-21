@@ -1,3 +1,4 @@
+import { questionHasCorruptedText, corruptedQuestionFields, questionBodyHasCorruptedText, questionHasOnlyCorruptedAnswers } from "@/lib/questionEncoding";
 import { PATTERN_CHAPTER_PREFIX, patternChapterName, ensurePatternChapter } from "@/lib/languagePatternChapters";
 import LanguageQuestionForm from "@/components/LanguageQuestionForm";
 import { ALL_TYPES, BASE_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, suggestedLanguageTopics, languageRules } from "@/lib/languageQuestionTypes";
@@ -33,6 +34,9 @@ const typeOptions = ALL_TYPES;
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200, 300, 500];
 const PAGE_SIZE_STORAGE_KEY = "admin_questions_page_size_v2";
 const SPECIAL_FILTER_OPTIONS = [
+  { id: "corrupted_question", label: "বিকৃত প্রশ্ন/অপশন — ডিলিটের জন্য" },
+  { id: "corrupted_answers_only", label: "প্রশ্ন ঠিক, উত্তর/ব্যাখ্যা বিকৃত — রাখুন" },
+  { id: "corrupted_text", label: "বিকৃত লেখা (Encoding সমস্যা)" },
   { id: "incomplete_cq_answers", label: "\u0985\u09b8\u09ae\u09cd\u09aa\u09c2\u09b0\u09cd\u09a3 \u0989\u09a4\u09cd\u09a4\u09b0 \u09b8\u09c3\u099c\u09a8\u09b6\u09c0\u09b2" },
   { id: "no_answer", label: "উত্তর ছাড়া প্রশ্ন" },
   { id: "no_explanation", label: "ব্যাখ্যা ছাড়া MCQ ও সংক্ষিপ্ত প্রশ্ন" },
@@ -63,6 +67,9 @@ const questionLatexIssueDetails = (question: any) => {
 const questionHasLatexIssues = (question: any) => questionLatexIssueDetails(question).length > 0;
 
 const specialFilterMatches = (question: any, filter: string) => {
+  if (filter === "corrupted_question") return questionBodyHasCorruptedText(question);
+  if (filter === "corrupted_answers_only") return questionHasOnlyCorruptedAnswers(question);
+  if (filter === "corrupted_text") return questionHasCorruptedText(question);
   if (filter === "incomplete_cq_answers") return questionHasIncompleteCqAnswers(question);
   const text = `${question.question || ""} ${question.option_a || ""} ${question.option_b || ""} ${question.option_c || ""} ${question.option_d || ""} ${question.stimulus_text || ""}`;
   const mathPattern = /\$.*?\$|\\frac|\\sqrt|\\sum|\\int|\\\[|\\\]|\\\(|\\\)|\\times|\\div|\\pm|\\leq|\\geq|\\neq|\\alpha|\\beta|\\theta|\\pi/i;
@@ -973,6 +980,14 @@ export default function AdminQuestions() {
         </div>
       </div>
 
+      {filterSpecial.startsWith("corrupted_") && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+        <p className="text-sm text-amber-950">প্রশ্ন/উদ্দীপক/অপশন বিকৃত থাকলেই ডিলিটের তালিকায় যাবে। প্রশ্ন ঠিক থাকলে শুধু উত্তর বা ব্যাখ্যার সমস্যার জন্য মুছবে না। নির্বাচিত শ্রেণি, বিষয় ও টাইপের সব পেজ অন্তর্ভুক্ত।</p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="destructive" disabled={questionsLoading || isDeleting || !specialTypeRows.some(questionBodyHasCorruptedText)} onClick={() => { setSelectedIds(new Set(specialTypeRows.filter(questionBodyHasCorruptedText).map((q: any) => q.id))); setBulkDeleteOpen(true); }}>বিকৃত প্রশ্নগুলো ডিলিট করুন ({specialTypeRows.filter(questionBodyHasCorruptedText).length.toLocaleString("bn-BD")})</Button>
+          <Button variant="outline" onClick={() => {setSelectedIds(new Set()); setFilterSpecial("corrupted_answers_only");}}>প্রশ্ন ঠিক — রেখে দিন / দেখুন</Button>
+        </div>
+      </div>}
+
       {/* Total + Type-wise breakdown badges */}
       <div className="flex flex-wrap items-center gap-2 mb-4" style={{ fontFamily: "'SolaimanLipi', sans-serif" }}>
         <div
@@ -1050,6 +1065,7 @@ export default function AdminQuestions() {
                     aria-label={`প্রশ্ন ${item.id} নির্বাচন`}
                   />
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">#{item.id}</span>
+                  {filterSpecial.startsWith("corrupted_") && <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">বিকৃত লেখা: {corruptedQuestionFields(item).join(", ")}</span>}
                   <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{typeLabel(item.type)}</span>
                   {item.classes?.name && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{item.classes.name}</span>}
                   {item.subjects?.name && <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{item.subjects.name}</span>}
