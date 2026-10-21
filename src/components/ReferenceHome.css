@@ -182,3 +182,5 @@ button{cursor:pointer}
   @media (max-width: 600px) { .hero-visual .real-question-paper { width: 49%; top: 24px; right: 3px; } .real-paper-label { left: 5px; right: 5px; bottom: 5px; padding: 4px; font-size: 8px; } }
   @media (prefers-reduced-motion: reduce) { .hero-visual .real-question-paper { animation: none !important; transform: rotate(2deg) !important; } }
 }
+
+@scope (.plh) { .hero-pricing-link { min-height: 48px; border: 1px solid #00858c; color: #006a70; background: #e6f7f7; font-weight: 700; } .hero-pricing-link:hover { background: #cdf1f0; } @media(max-width:600px) { .hero-actions .btn { width:100%; justify-content:center; } } }

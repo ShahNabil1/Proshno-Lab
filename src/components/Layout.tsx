@@ -81,6 +81,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
           {/* Right side */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <Link to="/pricing" onClick={() => setMobileOpen(false)} className="lg:hidden inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-lg border border-teal-300/40 bg-[#00B4BC] px-2.5 text-[13px] font-bold text-[#07162b] hover:bg-[#2ac8ce] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">প্যাকেজ ও মূল্য</Link>
             {user ? (
               <>
                 <Link to="/dashboard">
