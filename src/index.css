@@ -2849,6 +2849,11 @@ input.class-selection-box[type="radio"]:hover { border-color: #111; box-shadow: 
 
 /* A small blue verification mark leaves the original field colors intact. */
 .manual-form-fields [data-field-complete="true"] { position: relative; }
+.manual-form-fields [data-field-complete="true"] > :is(button, [role="button"], input),
+.manual-form-fields [data-field-complete="true"] > :is(button, [role="button"]) .truncate,
+.manual-form-fields [data-field-complete="true"] > :is(button, [role="button"]) .truncate > span {
+  font-weight: 700;
+}
 .manual-form-fields [data-field-complete="true"]::after {
   content: "\2713";
   position: absolute;

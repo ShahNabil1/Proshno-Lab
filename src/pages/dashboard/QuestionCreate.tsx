@@ -2118,7 +2118,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <Button
               className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading}
+              disabled={loading || !form.programName.trim() || !form.classId || !form.type || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || !Number.isInteger(Number(form.count)) || Number(form.count) < 1 || Number(form.count) > 200 || (showEnglishBuilder && !englishSections.length)}
               title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>
