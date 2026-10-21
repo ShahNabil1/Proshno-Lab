@@ -5,7 +5,7 @@ import {
   LayoutDashboard, PlusSquare, Tv, Database,
   FileText, GraduationCap, Building2, CreditCard,
   PlayCircle, Grid, KeyRound, CheckCircle2,
-  PhoneCall, MessageSquare, Menu, LogOut, User, Shield, Home, Award, X
+  PhoneCall, MessageSquare, Menu, LogOut, User, Shield, Home, Award, Crown, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -296,6 +296,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-base font-semibold text-[#0A1E38]">{fullName}</p>
                   <p className="mt-1 break-all text-xs text-slate-500">{user.email}</p>
                 </DropdownMenuLabel>
+                {membership && !membership.premium && <DropdownMenuItem asChild className="cursor-pointer rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 focus:bg-teal-100"><Link to="/dashboard/subscription" className="flex items-center gap-2"><Crown className="h-4 w-4" />Premium-এ আপগ্রেড করুন</Link></DropdownMenuItem>}
                 <DropdownMenuSeparator />
                 {[
                   { path: '/dashboard', label: 'শিক্ষক ড্যাশবোর্ড', icon: LayoutDashboard },
