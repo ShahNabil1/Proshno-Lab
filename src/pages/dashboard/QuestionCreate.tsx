@@ -683,6 +683,10 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
       toast.error("অন্তত একটি অধ্যায় নির্বাচন করুন");
       return;
     }
+    if (showEnglishBuilder && !englishSections.length) {
+      toast.warning("প্রশ্ন তৈরি করতে অন্তত একটি ইংরেজি প্রশ্নের বিভাগ নির্বাচন করুন");
+      return;
+    }
     const safeCount = Math.min(200, Math.max(1, parseInt(form.count || "100", 10) || 100));
     setLoading(true);
     try {
@@ -2114,7 +2118,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
             <Button
               className="w-full h-12 rounded-lg bg-[#0A1E38] hover:bg-[#122B4D] text-white font-bold text-lg shadow-xs border border-[#0A1E38] transition-colors flex items-center justify-center cursor-pointer"
               onClick={handleCreateQuestionSet}
-              disabled={loading || !form.programName.trim() || !form.type || selectedSubjectIds.length === 0 || form.chapterIds.length === 0 || (showEnglishBuilder && !englishSections.length)}
+              disabled={loading}
               title={selectedSubjectIds.length === 0 ? "প্রথমে বিষয় নির্বাচন করুন" : form.chapterIds.length === 0 ? "অন্তত একটি অধ্যায় নির্বাচন করুন" : undefined}
             >
               <span>{loading ? "অপেক্ষা করুন..." : "প্রশ্ন তৈরি করুন"}</span>
