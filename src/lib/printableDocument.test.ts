@@ -10,6 +10,21 @@ function paper(hidden = false) {
   return root;
 }
 describe("responsive print pagination", () => {
+  it("keeps a single centered watermark on the page without adding it to question flow", async () => {
+    const source=paper();
+    const mark=document.createElement("div");
+    mark.setAttribute("data-paper-watermark","");
+    mark.style.cssText="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0.15";
+    mark.textContent="Test institute";
+    source.prepend(mark);
+    const pages=await buildPrintablePages(source,layout);
+    expect(pages.length).toBeGreaterThan(0);
+    for(const html of pages){
+      const page=document.createElement("div");page.innerHTML=html;
+      expect(page.querySelectorAll("[data-paper-watermark]")).toHaveLength(1);
+      expect(page.querySelector(".combined-question-flow")?.textContent).not.toContain("Test institute");
+    }
+  });
   it("excludes retained hidden answers and badges from printed pages", async () => {
     const pages = await buildPrintablePages(paper(true), layout);
     expect(pages.join("")).toContain("Question");
