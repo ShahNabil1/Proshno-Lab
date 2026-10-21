@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isLocalMockAdminEnabled } from "@/lib/localDevAuth";
 
 import BrandLockup from "@/components/BrandLockup";
+import { useDashboardMembership, MembershipBadge, FreeUpgradeCard } from "@/components/dashboard/DashboardMembership";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -83,6 +84,7 @@ function useDashboardHiddenPages() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
+  const membership = useDashboardMembership(user?.id);
   const localMockAdmin = isLocalMockAdminEnabled();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(() => {
@@ -281,6 +283,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div id="question-picker-header-slot" className="flex-1 min-w-0 mx-3" />
           <div className="flex items-center gap-3">
+            <MembershipBadge membership={membership} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" aria-label="প্রোফাইল মেনু" className="relative rounded-full p-1 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-[#00B4BC] hover:bg-slate-100 transition-colors">
@@ -315,6 +318,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 bg-white overflow-y-auto p-3 sm:p-4 md:p-6 lg:overflow-visible">
           {isAdmin && <AdminExperiencePreview admin />}
           {children}
+          <FreeUpgradeCard key={user.id} userId={user.id} membership={membership} pathname={location.pathname} />
         </main>
       </div>
 
