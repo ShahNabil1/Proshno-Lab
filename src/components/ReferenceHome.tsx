@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { sortClasses } from "@/lib/classOrder";
+import realQuestionPreview from "@/assets/hero-real-question.webp";
 import markup from "./ReferenceHome.html?raw";
 import "./ReferenceHome.css";
 export default function ReferenceHome(){
@@ -30,5 +31,5 @@ export default function ReferenceHome(){
  tiltTargets.forEach(el=>{el.addEventListener('pointermove',tilt);el.addEventListener('pointerleave',resetTilt)});
  return()=>{alive=false;host.removeEventListener('click',onClick);tiltTargets.forEach(el=>{el.removeEventListener('pointermove',tilt);el.removeEventListener('pointerleave',resetTilt)})};
  },[navigate]);
- return <div className="plh" ref={ref} dangerouslySetInnerHTML={{__html:markup}}/>;
+ return <div className="plh" ref={ref} dangerouslySetInnerHTML={{__html:markup.replace("__REAL_QUESTION_PREVIEW__", realQuestionPreview)}}/>;
 }

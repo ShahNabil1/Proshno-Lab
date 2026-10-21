@@ -173,3 +173,12 @@ button{cursor:pointer}
 @media(max-width:900px) { .hero-version-note { justify-content: center; } }
 
 .plh .pricing-cards{grid-template-columns:minmax(0,1fr);max-width:420px}
+
+@scope (.plh) {
+  .hero-visual .real-question-paper { width: 292px; height: auto; padding: 0; top: 8px; border-radius: 5px; isolation: isolate; transform-style: preserve-3d; animation: real-paper-float 7s ease-in-out infinite; box-shadow: 2px 3px 0 #eef3f5, 5px 7px 0 #ccd8df, 9px 11px 0 #e4ebef, 0 28px 42px -8px #0a1e384d; }
+  .real-question-paper img { display: block; width: 100%; height: auto; border-radius: 4px; background: white; }
+  .real-paper-label { position: absolute; left: 12px; bottom: 12px; right: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #c5e8e5; border-radius: 8px; padding: 8px; background: #f1fcfbeF; color: #006b70; font-size: 11px; font-weight: 700; box-shadow: 0 4px 14px #0a1e3810; }
+  @keyframes real-paper-float { 0%,100% { transform: perspective(1000px) rotateY(-9deg) rotateZ(2deg) translateY(0); } 50% { transform: perspective(1000px) rotateY(-5deg) rotateZ(1deg) translateY(-7px); } }
+  @media (max-width: 600px) { .hero-visual .real-question-paper { width: 49%; top: 24px; right: 3px; } .real-paper-label { left: 5px; right: 5px; bottom: 5px; padding: 4px; font-size: 8px; } }
+  @media (prefers-reduced-motion: reduce) { .hero-visual .real-question-paper { animation: none !important; transform: rotate(2deg) !important; } }
+}
