@@ -38,4 +38,10 @@ jobs:
         run: node tests/marketing-dashboard.mjs
 
       - name: Run server conversion and payment checks
-        run: npx --yes deno@2.9.6 test --allow-env tests/custom-package-payments.ts tests/meta-capi.test.ts tests/meta-capi-worker.test.ts
+        run: npx --yes deno@2.9.6 test --allow-env tests/custom-package-payments.ts tests/meta-capi.test.ts tests/meta-capi-worker.test.ts tests/payment-telegram-worker.ts tests/payment-checkout-exit.ts
+
+      - name: Check Telegram notification authorization
+        run: node tests/notification-security-sql.mjs
+
+      - name: Check payment alert timing
+        run: node tests/payment-alert-timing.mjs

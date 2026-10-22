@@ -28,6 +28,7 @@ Deno.serve(async req=>{
     if(!response.ok) throw Error("Gateway unavailable");return response.json();
   }
   for(const event of events||[]){
+    let messageEvent=event.event_type;
     const finish=async(outcome:string)=>{
       const {error}=await admin.rpc("finish_payment_telegram_event",{event_ref:event.id,lease:event.lease_token,outcome});
       if(error) throw Error("Queue update unavailable");
@@ -49,6 +50,9 @@ Deno.serve(async req=>{
           await finish("skipped");skipped++;continue;
         }
         if(!["Initiated","Cancelled","Failed","Expired"].includes(receipt.transactionStatus))throw Error("Payment status unknown");
+        // The latest gateway state wins over an older queued event.
+        messageEvent=receipt.transactionStatus==="Cancelled"?"payment_cancelled":
+          ["Failed","Expired"].includes(receipt.transactionStatus)?"payment_failed":"payment_incomplete";
         // A newer checkout supersedes an abandoned one; don't send one alert per retry.
         if(event.event_type==="payment_incomplete"){
           const {data:newer,error}=await admin.from("bkash_payments").select("id").eq("user_id",p.user_id).gt("id",p.id).limit(1);
@@ -57,7 +61,7 @@ Deno.serve(async req=>{
       }else if(p.status!=="completed"||!p.trx_id||!verifiedPaymentReceipt(p,p.bkash_response)||p.bkash_response?.transactionStatus!=="Completed"){
         throw Error("Success receipt unverified");
       }
-      const text=paymentTelegramPayload(p,event.event_type);
+      const text=paymentTelegramPayload(p,messageEvent);
       for(const chat of chats){
         if(event.delivered_chat_ids?.includes(chat))continue;
         if(!await deliverPaymentTelegram(text,chat,config))throw Error("Telegram delivery failed");

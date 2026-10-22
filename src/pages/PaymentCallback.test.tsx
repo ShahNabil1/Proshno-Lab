@@ -1,6 +1,6 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, cleanup } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import PaymentCallback from "./PaymentCallback";
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), maybeSingle: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
@@ -10,6 +10,18 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
 vi.mock("@/lib/analytics", () => ({ analytics: { purchase: vi.fn() }, trackEvent: vi.fn() }));
 vi.mock("@/lib/marketingContext", () => ({ getMarketingContext: () => ({}) }));
 describe("payment access recovery", () => {
+  afterEach(() => { cleanup(); vi.clearAllMocks(); });
+  it.each(["cancel", "failure"])("reports %s through an authenticated query-only server call", async (status) => {
+    mocks.invoke.mockResolvedValueOnce({ data: { status: "initiated" }, error: null });
+    render(<MemoryRouter initialEntries={[`/payment/callback?paymentID=unpaid&status=${status}`]}><PaymentCallback /></MemoryRouter>);
+    await waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith("bkash-execute-payment", { body: { paymentID: "unpaid", verifyOnly: true } }));
+  });
+  it("shows verified success even when the callback URL says cancelled", async () => {
+    mocks.invoke.mockResolvedValueOnce({ data: { status: "completed", trxID: "settled" }, error: null });
+    mocks.maybeSingle.mockResolvedValue({ data: { status: "completed", amount: 500, trx_id: "settled" }, error: null });
+    render(<MemoryRouter initialEntries={["/payment/callback?paymentID=paid&status=cancel"]}><PaymentCallback /></MemoryRouter>);
+    await screen.findByRole("heading", { name: /সফল/  });
+  });
   it("shows pending activation and re-verifies the existing completed payment without a new checkout", async () => {
     mocks.invoke.mockResolvedValueOnce({ data: null, error: { context: { json: async () => ({ status: "activation_pending" }) } } })
       .mockResolvedValueOnce({ data: { status: "completed", trxID: "verified" }, error: null });

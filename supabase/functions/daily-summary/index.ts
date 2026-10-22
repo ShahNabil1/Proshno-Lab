@@ -2,6 +2,7 @@
 // Aggregates today's registrations, revenue, and questions and sends to Telegram.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { authorizeNotificationScheduler } from "../_shared/notificationHandler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,12 +31,21 @@ function dhakaDayBounds(): { start: string; end: string; label: string } {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    const authorized = await authorizeNotificationScheduler(req, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "", async (token) => {
+      const { data, error } = await supabase.rpc("authorize_meta_capi_worker", {
+        token,
+      });
+      return !error && data === true;
+    });
+    if (!authorized) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
 
     const { start, end, label } = dhakaDayBounds();
 

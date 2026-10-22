@@ -32,3 +32,18 @@ Deno.test("Telegram ok:false is queued for retry rather than marked sent",async(
 Deno.test("incomplete checkout is verified with bKash before an alert",async()=>{const calls=setup({event:"payment_incomplete",gatewayStatus:"Initiated"});const result=await(await handler(request())).json();assert(result.sent===1,"Incomplete alert not delivered");assert(calls.findIndex(c=>c.url.endsWith("/payment/status"))<calls.findIndex(c=>c.url.includes("/telegram/sendMessage")),"Unverified alert");});
 Deno.test("settled money is reconciled and never called an abandoned checkout",async()=>{const calls=setup({event:"payment_incomplete",gatewayStatus:"Completed"});const result=await(await handler(request())).json();assert(result.skipped===1,"Did not suppress incomplete alert");assert(calls.some(c=>c.url.includes("/complete_custom_payment")),"No activation");assert(!calls.some(c=>c.url.includes("/telegram/sendMessage")),"False unpaid message");});
 Deno.test("gateway outage or superseded checkout produces no false unpaid alert",async()=>{for(const options of [{gatewayFails:true},{newer:true}]){const calls=setup({event:"payment_incomplete",gatewayStatus:"Initiated",...options});await handler(request());assert(!calls.some(c=>c.url.includes("/telegram/sendMessage")),"False alert");}});
+Deno.test("incomplete event uses the latest cancelled or failed gateway state",async()=>{
+ for(const gatewayStatus of ["Cancelled","Failed","Expired"]){
+  const calls=setup({event:"payment_incomplete",gatewayStatus});
+  await handler(request());
+  const message=calls.find(c=>c.url.includes("/telegram/sendMessage"))?.body.text||"";
+  assert(message.includes(gatewayStatus==="Cancelled"?"বাতিল":"ব্যর্থ"),"Wrong outcome label");
+ }
+});
+Deno.test("stale failure events cannot describe an initiated checkout as failed",async()=>{
+ const calls=setup({event:"payment_failed",gatewayStatus:"Initiated"});
+ await handler(request());
+ const message=calls.find(c=>c.url.includes("/telegram/sendMessage"))?.body.text||"";
+ assert(message.includes("সম্পন্ন হয়নি"),"Missing incomplete status");
+ assert(!message.includes("পেমেন্ট ব্যর্থ"),"False failed payment");
+});

@@ -3,6 +3,7 @@
 // and provisions subscriptions + user_permissions on success.
 
 import { activateFixedPayment } from "../_shared/fixedPayment.ts";
+import { verifiedPaymentReceipt } from "../_shared/paymentTelegram.ts";
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     const user = userData.user;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    const { paymentID } = await req.json();
+    const { paymentID, verifyOnly = false } = await req.json();
     if (!paymentID) return json({ error: "paymentID required" }, 400);
 
     // Fetch our payment row
@@ -86,9 +87,9 @@ Deno.serve(async (req) => {
       return json({ status: paymentRow.status, error: paymentRow.error_message ?? "পেমেন্ট ব্যর্থ" }, 400);
     }
 
-    // Execute against bKash
+    // Cancel/failure callbacks only query bKash; they must never execute a payment.
     const token = await getBkashToken();
-    const execRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/${paymentRow.status === "completed" ? "payment/status" : "execute"}`, {
+    const execRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/${verifyOnly === true || paymentRow.status === "completed" ? "payment/status" : "execute"}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,7 +102,7 @@ Deno.serve(async (req) => {
     let execData = await execRes.json();
     // A refreshed page may execute an already-settled payment. Query bKash
     // before treating an ambiguous execute response as failure.
-    if (!(execData?.transactionStatus === "Completed" && execData?.trxID)) {
+    if (verifyOnly !== true && !(execData?.transactionStatus === "Completed" && execData?.trxID)) {
       const queryRes = await fetch(`${BKASH_BASE_URL}/tokenized/checkout/payment/status`, {
         method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: token, "X-App-Key": BKASH_APP_KEY },
         body: JSON.stringify({ paymentID }),
@@ -112,14 +113,32 @@ Deno.serve(async (req) => {
 
     const txStatus = execData?.transactionStatus;
     const isCompleted = txStatus === "Completed" && execData?.trxID;
+    if (verifyOnly === true && (!execRes.ok || !verifiedPaymentReceipt(paymentRow, execData))) {
+      return json({ error: "Payment status could not be verified" }, 503);
+    }
 
     if (!isCompleted) {
       const msg = execData?.statusMessage || execData?.errorMessage || "পেমেন্ট সম্পন্ন হয়নি";
-      await admin.from("bkash_payments").update({
-        status: ["Failed", "Cancelled", "Expired"].includes(String(txStatus)) ? "failed" : "initiated",
+      const state = txStatus === "Cancelled" ? "cancelled" : ["Failed", "Expired"].includes(String(txStatus)) ? "failed" : "initiated";
+      const { error: updateError } = await admin.from("bkash_payments").update({
+        status: state,
         bkash_response: execData,
         error_message: msg,
       }).eq("id", paymentRow.id).eq("status", "initiated");
+      if (updateError) throw Error("Payment status save failed");
+      if (verifyOnly === true && txStatus === "Initiated") {
+        // A signed-in owner returned from checkout, but bKash still reports pending.
+        // Notify as incomplete, never claim it is a confirmed failure.
+        const { data: queued, error } = await admin.from("payment_telegram_events").upsert({
+          payment_id: paymentRow.id, event_type: "payment_incomplete",
+        }, { onConflict: "payment_id,event_type", ignoreDuplicates: true }).select("id");
+        if (error) throw Error("Payment notification queue unavailable");
+        if (queued?.length) {
+          const { error } = await admin.rpc("dispatch_payment_telegram_events");
+          if (error) console.error("payment_notification_dispatch_failed");
+        }
+      }
+      if (verifyOnly === true) return json({ status: state, error: msg });
       return json({ status: "failed", error: msg, details: execData }, 400);
     }
 

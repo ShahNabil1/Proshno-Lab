@@ -105,21 +105,9 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       return;
     }
 
-    // Fire-and-forget Telegram notification (never blocks UX)
+    // The server loads this user's saved institute; no browser-authored message.
     supabase.functions.invoke("notify-telegram", {
-      body: {
-        event_type: "new_registration",
-        title: "🎉 নতুন রেজিস্ট্রেশন — Proshno Lab",
-        fields: [
-          { label: "👤 Teacher", value: user.user_metadata?.full_name || user.user_metadata?.name || "—" },
-          { label: "📧 Email", value: user.email },
-          { label: "🏫 Institute", value: form.name },
-          { label: "📱 Phone", value: form.phone },
-          { label: "📍 Location", value: `${form.division} > ${form.district} > ${form.upazila}` },
-          { label: "🏠 Address", value: form.specific_address || "—" },
-        ],
-        link: { label: "Admin → Teachers", url: "https://proshnolab.com/admin/teachers" },
-      },
+      body: { event_type: "new_registration" },
     }).catch(() => {});
 
     toast.success("রেজিস্ট্রেশন সম্পন্ন হয়েছে!");

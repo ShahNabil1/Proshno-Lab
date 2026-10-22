@@ -13,6 +13,7 @@ export function paymentTelegramPayload(payment: any, event: string) {
   const packages = (payment.selected_packages || []).map((p:any)=>`${p.class_name || ""} — ${p.subject_name || p.kind || ""}`).join(" | ").slice(0,1800);
   return [ `<b>${titles[event] || "পেমেন্ট আপডেট"}</b>`,
     `শিক্ষক: ${escape(payment.teacher_name || "নাম দেওয়া হয়নি")}`,
+    `ফোন: ${escape(payment.payer_reference || "নম্বর দেওয়া হয়নি")}`,
     `পরিমাণ: ৳${escape(payment.amount)}`, `প্যাকেজ: ${escape(packages)}`,
     `রেফারেন্স: #${escape(payment.id)}`,
     ...(event === "payment_success" ? [`TrxID: ${escape(payment.trx_id)}`] : []),

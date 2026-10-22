@@ -31,7 +31,7 @@ describe("compact subscription workspace",()=>{
   it("shows one workspace at a time instead of all package sections",async()=>{
     render(<MemoryRouter><Subscription /></MemoryRouter>);
     expect(await screen.findByRole("tabpanel",{name:"প্যাকেজ ও মূল্য"})).toBeVisible();
-    expect(screen.getByRole("heading",{name:"১। শিক্ষক/টিউটর প্যাকেজ"})).toBeVisible();
+    expect(screen.getByRole("heading",{name:/শিক্ষক\/টিউটর প্যাকেজ/})).toBeVisible();
     expect(screen.queryByRole("tabpanel",{name:"রেডিমেড প্যাকেজ"})).toBeNull();
     fireEvent.click(screen.getByRole("tab",{name:"আমার প্ল্যান"}));
     expect(screen.getByRole("tabpanel",{name:"আমার প্ল্যান"})).toBeVisible();

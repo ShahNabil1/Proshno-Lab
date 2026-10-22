@@ -1,9 +1,11 @@
 project_id = "biekabnpseyardqgutbp"
 
 [functions.notify-telegram]
+# User JWTs are verified with auth.getUser; only server credentials can submit summaries.
 verify_jwt = false
 
 [functions.daily-summary]
+# Private Vault scheduler token or service-role authorization is checked in the handler.
 verify_jwt = false
 
 # Authenticated by its private Vault token, not public browser requests.

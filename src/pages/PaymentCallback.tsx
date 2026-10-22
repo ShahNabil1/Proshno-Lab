@@ -34,6 +34,19 @@ export default function PaymentCallback() {
     } catch { /* Tracking must not delay access or change payment state. */ }
   };
 
+  const verifyCheckoutExit = async () => {
+    const { data, error } = await supabase.functions.invoke("bkash-execute-payment", {
+      body: { paymentID, verifyOnly: true },
+    });
+    // A late cancel/failure URL must not hide a payment bKash already settled.
+    if (!error && data?.status === "completed") {
+      void trackCompletedPurchase();
+      setPhase("success");
+      setTrxId(data.trxID || "");
+      setTimeout(() => navigate(returnPath), 3000);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       if (!paymentID) {
@@ -45,20 +58,14 @@ export default function PaymentCallback() {
         trackEvent("payment_cancelled", { method: "bkash" });
         setPhase("cancelled");
         setMessage("আপনি পেমেন্ট বাতিল করেছেন");
-        await supabase.from("bkash_payments")
-          .update({ status: "cancelled" })
-          .eq("payment_id", paymentID)
-          .eq("status", "initiated");
+        await verifyCheckoutExit();
         return;
       }
       if (status === "failure" || status === "failed") {
         trackEvent("payment_failed", { method: "bkash" });
         setPhase("failed");
         setMessage("বিকাশ থেকে পেমেন্ট ব্যর্থ হয়েছে");
-        await supabase.from("bkash_payments")
-          .update({ status: "failed", error_message: "bKash returned failure" })
-          .eq("payment_id", paymentID)
-          .eq("status", "initiated");
+        await verifyCheckoutExit();
         return;
       }
 

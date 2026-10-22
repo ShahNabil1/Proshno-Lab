@@ -71,30 +71,19 @@ export default function Feedback() {
       setLoading(false);
       return;
     }
-    const { error } = await supabase.from("feedback").insert({
+    const { data: savedFeedback, error } = await supabase.from("feedback").insert({
       teacher_id: user.id,
       category: form.category,
       subject: form.subject,
       details: form.details,
       priority: form.priority,
-    });
+    }).select("id").single();
     setLoading(false);
     if (error) {
       toast.error("সাবমিট ব্যর্থ হয়েছে");
     } else {
       supabase.functions.invoke("notify-telegram", {
-        body: {
-          event_type: "new_feedback",
-          title: "💬 নতুন Feedback — Proshno Lab",
-          fields: [
-            { label: "👤 Teacher", value: user.email },
-            { label: "📂 Category", value: form.category },
-            { label: "⚡ Priority", value: form.priority },
-            { label: "📝 Subject", value: form.subject },
-            { label: "💭 Details", value: form.details.slice(0, 500) },
-          ],
-          link: { label: "Admin → Feedback", url: "https://proshnolab.com/admin/feedback" },
-        },
+        body: { event_type: "new_feedback", record_id: savedFeedback.id },
       }).catch(() => {});
       toast.success("মতামত সাবমিট হয়েছে!");
       setForm({ category: "সাধারণ", subject: "", details: "", priority: "low" });
