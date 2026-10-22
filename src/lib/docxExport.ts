@@ -1,6 +1,6 @@
 import { paperWordFont } from "./paperFonts";
 import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from './englishPaperSections';
-import { languageSubject, patternGrade } from './languageQuestionTypes';
+import { languageSubject, usesEnglishFirstTemplate } from './languageQuestionTypes';
 import { isLanguageType, questionMarks, questionTypeLabel } from "@/lib/languageQuestionTypes";
 import {
   AlignmentType,
@@ -729,7 +729,7 @@ export async function exportPaperToDocx({
   settings?: PaperSettings;
 }): Promise<void> {
   const exportImages = await preloadExportImages(questions);
-  const paperColumnCount = languageSubject(meta.subjectName || "") === "english1" && patternGrade(meta.className || "") === 8 ? 1 : Math.max(1, Number(settings.columns) || 2);
+  const paperColumnCount = usesEnglishFirstTemplate(meta.className || "", meta.subjectName || "") ? 1 : Math.max(1, Number(settings.columns) || 2);
   const imageWidthLimit = paperColumnCount > 1 ? 280 : 560;
   const renderHtmlToBlocks = (
     source?: string | null,
@@ -783,7 +783,7 @@ export async function exportPaperToDocx({
   const sorted = [...questions].sort(
     (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
   );
-  const isEnglishPaper = !questions.every(q=>q.type === 'mcq') && languageSubject(meta.subjectName || '') === 'english1' && patternGrade(meta.className || '') === 8;
+  const isEnglishPaper = !questions.every(q=>q.type === 'mcq') && usesEnglishFirstTemplate(meta.className || '', meta.subjectName || '');
   const englishPaper = englishPaperSections(sorted);
   const mcqs = sorted.filter((q) => q.type === "mcq");
   const shorts = sorted.filter((q) => q.type === "short");

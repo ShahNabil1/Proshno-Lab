@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { englishPaperSections, englishPassageInstruction, englishItemLabel, englishQuestionContent } from './englishPaperSections';
+import { usesEnglishFirstTemplate } from './languageQuestionTypes';
 describe('English paper sections',()=>{
   it('uses the question passage instead of a stale standalone passage',()=>{
     const {sections}=englishPaperSections([{type:'seen_passage_2',question:'Wrong passage'},{type:'gap_filling',question:'Complete the passage with suitable words. Rice is (a) ___.',stimulus_text:'Cuisine passage'},{type:'vocabulary',question:'(d) staple (synonym)',stimulus_text:'Cuisine passage'}]);
@@ -33,7 +34,8 @@ describe('English paper sections',()=>{
     expect(result.sections[0].marks).toBe(7);
     expect(result.sections[0].items).toHaveLength(2);
   });
-  it('matches the full class eight 70+30 pattern',()=>{
+  it.each(['ষষ্ঠ শ্রেণি','সপ্তম শ্রেণি','অষ্টম শ্রেণি'])('matches the complete 70+30 template for %s',(className)=>{
+    expect(usesEnglishFirstTemplate(className,'English 1st Paper')).toBe(true);
     const counts:Record<string,number>={mcq:7,answering_questions:5,gap_filling:1,vocabulary:5,information_transfer:1,true_false:5,writing_summary:1,matching:1,rearranging:1,poem_questions:8,completing_story:1,paragraph:1,dialogue:1};
     const rows=Object.entries(counts).flatMap(([type,count])=>Array.from({length:count},(_,i)=>({type,question:`${type} ${i}`})));
     rows.push({type:'seen_passage_1',question:'first'},{type:'seen_passage_2',question:'second'},{type:'unseen_passage',question:'third'});
@@ -48,4 +50,11 @@ describe('English paper sections',()=>{
     expect(englishItemLabel('mcq',0,7)).toBe('(a)');
     expect(englishItemLabel('gap_filling',0,1)).toBe('');
   });
+});
+
+it.each(['Class 5','Class 9-10','Class 11'])('keeps other grades outside the shared template: %s',(name)=>{
+  expect(usesEnglishFirstTemplate(name,'English 1st Paper')).toBe(false);
+});
+it('does not enable the first paper template for second paper or unrelated subjects',()=>{
+  for(const name of ['English 2nd Paper','বাংলা ১ম পত্র','গণিত']) expect(usesEnglishFirstTemplate('Class 6',name)).toBe(false);
 });

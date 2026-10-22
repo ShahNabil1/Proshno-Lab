@@ -11,7 +11,7 @@ import { flushSync } from "react-dom";
 import { buildPrintablePages, PAPER_DIMENSIONS, waitForPrintableAssets } from "@/lib/printableDocument";
 import AutoFitQuestionGrid from "@/components/AutoFitQuestionGrid";
 import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from '@/lib/englishPaperSections';
-import { languageSubject, patternGrade } from '@/lib/languageQuestionTypes';
+import { languageSubject, usesEnglishFirstTemplate } from '@/lib/languageQuestionTypes';
 import { isLanguageType, questionTypeLabel, questionMarks } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
 import { useState, useEffect, useRef, useCallback, useMemo, memo, Fragment, type CSSProperties } from "react";
@@ -975,7 +975,7 @@ export default function QuestionPaperView() {
     autoMcqMode.current = mcqOnly;
     setSettings(prev => ({ ...prev, showMarksBox: mcqOnly, optionStyle: 'none' }));
   }, [questions.length, mcqOnly]);
-  const isEnglishPaper = !mcqOnly && languageSubject(meta?.subjectName || '') === 'english1' && patternGrade(meta?.className || '') === 8;
+  const isEnglishPaper = !mcqOnly && usesEnglishFirstTemplate(meta?.className || '', meta?.subjectName || '');
   const englishPaper = englishPaperSections(sortedQuestions);
   const mcqQuestions = (() => {
     const items = sortedQuestions.filter(q => q.type === "mcq");

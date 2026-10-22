@@ -8,7 +8,7 @@ import { addToPaperForm } from "@/lib/addToPaperContext";
 import { createPortal } from "react-dom";
 import { englishBlocks } from '@/lib/englishFirstBuilder';
 import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
-import { ALL_TYPES, allowedQuestionTypes, isLanguageType, languageSubject, questionTypeLabel, patternGrade } from "@/lib/languageQuestionTypes";
+import { ALL_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, usesEnglishFirstTemplate } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
 import { toast } from "sonner";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -295,7 +295,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   }, [selectedSubjectIds, subjects]);
 
   const selectedSubject = selectedSubjects[0];
-  const showEnglishBuilder = !addToPaper && selectedSubjects.length === 1 && languageSubject(selectedSubject?.name || '') === 'english1' && patternGrade(classes.find(c => String(c.id) === form.classId)?.name || '') === 8;
+  const showEnglishBuilder = !addToPaper && selectedSubjects.length === 1 && usesEnglishFirstTemplate(classes.find(c => String(c.id) === form.classId)?.name || '', selectedSubject?.name || '');
   useEffect(() => {
     if (showEnglishBuilder && chapters.length) {
       setForm(previous => ({ ...previous, chapterIds: chapters.filter(c => hasSubscription || c.is_free).map(c => String(c.id)) }));

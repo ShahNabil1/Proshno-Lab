@@ -39,8 +39,10 @@ export default function EnglishFirstUpload({ classId, subjectId, chapters }: {cl
   const [chosen, setChosen] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [allTypes, setAllTypes] = useState(true);
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const lessonRequired = !!config.lesson && (topicsLoading || topics.length > 0);
   useEffect(()=>{setExisting(false);setText('');},[section]);
-  const unitChapters = chapters.filter(c => /^unit[\s-]/i.test(c.name) || (section === 4 && /poem/i.test(c.name)));
+  const unitChapters = chapters.filter(c => /^unit[\s-]/i.test(c.name) || (section === 0 && /^seen\s+(comprehension|passage)/i.test(c.name)) || (section === 4 && /poem/i.test(c.name)));
   useEffect(() => {
     if (config.lesson) return;
     const patterns = [/unseen/i, /matching/i, /rearrang/i, /stor/i, /paragraph/i, /dialog/i];
@@ -48,19 +50,28 @@ export default function EnglishFirstUpload({ classId, subjectId, chapters }: {cl
     const target = chapters.find(c => pattern?.test(c.name));
     setChapter(target ? String(target.id) : '');
   }, [section, chapters]);
-  useEffect(() => { setLesson(''); setTopics([]); if (chapter) supabase.from('topics').select('id,name').eq('chapter_id',Number(chapter)).then(({data})=>setTopics(data || [])); }, [chapter]);
+  useEffect(() => {
+    let active = true;
+    setLesson(''); setTopics([]); setTopicsLoading(!!chapter);
+    if (chapter) supabase.from('topics').select('id,name').eq('chapter_id',Number(chapter)).then(({data,error})=>{
+      if (!active) return;
+      if (error) { toast.error('Lesson পড়া যায়নি'); return; }
+      setTopics(data || []); setTopicsLoading(false);
+    });
+    return () => { active = false; };
+  }, [chapter]);
   useEffect(() => {
     setChosen(''); setName(''); setPassage(''); setSavedPassages([]);
-    if (!config.passage || !chapter || (config.lesson && !lesson)) return;
+    if (!config.passage || !chapter || (lessonRequired && !lesson)) return;
     let active = true;
     let query = supabase.from('questions').select('id,chapter_id,topic_id,question,stimulus_text,stimulus_group_id,creative_data').eq('class_id',Number(classId)).eq('subject_id',Number(subjectId)).in('type',section===0?['seen_passage_1','seen_passage_2']:['unseen_passage']);
     if (section === 0) query = query.eq('chapter_id',Number(chapter));
     if (lesson) query = query.eq('topic_id',Number(lesson));
     query.then(({data,error})=>{ if (!active) return; if (error) toast.error('আগের Passage পড়া যায়নি'); else {const unique = new Map<string,any>(); (data || []).forEach(p=>{const key=(p.stimulus_text || p.question).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();if(!unique.has(key))unique.set(key,p);});setSavedPassages([...unique.values()]);} });
     return ()=>{active=false;};
-  }, [chapter, lesson, section, classId, subjectId, refresh]);
-  const contextReady = !!chapter && (!config.lesson || !!lesson);
-  const ready = !!chapter && (!config.lesson || !!lesson) && (!config.passage || (!!name.trim() && !!passage.trim()));
+  }, [chapter, lesson, lessonRequired, section, classId, subjectId, refresh]);
+  const contextReady = !!chapter && (!lessonRequired || !!lesson);
+  const ready = !!chapter && (!lessonRequired || !!lesson) && (!config.passage || (!!name.trim() && !!passage.trim()));
   function add(items: ParsedQuestion[]) { setRows(previous => markBatchDuplicates([...previous,...items])); setText(''); setReview(false); }
   function insertSample(sample: string) {
     const stimulus = parsePastedText(sample,type)[0]?.stimulus || 'সম্পূর্ণ Passage এখানে লিখুন';
@@ -107,7 +118,7 @@ export default function EnglishFirstUpload({ classId, subjectId, chapters }: {cl
       <select aria-label="প্রশ্নপত্রের অংশ" className="border rounded p-2 w-full" value={section} disabled={busy} onChange={e=>{setSection(Number(e.target.value));setType(sections[Number(e.target.value)].types[0] as QType);setRows([]);setChapter('');setName('');setPassage('');setReview(false);}}>{sections.map((s,i)=><option key={s.name} value={i}>{s.name}</option>)}</select>
       <div className="grid sm:grid-cols-2 gap-3">
         {(config.lesson || !chapter) && <label>{config.lesson ? 'Unit *' : 'অধ্যায় *'}<select aria-label="Upload Unit" className="border rounded p-2 w-full" value={chapter} disabled={rows.length > 0 || busy} onChange={e=>setChapter(e.target.value)}><option value="">বাছাই করুন</option>{(config.lesson ? unitChapters : chapters).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
-        {config.lesson && <label>Lesson *<select aria-label="Upload Lesson" className="border rounded p-2 w-full" value={lesson} disabled={!chapter || rows.length > 0 || busy} onChange={e=>setLesson(e.target.value)}><option value="">বাছাই করুন</option>{topics.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
+        {config.lesson && lessonRequired && <label>Lesson *<select aria-label="Upload Lesson" className="border rounded p-2 w-full" value={lesson} disabled={!chapter || rows.length > 0 || busy} onChange={e=>setLesson(e.target.value)}><option value="">বাছাই করুন</option>{topics.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
       </div>
       {config.passage && <div className="space-y-3"><div className="flex gap-2"><Button variant={!existing?'default':'outline'} disabled={rows.length>0} onClick={()=>{setExisting(false);setChosen('');setName('');setPassage('');}}>নতুন Passage</Button><Button variant={existing?'default':'outline'} disabled={rows.length>0} onClick={()=>{setExisting(true);setName('');setPassage('');}}>আগের Passage-এ প্রশ্ন যোগ করুন</Button></div>{existing && <><select aria-label="আগের Passage" className="border rounded p-2 w-full" value={chosen} disabled={!contextReady || rows.length>0} onChange={e=>{setChosen(e.target.value); const p=savedPassages.find(p=>String(p.id)===e.target.value);setName(p?.creative_data?.passage_name || (p?.question || '').replace(/<[^>]*>/g,' ').slice(0,80));setPassage(p?.stimulus_text || p?.question || '');setReview(false);}}><option value="">Passage বাছাই করুন</option>{savedPassages.map(p=><option key={p.id} value={p.id}>{p.creative_data?.passage_name || (p.question || '').replace(/<[^>]*>/g,' ').slice(0,80)}</option>)}</select>{contextReady && !savedPassages.length && <p className="text-sm text-muted-foreground">এই Context-এ আগে আপলোড করা Passage নেই।</p>}{passage && <div className="bg-blue-50 p-3"><strong>{name}</strong><LatexRenderer text={passage}/></div>}</>}</div>}
     </div>

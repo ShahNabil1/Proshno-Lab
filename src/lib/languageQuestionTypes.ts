@@ -36,6 +36,12 @@ export function languageSubject(name: string): 'english1' | 'english2' | 'bangla
   if (/bangla|বাংলা/.test(n) && /2nd|second|2|দ্বিতীয়|দ্বিতীয়/.test(n)) return 'bangla2';
   return null;
 }
+// The shared upload, builder and paper layout follow the owner's class 8 template.
+export function usesEnglishFirstTemplate(className: string, subjectName: string): boolean {
+  const grade = patternGrade(className);
+  return (grade === 6 || grade === 7 || grade === 8) && languageSubject(subjectName) === 'english1';
+}
+
 type Rule = { match: RegExp; types: string[]; topics?: string[] };
 export function languageRules(className: string, subjectName: string): Rule[] | null {
   const grade = patternGrade(className), subject = languageSubject(subjectName);

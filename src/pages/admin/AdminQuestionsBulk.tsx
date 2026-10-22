@@ -1,6 +1,6 @@
 import { resolveQuestionChapters } from "@/lib/bulkChapterRouting";
 import { PATTERN_CHAPTER_PREFIX, patternChapterName } from "@/lib/languagePatternChapters";
-import { allowedQuestionTypes, isLanguageType, languageSubject, patternGrade } from "@/lib/languageQuestionTypes";
+import { allowedQuestionTypes, isLanguageType, languageSubject, usesEnglishFirstTemplate } from "@/lib/languageQuestionTypes";
 import EnglishFirstUpload from '@/components/admin/bulk/EnglishFirstUpload';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -327,9 +327,9 @@ export default function AdminQuestionsBulk() {
     setFailedChunks((prev) => prev.filter((c) => c.id !== id));
   };
 
-  if (isEnglishFirst && patternGrade(classes.find(c=>String(c.id)===classId)?.name || '') === 8) {
+  if (usesEnglishFirstTemplate(classes.find(c=>String(c.id)===classId)?.name || '', subjects.find(s=>String(s.id)===subjectId)?.name || '')) {
     return <div className="space-y-5">
-      <h1 className="text-2xl font-bold">অষ্টম শ্রেণি · English 1st Paper আপলোড</h1>
+      <h1 className="text-2xl font-bold">{classes.find(c=>String(c.id)===classId)?.name} · English 1st Paper আপলোড</h1>
       <div className="grid sm:grid-cols-2 gap-3 border rounded p-4 bg-white">
         <Select value={classId} onValueChange={v=>{setClassId(v);setSubjectId('');setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{classes.map(c=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select>
         <Select value={subjectId} onValueChange={v=>{setSubjectId(v);setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{subjects.map(s=><SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent></Select>
