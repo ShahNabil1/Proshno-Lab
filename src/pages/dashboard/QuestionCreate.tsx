@@ -6,7 +6,7 @@ import { fetchQuestionPages } from "@/lib/fetchQuestionPages";
 import { getQuestionDuplicateSignature } from "@/lib/questionDuplicates";
 import { addToPaperForm } from "@/lib/addToPaperContext";
 import { createPortal } from "react-dom";
-import { englishBlocks } from '@/lib/englishFirstBuilder';
+import { getEnglishBlocks } from '@/lib/englishFirstPattern';
 import EnglishFirstPaperBuilder from '@/components/dashboard/EnglishFirstPaperBuilder';
 import { ALL_TYPES, allowedQuestionTypes, isLanguageType, questionTypeLabel, usesEnglishFirstTemplate } from "@/lib/languageQuestionTypes";
 import { isCorrectOption } from "@/lib/answerKey";
@@ -295,6 +295,14 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
   }, [selectedSubjectIds, subjects]);
 
   const selectedSubject = selectedSubjects[0];
+  const englishClassName = classes.find(c => String(c.id) === form.classId)?.name || '';
+  const englishBlocks = getEnglishBlocks(englishClassName);
+  const previousEnglishClass = useRef(form.classId);
+  useEffect(() => {
+    const classChanged = previousEnglishClass.current !== form.classId;
+    setEnglishSections(previous => classChanged ? englishBlocks.map((_, i) => i) : previous.filter(i => i < englishBlocks.length));
+    previousEnglishClass.current = form.classId;
+  }, [form.classId, englishBlocks]);
   const showEnglishBuilder = !addToPaper && selectedSubjects.length === 1 && usesEnglishFirstTemplate(classes.find(c => String(c.id) === form.classId)?.name || '', selectedSubject?.name || '');
   useEffect(() => {
     if (showEnglishBuilder && chapters.length) {
@@ -653,7 +661,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     if (showEnglishBuilder) {
       const types = new Set<string>(englishSections.flatMap(i => {
         const block = englishBlocks[i];
-        return [...block.needs.map(n => n[0]), ...('passage' in block ? [block.passage] : [])];
+        return block ? [...block.needs.map(n => n[0]), ...(block.passage ? [block.passage] : [])] : [];
       }));
       return allRows.filter(q => types.has(q.type));
     }
@@ -1103,6 +1111,7 @@ export default function QuestionCreate({ onQuestionListChange }: { onQuestionLis
     const englishSelectionContent = showEnglishBuilder ? <EnglishFirstPaperBuilder
       key={`${form.subjectId}:${form.chapterIds.join(',')}`}
       enabledBlocks={englishSections}
+      className={englishClassName}
       chapters={chapters}
       topics={topics}
       onPreview={rows => {

@@ -784,7 +784,7 @@ export async function exportPaperToDocx({
     (a, b) => (typePriority[a.type] ?? 5) - (typePriority[b.type] ?? 5)
   );
   const isEnglishPaper = !questions.every(q=>q.type === 'mcq') && usesEnglishFirstTemplate(meta.className || '', meta.subjectName || '');
-  const englishPaper = englishPaperSections(sorted);
+  const englishPaper = englishPaperSections(sorted, meta.className);
   const mcqs = sorted.filter((q) => q.type === "mcq");
   const shorts = sorted.filter((q) => q.type === "short");
   const cqs = sorted.filter((q) => q.type === "cq");
@@ -807,7 +807,7 @@ export async function exportPaperToDocx({
 
   const totalMarks =
     languageMarks + mcqs.length + shortToAnswer * 2 + cqToAnswer * 10 + descToAnswer * 10;
-  const totalMinutes = isEnglishPaper && totalMarks === 100 && englishPaper.sections.length === 13 ? 180 : languageMarks +
+  const totalMinutes = isEnglishPaper && totalMarks === 100 && [11,13].includes(englishPaper.sections.length) ? 180 : languageMarks +
     (isEnglish ? Math.ceil(mcqs.length * 1.5) : mcqs.length) +
     shortToAnswer * 2 +
     cqToAnswer * 10 +
@@ -1482,7 +1482,7 @@ export async function exportPaperToDocx({
       }
       questionChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:noBorders,rows:[new TableRow({children:[
         new TableCell({width:{size:5,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({children:[new TextRun({text:`${section.number}.`,bold:true,font,size:fontSize})]})]}),
-        new TableCell({width:{size:78,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({children:[new TextRun({text:`${section.instruction || questionTypeLabel(section.type)}${section.type === 'poem_questions' && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ''}`,bold:true,font,size:fontSize})]})]}),
+        new TableCell({width:{size:78,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({children:[new TextRun({text:`${section.instruction || questionTypeLabel(section.type)}${['poem_questions','story_questions'].includes(section.type) && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ''}`,bold:true,font,size:fontSize})]})]}),
         new TableCell({width:{size:17,type:WidthType.PERCENTAGE},borders:noBorders,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:section.marks > 0 ? section.marksLine : '',font,size:fontSize})]})]})
       ]})]}));
       for (const [index,q] of section.items.entries()) {

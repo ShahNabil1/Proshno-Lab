@@ -111,7 +111,7 @@ describe("chapter destinations in bulk upload", () => {
 
 
 describe("full English 1st Paper upload", () => {
-  it.each(["ষষ্ঠ শ্রেণি", "সপ্তম শ্রেণি", "অষ্টম শ্রেণি", "Class 6 (English Version)", "Class 7 (English Version)"])("opens the complete upload workflow for %s", async (className) => {
+  it.each(["ষষ্ঠ শ্রেণি", "সপ্তম শ্রেণি", "অষ্টম শ্রেণি", "Class 6 (English Version)", "Class 7 (English Version)", "নবম-দশম শ্রেণি", "SSC (Eglish Version)"])("opens the complete upload workflow for %s", async (className) => {
     state.className = className;
     state.subjectName = "English 1st Paper";
     localStorage.setItem("adminBulkContext.v1", JSON.stringify({classId:"1",subjectId:"2",chapterId:"",type:"mcq"}));

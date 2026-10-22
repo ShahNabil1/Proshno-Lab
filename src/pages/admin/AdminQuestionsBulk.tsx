@@ -334,7 +334,7 @@ export default function AdminQuestionsBulk() {
         <Select value={classId} onValueChange={v=>{setClassId(v);setSubjectId('');setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{classes.map(c=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent></Select>
         <Select value={subjectId} onValueChange={v=>{setSubjectId(v);setChapterId('');}}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{subjects.map(s=><SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent></Select>
       </div>
-      <EnglishFirstUpload key={`${classId}:${subjectId}`} classId={classId} subjectId={subjectId} chapters={chapters} />
+      <EnglishFirstUpload key={`${classId}:${subjectId}`} classId={classId} subjectId={subjectId} chapters={chapters} className={classes.find(c=>String(c.id)===classId)?.name || ""} />
     </div>;
   }
   return (

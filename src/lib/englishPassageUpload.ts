@@ -1,17 +1,20 @@
+import { isClassNineEnglish } from './englishFirstPattern';
 import * as XLSX from 'xlsx';
 import { buildEnglishFirstMcqTemplate, buildLanguageTemplate, parseExcelFile, parsePastedText, QType } from './bulkQuestions';
 const aliases: Record<string,QType> = {mcq:'mcq',q1:'mcq',q2:'answering_questions','answering questions':'answering_questions',answering_questions:'answering_questions',q3:'gap_filling','gap filling':'gap_filling',gap_filling:'gap_filling',q4:'vocabulary',vocabulary:'vocabulary',q5:'information_transfer','information transfer':'information_transfer',information_transfer:'information_transfer',q6:'true_false','true/false':'true_false',true_false:'true_false',q7:'writing_summary','writing summary':'writing_summary',writing_summary:'writing_summary'};
-export function passageType(value: string, allowed: readonly string[]) {
-  const type = aliases[value.trim().toLowerCase()];
+export function passageType(value: string, allowed: readonly string[], className = '') {
+  const key = value.trim().toLowerCase();
+  const nineAliases: Record<string,QType> = {q1:'mcq',q2:'answering_questions',q3:'gap_filling',q4:'information_transfer',q5:'writing_summary'};
+  const type = isClassNineEnglish(className) && /^q[0-9]+$/.test(key) ? nineAliases[key] : aliases[key];
   if (!type || !allowed.includes(type)) throw new Error(`প্রশ্নের ধরন সঠিক নয়: ${value}`);
   return type;
 }
 
-export function parseMixedPassagePaste(text: string, allowed: readonly string[]) {
+export function parseMixedPassagePaste(text: string, allowed: readonly string[], className = '') {
   const markers = [...text.matchAll(/^Type\s*:\s*(.+)$/gim)];
   if (!markers.length) throw new Error('প্রতিটি ধরনের আগে Type: লিখুন');
   const context = parsePassagePaste(text.slice(0,markers[0].index),'mcq');
-  const rows = markers.flatMap((marker,i)=>parsePastedText(text.slice(marker.index!+marker[0].length,markers[i+1]?.index).trim().replace(/\n---\s*$/,''),passageType(marker[1],allowed)));
+  const rows = markers.flatMap((marker,i)=>parsePastedText(text.slice(marker.index!+marker[0].length,markers[i+1]?.index).trim().replace(/\n---\s*$/,''),passageType(marker[1],allowed,className)));
   return {...context,rows};
 }
 
@@ -24,7 +27,7 @@ export function downloadMixedPassageTemplate(allowed: readonly string[]) {
   XLSX.writeFile(wb,'all_types_passage_template.xlsx');
 }
 
-export async function parseMixedPassageExcel(file: File, allowed: readonly string[]) {
+export async function parseMixedPassageExcel(file: File, allowed: readonly string[], className = '') {
   const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});
   const data = XLSX.utils.sheet_to_json<any[]>(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
   const header = (data[0] || []).map(v=>String(v).trim().toLowerCase());
@@ -35,7 +38,7 @@ export async function parseMixedPassageExcel(file: File, allowed: readonly strin
   if (new Set(names).size>1 || new Set(passages).size>1) throw new Error('একবারে একটি Passage-এর প্রশ্ন দিন');
   const rows = [];
   for (const row of body) {
-    const type = passageType(cell(row,'type'),allowed);
+    const type = passageType(cell(row,'type'),allowed,className);
     const question = cell(row,'question');
     const answer = cell(row,'answer'), explanation=cell(row,'explanation');
     const parsed = parsePastedText(`প্রশ্ন: ${question}\n${type==='mcq'?['a','b','c','d'].map(k=>`(${k}) ${cell(row,`option ${k}`)}`).join('\n')+'\n':''}উত্তর: ${answer}\nব্যাখ্যা: ${explanation}`,type);

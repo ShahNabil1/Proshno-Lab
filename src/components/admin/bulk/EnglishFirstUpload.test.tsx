@@ -31,3 +31,14 @@ it('requires an existing lesson for Class 7 unit-based uploads',async()=>{
   fireEvent.change(screen.getByLabelText('Upload Lesson'),{target:{value:'71'}});
   expect(screen.getByRole('button',{name:'প্রশ্ন তালিকায় যোগ করুন'})).toBeEnabled();
 });
+
+it('offers the exact class nine sections and a three-part seen template',()=>{
+ render(<EnglishFirstUpload classId="9" className="Class 9" subjectId="1" chapters={[{id:91,name:'Unit 2: Climate Change'}]}/>);
+ const options=screen.getAllByRole('option').map(el=>el.textContent);
+ for(const label of ['Seen Passage · Q1–Q3','Unseen Passage · Q4–Q5','Matching · Q6','Rearranging · Q7','Poems · Q8','Stories · Q9','Completing a Story · Q10','Dialogue · Q11'])expect(options).toContain(label);
+ expect(screen.queryByRole('button',{name:'Vocabulary (Synonyms & Antonyms)'})).toBeNull();
+ expect(screen.getByText(/Type: gap_filling/)).toBeTruthy();
+ fireEvent.change(screen.getByLabelText('প্রশ্নপত্রের অংশ'),{target:{value:'1'}});
+ expect(screen.queryByRole('button',{name:'True/False'})).toBeNull();
+ expect(screen.getByRole('button',{name:'Writing Summary'})).toBeTruthy();
+});

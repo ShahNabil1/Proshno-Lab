@@ -52,9 +52,26 @@ describe('English paper sections',()=>{
   });
 });
 
-it.each(['Class 5','Class 9-10','Class 11'])('keeps other grades outside the shared template: %s',(name)=>{
+it.each(['Class 5','Class 11'])('keeps other grades outside the shared template: %s',(name)=>{
   expect(usesEnglishFirstTemplate(name,'English 1st Paper')).toBe(false);
 });
 it('does not enable the first paper template for second paper or unrelated subjects',()=>{
   for(const name of ['English 2nd Paper','বাংলা ১ম পত্র','গণিত']) expect(usesEnglishFirstTemplate('Class 6',name)).toBe(false);
+});
+
+it('uses the supplied class nine Q1-Q11 pattern with 70 reading and 30 writing marks',()=>{
+ const counts:Record<string,number>={mcq:7,answering_questions:5,gap_filling:1,information_transfer:1,writing_summary:1,matching:1,rearranging:1,poem_questions:8,story_questions:8,completing_story:1,dialogue:1};
+ const rows=Object.entries(counts).flatMap(([type,count])=>Array.from({length:count},(_,i)=>({type,question:`(a) ${type} ${i}`,creative_data:{marks:type==='completing_story'||type==='dialogue'?10:0}})));
+ rows.push({type:'seen_passage',question:'Seen source',creative_data:{marks:0}},{type:'unseen_passage',question:'Unseen source',creative_data:{marks:0}});
+ const {sections}=englishPaperSections(rows.reverse(),'নবম-দশম শ্রেণি');
+ expect(sections.map(s=>s.type)).toEqual(Object.keys(counts));
+ expect(sections.map(s=>s.number)).toEqual([1,2,3,4,5,6,7,8,9,10,11]);
+ expect(sections.map(s=>s.marks)).toEqual([7,10,5,5,10,5,8,10,10,15,15]);
+ expect(sections.filter(s=>s.part==='reading').reduce((n,s)=>n+s.marks,0)).toBe(70);
+ expect(sections.filter(s=>s.part==='writing').reduce((n,s)=>n+s.marks,0)).toBe(30);
+ expect(sections.slice(0,3).map(s=>s.passage?.question)).toEqual(['Seen source','Seen source','Seen source']);
+ expect(sections.slice(3,5).map(s=>s.passage?.question)).toEqual(['Unseen source','Unseen source']);
+ for(const i of [7,8]){expect(sections[i].items).toHaveLength(8);expect(sections[i].answerCount).toBe(5);expect(sections[i].marksLine).toBe('2 × 5 = 10');}
+ expect(englishItemLabel('story_questions',7,8)).toBe('(h)');
+ expect(sections[8].items[0].question).not.toMatch(/^\(a\)/);
 });

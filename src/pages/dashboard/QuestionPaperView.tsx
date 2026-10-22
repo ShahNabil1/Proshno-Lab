@@ -976,7 +976,7 @@ export default function QuestionPaperView() {
     setSettings(prev => ({ ...prev, showMarksBox: mcqOnly, optionStyle: 'none' }));
   }, [questions.length, mcqOnly]);
   const isEnglishPaper = !mcqOnly && usesEnglishFirstTemplate(meta?.className || '', meta?.subjectName || '');
-  const englishPaper = englishPaperSections(sortedQuestions);
+  const englishPaper = englishPaperSections(sortedQuestions, meta?.className);
   const mcqQuestions = (() => {
     const items = sortedQuestions.filter(q => q.type === "mcq");
     const repeated = findRepeatedStimuli(items, q => q.stimulus_text);
@@ -1038,7 +1038,7 @@ export default function QuestionPaperView() {
   const totalMarks = languageMarks + mcqQuestions.length + shortToAnswerForTotal * 2 + cqToAnswerForTotal * 10 + descToAnswerForTotal * 10;
 
   // Calculate total time: MCQ=1min, CQ=10min, Short=2min, Descriptive=10min
-  const totalTimeMinutes = isEnglishPaper && totalMarks === 100 && englishPaper.sections.length === 13 ? 180 : languageMarks + (isEnglishVersion ? Math.ceil(mcqQuestions.length * 1.5) : mcqQuestions.length) + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
+  const totalTimeMinutes = isEnglishPaper && totalMarks === 100 && [11,13].includes(englishPaper.sections.length) ? 180 : languageMarks + (isEnglishVersion ? Math.ceil(mcqQuestions.length * 1.5) : mcqQuestions.length) + cqToAnswerForTotal * 10 + shortToAnswerForTotal * 2 + descToAnswerForTotal * 10;
   const formatTime = (mins: number): string => {
     if (isEnglishVersion) {
       const hours = Math.floor(mins / 60);
@@ -3035,7 +3035,7 @@ export default function QuestionPaperView() {
                 <p className="font-semibold">{englishPassageInstruction(englishPaper.sections,si)}</p>
                 <LatexRenderer text={section.passage.question} />
               </div>}
-              <div className="paper-question-item grid grid-cols-[24px_minmax(0,1fr)_auto] gap-x-2 font-semibold"><span className="font-bold" style={{fontWeight:700}}>{section.number}.</span><span>{section.instruction || questionTypeLabel(section.type)}{section.type === "poem_questions" && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ""}</span><span className="shrink-0 whitespace-nowrap">{section.marks > 0 ? section.marksLine : ''}</span></div>
+              <div className="paper-question-item grid grid-cols-[24px_minmax(0,1fr)_auto] gap-x-2 font-semibold"><span className="font-bold" style={{fontWeight:700}}>{section.number}.</span><span>{section.instruction || questionTypeLabel(section.type)}{["poem_questions","story_questions"].includes(section.type) && section.items.length > section.answerCount ? ` [Any ${section.answerCount} out of ${section.items.length}]` : ""}</span><span className="shrink-0 whitespace-nowrap">{section.marks > 0 ? section.marksLine : ''}</span></div>
               <AutoFitQuestionGrid enabled={['answering_questions','true_false'].includes(section.type)} manualColumns={settings.manualSectionColumns?.[section.type]} maxColumns={section.type === 'answering_questions' ? settings.answeringColumns || 2 : 2} gap={24} style={{marginLeft:32,minWidth:0}} className={section.type === 'vocabulary' ? 'flex flex-wrap gap-x-4' : ''}>
               {section.items.map((q,index) => <Fragment key={q.id}>
                 {q.stimulus_text && !section.passage && (index === 0 || q.stimulus_text !== section.items[index-1].stimulus_text) && <div data-editable={`stimulus-${q.id}`} onClick={(e) => handleEditableClick(e)} suppressContentEditableWarning className={`paper-question-item col-span-full w-full ${editableClass}`}><LatexRenderer text={q.stimulus_text} /></div>}

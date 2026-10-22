@@ -24,7 +24,7 @@ export function patternGrade(name: string): 6 | 7 | 8 | 9 | null {
   if (/ষষ্ঠ|class\s*6\b|^6(?:\D|$)/.test(n)) return 6;
   if (/সপ্তম|class\s*7\b|^7(?:\D|$)/.test(n)) return 7;
   if (/অষ্টম|class\s*8\b|^8(?:\D|$)/.test(n)) return 8;
-  if (/নবম|দশম|class\s*(9|10)\b|^(9|10)(?:\D|$)/.test(n)) return 9;
+  if (/\bssc\b|নবম|দশম|class\s*(9|10)\b|^(9|10)(?:\D|$)/.test(n)) return 9;
   return null;
 }
 export function languageSubject(name: string): 'english1' | 'english2' | 'bangla2' | null {
@@ -36,10 +36,10 @@ export function languageSubject(name: string): 'english1' | 'english2' | 'bangla
   if (/bangla|বাংলা/.test(n) && /2nd|second|2|দ্বিতীয়|দ্বিতীয়/.test(n)) return 'bangla2';
   return null;
 }
-// The shared upload, builder and paper layout follow the owner's class 8 template.
+// The shared upload, builder and paper layout follow the owner's class-specific templates.
 export function usesEnglishFirstTemplate(className: string, subjectName: string): boolean {
   const grade = patternGrade(className);
-  return (grade === 6 || grade === 7 || grade === 8) && languageSubject(subjectName) === 'english1';
+  return (grade === 6 || grade === 7 || grade === 8 || grade === 9) && languageSubject(subjectName) === 'english1';
 }
 
 type Rule = { match: RegExp; types: string[]; topics?: string[] };
