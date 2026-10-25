@@ -16,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-center"
       offset={{ top: "80px" }}
       mobileOffset={{ top: "calc(env(safe-area-inset-top, 0px) + 72px)", left: "16px", right: "16px" }}
-      duration={5000}
+      duration={2000}
       visibleToasts={2}
       expand
       closeButton

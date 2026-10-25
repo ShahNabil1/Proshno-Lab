@@ -43,7 +43,23 @@ export function restorePaperInlineEdits(paper:HTMLElement,edits:PaperInlineEdits
   for(const [key,edit] of Object.entries(edits||{})){
     try{
       const target=locate(paper,JSON.parse(key));if(!target||typeof edit.html!=="string")continue;
-      const html=safePaperEditHtml(edit.html);
+      let html=safePaperEditHtml(edit.html);
+      // Old question edits were captured before answers were enabled. Keep
+      // freshly rendered answer attachments when restoring those edits.
+      if (/^(mcq|cq|short|desc)-/.test(target.dataset.editable || '')) {
+        const restored = target.cloneNode(false) as HTMLElement;
+        restored.innerHTML = html;
+        for (const selector of ['.paper-answer-block', '.mcq-explanation', '.mcq-correct-answer-badge', '.cq-reference-answers']) {
+          if (restored.querySelector(selector)) continue;
+          target.querySelectorAll<HTMLElement>(selector).forEach(answer => {
+            if (answer.parentElement?.closest('.paper-answer-block, .mcq-explanation, .cq-reference-answers')) return;
+            const parent = selector === '.mcq-correct-answer-badge'
+              ? restored.querySelector('[data-auto-fit-columns]') || restored : restored;
+            parent.append(answer.cloneNode(true));
+          });
+        }
+        html = restored.innerHTML;
+      }
       if(safePaperEditHtml(target.innerHTML)!==html)target.innerHTML=html;
       if(edit.style!==null && !/expression\s*\(|javascript\s*:/i.test(edit.style))target.setAttribute("style",edit.style);
     }catch{/* Ignore corrupt or no-longer-present optional fields. */}

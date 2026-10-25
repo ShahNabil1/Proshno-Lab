@@ -27,6 +27,7 @@ import {
 } from "./boardGeometry";
 
 interface BoardCanvasProps {
+  onMarqueeSelect?: (rect: { left: number; top: number; right: number; bottom: number }) => void;
   tool: ToolId;
   color: string;
   strokeWidth: number;
@@ -108,6 +109,7 @@ export default function BoardCanvas({
   showCompassCenter = true,
   onCompassRadiusChange,
   onCompassClose,
+  onMarqueeSelect,
   className = "",
 }: BoardCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -471,7 +473,7 @@ export default function BoardCanvas({
 
       if (compassArc?.resizing) {
         const point = toBoardPoint(event.clientX, event.clientY);
-        const radius = Math.max(30, Math.min(520, Math.hypot(point[0] - compassArc.center[0], point[1] - compassArc.center[1])));
+        const radius = Math.max(10, Math.hypot(point[0] - compassArc.center[0], point[1] - compassArc.center[1]));
         const angle = Math.atan2(point[1] - compassArc.center[1], point[0] - compassArc.center[0]);
         setCompassArc({ ...compassArc, radius, startAngle: angle, currentAngle: angle });
         onCompassRadiusChange?.(Math.round(radius));
@@ -603,6 +605,11 @@ export default function BoardCanvas({
 
       if (selectionBox) {
         const box = rectFromPoints(selectionBox.start, selectionBox.current);
+        const surface = svgRef.current?.getBoundingClientRect();
+        if (surface) onMarqueeSelect?.({ left: surface.left + box.x * surface.width / boardWidth,
+          top: surface.top + box.y * surface.height / boardHeight,
+          right: surface.left + (box.x + box.w) * surface.width / boardWidth,
+          bottom: surface.top + (box.y + box.h) * surface.height / boardHeight });
         const ids = elementsRef.current.filter((element) => {
           const bounds = elementBounds(element);
           return bounds.x <= box.x + box.w && bounds.x + bounds.w >= box.x && bounds.y <= box.y + box.h && bounds.y + bounds.h >= box.y;
@@ -667,7 +674,7 @@ export default function BoardCanvas({
       setDragPreview(null);
       setDragPreviews([]);
     },
-    [color, compassArc, draft, dragPreview, dragPreviews, onCommit, opacity, selectionBox, showCompassCenter, strokeWidth],
+    [boardWidth, boardHeight, onMarqueeSelect, color, compassArc, draft, dragPreview, dragPreviews, onCommit, opacity, selectionBox, showCompassCenter, strokeWidth],
   );
 
   const handlePointerCancel = useCallback(() => {
@@ -1137,6 +1144,10 @@ interface ElementNodeProps {
   interactive: boolean;
   onPointerDown: (event: React.PointerEvent, el: BoardElement, mode: DragMode) => void;
   onRequestEdit: (point: Point, existing?: TextElement) => void;
+}
+
+export function BoardElementView({ element }: { element: BoardElement }) {
+  return <ElementNode element={element} interactive={false} onPointerDown={() => {}} onRequestEdit={() => {}} />;
 }
 
 function ElementNode({ element, interactive, onPointerDown, onRequestEdit }: ElementNodeProps) {

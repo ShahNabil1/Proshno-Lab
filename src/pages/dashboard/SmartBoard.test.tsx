@@ -1,7 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { printSmartboard } from "@/lib/printSmartboard";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import SmartBoard from "./SmartBoard";
+
+vi.mock("@/lib/printSmartboard", () => ({ printSmartboard: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, session: null, loading: false, signInWithGoogle: vi.fn(), signOut: vi.fn() }),
@@ -37,6 +40,31 @@ const renderPage = () =>
   );
 
 describe("SmartBoard page", () => {
+  it("exports blank and duplicate pages with independent answer and drawing controls", async () => {
+    renderPage();
+    fireEvent.click(screen.getByTitle("সমাধানের জন্য ফাঁকা পৃষ্ঠা যোগ করুন"));
+    fireEvent.click(screen.getByTitle("বর্তমান পৃষ্ঠা ডুপ্লিকেট করুন"));
+    fireEvent.click(screen.getByText("PDF স্লাইড"));
+    expect(screen.getByLabelText("উত্তরসহ")).not.toBeChecked();
+    expect(screen.getByLabelText("লেখা ও আঁকা দাগসহ")).toBeChecked();
+    fireEvent.click(screen.getByLabelText("উত্তরসহ"));
+    fireEvent.click(screen.getByLabelText("লেখা ও আঁকা দাগসহ"));
+    fireEvent.click(screen.getByText("PDF ডাউনলোড / প্রিন্ট"));
+    await waitFor(() => expect(printSmartboard).toHaveBeenCalled());
+    const [slides] = vi.mocked(printSmartboard).mock.calls.at(-1)!;
+    expect(slides).toHaveLength(2);
+    expect(slides.every(slide => !slide.includes('<svg'))).toBe(true);
+  });
+  it("adds and navigates between independent blank solution pages", () => {
+    renderPage();
+    fireEvent.click(screen.getByTitle("সমাধানের জন্য ফাঁকা পৃষ্ঠা যোগ করুন"));
+    expect(screen.queryByText("স্মার্টবোর্ড প্রস্তুত")).not.toBeInTheDocument();
+    expect(screen.getByText("পৃষ্ঠা ১ / ১")).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle("সমাধানের জন্য ফাঁকা পৃষ্ঠা যোগ করুন"));
+    expect(screen.getByText("পৃষ্ঠা ২ / ২")).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle("পূর্ববর্তী প্রশ্ন (Left Arrow)"));
+    expect(screen.getByText("পৃষ্ঠা ১ / ২")).toBeInTheDocument();
+  });
   it("mounts with the board shell and an empty whiteboard", () => {
     renderPage();
 

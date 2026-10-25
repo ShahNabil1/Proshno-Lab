@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildPrintablePages, type PrintLayout } from "./printableDocument";
 
 const layout: PrintLayout = { widthMm: 210, heightMm: 297, columns: 1, gap: 15, divider: "", margins: [0, 0, 0, 0] };
@@ -10,6 +10,45 @@ function paper(hidden = false) {
   return root;
 }
 describe("responsive print pagination", () => {
+  it.each([40, 60])("prints OMR once after all questions (attachment height %i)", async (omrHeight) => {
+    const source = paper();
+    const branding = document.createElement('div');
+    branding.innerHTML = '<img data-paper-first-page-only alt="Institute logo"><span>Institute name</span>';
+    branding.querySelector('img')!.style.position = omrHeight === 40 ? 'relative' : 'absolute';
+    source.prepend(branding);
+    source.querySelector('.combined-question-flow')!.innerHTML = '<div>First</div><div>Second</div><div>Third</div>';
+    const omr = document.createElement('section');
+    omr.className = 'in-paper-omr-container';
+    omr.textContent = 'OMR Area';
+    source.append(omr);
+    const geometry = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      let bottom = 0;
+      if (this.hasAttribute('data-print-paper')) bottom = 100;
+      if (this.classList.contains('paper-explicit-column')) bottom = this.children.length * 60;
+      if (this.classList.contains('in-paper-omr-container')) {
+        const column = this.parentElement?.querySelector('.paper-explicit-column');
+        bottom = (column?.children.length || 0) * 60 + omrHeight;
+      }
+      return { x: 0, y: 0, top: 0, left: 0, right: 100, width: 100, height: bottom, bottom, toJSON() {} };
+    });
+    try {
+      const pages = await buildPrintablePages(source, layout);
+      expect(pages).toHaveLength(omrHeight === 40 ? 3 : 4);
+      expect(pages.join('').match(/OMR Area/g)).toHaveLength(1);
+      expect(pages.at(-1)).toContain('OMR Area');
+      expect(pages[0]).toContain('alt="Institute logo"');
+      expect(pages.slice(1).join('')).not.toContain('alt="Institute logo"');
+      expect(pages.every(page => page.includes('Institute name'))).toBe(true);
+      expect(source.querySelector('[data-paper-first-page-only]')).not.toBeNull();
+      expect(pages.slice(0, -1).join('')).not.toContain('OMR Area');
+      for (const question of ['First', 'Second', 'Third']) {
+        expect(pages.join('').match(new RegExp(question, 'g'))).toHaveLength(1);
+      }
+      expect(source.querySelectorAll('.in-paper-omr-container')).toHaveLength(1);
+    } finally {
+      geometry.mockRestore();
+    }
+  });
   it("keeps a single centered watermark on the page without adding it to question flow", async () => {
     const source=paper();
     const mark=document.createElement("div");

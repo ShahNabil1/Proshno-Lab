@@ -29,3 +29,10 @@ it("renders CQ imported array answers with equation bold enabled", () => {
   expect(container.querySelector(".latex-fallback, .katex-error")).toBeNull();
   expect(container.querySelectorAll(".math-authored-row")).toHaveLength(2);
 });
+
+it("renders nested aligned answers without exposing LaTeX code", () => {
+  const { container } = render(<LatexRenderer text={String.raw`\[\begin{aligned} & A=\{1,2\} \\ & \begin{aligned} A\cap B&=\{2\} \\ A'&=U-A \end{aligned} \\ & A'=\{3\} \end{aligned}\]`} />);
+  expect(container.querySelector('.katex')).not.toBeNull();
+  expect(container.querySelector('.latex-fallback')).toBeNull();
+  expect(container.textContent).not.toContain('\\begin{aligned}');
+});

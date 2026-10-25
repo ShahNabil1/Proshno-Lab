@@ -86,3 +86,42 @@ describe("boardReducer", () => {
   });
 });
 
+
+it("undoes and redoes part deletion together with drawings in chronological order", () => {
+  let state = createBoardState('q-1');
+  const moved = { stem: { x: 90, y: 30 } };
+  state = boardReducer(state, { type: 'parts', parts: moved });
+  state = boardReducer(state, { type: 'commit', elements: [pen('stroke')] });
+  state = boardReducer(state, { type: 'parts', parts: { stem: { ...moved.stem, deleted: true } } });
+  state = boardReducer(state, { type: 'undo' });
+  expect(state.parts).toEqual(moved);
+  expect(state.elements).toHaveLength(1);
+  state = boardReducer(state, { type: 'undo' });
+  expect(state.elements).toHaveLength(0);
+  expect(state.parts).toEqual(moved);
+  state = boardReducer(state, { type: 'redo' });
+  state = boardReducer(state, { type: 'redo' });
+  expect(state.parts.stem.deleted).toBe(true);
+  expect(state.elements).toHaveLength(1);
+  state = boardReducer(state, { type: 'switch', key: 'q-2' });
+  expect(state.parts).toEqual({});
+  state = boardReducer(state, { type: 'switch', key: 'q-1' });
+  expect(state.parts.stem.deleted).toBe(true);
+});
+
+it("duplicates drawings and remaps movable question parts independently", () => {
+  let source = boardReducer(createBoardState('q-12'), { type: 'commit', elements: [pen('ink')] });
+  source = boardReducer(source, { type: 'parts', parts: {
+    '12:stem': { x: 10, y: 30, copies: ['12:stem:copy:a'] },
+    '12:stem:copy:a': { x: 20, y: 50, deleted: true },
+  } });
+  let copy = boardReducer(source, { type: 'duplicate', key: 'q--1', sourceId: 12, targetId: -1 });
+  expect(copy.elements).toEqual(source.elements);
+  expect(copy.elements).not.toBe(source.elements);
+  expect(copy.parts['-1:stem'].copies).toEqual(['-1:stem:copy:a']);
+  expect(copy.parts['-1:stem:copy:a'].deleted).toBe(true);
+  copy = boardReducer(copy, { type: 'clear' });
+  copy = boardReducer(copy, { type: 'switch', key: 'q-12' });
+  expect(copy.elements).toHaveLength(1);
+  expect(copy.parts).toEqual(source.parts);
+});

@@ -3003,3 +3003,129 @@ input.class-selection-box[type="radio"]:hover { border-color: #111; box-shadow: 
   .ready-package-catalog td:last-child::before { display: none; }
   .ready-package-catalog td:last-child button { width: 100%; min-height: 44px; }
 }
+
+/* Imported rich text must follow the board palette rather than retain black ink. */
+[data-testid="smartboard-question-panel"] .latex-renderer,
+[data-testid="smartboard-question-panel"] .latex-renderer * {
+  color: inherit !important;
+}
+
+/* Classroom controls keep usable targets instead of shrinking into each other. */
+.smartboard-topbar {
+  height: auto;
+  min-height: 64px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 16px;
+  padding: 10px 16px;
+}
+.smartboard-topbar > div {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.smartboard-topbar button,
+.smartboard-topbar a {
+  flex-shrink: 0;
+  min-height: 40px;
+  white-space: nowrap;
+}
+.smartboard-topbar svg,
+.smartboard-toolbar svg { flex-shrink: 0; }
+.smartboard-toolbar {
+  gap: 12px;
+  padding: 10px 16px;
+}
+.smartboard-tools {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  overflow: visible;
+  gap: 6px;
+}
+.smartboard-tools > button {
+  flex-shrink: 0;
+  min-width: 44px;
+  height: 44px;
+  justify-content: center;
+  white-space: nowrap;
+}
+.smartboard-options {
+  justify-content: center;
+  gap: 8px;
+}
+.smartboard-options > * { flex-shrink: 0; }
+@media (max-width: 1399px) {
+  .smartboard-toolbar { justify-content: center; }
+  .smartboard-tools { flex-basis: 100%; }
+}
+@media (max-width: 767px) {
+  .smartboard-topbar { padding: 8px; gap: 8px; }
+  .smartboard-toolbar { padding: 8px; gap: 8px; }
+}
+
+@media (max-width: 767px) {
+  .smartboard-shell { min-width: 0; max-width: 100%; }
+  .smartboard-topbar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    min-height: 60px;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .smartboard-topbar > div { flex-wrap: nowrap; max-width: none; }
+  .smartboard-topbar button, .smartboard-topbar a { min-width: 44px; min-height: 44px; }
+  .smartboard-toolbar { display: block; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .smartboard-tools {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .smartboard-options {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-top: 6px;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+  }
+  .smartboard-options button { min-height: 44px; }
+  .smartboard-shell input, .smartboard-shell select { font-size: 16px; }
+}
+
+/* Font changes must not alternate scrollbars, available width and fit zoom. */
+.smartboard-viewport {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+  contain: size layout;
+}
+.smartboard-viewport * { overflow-anchor: none; }
+
+@media (max-width: 639px) {
+  .paper-edit-toolbar {
+    width: calc(100vw - 16px);
+    max-height: 38dvh;
+    overflow-y: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  .paper-edit-toolbar button {
+    min-width: 40px;
+    min-height: 40px;
+    flex-shrink: 0;
+  }
+  .paper-edit-toolbar svg { width: 17px; height: 17px; }
+}

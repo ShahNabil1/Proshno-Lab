@@ -37,3 +37,15 @@ describe("saved paper inline edits",()=>{
   expect(source.textContent).toBe("Unchanged");
  });
 });
+
+it('preserves generated answers when restoring edits captured with answers off', () => {
+ const old=paper('<div data-editable="mcq-1"><p>Edited question</p><div data-auto-fit-columns="2">Options</div></div>');
+ const edits=capturePaperInlineEdit(old,old.firstElementChild as HTMLElement,{});
+ const fresh=paper('<div data-editable="mcq-1"><p>Original question</p><div data-auto-fit-columns="2">Options<span class="mcq-correct-answer-badge">Answer A</span></div><div class="mcq-explanation">Worked answer</div></div>');
+ restorePaperInlineEdits(fresh,edits);
+ expect(fresh.textContent).toContain('Edited question');
+ expect(fresh.querySelector('[data-auto-fit-columns] .mcq-correct-answer-badge')?.textContent).toBe('Answer A');
+ expect(fresh.querySelector('.mcq-explanation')?.textContent).toBe('Worked answer');
+ restorePaperInlineEdits(fresh,edits);
+ expect(fresh.querySelectorAll('.mcq-explanation')).toHaveLength(1);
+});

@@ -49,16 +49,28 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
   // Position toolbar above the target element
   useEffect(() => {
     if (!targetEl || !toolbarRef.current) return;
-    const rect = targetEl.getBoundingClientRect();
-    const tbRect = toolbarRef.current.getBoundingClientRect();
-    const scrollY = window.scrollY;
-
-    let top = rect.top + scrollY - tbRect.height - 8;
-    if (top < scrollY + 10) top = rect.bottom + scrollY + 8;
-    let left = rect.left + rect.width / 2 - tbRect.width / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - tbRect.width - 8));
-
-    setPos({ top, left });
+    const reposition = () => {
+      const toolbar = toolbarRef.current;
+      if (!toolbar) return;
+      const viewport = window.visualViewport;
+      const viewportTop = viewport?.offsetTop || 0;
+      const viewportHeight = viewport?.height || window.innerHeight;
+      const rect = targetEl.getBoundingClientRect();
+      const tbRect = toolbar.getBoundingClientRect();
+      const mobile = window.innerWidth < 640;
+      let top = mobile ? viewportTop + viewportHeight - tbRect.height - 8 : rect.top - tbRect.height - 8;
+      if (!mobile && top < viewportTop + 8) top = rect.bottom + 8;
+      top = Math.max(viewportTop + 8, Math.min(top, viewportTop + viewportHeight - tbRect.height - 8));
+      const left = mobile ? 8 : Math.max(8, Math.min(rect.left + rect.width / 2 - tbRect.width / 2, window.innerWidth - tbRect.width - 8));
+      setPos(previous => previous.top === top && previous.left === left ? previous : { top, left });
+    };
+    reposition();
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    window.visualViewport?.addEventListener('resize', reposition);
+    window.visualViewport?.addEventListener('scroll', reposition);
+    const observer = new ResizeObserver(reposition);
+    observer.observe(toolbarRef.current);
 
     // Read current font size + colour
     const computed = window.getComputedStyle(targetEl);
@@ -70,6 +82,13 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
         "#" + rgb.slice(0, 3).map(n => Number(n).toString(16).padStart(2, "0")).join("")
       );
     }
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+      window.visualViewport?.removeEventListener('resize', reposition);
+      window.visualViewport?.removeEventListener('scroll', reposition);
+      observer.disconnect();
+    };
   }, [targetEl]);
 
   // Keep track of the last selection made inside the editable element,
@@ -110,8 +129,12 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
   }, [targetEl, onClose]);
 
   const exec = useCallback((cmd: string, value?: string) => {
+    targetEl?.focus({ preventScroll: true });
+    const selection = window.getSelection();
+    if (selection && savedRange.current && targetEl?.contains(savedRange.current.commonAncestorContainer)) {
+      selection.removeAllRanges(); selection.addRange(savedRange.current);
+    }
     document.execCommand(cmd, false, value);
-    targetEl?.focus();
   }, [targetEl]);
 
   const changeFontSize = (delta: number) => {
@@ -177,7 +200,9 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
   return (
     <div
       ref={toolbarRef}
-      className="fixed z-[100] flex items-center gap-0.5 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/[0.10] via-white to-accent/25 px-1.5 py-1.5 font-paper shadow-[0_14px_34px_rgba(30,58,138,0.20)] backdrop-blur-sm dark:from-primary/25 dark:via-card dark:to-accent/15"
+      className="paper-edit-toolbar fixed z-[100] flex items-center gap-0.5 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/[0.10] via-white to-accent/25 px-1.5 py-1.5 font-paper shadow-[0_14px_34px_rgba(30,58,138,0.20)] backdrop-blur-sm dark:from-primary/25 dark:via-card dark:to-accent/15"
+      role="toolbar" aria-label="প্রশ্ন সম্পাদনার অপশন"
+      onMouseDown={event => { if (!(event.target instanceof HTMLInputElement)) event.preventDefault(); }}
       style={{ top: pos.top, left: pos.left }}
     >
       {/* Font size */}
@@ -230,7 +255,7 @@ export default function FloatingToolbar({ targetEl, optionLayout, onOptionLayout
             <Type className="h-3.5 w-3.5" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-1.5" side="bottom" align="center" onOpenAutoFocus={e => e.preventDefault()}>
+        <PopoverContent className="w-48 max-h-[50dvh] overflow-y-auto p-1.5" side="bottom" align="center" onOpenAutoFocus={e => e.preventDefault()}>
           {FONT_FAMILIES.map(font => (
             <button
               key={font.value}

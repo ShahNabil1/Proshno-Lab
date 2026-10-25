@@ -164,6 +164,9 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
   flow.classList.add('paper-explicit-columns');
   Object.assign(flow.style, { columnCount: 'auto', columnRule: 'none', display: 'grid',
     gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`, gap: `${layout.gap}px`, alignItems: 'start' });
+  // The OMR is a document attachment, not a repeating sheet footer.
+  const omr = template.querySelector<HTMLElement>('.in-paper-omr-container');
+  omr?.remove();
   const pages: string[] = [];
   const totalWork = Math.max(1, pending.reduce((sum, item) => sum + (item.textContent?.length || 0) + 1, 0));
   let completedWork = 0;
@@ -181,7 +184,10 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
     while (pending.length) {
       await yieldWork();
       const page = template.cloneNode(true) as HTMLElement;
-      if (pages.length) page.querySelector('.paper-document-header')?.remove();
+      if (pages.length) {
+        page.querySelectorAll('.paper-document-header').forEach(element => element.remove());
+        page.querySelectorAll('[data-paper-first-page-only]').forEach(element => element.remove());
+      }
       const pageFlow = page.querySelector<HTMLElement>('.combined-question-flow')!;
       host.replaceChildren(page);
       const pageBottom = page.getBoundingClientRect().bottom - layout.margins[2];
@@ -260,6 +266,30 @@ export async function buildPrintablePages(source: HTMLElement, layout: PrintLayo
       }
       pages.push(page.outerHTML);
       if (pages.length > 500) throw new Error('Pagination made no progress');
+    }
+    if (omr) {
+      // Try the balanced final question sheet first, preserving full page width.
+      let finalPage = host.firstElementChild as HTMLElement;
+      let finalFlow = finalPage.querySelector<HTMLElement>('.combined-question-flow')!;
+      finalFlow.after(omr);
+      const bottom = finalPage.getBoundingClientRect().bottom - layout.margins[2];
+      const overflows = Array.from(finalPage.children).some(element => {
+        const style = getComputedStyle(element);
+        return style.position !== 'absolute' && style.display !== 'none'
+          && element.getBoundingClientRect().bottom + parseFloat(style.marginBottom || '0') > bottom;
+      });
+      if (overflows) {
+        omr.remove();
+        finalPage = template.cloneNode(true) as HTMLElement;
+        finalPage.querySelectorAll('.paper-document-header').forEach(element => element.remove());
+        finalPage.querySelectorAll('[data-paper-first-page-only]').forEach(element => element.remove());
+        finalFlow = finalPage.querySelector<HTMLElement>('.combined-question-flow')!;
+        finalFlow.after(omr);
+        host.replaceChildren(finalPage);
+        pages.push(finalPage.outerHTML);
+      } else {
+        pages[pages.length - 1] = finalPage.outerHTML;
+      }
     }
     onProgress?.(100);
     return pages;

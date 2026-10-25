@@ -1,3 +1,5 @@
+import { useHistorySheet } from "@/hooks/useHistorySheet";
+import { paperSetCode } from "@/lib/paperSetCode";
 import { normalizeQuestionReferenceSettings } from "@/lib/questionReferenceSettings";
 import { usePaperInlineEdits } from "@/hooks/usePaperInlineEdits";
 import type { PaperInlineEdits } from "@/lib/paperInlineEdits";
@@ -291,7 +293,7 @@ export default function QuestionPaperView() {
   const cloudSaveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestCloudSave = useRef<(() => Promise<unknown>) | null>(null);
   const isMobile = useIsMobile();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useHistorySheet("paper-settings");
   const [pageSetupOpen, setPageSetupOpen] = useState(false);
   const [pageNumberOpen, setPageNumberOpen] = useState(false);
   const retainedAnswers = useRef(false);
@@ -331,6 +333,7 @@ export default function QuestionPaperView() {
     showSubjectName: true,
     showChapterName: true,
     showSetCode: true,
+    setCodeIndex: 0,
     showProgramName: true,
     showInstruction: true,
     paperSize: "A4" as PaperSize,
@@ -844,9 +847,13 @@ export default function QuestionPaperView() {
       toast.error("Smart Board-এ নেওয়ার মতো কোনো প্রশ্ন নেই");
       return;
     }
+    sessionStorage.setItem("viewPaperQuestions", JSON.stringify(questions));
+    sessionStorage.setItem("viewPaperMeta", JSON.stringify(meta));
+    sessionStorage.setItem("viewPaperSettings", JSON.stringify({ ...settings, inlineEdits: captureInlineEdits() }));
     navigate("/dashboard/smartboard", {
       state: {
         smartBoardImport: {
+          returnUrl: currentPaperId ? `/dashboard/view-paper?paper_id=${encodeURIComponent(currentPaperId)}` : "/dashboard/view-paper",
           questions,
           meta: {
             instituteName: meta.instituteName,
@@ -1287,6 +1294,9 @@ export default function QuestionPaperView() {
     previewProgressValue.current = percent;
     if (previewProgressRef.current) previewProgressRef.current.textContent = `${percent}%`;
   }, []);
+  // Position and opacity do not change logo geometry or question pagination.
+  const paginationSettingsKey = JSON.stringify({ ...settings, headerLogoX: 0, headerLogoY: 0, headerLogoOpacity: 100 });
+  const paginationSettings = useMemo(() => JSON.parse(paginationSettingsKey) as typeof settings, [paginationSettingsKey]);
   const preparePrintablePages = useCallback(async (isCancelled?: () => boolean, onProgress?: (percent: number) => void) => {
       const paper = paperRef.current;
       if (!paper) return [];
@@ -1296,10 +1306,10 @@ export default function QuestionPaperView() {
       if (isCancelled?.()) return [];
       const layout = {
         widthMm: pageWidthMm, heightMm: pageHeightMm,
-        columns: isEnglishPaper ? 1 : settings.columns, gap: settings.columnGap,
-        divider: settings.columnDivider ? COLUMN_DIVIDER_STYLE : "",
-        margins: [38 + settings.pageMarginTop, 38 + settings.pageMarginRight,
-          38 + settings.pageMarginBottom, 38 + settings.pageMarginLeft] as [number, number, number, number],
+        columns: isEnglishPaper ? 1 : paginationSettings.columns, gap: paginationSettings.columnGap,
+        divider: paginationSettings.columnDivider ? COLUMN_DIVIDER_STYLE : "",
+        margins: [38 + paginationSettings.pageMarginTop, 38 + paginationSettings.pageMarginRight,
+          38 + paginationSettings.pageMarginBottom, 38 + paginationSettings.pageMarginLeft] as [number, number, number, number],
       };
       const key = JSON.stringify(layout) + paper.innerHTML + paper.getAttribute("style") + paper.getAttribute("data-answers-hidden");
       const cachedPages = printableCache.current.get(key);
@@ -1329,7 +1339,7 @@ export default function QuestionPaperView() {
       if (printableCache.current.size >= 4) printableCache.current.delete(printableCache.current.keys().next().value!);
       printableCache.current.set(key, pages);
       return pages;
-  }, [settings, pageWidthMm, pageHeightMm, isEnglishPaper]);
+  }, [paginationSettings, pageWidthMm, pageHeightMm, isEnglishPaper]);
 
   useEffect(() => {
     if (editingMode || !meta || !questions.length) {
@@ -1413,7 +1423,14 @@ export default function QuestionPaperView() {
       );
       return [...shuffledKnownTypes, ...shuffledOtherTypes];
     });
-    updateSetting("showSetCode", true);
+    setSettings(previous => ({
+      ...previous,
+      showSetCode: true,
+      setCodeIndex: (previous.setCodeIndex || 0) + 1,
+      inlineEdits: Object.fromEntries(Object.entries(previous.inlineEdits).filter(([key]) => {
+        try { return JSON.parse(key).anchor !== "setCode"; } catch { return true; }
+      })),
+    }));
     toast.success("প্রশ্ন শাফল করা হয়েছে — নতুন সেট তৈরী!");
   }, []);
 
@@ -2385,7 +2402,8 @@ export default function QuestionPaperView() {
           <span>Preview</span><span ref={previewProgressRef} className="font-medium tabular-nums">{previewProgressValue.current}%</span>
         </div>}
         <PrintableDocument pages={pagedPreviewPages} visible={isPrintPreview}
-          widthMm={pageWidthMm} heightMm={pageHeightMm} showPageNumbers={settings.showPageNumbers} />
+          widthMm={pageWidthMm} heightMm={pageHeightMm} showPageNumbers={settings.showPageNumbers}
+          logoPosition={{ enabled: settings.showHeader && settings.showHeaderLogo && !!settings.headerLogoUrl, src: settings.headerLogoUrl, absolute: settings.headerLogoPositionMode === "absolute", x: settings.headerLogoX, y: settings.headerLogoY, opacity: settings.headerLogoOpacity }} />
         <div
           className={`paper-live-print-source${isPrintPreview ? " paper-live-preview-source" : ""}`}
           style={isPrintPreview ? { width: previewPaperWidth } : undefined}
@@ -2393,6 +2411,7 @@ export default function QuestionPaperView() {
         <div
           className={`font-paper${isEnglishVersion ? " paper-english-version" : ""}${isPrintPreview ? " paper-print-layout-preview" : ""}`}
           ref={paperRef}
+          key={`paper-answers-${settings.showAnswerSheet}`}
           data-print-paper
           data-answers-hidden={!settings.showAnswerSheet || undefined}
           data-paper-version={isEnglishVersion ? "english" : "bangla"}
@@ -2498,10 +2517,11 @@ export default function QuestionPaperView() {
           })()}
 
           {/* ===== PROFESSIONAL PAPER HEADER ===== */}
+          <div className="paper-header-region" style={{ position: "relative" }}>
           {settings.showHeader && (settings.headerText || (settings.showHeaderLogo && settings.headerLogoUrl)) && (
             <div
               style={{
-                position: "relative",
+                position: settings.headerLogoPositionMode === "absolute" ? "static" : "relative",
                 minHeight: settings.headerHeight ? `${settings.headerHeight}px` : undefined,
                 padding: "6px 10px",
                 marginBottom: "6px",
@@ -2517,6 +2537,7 @@ export default function QuestionPaperView() {
             >
               {settings.showHeaderLogo && settings.headerLogoUrl && (
                 <img
+                  data-paper-first-page-only
                   src={settings.headerLogoUrl}
                   alt="হেডার লোগো"
                   style={{
@@ -2527,7 +2548,7 @@ export default function QuestionPaperView() {
                     position: settings.headerLogoPositionMode === "absolute" ? "absolute" : undefined,
                     left: settings.headerLogoPositionMode === "absolute" ? `${settings.headerLogoX}%` : undefined,
                     top: settings.headerLogoPositionMode === "absolute" ? `${settings.headerLogoY}%` : undefined,
-                    transform: settings.headerLogoPositionMode === "absolute" ? "translate(-50%, -50%)" : undefined,
+                    transform: settings.headerLogoPositionMode === "absolute" ? `translate(-50%, -${settings.headerLogoY}%)` : undefined,
                     margin: settings.headerLogoPositionMode === "relative" ? (settings.headerLogoPosition === "left" ? "0 auto 4px 0" : settings.headerLogoPosition === "right" ? "0 0 4px auto" : "0 auto 4px") : undefined,
                   }}
                 />
@@ -2645,7 +2666,7 @@ export default function QuestionPaperView() {
               {settings.showSetCode && (
                 <div className={`${editableClass} paper-header-set-code`} data-editable="setCode" onClick={handleEditableClick} suppressContentEditableWarning>
                   <span>{isEnglishVersion ? "Set Code:" : "সেট কোড:"}</span>
-                  <span>{isEnglishVersion ? "A" : "ক"}</span>
+                  <span>{paperSetCode(settings.setCodeIndex, isEnglishVersion)}</span>
                 </div>
               )}
 
@@ -2691,6 +2712,9 @@ export default function QuestionPaperView() {
               </div>
             )}
 
+          </header>
+          </div>
+          <div className="paper-document-header">
             {settings.showInstruction && (
               <div className="paper-header-instructions">
                 {!isEnglishPaper && mcqOnly && mcqQuestions.length > 0 && (
@@ -2715,7 +2739,7 @@ export default function QuestionPaperView() {
                 </p>
               </div>
             )}
-          </header>
+          </div>
 
 
           <div
@@ -3456,7 +3480,7 @@ export default function QuestionPaperView() {
               totalQuestions={mcqQuestions.length}
               columns={settings.omrColumns || 4}
               isEnglishVersion={isEnglishVersion}
-              setCode={isEnglishVersion ? "A" : "ক"}
+              setCode={paperSetCode(settings.setCodeIndex, isEnglishVersion)}
               showSetCode={settings.showSetCode}
               showStudentInfo={settings.showStudentInfo}
               instituteName={meta?.instituteName}
@@ -3471,7 +3495,7 @@ export default function QuestionPaperView() {
               instituteName={meta?.instituteName}
               subjectName={meta?.subjectName}
               className={meta?.className}
-              setCode={isEnglishVersion ? "A" : "ক"}
+              setCode={paperSetCode(settings.setCodeIndex, isEnglishVersion)}
               showSetCode={settings.showSetCode}
               isEnglishVersion={isEnglishVersion}
               columns={5}

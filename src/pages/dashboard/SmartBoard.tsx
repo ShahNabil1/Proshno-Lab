@@ -1,3 +1,7 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { printSmartboard } from "@/lib/printSmartboard";
+import { BoardElementView } from "@/components/smartboard/BoardCanvas";
+import LatexRenderer from "@/components/LatexRenderer";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
@@ -151,6 +155,7 @@ export default function SmartBoard() {
 
   const [questions, setQuestions] = useState<SmartBoardQuestion[]>([]);
   const [meta, setMeta] = useState<SmartBoardPaperMeta | null>(null);
+  const [returnToPaper, setReturnToPaper] = useState<string | null>(paperIdFromUrl ? `/dashboard/view-paper?paper_id=${encodeURIComponent(paperIdFromUrl)}&action=view` : null);
   const [paperTitle, setPaperTitle] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadOpen, setLoadOpen] = useState(false);
@@ -165,6 +170,8 @@ export default function SmartBoard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [questionPositionMode, setQuestionPositionMode] = useState<QuestionPositionMode>("center");
   const [manualQuestionPosition, setManualQuestionPosition] = useState({ x: 50, y: 50 });
+  const [questionTextColor, setQuestionTextColor] = useState("");
+  const [stimulusTextColor, setStimulusTextColor] = useState("");
   const [questionFontSize, setQuestionFontSize] = useState(36);
   const [questionFontFamily, setQuestionFontFamily] = useState("inherit");
   const [mcqOptionBorderColor, setMcqOptionBorderColor] = useState("#cbd5e1");
@@ -209,8 +216,98 @@ export default function SmartBoard() {
 
   const [board, dispatch] = useReducer(boardReducer, undefined, () => createBoardState(BLANK_BOARD_KEY));
 
-  const currentQuestion = questions[currentIndex] ?? null;
-  const boardKey = currentQuestion ? `q-${currentQuestion.id}` : BLANK_BOARD_KEY;
+  const blankPageSequence = useRef(0);
+  const currentPage = questions[currentIndex] ?? null;
+  const currentQuestion = currentPage?.type === "blank" ? null : currentPage;
+  const boardKey = currentPage ? `q-${currentPage.id}` : BLANK_BOARD_KEY;
+  const questionNumber = questions.slice(0, currentIndex + 1).filter(question => question.type !== "blank").length;
+  const addBlankPage = () => {
+    const page: SmartBoardQuestion = {
+      id: -(++blankPageSequence.current), type: "blank", question: "সমাধানের ফাঁকা পৃষ্ঠা",
+    };
+    const insertAt = questions.length ? currentIndex + 1 : 0;
+    setQuestions(previous => [...previous.slice(0, insertAt), page, ...previous.slice(insertAt)]);
+    setCurrentIndex(insertAt);
+    setShowAnswer(false);
+    setTool("pen");
+  };
+  const [pdfAnswers, setPdfAnswers] = useState(false);
+  const [pdfDrawings, setPdfDrawings] = useState(true);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const downloadSlides = async () => {
+    setPdfBusy(true);
+    try {
+      let pageNumber = 0;
+      const pages = questions.length ? questions : [{ id: 0, type: "blank", question: "" } as SmartBoardQuestion];
+      const slides = pages.map(page => {
+        const key = questions.length ? `q-${page.id}` : BLANK_BOARD_KEY;
+        const elements = key === board.key ? board.elements : board.store[key] || [];
+        const pageParts = key === board.key ? board.parts : board.partsStore[key] || {};
+        if (page.type !== "blank") pageNumber++;
+        return renderToStaticMarkup(<div className="board-pdf-slide" style={background.style}>
+          {page.type !== "blank" && <div style={{ position: 'absolute', left: boardWidth * 0.03, top: boardHeight * 0.07, width: boardWidth * 0.94, height: boardHeight * 0.86 }}>
+                    <QuestionSlide
+                      parts={pageParts}
+                      dragEnabled={false}
+                      question={page}
+                      number={pageNumber}
+                      meta={meta}
+                      showAnswer={pdfAnswers}
+                      dark={background.dark}
+                      questionTextColor={questionTextColor}
+                      stimulusTextColor={stimulusTextColor}
+                      questionFontSize={questionFontSize}
+                      questionFontFamily={questionFontFamily}
+                      mcqOptionBorderColor={mcqOptionBorderColor}
+                      mcqOptionTextColor={mcqOptionTextColor}
+                      mcqCorrectColor={mcqCorrectColor}
+                      mcqAnswerBackgroundColor={mcqAnswerBackgroundColor}
+                      mcqAnswerBorderColor={mcqAnswerBorderColor}
+                      mcqAnswerBorderStyle={mcqAnswerBorderStyle}
+                      showBoardReferences={showBoardReferences}
+                      showInstitutionReferences={showInstitutionReferences}
+                      headerAccentColor={headerAccentColor}
+                      headerInstitutionColor={headerInstitutionColor}
+                      headerLogoUrl={headerLogoUrl}
+                      institutionFontFamily={institutionFontFamily}
+                      institutionFontSize={institutionFontSize}
+                      chapterFontFamily={chapterFontFamily}
+                      chapterFontSize={chapterFontSize}
+                      chapterTextColor={chapterTextColor}
+                      courseFontFamily={courseFontFamily}
+                      courseFontSize={courseFontSize}
+                      courseColor={courseColor}
+                      institutionText={institutionText}
+                      chapterText={chapterText}
+                      courseText={courseText}
+                      referenceStyle={referenceStyle}
+                      referenceColor={referenceColor}
+                      referenceTextColor={referenceTextColor}
+                      referenceFontFamily={referenceFontFamily}
+                      referenceFontSize={referenceFontSize}
+                      referenceBold={referenceBold}
+                      referenceItalic={referenceItalic}
+                    />
+          </div>}
+          {pdfDrawings && <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+            {elements.map(element => <BoardElementView key={element.id} element={element} />)}
+          </svg>}
+        </div>);
+      });
+      await printSmartboard(slides, boardWidth, boardHeight);
+    } catch (error) { console.error(error); toast.error("PDF তৈরি করা যায়নি। আবার চেষ্টা করুন।"); }
+    finally { setPdfBusy(false); }
+  };
+  const duplicatePage = () => {
+    const id = -(++blankPageSequence.current);
+    const page: SmartBoardQuestion = currentPage
+      ? { ...structuredClone(currentPage), id }
+      : { id, type: "blank", question: "সমাধানের ফাঁকা পৃষ্ঠা" };
+    const insertAt = questions.length ? currentIndex + 1 : 0;
+    dispatch({ type: "duplicate", key: `q-${id}`, sourceId: currentPage?.id, targetId: id });
+    setQuestions(previous => [...previous.slice(0, insertAt), page, ...previous.slice(insertAt)]);
+    setCurrentIndex(insertAt);
+  };
   const background = useMemo(() => getBackground(backgroundId), [backgroundId]);
 
   // A freshly created preview can be opened on the board without first saving
@@ -219,6 +316,7 @@ export default function SmartBoard() {
     if (directImportHandledRef.current) return;
     const imported = (location.state as {
       smartBoardImport?: {
+        returnUrl?: string;
         questions: SmartBoardQuestion[];
         meta: SmartBoardPaperMeta;
         title?: string;
@@ -226,6 +324,7 @@ export default function SmartBoard() {
     } | null)?.smartBoardImport;
     if (!imported || imported.questions.length === 0) return;
     directImportHandledRef.current = true;
+    if (imported.returnUrl?.startsWith('/dashboard/view-paper')) setReturnToPaper(imported.returnUrl);
     setQuestions(imported.questions);
     setMeta(imported.meta);
     setPaperTitle(imported.title || "বর্তমান প্রশ্নপত্র");
@@ -280,7 +379,10 @@ export default function SmartBoard() {
   useEffect(() => {
     const node = viewportRef.current;
     if (!node) return;
-    const update = () => setViewport({ width: node.clientWidth, height: node.clientHeight });
+    const update = () => {
+      const width = node.clientWidth, height = node.clientHeight;
+      setViewport(previous => previous.width === width && previous.height === height ? previous : { width, height });
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
@@ -318,6 +420,18 @@ export default function SmartBoard() {
 
   const boardWidth = viewport.width > 0 ? Math.max(BOARD_WIDTH, (viewport.width - 2) / scale) : BOARD_WIDTH;
   const boardHeight = viewport.height > 0 ? Math.max(BOARD_HEIGHT, (viewport.height - 2) / scale) : BOARD_HEIGHT;
+  const [questionResizePreview, setQuestionResizePreview] = useState<number | null>(null);
+  const questionSurface = useRef<HTMLDivElement>(null);
+  const [selectedQuestionParts, setSelectedQuestionParts] = useState<string[]>([]);
+  useEffect(() => { setSelectedQuestionParts([]); }, [boardKey, tool]);
+  const questionResize = useRef<{ clientX: number; startZoom: number } | null>(null);
+  const savedQuestionZoom = selectedQuestionParts.length ? board.parts[selectedQuestionParts[0]]?.scale ?? 1 : 1;
+  const questionZoom = currentQuestion?.type === "cq" ? questionResizePreview ?? savedQuestionZoom : 1;
+  const setQuestionZoom = (value: number) => dispatch({ type: "parts", parts: {
+    ...board.parts, ...Object.fromEntries(selectedQuestionParts.map(id => [id, {
+      ...(board.parts[id] || { x: 0, y: 0 }), scale: Math.max(0.25, Math.min(3, value)),
+    }])),
+  } });
   const questionPanelWidth = boardWidth * 0.94;
   const questionPanelHeight = boardHeight * 0.86;
   // Let the question use the complete visible board, including the extra
@@ -366,8 +480,8 @@ export default function SmartBoard() {
       const x = drag.x + ((event.clientX - drag.clientX) / Math.max(1, questionTravelX * scale)) * 100;
       const y = drag.y + ((event.clientY - drag.clientY) / Math.max(1, questionTravelY * scale)) * 100;
       setManualQuestionPosition({
-        x: Math.max(0, Math.min(100, x)),
-        y: Math.max(0, Math.min(100, y)),
+        x,
+        y,
       });
     };
     const handlePointerUp = () => { questionDragRef.current = null; };
@@ -385,6 +499,7 @@ export default function SmartBoard() {
   );
 
   const handleLoadPaper = useCallback((paper: LoadedPaper) => {
+    setReturnToPaper(paper.id ? `/dashboard/view-paper?paper_id=${encodeURIComponent(paper.id)}&action=view` : '/dashboard/view-paper');
     setQuestions(paper.questions);
     setMeta(paper.meta);
     setPaperTitle(paper.title);
@@ -476,15 +591,15 @@ export default function SmartBoard() {
       <div
         ref={setFrameNode}
         className={cn(
-          "relative flex flex-col overflow-hidden bg-white shadow-xs transition-all duration-200",
+          "smartboard-shell relative flex flex-col overflow-hidden bg-white shadow-xs",
           isFullscreen
             ? "fixed inset-0 z-50 h-screen w-screen rounded-none border-0"
-            : "h-[calc(100vh-140px)] min-h-[620px] rounded-[1px] border border-slate-300"
+            : "h-[calc(100dvh-110px)] min-h-[440px] md:h-[calc(100vh-140px)] md:min-h-[620px] rounded-[1px] border border-slate-300"
         )}
       >
         {calculatorOpen && (
           <section
-            className="absolute z-[80] w-[390px] origin-top-left scale-[0.86]"
+            className="absolute z-[80] w-[min(390px,calc(100vw-24px))] origin-top-left scale-[0.86]"
             style={{ left: calculatorPosition.x, top: calculatorPosition.y }}
             aria-label="সায়েন্টিফিক ক্যালকুলেটর"
           >
@@ -501,7 +616,7 @@ export default function SmartBoard() {
         {/* ========================================================
             TOP BAR: Minimalist, Eye-Friendly Header
            ======================================================== */}
-        <header className="flex h-14 shrink-0 items-center justify-between gap-2 bg-[#0A1E38] px-3 md:px-4 text-white border-b border-slate-800 select-none shadow-xs">
+        <header aria-label="বোর্ডের প্রধান নিয়ন্ত্রণ" className="smartboard-topbar flex h-14 shrink-0 items-center justify-between gap-2 bg-[#0A1E38] px-3 md:px-4 text-white border-b border-slate-800 select-none shadow-xs">
           {/* Left section: Title & Quick Paper Actions */}
           <div className="flex min-w-0 items-center gap-2">
             {!isFullscreen && (
@@ -530,7 +645,7 @@ export default function SmartBoard() {
               )}
             </Button>
 
-            <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-white/15">
+            <div className="hidden 2xl:flex items-center gap-2 pl-2 border-l border-white/15">
               <h1 className="truncate font-heading text-sm font-bold text-white flex items-center gap-1.5">
                 <Tv className="w-4 h-4 text-[#00B4BC]" />
                 ইন্টারেক্টিভ স্মার্টবোর্ড
@@ -561,7 +676,7 @@ export default function SmartBoard() {
                   <span className="hidden xl:inline">অবস্থান</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 rounded-[1px] p-3">
+              <PopoverContent align="end" className="w-72 max-w-[calc(100vw-24px)] rounded-[1px] p-3">
                 <div className="mb-2 text-sm font-bold text-slate-800">প্রশ্ন কোথায় দেখাবে?</div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {([
@@ -613,12 +728,27 @@ export default function SmartBoard() {
                   <span className="hidden xl:inline">প্রশ্ন স্টাইল</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="max-h-[78vh] w-96 overflow-y-auto rounded-[1px] p-4">
+              <PopoverContent align="end" className="max-h-[78dvh] w-96 max-w-[calc(100vw-24px)] overflow-y-auto rounded-[1px] p-4">
                 <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
                   <div className="text-sm font-bold text-slate-800">প্রশ্নের স্টাইল ও তথ্য</div>
                   <button type="button" onClick={() => setQuestionStyleOpen(false)} className="inline-flex h-8 items-center gap-1 rounded-[1px] border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                     <ChevronLeft className="h-3.5 w-3.5" /> ফিরে যান
                   </button>
+                </div>
+                <div className="mb-4 space-y-3 border-b border-slate-200 pb-3">
+                  <label className="flex items-center justify-between gap-2 text-sm">
+                    প্রশ্নের রং
+                    <input type="color" aria-label="প্রশ্নের রং" value={questionTextColor || (background.dark ? "#f1f5f9" : "#0f172a")}
+                      onChange={event => setQuestionTextColor(event.target.value)} />
+                  </label>
+                  <label className="flex items-center justify-between gap-2 text-sm">
+                    উদ্দীপকের রং
+                    <input type="color" aria-label="উদ্দীপকের রং" value={stimulusTextColor || (background.dark ? "#fde047" : "#92400e")}
+                      onChange={event => setStimulusTextColor(event.target.value)} />
+                  </label>
+                  <Button size="sm" variant="outline" onClick={() => { setQuestionTextColor(""); setStimulusTextColor(""); }}>
+                    বোর্ড অনুযায়ী স্বয়ংক্রিয় রং
+                  </Button>
                 </div>
                 <label className="block text-xs font-semibold text-slate-600">ফন্ট</label>
                 <select
@@ -769,7 +899,7 @@ export default function SmartBoard() {
               <span className="min-w-[84px] text-center text-xs sm:text-sm font-bold text-amber-300 px-2">
                 {questions.length === 0
                   ? "০ / ০"
-                  : `প্রশ্ন ${toBanglaNum(currentIndex + 1)} / ${toBanglaNum(questions.length)}`}
+                  : `পৃষ্ঠা ${toBanglaNum(currentIndex + 1)} / ${toBanglaNum(questions.length)}`}
               </span>
 
               <Button
@@ -783,6 +913,31 @@ export default function SmartBoard() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+
+            <Button size="sm" variant="outline" onClick={addBlankPage}
+              className="h-9 rounded-[1px] border-white/20 bg-white/10 font-semibold text-white hover:bg-white/20 hover:text-white" title="সমাধানের জন্য ফাঁকা পৃষ্ঠা যোগ করুন">
+              + ফাঁকা পৃষ্ঠা
+            </Button>
+
+            <Button size="sm" variant="outline" onClick={duplicatePage}
+              className="h-9 rounded-[1px] border-white/20 bg-white/10 font-semibold text-white hover:bg-white/20 hover:text-white"
+              title="বর্তমান পৃষ্ঠা ডুপ্লিকেট করুন">পৃষ্ঠা ডুপ্লিকেট</Button>
+
+            <Popover>
+              <PopoverTrigger asChild><Button size="sm" variant="outline" className="h-9 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">PDF স্লাইড</Button></PopoverTrigger>
+              <PopoverContent className="w-72 max-w-[calc(100vw-24px)] space-y-4 p-4">
+                <div className="font-semibold">সব পৃষ্ঠা PDF করুন</div>
+                <label className="flex items-center gap-3"><input type="checkbox" checked={pdfAnswers} onChange={event => setPdfAnswers(event.target.checked)} />উত্তরসহ</label>
+                <label className="flex items-center gap-3"><input type="checkbox" checked={pdfDrawings} onChange={event => setPdfDrawings(event.target.checked)} />লেখা ও আঁকা দাগসহ</label>
+                <Button className="w-full" onClick={downloadSlides} disabled={pdfBusy}>{pdfBusy ? "তৈরি হচ্ছে…" : "PDF ডাউনলোড / প্রিন্ট"}</Button>
+                <p className="text-xs text-slate-500">প্রিন্ট উইন্ডোতে Save as PDF বেছে নিন। ফাঁকা ও ডুপ্লিকেট পৃষ্ঠাও থাকবে।</p>
+              </PopoverContent>
+            </Popover>
+
+            {returnToPaper && <Link to={returnToPaper} title="প্রশ্নপত্রে ফিরে যান"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded border border-white/20 bg-white/10 px-3 text-sm font-semibold text-white hover:bg-white/20">
+              <ChevronLeft className="h-4 w-4" /> প্রশ্নপত্রে ফিরুন
+            </Link>}
 
             {/* Answer Toggle */}
             <Button
@@ -813,7 +968,7 @@ export default function SmartBoard() {
               <span className="sm:hidden">লোড</span>
             </Button>
 
-            <div className="hidden md:flex items-center gap-0.5 border-l border-white/15 pl-1.5">
+            <div className="flex items-center gap-0.5 border-l border-white/15 pl-1.5">
               <Button
                 size="icon"
                 variant="ghost"
@@ -865,8 +1020,9 @@ export default function SmartBoard() {
            ======================================================== */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           {/* Questions Sidebar Drawer */}
+          {sidebarOpen && <button type="button" aria-label="প্রশ্ন তালিকা বন্ধ করুন" onClick={() => setSidebarOpen(false)} className="absolute inset-0 z-10 bg-black/25 md:hidden" />}
           {sidebarOpen && (
-            <aside className="flex w-64 md:w-80 shrink-0 flex-col border-r border-slate-300 bg-slate-50 z-20 shadow-xs animate-in slide-in-from-left duration-200">
+            <aside className="absolute inset-y-0 left-0 w-[min(85vw,320px)] md:relative md:w-80 shrink-0 flex-col border-r border-slate-300 bg-slate-50 z-20 shadow-xs animate-in slide-in-from-left duration-200">
               <div className="p-3 border-b border-slate-200 bg-white flex items-center justify-between">
                 <div>
                   <h3 className="font-heading font-bold text-sm text-[#0A1E38]">
@@ -912,7 +1068,7 @@ export default function SmartBoard() {
                       <button
                         key={`${question.id}-${index}`}
                         type="button"
-                        onClick={() => goTo(index)}
+                        onClick={() => { goTo(index); if (window.innerWidth < 768) setSidebarOpen(false); }}
                         className={cn(
                           "w-full rounded-[1px] border p-3.5 text-left transition-all cursor-pointer",
                           isSelected
@@ -925,15 +1081,15 @@ export default function SmartBoard() {
                             "text-xs font-bold",
                             isSelected ? "text-emerald-800" : "text-slate-600"
                           )}>
-                            প্রশ্ন {toBanglaNum(index + 1)}
+                            {question.type === "blank" ? "ফাঁকা পৃষ্ঠা" : "প্রশ্ন"} {toBanglaNum(index + 1)}
                           </span>
                           <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-[1px] uppercase bg-slate-100 border border-slate-200 text-slate-700">
                             {question.type}
                           </Badge>
                         </div>
-                        <span className="line-clamp-2 block text-sm font-medium text-slate-800 leading-snug">
-                          {stripHtml(question.question || "").slice(0, 140) || "(প্রশ্ন নেই)"}
-                        </span>
+                        <div className="line-clamp-3 max-h-24 overflow-hidden break-words text-sm font-medium leading-snug text-slate-800 [&_img]:hidden [&_.katex]:text-[1em]">
+                          <LatexRenderer text={question.creative_data?.stem || question.stimulus_text || question.question || "(প্রশ্ন নেই)"} />
+                        </div>
                       </button>
                     );
                   })
@@ -948,7 +1104,65 @@ export default function SmartBoard() {
           )}
 
           {/* Board Viewport Surface */}
-          <div ref={viewportRef} className="relative flex-1 overflow-auto bg-slate-100">
+          <div ref={viewportRef} className="smartboard-viewport relative min-h-0 min-w-0 flex-1 overflow-scroll bg-slate-100">
+            {currentQuestion && <div className="pointer-events-none sticky left-0 top-0 z-30 h-0" style={{ width: viewport.width || '100%' }}>
+              <div style={{ width: viewport.width ? viewport.width / Math.max(0.05, fitScale) : BOARD_WIDTH,
+                height: 180, transform: `scale(${Math.max(0.05, fitScale)})`, transformOrigin: 'top left' }}>
+                    <QuestionSlide
+                      headerOnly
+                      parts={questionResizePreview === null ? board.parts : {
+                        ...board.parts, ...Object.fromEntries(selectedQuestionParts.map(id => [id, {
+                          ...(board.parts[id] || { x: 0, y: 0 }), scale: questionResizePreview,
+                        }])),
+                      }}
+                      onPartsChange={parts => dispatch({ type: "parts", parts })}
+                      dragEnabled={tool === "select"}
+                      selectedPartIds={selectedQuestionParts}
+                      contentOffset={{ x: questionPanelLeft - questionTravelX / 2, y: questionPanelTop - questionTravelY / 2 }}
+                      contentScale={1}
+                      boardScale={scale}
+                      question={currentQuestion}
+                      number={questionNumber}
+                      meta={meta}
+                      showAnswer={showAnswer}
+                      dark={background.dark}
+                      questionTextColor={questionTextColor}
+                      stimulusTextColor={stimulusTextColor}
+                      questionFontSize={questionFontSize}
+                      questionFontFamily={questionFontFamily}
+                      mcqOptionBorderColor={mcqOptionBorderColor}
+                      mcqOptionTextColor={mcqOptionTextColor}
+                      mcqCorrectColor={mcqCorrectColor}
+                      mcqAnswerBackgroundColor={mcqAnswerBackgroundColor}
+                      mcqAnswerBorderColor={mcqAnswerBorderColor}
+                      mcqAnswerBorderStyle={mcqAnswerBorderStyle}
+                      showBoardReferences={showBoardReferences}
+                      showInstitutionReferences={showInstitutionReferences}
+                      headerAccentColor={headerAccentColor}
+                      headerInstitutionColor={headerInstitutionColor}
+                      headerLogoUrl={headerLogoUrl}
+                      institutionFontFamily={institutionFontFamily}
+                      institutionFontSize={institutionFontSize}
+                      chapterFontFamily={chapterFontFamily}
+                      chapterFontSize={chapterFontSize}
+                      chapterTextColor={chapterTextColor}
+                      courseFontFamily={courseFontFamily}
+                      courseFontSize={courseFontSize}
+                      courseColor={courseColor}
+                      institutionText={institutionText}
+                      chapterText={chapterText}
+                      courseText={courseText}
+                      referenceStyle={referenceStyle}
+                      referenceColor={referenceColor}
+                      referenceTextColor={referenceTextColor}
+                      referenceFontFamily={referenceFontFamily}
+                      referenceFontSize={referenceFontSize}
+                      referenceBold={referenceBold}
+                      referenceItalic={referenceItalic}
+                    />
+              </div>
+            </div>}
+
             <div
               className="relative m-auto"
               style={{ width: boardWidth * scale, height: boardHeight * scale }}
@@ -967,26 +1181,70 @@ export default function SmartBoard() {
                 {currentQuestion ? (
                   <div
                     className={cn(
-                      "absolute overflow-hidden rounded-[1px]",
-                      tool === "select" ? "z-20 cursor-move touch-none select-none" : "pointer-events-none z-0",
+                      "absolute overflow-visible rounded-[1px] pointer-events-none",
+                      tool === "select" ? "z-20 touch-none select-none" : "pointer-events-none z-0",
                     )}
                     style={{
-                      left: questionPanelLeft,
-                      top: questionPanelTop,
+                      left: questionTravelX / 2,
+                      top: questionTravelY / 2,
                       width: questionPanelWidth,
                       height: questionPanelHeight,
                       backgroundColor: "transparent",
+                      outline: undefined,
                     }}
-                    onPointerDown={beginQuestionDrag}
+                    ref={questionSurface}
                     aria-label="প্রশ্ন নির্বাচন করে সরান"
                     title={tool === "select" ? "প্রশ্নটি ধরে বোর্ডের যেকোনো স্থানে সরান" : undefined}
                   >
+                    {tool === "select" && selectedQuestionParts.length > 0 && currentQuestion.type === "cq" && <>
+                      <div className="pointer-events-auto absolute left-2 top-0 z-50 flex items-center gap-2 rounded border border-sky-500 bg-white p-2 text-sm text-slate-900 shadow"
+                        onPointerDown={event => event.stopPropagation()}>
+                        <span>সিলেক্ট করা অংশ</span>
+                        <button type="button" aria-label="CQ ছোট করুন" className="h-8 w-8 rounded bg-slate-100" onClick={() => setQuestionZoom(questionZoom - 0.1)}>−</button>
+                        <span>{Math.round(questionZoom * 100)}%</span>
+                        <button type="button" aria-label="CQ বড় করুন" className="h-8 w-8 rounded bg-slate-100" onClick={() => setQuestionZoom(questionZoom + 0.1)}>+</button>
+                        <button type="button" className="rounded bg-slate-100 px-2 py-1" onClick={() => setQuestionZoom(1)}>রিসেট</button>
+                      </div>
+                      <button type="button" aria-label="কোণা টেনে CQ ছোট বড় করুন"
+                        className="pointer-events-auto absolute -bottom-3 -right-3 z-50 h-8 w-8 cursor-nwse-resize rounded border-2 border-white bg-sky-600 text-white shadow" style={{ touchAction: "none" }}
+                        onPointerDown={event => {
+                          event.preventDefault(); event.stopPropagation();
+                          questionResize.current = { clientX: event.clientX, startZoom: questionZoom };
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                        }}
+                        onPointerMove={event => {
+                          if (!questionResize.current) return;
+                          event.stopPropagation();
+                          setQuestionResizePreview(Math.max(0.25, Math.min(3, questionResize.current.startZoom + (event.clientX - questionResize.current.clientX) / (questionPanelWidth * scale))));
+                        }}
+                        onPointerUp={event => {
+                          if (!questionResize.current) return;
+                          event.stopPropagation();
+                          setQuestionZoom(questionResize.current.startZoom + (event.clientX - questionResize.current.clientX) / (questionPanelWidth * scale));
+                          questionResize.current = null; setQuestionResizePreview(null);
+                        }}
+                        onPointerCancel={() => { questionResize.current = null; setQuestionResizePreview(null); }}>↘</button>
+                    </>}
                     <QuestionSlide
+                      hideHeader
+                      parts={questionResizePreview === null ? board.parts : {
+                        ...board.parts, ...Object.fromEntries(selectedQuestionParts.map(id => [id, {
+                          ...(board.parts[id] || { x: 0, y: 0 }), scale: questionResizePreview,
+                        }])),
+                      }}
+                      onPartsChange={parts => dispatch({ type: "parts", parts })}
+                      dragEnabled={tool === "select"}
+                      selectedPartIds={selectedQuestionParts}
+                      contentOffset={{ x: questionPanelLeft - questionTravelX / 2, y: questionPanelTop - questionTravelY / 2 }}
+                      contentScale={1}
+                      boardScale={scale}
                       question={currentQuestion}
-                      number={currentIndex + 1}
+                      number={questionNumber}
                       meta={meta}
                       showAnswer={showAnswer}
                       dark={background.dark}
+                      questionTextColor={questionTextColor}
+                      stimulusTextColor={stimulusTextColor}
                       questionFontSize={questionFontSize}
                       questionFontFamily={questionFontFamily}
                       mcqOptionBorderColor={mcqOptionBorderColor}
@@ -1021,7 +1279,7 @@ export default function SmartBoard() {
                     />
                   </div>
                 ) : (
-                  board.elements.length === 0 && (
+                  !currentPage && board.elements.length === 0 && (
                     <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-8 text-center">
                       <div className="w-16 h-16 rounded-[1px] bg-slate-100 border border-slate-300 text-slate-700 flex items-center justify-center shadow-xs">
                         <Tv className="w-8 h-8 text-[#00B4BC]" />
@@ -1064,6 +1322,20 @@ export default function SmartBoard() {
                   opacity={style.opacity}
                   fontSize={style.fontSize}
                   elements={board.elements}
+                  onMarqueeSelect={rect => {
+                    const ids = Array.from(questionSurface.current?.querySelectorAll<HTMLElement>('[data-question-part]') || []).filter(element => {
+                      const bounds = element.getBoundingClientRect();
+                      return bounds.width > 0 && bounds.height > 0 && bounds.left < rect.right && bounds.right > rect.left && bounds.top < rect.bottom && bounds.bottom > rect.top;
+                    }).map(element => element.dataset.questionPart!);
+                    // A selection covering the complete CQ carries its number/type badge too.
+                    const questionParts = Array.from(questionSurface.current?.querySelectorAll<HTMLElement>('[data-question-part]') || [])
+                      .map(element => element.dataset.questionPart!).filter(id => !id.endsWith(':question-label') && !board.parts[id]?.deleted);
+                    if (currentQuestion?.type === "cq" && questionParts.length && questionParts.every(id => ids.includes(id))) {
+                      const labelId = `${currentQuestion.id}:question-label`;
+                      if (!ids.includes(labelId)) ids.push(labelId);
+                    }
+                    setSelectedQuestionParts(ids);
+                  }}
                   onCommit={commitBoard}
                   compassRadius={compassRadius}
                   showCompassCenter={showCompassCenter}
@@ -1078,9 +1350,9 @@ export default function SmartBoard() {
         {/* ========================================================
             BOTTOM TOOLBAR: Intuitive, Minimalist Teacher Tools
            ======================================================== */}
-        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-300 bg-white px-3 py-2 shadow-xs select-none">
+        <footer aria-label="বোর্ডের আঁকার সরঞ্জাম" className="smartboard-toolbar flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-300 bg-white px-3 py-2 shadow-xs select-none">
           {/* Tools Selector */}
-          <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto">
+          <div className="smartboard-tools flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto">
             {TOOLS.map(({ id, label, hint, Icon }) => {
               const isActive = tool === id;
               return (
@@ -1089,6 +1361,7 @@ export default function SmartBoard() {
                   type="button"
                   onClick={() => setTool(id)}
                   title={`${label} (${hint})`}
+                  aria-label={label}
                   className={cn(
                     "flex h-9 md:h-10 min-w-9 md:min-w-10 items-center gap-1.5 rounded-[1px] px-2.5 text-sm font-medium transition-all cursor-pointer",
                     isActive
@@ -1097,20 +1370,22 @@ export default function SmartBoard() {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden xl:inline">{label}</span>
+                  <span className="sr-only">{label}</span>
                 </button>
               );
             })}
           </div>
 
           {/* Quick Swatches & Settings */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="smartboard-options flex flex-wrap items-center gap-2 sm:gap-3">
             {tool === "compass" && (
               <div className="flex h-10 items-center gap-2 rounded-[1px] border border-slate-300 bg-white px-2" title="কম্পাসের ব্যাসার্ধ ছোট–বড় করুন">
                 <Compass className="h-4 w-4 text-slate-600" />
                 <span className="hidden 2xl:inline text-xs font-semibold text-slate-700">ব্যাসার্ধ</span>
-                <Slider className="w-24" value={[compassRadius]} min={30} max={520} step={5} onValueChange={([value]) => setCompassRadius(value)} />
-                <span className="min-w-10 text-right text-xs font-bold text-slate-700">{toBanglaNum(compassRadius)}</span>
+                <Slider className="w-24" value={[compassRadius]} min={10} max={Math.max(Math.ceil(Math.hypot(boardWidth, boardHeight)), compassRadius)} step={5} onValueChange={([value]) => setCompassRadius(value)} />
+                <input type="number" aria-label="কম্পাসের ব্যাসার্ধ" min={10} step={5} value={compassRadius}
+                  className="h-8 w-20 rounded border border-slate-300 bg-white px-2 text-right text-sm font-bold text-slate-700"
+                  onChange={event => { const value = Number(event.target.value); if (Number.isFinite(value) && value >= 10) setCompassRadius(value); }} />
                 <button
                   type="button"
                   onClick={() => setShowCompassCenter((value) => !value)}

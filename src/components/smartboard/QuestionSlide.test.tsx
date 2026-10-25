@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import QuestionSlide, { type SmartBoardQuestion } from "./QuestionSlide";
 
@@ -35,6 +35,60 @@ const shortQuestion: SmartBoardQuestion = {
 };
 
 describe("QuestionSlide", () => {
+  it("shows CQ board references and respects their visibility toggle", () => {
+    const question = { ...cqQuestion, board_references: [{ board: 'Dhaka', year: 2025 }] };
+    const { rerender } = render(<QuestionSlide question={question} number={1} meta={null} showAnswer={false} dark={false} />);
+    expect(screen.getByText("Dhaka '2025")).toBeInTheDocument();
+    const badgeStyle = getComputedStyle(screen.getByText("Dhaka '2025"));
+    for (const edge of ['Top', 'Right', 'Bottom', 'Left']) {
+      expect(badgeStyle.getPropertyValue(`border-${edge.toLowerCase()}-width`)).toBe('2px');
+    }
+    rerender(<QuestionSlide question={question} number={1} meta={null} showAnswer={false} dark={false} showBoardReferences={false} />);
+    expect(screen.queryByText("Dhaka '2025")).not.toBeInTheDocument();
+  });
+  it("reflows enlarged selected text within its original column width", () => {
+    const { container } = render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false}
+      parts={{ '2:stimulus': { x: 120, y: 60, scale: 2 } }} />);
+    const part = container.querySelector<HTMLElement>('[data-question-part="2:stimulus"]')!;
+    expect(part.style.width).toBe('50%');
+    expect(part.style.transform).toBe('translate(60px, 30px)');
+    expect(part.style.overflowWrap).toBe('anywhere');
+    expect(part.style.transform).not.toContain('scale');
+  });
+  it("keeps the header fixed when question content is repositioned", () => {
+    render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false} contentOffset={{ x: 120, y: 80 }} />);
+    expect(screen.getByTestId('smartboard-fixed-header').style.transform).toBe('');
+    expect(screen.getByTestId('smartboard-question-content')).toHaveStyle({ transform: 'translate(120px, 80px) scale(1)' });
+  });
+  it("scales CQ content without scaling its institution header", () => {
+    render(<QuestionSlide question={cqQuestion} number={1} meta={{ instituteName: 'School' }} showAnswer={false} dark={false} contentScale={1.5} />);
+    const content = screen.getByTestId('smartboard-question-content');
+    expect(content).toHaveStyle({ transform: 'translate(0px, 0px) scale(1.5)' });
+    expect(content).not.toContainElement(screen.getByText('School'));
+    expect(content).toContainElement(screen.getByText(cqQuestion.creative_data.stem));
+  });
+  it("applies independently chosen question and stimulus colors", () => {
+    const { container } = render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark questionTextColor="#aabbcc" stimulusTextColor="#123456" />);
+    expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#aabbcc' });
+    expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#123456' });
+  });
+  it("keeps stimulus and questions distinct and updates their palette with the board", () => {
+    const { container, rerender } = render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false} />);
+    expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#0f172a' });
+    expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#92400e' });
+    rerender(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark />);
+    expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#f1f5f9' });
+    expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#fde047' });
+  });
+  it("copies a stimulus onto the board and removes only its duplicate", () => {
+    render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false} dragEnabled />);
+    expect(screen.queryByRole('button', { name: 'এই অংশ কপি করুন' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText(cqQuestion.creative_data.stem));
+    fireEvent.click(screen.getByRole('button', { name: 'এই অংশ কপি করুন' }));
+    expect(screen.getAllByText(cqQuestion.creative_data.stem)).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'কপি সরান' }));
+    expect(screen.getAllByText(cqQuestion.creative_data.stem)).toHaveLength(1);
+  });
   it("renders an MCQ with its options and hides the answer by default", () => {
     render(<QuestionSlide question={mcqQuestion} number={1} meta={null} showAnswer={false} dark={false} />);
 

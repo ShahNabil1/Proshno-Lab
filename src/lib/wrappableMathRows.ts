@@ -34,6 +34,9 @@ export function wrappableMathRows(source: string): string[] | null {
 /** Break only between top-level terms, never inside fractions, roots, scripts
  * or stretchy delimiters. Each term is independently typeset at the same size. */
 export function wrappableMathParts(source: string): string[] {
+  // Environment contents (including nested aligned rows) must be typeset
+  // together. Splitting at an equals sign would separate begin/end pairs.
+  if (/\\(?:begin|end)\{/.test(source)) return [source];
   // Explanatory square-bracket notes should wrap like their surrounding row.
   // Leave nested/stretchy fraction delimiters untouched.
   source = source.replace(/\\left\[([\s\S]*?)\\right\]/g, (whole, note: string) =>

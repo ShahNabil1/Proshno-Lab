@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SmartBoardPaperMeta, SmartBoardQuestion } from "./QuestionSlide";
 
 export interface LoadedPaper {
+  id?: string;
   questions: SmartBoardQuestion[];
   meta: SmartBoardPaperMeta | null;
   title: string;
@@ -129,6 +130,7 @@ export default function LoadPaperDialog({ open, onOpenChange, onLoad }: LoadPape
       }
 
       onLoad({
+        id: data.id,
         questions,
         meta: {
           ...((data.meta as SmartBoardPaperMeta) || {}),

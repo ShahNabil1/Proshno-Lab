@@ -1,3 +1,4 @@
+import { paperSetCode } from "./paperSetCode";
 import { paperWordFont } from "./paperFonts";
 import { englishPaperSections, englishSectionInstruction, englishItemLabel, englishPassageInstruction } from './englishPaperSections';
 import { languageSubject, usesEnglishFirstTemplate } from './languageQuestionTypes';
@@ -987,7 +988,7 @@ export async function exportPaperToDocx({
             size: fontSize,
           }),
           new TextRun({
-            text: isEnglish ? "[ A ]" : "[ ক ]",
+            text: `[ ${paperSetCode(settings.setCodeIndex, isEnglish)} ]`,
             bold: true,
             font,
             size: fontSize,
