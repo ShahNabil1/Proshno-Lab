@@ -1,7 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import BoardCanvas from "./BoardCanvas";
-import type { ToolId } from "./boardTypes";
+import { BOARD_WIDTH, BOARD_HEIGHT, type ToolId } from "./boardTypes";
 
 const renderBoard = (tool: ToolId) =>
   render(
@@ -31,7 +31,7 @@ describe("BoardCanvas pointer", () => {
     );
     const svg = boardSvg(container);
     Object.defineProperty(svg, "setPointerCapture", { value: vi.fn() });
-    vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 1000, bottom: 1414, width: 1000, height: 1414, toJSON: () => ({}) });
+    vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: BOARD_WIDTH, bottom: BOARD_HEIGHT, width: BOARD_WIDTH, height: BOARD_HEIGHT, toJSON: () => ({}) });
     const pointer = (type: string, clientX: number, clientY: number, pointerId: number) => {
       const event = new Event(type, { bubbles: true, cancelable: true });
       Object.defineProperties(event, {

@@ -3129,3 +3129,46 @@ input.class-selection-box[type="radio"]:hover { border-color: #111; box-shadow: 
   }
   .paper-edit-toolbar svg { width: 17px; height: 17px; }
 }
+
+/* CQ slide tables retain readable numeric cells inside the right column. */
+.smartboard-cq-content .latex-renderer table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: auto !important;
+}
+.smartboard-cq-content .latex-renderer td,
+.smartboard-cq-content .latex-renderer th {
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0.15em 0.2em;
+  white-space: nowrap;
+}
+
+/* Transparent diagrams retain visible black ink on every dark board slide. */
+.smartboard-dark-media .latex-renderer img {
+  background: #ffffff !important;
+  padding: 8px;
+  box-sizing: border-box;
+  object-fit: contain;
+  max-width: 100% !important;
+  height: auto !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Avoid an empty first line before authored math in the full-width MCQ lead. */
+.smartboard-mcq-flow-question .math-authored-rows { display: inline; }
+.smartboard-mcq-flow-question .math-authored-row:first-child {
+  display: inline;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.smartboard-dark-answer .latex-renderer img {
+  background: white !important;
+  padding: 8px;
+  box-sizing: border-box;
+  object-fit: contain;
+}
+[data-answer-content] { overflow-wrap: anywhere; }
+[data-answer-content] .latex-renderer img { max-width: 100% !important; height: auto !important; }

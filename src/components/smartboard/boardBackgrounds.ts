@@ -15,6 +15,7 @@ const lineGrid = (size: number, color: string): CSSProperties => ({
 });
 
 export const BOARD_BACKGROUNDS: BoardBackground[] = [
+  { id: "lecture", label: "লেকচার স্লাইড", dark: true, style: { backgroundColor: "#000000" } },
   { id: "white", label: "সাদা বোর্ড", dark: false, style: { backgroundColor: "#ffffff" } },
 
   { id: "grid", label: "গ্রিড", dark: false, style: lineGrid(30, "#e2e8f0") },
@@ -179,7 +180,7 @@ export const BOARD_BACKGROUNDS: BoardBackground[] = [
   },
 ];
 
-export const DEFAULT_BACKGROUND_ID = "white";
+export const DEFAULT_BACKGROUND_ID = "lecture";
 
 export function getBackground(id: string): BoardBackground {
   return BOARD_BACKGROUNDS.find((bg) => bg.id === id) ?? BOARD_BACKGROUNDS[0];

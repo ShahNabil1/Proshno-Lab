@@ -1,7 +1,7 @@
 /**
  * Shared types + constants for the interactive smartboard.
  *
- * All geometry is stored in "board units" - the logical A4 canvas
+ * All geometry is stored in "board units" - the fixed 16:9 slide canvas
  * (BOARD_WIDTH x BOARD_HEIGHT). The surface is scaled with a CSS transform, so
  * the same drawing stays aligned with the question text at any zoom level or
  * window size.
@@ -93,8 +93,8 @@ export interface BoardStyle {
   fontSize: number;
 }
 
-export const BOARD_WIDTH = 1000;
-export const BOARD_HEIGHT = 1414;
+export const BOARD_WIDTH = 1920;
+export const BOARD_HEIGHT = 1080;
 export const MIN_ZOOM = 0.4;
 export const MAX_ZOOM = 3;
 
@@ -102,7 +102,7 @@ export const DEFAULT_BOARD_STYLE: BoardStyle = {
   color: "#ef4444",
   strokeWidth: 6,
   opacity: 1,
-  fontSize: 34,
+  fontSize: 48,
 };
 
 /** Pen / shape palette. The last two entries are the "chalk" inks for dark boards. */

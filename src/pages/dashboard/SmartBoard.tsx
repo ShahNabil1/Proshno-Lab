@@ -1,4 +1,6 @@
+import { withAnswerSlides, type SlideExportMode } from "@/components/smartboard/answerSequence";
 import { renderToStaticMarkup } from "react-dom/server";
+import { expandSmartboardQuestions } from "@/components/smartboard/slideSequence";
 import { printSmartboard } from "@/lib/printSmartboard";
 import { BoardElementView } from "@/components/smartboard/BoardCanvas";
 import LatexRenderer from "@/components/LatexRenderer";
@@ -55,7 +57,7 @@ import { Badge } from "@/components/ui/badge";
 import BoardCanvas from "@/components/smartboard/BoardCanvas";
 import ScientificCalculator from "@/components/smartboard/ScientificCalculator";
 import LoadPaperDialog, { type LoadedPaper } from "@/components/smartboard/LoadPaperDialog";
-import QuestionSlide, { type SmartBoardPaperMeta, type SmartBoardQuestion } from "@/components/smartboard/QuestionSlide";
+import QuestionSlide, { getQuestionSlideForExport, type SmartBoardPaperMeta, type SmartBoardQuestion } from "@/components/smartboard/QuestionSlide";
 import { BOARD_BACKGROUNDS, DEFAULT_BACKGROUND_ID, getBackground } from "@/components/smartboard/boardBackgrounds";
 import { BLANK_BOARD_KEY, boardReducer, createBoardState } from "@/components/smartboard/boardHistory";
 import {
@@ -153,7 +155,7 @@ export default function SmartBoard() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const directImportHandledRef = useRef(false);
 
-  const [questions, setQuestions] = useState<SmartBoardQuestion[]>([]);
+  const [questionPages, setQuestions] = useState<SmartBoardQuestion[]>([]);
   const [meta, setMeta] = useState<SmartBoardPaperMeta | null>(null);
   const [returnToPaper, setReturnToPaper] = useState<string | null>(paperIdFromUrl ? `/dashboard/view-paper?paper_id=${encodeURIComponent(paperIdFromUrl)}&action=view` : null);
   const [paperTitle, setPaperTitle] = useState<string | null>(null);
@@ -162,6 +164,7 @@ export default function SmartBoard() {
   const [questionStyleOpen, setQuestionStyleOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  const questions = useMemo(() => withAnswerSlides(questionPages, showAnswer ? "both" : "questions"), [questionPages, showAnswer]);
   const [tool, setTool] = useState<ToolId>("pen");
   const [style, setStyle] = useState(DEFAULT_BOARD_STYLE);
   const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
@@ -172,7 +175,7 @@ export default function SmartBoard() {
   const [manualQuestionPosition, setManualQuestionPosition] = useState({ x: 50, y: 50 });
   const [questionTextColor, setQuestionTextColor] = useState("");
   const [stimulusTextColor, setStimulusTextColor] = useState("");
-  const [questionFontSize, setQuestionFontSize] = useState(36);
+  const [questionFontSize, setQuestionFontSize] = useState(48);
   const [questionFontFamily, setQuestionFontFamily] = useState("inherit");
   const [mcqOptionBorderColor, setMcqOptionBorderColor] = useState("#cbd5e1");
   const [mcqOptionTextColor, setMcqOptionTextColor] = useState("#334155");
@@ -182,23 +185,23 @@ export default function SmartBoard() {
   const [mcqAnswerBorderStyle, setMcqAnswerBorderStyle] = useState<"solid" | "dashed" | "double" | "none">("solid");
   const [showBoardReferences, setShowBoardReferences] = useState(true);
   const [showInstitutionReferences, setShowInstitutionReferences] = useState(true);
-  const [headerAccentColor, setHeaderAccentColor] = useState("#ec168c");
-  const [headerInstitutionColor, setHeaderInstitutionColor] = useState("#22c55e");
+  const [headerAccentColor, setHeaderAccentColor] = useState("#ff0099");
+  const [headerInstitutionColor, setHeaderInstitutionColor] = useState("#00B4BC");
   const [headerLogoUrl, setHeaderLogoUrl] = useState("");
-  const [institutionFontFamily, setInstitutionFontFamily] = useState("inherit");
-  const [institutionFontSize, setInstitutionFontSize] = useState(26);
-  const [chapterFontFamily, setChapterFontFamily] = useState("inherit");
-  const [chapterFontSize, setChapterFontSize] = useState(24);
+  const [institutionFontFamily, setInstitutionFontFamily] = useState("'NotoSerifBengali', serif");
+  const [institutionFontSize, setInstitutionFontSize] = useState(40);
+  const [chapterFontFamily, setChapterFontFamily] = useState("'HasanHera', 'NotoSerifBengali', serif");
+  const [chapterFontSize, setChapterFontSize] = useState(48);
   const [chapterTextColor, setChapterTextColor] = useState("#ffffff");
-  const [courseFontFamily, setCourseFontFamily] = useState("inherit");
-  const [courseFontSize, setCourseFontSize] = useState(26);
-  const [courseColor, setCourseColor] = useState("#ec168c");
+  const [courseFontFamily, setCourseFontFamily] = useState("'NotoSerifBengali', serif");
+  const [courseFontSize, setCourseFontSize] = useState(44);
+  const [courseColor, setCourseColor] = useState("#ff0099");
   const [institutionText, setInstitutionText] = useState("");
   const [chapterText, setChapterText] = useState("");
   const [courseText, setCourseText] = useState("");
   const [referenceStyle, setReferenceStyle] = useState<"filled" | "black" | "outline" | "bracket" | "underline">("outline");
-  const [referenceColor, setReferenceColor] = useState("#64748b");
-  const [referenceTextColor, setReferenceTextColor] = useState("#475569");
+  const [referenceColor, setReferenceColor] = useState("#ff0099");
+  const [referenceTextColor, setReferenceTextColor] = useState("#ff66c4");
   const [referenceFontFamily, setReferenceFontFamily] = useState("inherit");
   const [referenceFontSize, setReferenceFontSize] = useState(20);
   const [referenceBold, setReferenceBold] = useState(true);
@@ -219,40 +222,49 @@ export default function SmartBoard() {
   const blankPageSequence = useRef(0);
   const currentPage = questions[currentIndex] ?? null;
   const currentQuestion = currentPage?.type === "blank" ? null : currentPage;
-  const boardKey = currentPage ? `q-${currentPage.id}` : BLANK_BOARD_KEY;
-  const questionNumber = questions.slice(0, currentIndex + 1).filter(question => question.type !== "blank").length;
+  const [answerPart, setAnswerPart] = useState(0);
+  useEffect(() => { setAnswerPart(0); }, [currentPage?.id]);
+  const boardKey = currentPage ? `q-${currentPage.id}${currentPage.answerSlide ? `-part-${answerPart}` : ""}` : BLANK_BOARD_KEY;
+  const questionNumber = currentPage?.sourceQuestionNumber ?? questions.slice(0, currentIndex + 1).filter(question => question.type !== "blank").length;
   const addBlankPage = () => {
     const page: SmartBoardQuestion = {
       id: -(++blankPageSequence.current), type: "blank", question: "সমাধানের ফাঁকা পৃষ্ঠা",
     };
-    const insertAt = questions.length ? currentIndex + 1 : 0;
+    const sourceId = currentPage?.sourcePageId ?? currentPage?.id;
+    const insertAt = Math.max(0, questionPages.findIndex(page => page.id === sourceId) + 1);
     setQuestions(previous => [...previous.slice(0, insertAt), page, ...previous.slice(insertAt)]);
-    setCurrentIndex(insertAt);
     setShowAnswer(false);
+    setCurrentIndex(insertAt);
     setTool("pen");
   };
-  const [pdfAnswers, setPdfAnswers] = useState(false);
+  const [pdfMode, setPdfMode] = useState<SlideExportMode>("questions");
   const [pdfDrawings, setPdfDrawings] = useState(true);
   const [pdfBusy, setPdfBusy] = useState(false);
   const downloadSlides = async () => {
     setPdfBusy(true);
     try {
+      const ExportQuestionSlide = getQuestionSlideForExport();
       let pageNumber = 0;
-      const pages = questions.length ? questions : [{ id: 0, type: "blank", question: "" } as SmartBoardQuestion];
+      const pages = withAnswerSlides(questionPages.length ? questionPages : [{ id: 0, type: "blank", question: "" } as SmartBoardQuestion], pdfMode);
+      if (!pages.length) { toast.error("এক্সপোর্ট করার মতো উত্তর নেই।"); return; }
       const slides = pages.map(page => {
-        const key = questions.length ? `q-${page.id}` : BLANK_BOARD_KEY;
+        const baseKey = `q-${page.id}`;
+        const key = questionPages.length ? `${baseKey}${page.answerSlide ? "-part-0" : ""}` : BLANK_BOARD_KEY;
         const elements = key === board.key ? board.elements : board.store[key] || [];
         const pageParts = key === board.key ? board.parts : board.partsStore[key] || {};
+        const answerInk = page.answerSlide ? Object.entries({ ...board.store, [board.key]: board.elements })
+          .filter(([inkKey]) => inkKey.startsWith(`${baseKey}-part-`))
+          .map(([inkKey, inkElements]) => ({ part: Number(inkKey.slice(`${baseKey}-part-`.length)), elements: inkElements })) : [];
         if (page.type !== "blank") pageNumber++;
-        return renderToStaticMarkup(<div className="board-pdf-slide" style={background.style}>
-          {page.type !== "blank" && <div style={{ position: 'absolute', left: boardWidth * 0.03, top: boardHeight * 0.07, width: boardWidth * 0.94, height: boardHeight * 0.86 }}>
-                    <QuestionSlide
+        return renderToStaticMarkup(<div className="board-pdf-slide" data-board-dark={background.dark ? "true" : "false"} style={background.style}>
+          {page.type !== "blank" && <div style={{ position: 'absolute', left: 0, top: 0, width: boardWidth, height: boardHeight }}>
+                    <ExportQuestionSlide
                       parts={pageParts}
                       dragEnabled={false}
                       question={page}
-                      number={pageNumber}
+                      number={page.sourceQuestionNumber ?? pageNumber}
                       meta={meta}
-                      showAnswer={pdfAnswers}
+                      showAnswer={Boolean(page.answerSlide)}
                       dark={background.dark}
                       questionTextColor={questionTextColor}
                       stimulusTextColor={stimulusTextColor}
@@ -290,22 +302,26 @@ export default function SmartBoard() {
                     />
           </div>}
           {pdfDrawings && <svg viewBox={`0 0 ${boardWidth} ${boardHeight}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-            {elements.map(element => <BoardElementView key={element.id} element={element} />)}
+            {page.answerSlide ? answerInk.map(ink => <g key={ink.part} data-answer-ink-part={ink.part} style={{ display: ink.part === 0 ? "inline" : "none" }}>
+              {ink.elements.map(element => <BoardElementView key={element.id} element={element} />)}
+            </g>) : elements.map(element => <BoardElementView key={element.id} element={element} />)}
           </svg>}
         </div>);
       });
       await printSmartboard(slides, boardWidth, boardHeight);
-    } catch (error) { console.error(error); toast.error("PDF তৈরি করা যায়নি। আবার চেষ্টা করুন।"); }
+    } catch (error) { console.error(error); toast.error(error instanceof Error && error.message.startsWith("PDF image") ? "ছবি লোড হয়নি। ইন্টারনেট সংযোগ দেখে আবার PDF তৈরি করুন।" : "PDF তৈরি করা যায়নি। আবার চেষ্টা করুন।"); }
     finally { setPdfBusy(false); }
   };
   const duplicatePage = () => {
     const id = -(++blankPageSequence.current);
     const page: SmartBoardQuestion = currentPage
-      ? { ...structuredClone(currentPage), id }
+      ? { ...structuredClone(questionPages.find(page => page.id === (currentPage.sourcePageId ?? currentPage.id)) || currentPage), id, answerSlide: false, sourcePageId: undefined }
       : { id, type: "blank", question: "সমাধানের ফাঁকা পৃষ্ঠা" };
-    const insertAt = questions.length ? currentIndex + 1 : 0;
+    const sourceId = currentPage?.sourcePageId ?? currentPage?.id;
+    const insertAt = Math.max(0, questionPages.findIndex(page => page.id === sourceId) + 1);
     dispatch({ type: "duplicate", key: `q-${id}`, sourceId: currentPage?.id, targetId: id });
     setQuestions(previous => [...previous.slice(0, insertAt), page, ...previous.slice(insertAt)]);
+    setShowAnswer(false);
     setCurrentIndex(insertAt);
   };
   const background = useMemo(() => getBackground(backgroundId), [backgroundId]);
@@ -325,7 +341,7 @@ export default function SmartBoard() {
     if (!imported || imported.questions.length === 0) return;
     directImportHandledRef.current = true;
     if (imported.returnUrl?.startsWith('/dashboard/view-paper')) setReturnToPaper(imported.returnUrl);
-    setQuestions(imported.questions);
+    setQuestions(expandSmartboardQuestions(imported.questions));
     setMeta(imported.meta);
     setPaperTitle(imported.title || "বর্তমান প্রশ্নপত্র");
     setCurrentIndex(0);
@@ -356,7 +372,7 @@ export default function SmartBoard() {
           const map = new Map(qData.map((q) => [q.id, q]));
           const sortedQuestions = qIds.map((id) => map.get(id)).filter(Boolean) as SmartBoardQuestion[];
 
-          setQuestions(sortedQuestions);
+          setQuestions(expandSmartboardQuestions(sortedQuestions));
           setMeta({
             instituteName: paper.institution_name || undefined,
             className: paper.class_name || undefined,
@@ -418,8 +434,8 @@ export default function SmartBoard() {
 
   const scale = Math.max(0.05, fitScale * zoom);
 
-  const boardWidth = viewport.width > 0 ? Math.max(BOARD_WIDTH, (viewport.width - 2) / scale) : BOARD_WIDTH;
-  const boardHeight = viewport.height > 0 ? Math.max(BOARD_HEIGHT, (viewport.height - 2) / scale) : BOARD_HEIGHT;
+  const boardWidth = BOARD_WIDTH;
+  const boardHeight = BOARD_HEIGHT;
   const [questionResizePreview, setQuestionResizePreview] = useState<number | null>(null);
   const questionSurface = useRef<HTMLDivElement>(null);
   const [selectedQuestionParts, setSelectedQuestionParts] = useState<string[]>([]);
@@ -432,12 +448,11 @@ export default function SmartBoard() {
       ...(board.parts[id] || { x: 0, y: 0 }), scale: Math.max(0.25, Math.min(3, value)),
     }])),
   } });
-  const questionPanelWidth = boardWidth * 0.94;
-  const questionPanelHeight = boardHeight * 0.86;
-  // Let the question use the complete visible board, including the extra
-  // horizontal/vertical space that appears on wide classroom displays.
-  const questionTravelX = Math.max(0, boardWidth - questionPanelWidth);
-  const questionTravelY = Math.max(0, boardHeight - questionPanelHeight);
+  const questionPanelWidth = boardWidth;
+  const questionPanelHeight = boardHeight;
+  // Keep slide geometry independent of viewport size and editor zoom.
+  const questionTravelX = boardWidth * 0.06;
+  const questionTravelY = boardHeight * 0.14;
   const questionPanelLeft = (
     questionPositionMode === "left" ? 0
       : questionPositionMode === "right" ? questionTravelX
@@ -500,7 +515,7 @@ export default function SmartBoard() {
 
   const handleLoadPaper = useCallback((paper: LoadedPaper) => {
     setReturnToPaper(paper.id ? `/dashboard/view-paper?paper_id=${encodeURIComponent(paper.id)}&action=view` : '/dashboard/view-paper');
-    setQuestions(paper.questions);
+    setQuestions(expandSmartboardQuestions(paper.questions));
     setMeta(paper.meta);
     setPaperTitle(paper.title);
     setCurrentIndex(0);
@@ -738,12 +753,12 @@ export default function SmartBoard() {
                 <div className="mb-4 space-y-3 border-b border-slate-200 pb-3">
                   <label className="flex items-center justify-between gap-2 text-sm">
                     প্রশ্নের রং
-                    <input type="color" aria-label="প্রশ্নের রং" value={questionTextColor || (background.dark ? "#f1f5f9" : "#0f172a")}
+                    <input type="color" aria-label="প্রশ্নের রং" value={questionTextColor || (background.dark ? currentQuestion?.type === "cq" ? "#ffff00" : "#f1f5f9" : "#0f172a")}
                       onChange={event => setQuestionTextColor(event.target.value)} />
                   </label>
                   <label className="flex items-center justify-between gap-2 text-sm">
                     উদ্দীপকের রং
-                    <input type="color" aria-label="উদ্দীপকের রং" value={stimulusTextColor || (background.dark ? "#fde047" : "#92400e")}
+                    <input type="color" aria-label="উদ্দীপকের রং" value={stimulusTextColor || (background.dark ? currentQuestion?.type === "cq" ? "#ffffff" : "#fde047" : "#92400e")}
                       onChange={event => setStimulusTextColor(event.target.value)} />
                   </label>
                   <Button size="sm" variant="outline" onClick={() => { setQuestionTextColor(""); setStimulusTextColor(""); }}>
@@ -810,9 +825,9 @@ export default function SmartBoard() {
                     />
                     <div className="grid grid-cols-[1fr_72px_46px] gap-2">
                       <select value={institutionFontFamily} onChange={(event) => setInstitutionFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
-                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                        <option value="inherit">ডিফল্ট</option><option value="'HasanHera', 'NotoSerifBengali', serif">Hasan Hera — স্টাইলিশ</option><option value="'NotoSerifBengali', serif">Noto Serif — বোল্ড</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
                       </select>
-                      <input type="number" min={14} max={54} value={institutionFontSize} onChange={(event) => setInstitutionFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="প্রতিষ্ঠানের font size" />
+                      <input type="number" min={14} max={96} value={institutionFontSize} onChange={(event) => setInstitutionFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="প্রতিষ্ঠানের font size" />
                       <input type="color" value={headerInstitutionColor} onChange={(event) => setHeaderInstitutionColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="প্রতিষ্ঠানের color" />
                     </div>
                   </div>
@@ -822,9 +837,9 @@ export default function SmartBoard() {
                     <input value={chapterText} onChange={(event) => setChapterText(event.target.value)} placeholder={meta?.chapterNames?.join(", ") || "Chapter name"} className="mb-2 h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs" />
                     <div className="grid grid-cols-[1fr_72px_46px_46px] gap-2">
                       <select value={chapterFontFamily} onChange={(event) => setChapterFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
-                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                        <option value="inherit">ডিফল্ট</option><option value="'HasanHera', 'NotoSerifBengali', serif">Hasan Hera — স্টাইলিশ</option><option value="'NotoSerifBengali', serif">Noto Serif — বোল্ড</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
                       </select>
-                      <input type="number" min={14} max={54} value={chapterFontSize} onChange={(event) => setChapterFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Chapter font size" />
+                      <input type="number" min={14} max={96} value={chapterFontSize} onChange={(event) => setChapterFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Chapter font size" />
                       <input type="color" value={headerAccentColor} onChange={(event) => setHeaderAccentColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Chapter background color" />
                       <input type="color" value={chapterTextColor} onChange={(event) => setChapterTextColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Chapter text color" />
                     </div>
@@ -836,9 +851,9 @@ export default function SmartBoard() {
                     <input value={courseText} onChange={(event) => setCourseText(event.target.value)} placeholder={meta?.programName || meta?.subjectName || "Course name"} className="mb-2 h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs" />
                     <div className="grid grid-cols-[1fr_72px_46px] gap-2">
                       <select value={courseFontFamily} onChange={(event) => setCourseFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
-                        <option value="inherit">ডিফল্ট</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
+                        <option value="inherit">ডিফল্ট</option><option value="'HasanHera', 'NotoSerifBengali', serif">Hasan Hera — স্টাইলিশ</option><option value="'NotoSerifBengali', serif">Noto Serif — বোল্ড</option><option value="'Noto Sans Bengali', sans-serif">Noto Sans</option><option value="'Hind Siliguri', sans-serif">Hind</option><option value="'SolaimanLipi', serif">Solaiman</option><option value="Arial, sans-serif">Arial</option>
                       </select>
-                      <input type="number" min={14} max={54} value={courseFontSize} onChange={(event) => setCourseFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Course font size" />
+                      <input type="number" min={14} max={96} value={courseFontSize} onChange={(event) => setCourseFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Course font size" />
                       <input type="color" value={courseColor} onChange={(event) => setCourseColor(event.target.value)} className="h-8 w-full cursor-pointer rounded border border-slate-300 p-1" aria-label="Course color" />
                     </div>
                   </div>
@@ -852,7 +867,7 @@ export default function SmartBoard() {
                       <select value={referenceFontFamily} onChange={(event) => setReferenceFontFamily(event.target.value)} className="h-8 rounded border border-slate-300 bg-white px-2 text-xs">
                         <option value="inherit">ডিফল্ট</option><option value="SolaimanLipi">SolaimanLipi</option><option value="OmicronBangla">OmicronBangla</option><option value="Kalpurush">Kalpurush</option><option value="Noto Serif Bengali">Noto Serif</option><option value="Arial">Arial</option><option value="Times New Roman">Times</option>
                       </select>
-                      <input type="number" min={8} max={36} value={referenceFontSize} onChange={(event) => setReferenceFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Reference font size" />
+                      <input type="number" min={8} max={64} value={referenceFontSize} onChange={(event) => setReferenceFontSize(Number(event.target.value))} className="h-8 rounded border border-slate-300 px-2 text-xs" aria-label="Reference font size" />
                       <input type="color" value={referenceColor} onChange={(event) => setReferenceColor(event.target.value)} className="h-8 w-full rounded border border-slate-300 p-1" aria-label="Reference badge color" />
                       <input type="color" value={referenceTextColor} onChange={(event) => setReferenceTextColor(event.target.value)} className="h-8 w-full rounded border border-slate-300 p-1" aria-label="Reference text color" />
                     </div>
@@ -927,10 +942,12 @@ export default function SmartBoard() {
               <PopoverTrigger asChild><Button size="sm" variant="outline" className="h-9 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">PDF স্লাইড</Button></PopoverTrigger>
               <PopoverContent className="w-72 max-w-[calc(100vw-24px)] space-y-4 p-4">
                 <div className="font-semibold">সব পৃষ্ঠা PDF করুন</div>
-                <label className="flex items-center gap-3"><input type="checkbox" checked={pdfAnswers} onChange={event => setPdfAnswers(event.target.checked)} />উত্তরসহ</label>
+                <label className="block space-y-2"><span>এক্সপোর্টের ধরন</span><select aria-label="এক্সপোর্টের ধরন" value={pdfMode} onChange={event => setPdfMode(event.target.value as SlideExportMode)} className="h-10 w-full rounded border bg-white px-2">
+                  <option value="questions">শুধু প্রশ্ন</option><option value="both">প্রশ্ন ও উত্তর</option><option value="answers">শুধু উত্তর</option>
+                </select></label>
                 <label className="flex items-center gap-3"><input type="checkbox" checked={pdfDrawings} onChange={event => setPdfDrawings(event.target.checked)} />লেখা ও আঁকা দাগসহ</label>
                 <Button className="w-full" onClick={downloadSlides} disabled={pdfBusy}>{pdfBusy ? "তৈরি হচ্ছে…" : "PDF ডাউনলোড / প্রিন্ট"}</Button>
-                <p className="text-xs text-slate-500">প্রিন্ট উইন্ডোতে Save as PDF বেছে নিন। ফাঁকা ও ডুপ্লিকেট পৃষ্ঠাও থাকবে।</p>
+                <p className="text-xs text-slate-500">প্রিন্ট উইন্ডোতে Save as PDF বেছে নিন। বড় উত্তর আলাদা ধারাবাহিক স্লাইডে থাকবে।</p>
               </PopoverContent>
             </Popover>
 
@@ -949,7 +966,13 @@ export default function SmartBoard() {
                   ? "bg-[#059669] hover:bg-[#047857] text-white border-0 shadow-xs"
                   : "bg-white/10 hover:bg-white/20 text-white border-white/20"
               )}
-              onClick={() => setShowAnswer((value) => !value)}
+              onClick={() => {
+                const source = currentPage?.sourcePageId ?? currentPage?.id;
+                const next = withAnswerSlides(questionPages, showAnswer ? "questions" : "both");
+                const target = next.findIndex(page => showAnswer ? page.id === source : page.answerSlide && (page.sourcePageId === source || (currentPage?.type === "cq" && currentPage.cqPartIndex === undefined && page.sourceQuestionNumber === currentPage.sourceQuestionNumber)));
+                setShowAnswer(value => !value);
+                setCurrentIndex(Math.max(0, target >= 0 ? target : next.findIndex(page => page.id === source)));
+              }}
             >
               {showAnswer ? <EyeOff className="h-4 w-4 text-white" /> : <Eye className="h-4 w-4 text-amber-300" />}
               <span>{showAnswer ? "উত্তর লুকান" : "উত্তর দেখান"}</span>
@@ -1081,7 +1104,7 @@ export default function SmartBoard() {
                             "text-xs font-bold",
                             isSelected ? "text-emerald-800" : "text-slate-600"
                           )}>
-                            {question.type === "blank" ? "ফাঁকা পৃষ্ঠা" : "প্রশ্ন"} {toBanglaNum(index + 1)}
+                            {question.type === "blank" ? "ফাঁকা পৃষ্ঠা" : question.answerSlide ? "উত্তর" : "প্রশ্ন"} {toBanglaNum(question.sourceQuestionNumber ?? index + 1)}{question.type === "cq" ? question.cqPartIndex === undefined ? " — সম্পূর্ণ" : ` — ${["ক", "খ", "গ", "ঘ"][question.cqPartIndex]}` : ""}
                           </span>
                           <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-[1px] uppercase bg-slate-100 border border-slate-200 text-slate-700">
                             {question.type}
@@ -1105,8 +1128,8 @@ export default function SmartBoard() {
 
           {/* Board Viewport Surface */}
           <div ref={viewportRef} className="smartboard-viewport relative min-h-0 min-w-0 flex-1 overflow-scroll bg-slate-100">
-            {currentQuestion && <div className="pointer-events-none sticky left-0 top-0 z-30 h-0" style={{ width: viewport.width || '100%' }}>
-              <div style={{ width: viewport.width ? viewport.width / Math.max(0.05, fitScale) : BOARD_WIDTH,
+            {currentQuestion && <div className="pointer-events-none sticky left-0 top-0 z-30 h-0" style={{ width: boardWidth * Math.max(0.05, fitScale), margin: "0 auto" }}>
+              <div style={{ width: boardWidth,
                 height: 180, transform: `scale(${Math.max(0.05, fitScale)})`, transformOrigin: 'top left' }}>
                     <QuestionSlide
                       headerOnly
@@ -1124,7 +1147,8 @@ export default function SmartBoard() {
                       question={currentQuestion}
                       number={questionNumber}
                       meta={meta}
-                      showAnswer={showAnswer}
+                      showAnswer={Boolean(currentQuestion?.answerSlide)}
+                      onAnswerPageChange={setAnswerPart}
                       dark={background.dark}
                       questionTextColor={questionTextColor}
                       stimulusTextColor={stimulusTextColor}
@@ -1185,8 +1209,8 @@ export default function SmartBoard() {
                       tool === "select" ? "z-20 touch-none select-none" : "pointer-events-none z-0",
                     )}
                     style={{
-                      left: questionTravelX / 2,
-                      top: questionTravelY / 2,
+                      left: 0,
+                      top: 0,
                       width: questionPanelWidth,
                       height: questionPanelHeight,
                       backgroundColor: "transparent",
@@ -1241,7 +1265,8 @@ export default function SmartBoard() {
                       question={currentQuestion}
                       number={questionNumber}
                       meta={meta}
-                      showAnswer={showAnswer}
+                      showAnswer={Boolean(currentQuestion?.answerSlide)}
+                      onAnswerPageChange={setAnswerPart}
                       dark={background.dark}
                       questionTextColor={questionTextColor}
                       stimulusTextColor={stimulusTextColor}

@@ -1,11 +1,17 @@
+import PaginatedAnswer from "./PaginatedAnswer";
+import { fitCqSlide } from "./fitCqSlide";
 import type { SlideParts } from "./boardHistory";
 import LatexRenderer from "@/components/LatexRenderer";
 import { answerLabelBangla, isCorrectOption } from "@/lib/answerKey";
 import { brandMarkUrl } from "@/lib/brandAssets";
-import { useState, useRef, type CSSProperties, type ReactNode } from "react";
+import { useState, useRef, useEffect, type CSSProperties, type ReactNode } from "react";
 
 export interface SmartBoardQuestion {
   id: number;
+  sourceQuestionNumber?: number;
+  cqPartIndex?: number;
+  answerSlide?: boolean;
+  sourcePageId?: number;
   question: string;
   type: string;
   option_a?: string | null;
@@ -31,6 +37,7 @@ export interface SmartBoardPaperMeta {
 }
 
 interface QuestionSlideProps {
+  onAnswerPageChange?: (index: number) => void;
   headerOnly?: boolean;
   hideHeader?: boolean;
   selectedPartIds?: string[];
@@ -138,6 +145,7 @@ function formatReferenceList(references: any[] | null | undefined, kind: "board"
 }
 
 export default function QuestionSlide({
+  onAnswerPageChange,
   headerOnly = false,
   hideHeader = false,
   selectedPartIds,
@@ -154,27 +162,27 @@ export default function QuestionSlide({
   dark,
   questionTextColor,
   stimulusTextColor,
-  questionFontSize = 36,
+  questionFontSize = 48,
   questionFontFamily = "inherit",
   showBoardReferences = true,
   showInstitutionReferences = true,
-  headerAccentColor = "#ec168c",
-  headerInstitutionColor = "#22c55e",
+  headerAccentColor = "#ff0099",
+  headerInstitutionColor = "#00B4BC",
   headerLogoUrl,
-  institutionFontFamily = "inherit",
-  institutionFontSize = 26,
-  chapterFontFamily = "inherit",
-  chapterFontSize = 24,
+  institutionFontFamily = "'NotoSerifBengali', serif",
+  institutionFontSize = 40,
+  chapterFontFamily = "'HasanHera', 'NotoSerifBengali', serif",
+  chapterFontSize = 48,
   chapterTextColor = "#ffffff",
-  courseFontFamily = "inherit",
-  courseFontSize = 26,
-  courseColor = "#ec168c",
+  courseFontFamily = "'NotoSerifBengali', serif",
+  courseFontSize = 44,
+  courseColor = "#ff0099",
   institutionText,
   chapterText,
   courseText,
   referenceStyle = "outline",
-  referenceColor = "#64748b",
-  referenceTextColor = "#475569",
+  referenceColor = "#ff0099",
+  referenceTextColor = "#ff66c4",
   referenceFontFamily = "inherit",
   referenceFontSize = 20,
   referenceBold = true,
@@ -215,8 +223,8 @@ export default function QuestionSlide({
       onDragPreview={delta => setGroupDrag(delta ? { id, ...delta } : null)} selectedId={selectedPartIds?.includes(id) ? id : selectedPartIds ? null : selectedPart} onSelect={setSelectedPart} enabled={dragEnabled && (!selectedPartIds || selectedPartIds.includes(id))} scale={boardScale} parts={parts} onChange={changeParts}>{children}</MovablePart>;
   };
   const muted = dark ? "text-slate-300" : "text-slate-500";
-  const questionColor = questionTextColor || (dark ? "#f1f5f9" : "#0f172a");
-  const stimulusColor = stimulusTextColor || (dark ? "#fde047" : "#92400e");
+  const questionColor = questionTextColor || (dark ? question.type === "cq" ? "#ffff00" : "#f1f5f9" : "#0f172a");
+  const stimulusColor = stimulusTextColor || (dark ? question.type === "cq" ? "#ffffff" : "#fde047" : "#92400e");
   const strong = dark ? "text-white" : "text-slate-900";
   const optionLabels = question.type === "mcq" ? BANGLA_OPTION_LABELS : [];
   const options = [question.option_a, question.option_b, question.option_c, question.option_d];
@@ -230,8 +238,8 @@ export default function QuestionSlide({
   // The smartboard font control represents the complete question content,
   // including choices, sub-questions and the revealed answer.
   const optionFontSize = questionFontSize;
-  const supportingFontSize = Math.max(16, Math.round(questionFontSize * 0.88));
-  const answerFontSize = Math.max(16, Math.round(questionFontSize * 0.88));
+  const supportingFontSize = Math.max(16, Math.round(questionFontSize * (20 / 24)));
+  const answerFontSize = Math.max(16, Math.round(questionFontSize * (20 / 24)));
   const references = [...boardReferences, ...institutionReferences];
   const referenceBadge = references.length > 0 ? (
     <span className="inline-flex min-w-0 flex-wrap items-center gap-2" aria-label="প্রশ্নের রেফারেন্স">
@@ -239,17 +247,19 @@ export default function QuestionSlide({
         className="inline-flex max-w-full items-center whitespace-normal break-words"
         style={{
           boxSizing: "border-box", lineHeight: 1.5,
-          padding: referenceStyle === "bracket" || referenceStyle === "underline" ? "2px 4px" : "5px 12px",
+          padding: referenceStyle === "bracket" || referenceStyle === "underline" ? "2px 4px" : "2px 6px",
           border: ["outline", "filled", "black"].includes(referenceStyle)
-            ? `2px solid ${referenceStyle === "black" ? "#000000" : referenceColor}` : undefined,
-          borderBottom: referenceStyle === "underline" ? `2px solid ${referenceColor}`
+            ? `1px solid ${referenceStyle === "black" ? "#000000" : referenceColor}` : undefined,
+          borderBottom: referenceStyle === "underline" ? `1px solid ${referenceColor}`
             : ["outline", "filled", "black"].includes(referenceStyle)
-              ? `2px solid ${referenceStyle === "black" ? "#000000" : referenceColor}` : undefined,
+              ? `1px solid ${referenceStyle === "black" ? "#000000" : referenceColor}` : undefined,
           borderRadius: ["filled", "black", "outline"].includes(referenceStyle) ? 6 : undefined,
           background: referenceStyle === "filled" ? referenceColor : referenceStyle === "black" ? "#000000"
-            : referenceStyle === "outline" ? (dark ? "#1e293b" : "#f8fafc") : "transparent",
+            : referenceStyle === "outline" ? (dark ? "transparent" : "#f8fafc") : "transparent",
           color: referenceStyle === "black" ? "#ffffff" : referenceTextColor,
           fontFamily: referenceFontFamily, fontSize: referenceFontSize,
+          textShadow: dark ? `0 0 8px ${referenceTextColor}99` : undefined,
+          boxShadow: dark && ["outline", "filled", "black"].includes(referenceStyle) ? `0 0 6px ${referenceColor}66` : undefined,
           fontWeight: referenceBold ? 700 : 400, fontStyle: referenceItalic ? "italic" : "normal",
         }}>
         {referenceStyle === "bracket" ? `[${reference}]` : reference}
@@ -257,20 +267,31 @@ export default function QuestionSlide({
     </span>
   ) : null;
   const sideCq = question.type === "cq";
-  const mcqHasImage = /<img\s/i.test(`${question.question || ""} ${question.stimulus_text || ""} ${options.join(" ")}`);
-  const mcqUsesLeftColumn = mcqHasImage || Boolean(question.stimulus_text?.trim());
+  const cqPanelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const panel = cqPanelRef.current;
+    if (!panel || (question.type !== "cq" && question.type !== "mcq")) return;
+    let disposed = false;
+    const fit = () => { if (!disposed) fitCqSlide(panel); };
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    observer?.observe(panel);
+    const content = panel.querySelector(".smartboard-cq-content, .smartboard-mcq-content");
+    if (content) observer?.observe(content);
+    panel.addEventListener("load", fit, true);
+    document.fonts?.ready.then(fit);
+    fit();
+    return () => { disposed = true; observer?.disconnect(); panel.removeEventListener("load", fit, true); };
+  }, [question, questionFontSize, questionFontFamily, showAnswer, headerOnly]);
+  const mcqPlainText = `${question.question || ""} ${question.stimulus_text || ""}`.replace(/<[^>]*>/g, " ");
+  const compoundMcq = /(?:^|\s)(?:i{1,3}|iv|[ⅠⅡⅢⅣ])\s*[.)।]/i.test(mcqPlainText);
+  const splitMcq = compoundMcq || /<img\s/i.test(`${question.question || ""} ${question.stimulus_text || ""} ${options.join(" ")}`);
   const mediaScaleStyle = { "--smartboard-media-scale": Math.max(0.55, questionFontSize / 36) } as CSSProperties;
-  const mcqOptionCount = options.filter(Boolean).length;
-  const mcqContentHeight = Math.max(
-    mcqUsesLeftColumn ? 500 * Math.max(0.75, questionFontSize / 36) : 300,
-    mcqOptionCount * (optionFontSize * 1.35 + 34) + Math.max(0, mcqOptionCount - 1) * 20 + 24,
-  );
 
   return (
-    <div className={`flex h-full w-full flex-col px-[70px] py-[46px] `}>
+    <div className={`flex h-full w-full flex-col px-[70px] pt-[45px] pb-[30px] ${dark ? "smartboard-dark-media" : ""}`}>
       <div
         data-testid="smartboard-fixed-header"
-        className="pointer-events-none grid shrink-0 grid-cols-[1fr_1.25fr_1fr] items-center gap-8 border-b-2 pb-4"
+        className="pointer-events-none grid shrink-0 grid-cols-[minmax(0,1.15fr)_minmax(0,2fr)_minmax(0,1.35fr)] items-center gap-8 border-b-2 pb-4"
         style={{ borderBottomColor: headerAccentColor, visibility: hideHeader ? "hidden" : undefined }}
       >
         <div
@@ -285,12 +306,14 @@ export default function QuestionSlide({
           <span className="truncate">{institutionText || meta?.instituteName || "প্রশ্নল্যাব"}</span>
         </div>
         <div
-          className="truncate rounded-lg px-5 py-2 text-center font-bold text-white"
+          className="truncate rounded-[16px] px-5 py-2 text-center font-bold text-white"
           style={{
             fontSize: chapterFontSize,
             backgroundColor: headerAccentColor,
             color: chapterTextColor,
             fontFamily: chapterFontFamily,
+            fontWeight: chapterFontFamily.includes("HasanHera") ? 400 : 700,
+            lineHeight: 1.3,
           }}
         >
           {chapterText || meta?.chapterNames?.join(", ") || "অধ্যায়"}
@@ -310,16 +333,17 @@ export default function QuestionSlide({
         </div>
       </div>
 
-      <div data-testid="smartboard-question-content" style={{ display: headerOnly ? "none" : undefined, transform: `translate(${contentOffset.x}px, ${contentOffset.y}px) scale(${sideCq ? contentScale : 1})`, transformOrigin: "top right" }} className={sideCq ? "grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grid-rows-[auto_minmax(0,1fr)] gap-x-10" : "flex min-h-0 flex-1 flex-col"}>
+      {question.answerSlide && !headerOnly && <AnswerSlideContent question={question} number={number} dark={dark} fontSize={questionFontSize} fontFamily={questionFontFamily} referenceBadge={referenceBadge} correctColor={mcqCorrectColor} onPageChange={onAnswerPageChange} />}
+      <div data-testid="smartboard-question-content" style={{ display: headerOnly || question.answerSlide ? "none" : undefined, transform: `translate(${contentOffset.x}px, ${contentOffset.y}px) scale(${question.type === "cq" ? contentScale : 1})`, transformOrigin: "top right" }} className={sideCq ? "grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] grid-rows-[auto_minmax(0,1fr)] gap-x-10" : "flex min-h-0 flex-1 flex-col"}>
       <div className={sideCq ? "col-start-2 row-start-1" : undefined}>
         {sideCq ? movable("question-label", (
-      <div className="mt-6 flex flex-wrap items-center gap-4">
+      <div data-testid="smartboard-question-meta" className="mt-2 flex flex-wrap items-center gap-3" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <span
           className="inline-flex items-center justify-center rounded-[1px]"
           style={{
-            width: 58,
-            height: 58,
-            fontSize: 32,
+            width: 32,
+            height: 32,
+            fontSize: 22,
             fontWeight: 700,
             backgroundColor: dark ? "#1e293b" : "#0A1E38",
             color: "#ffffff",
@@ -328,24 +352,21 @@ export default function QuestionSlide({
           {number}
         </span>
         <span
-          className="rounded-[1px] bg-slate-100/70 px-4 py-1 font-semibold dark:bg-slate-800/70"
+          className="shrink-0 whitespace-nowrap rounded-[1px] px-4 py-1 font-semibold"
           style={{
-            fontSize: 22,
-            color: dark ? "#e2e8f0" : "#334155",
+            fontSize: question.type === "mcq" ? 28 : 22,
+            color: dark ? "#ffffff" : "#334155",
+            backgroundColor: dark ? "#1e293b" : "#f1f5f9",
+            border: `1px solid ${dark ? "#64748b" : "#cbd5e1"}`,
           }}
         >
           {typeLabel}
         </span>
-        {question.type !== "mcq" && referenceBadge}
-        {meta?.programName ? (
-          <span className={`font-medium ${muted}`} style={{ fontSize: 24 }}>
-            {meta.programName}
-          </span>
-        ) : null}
+        {referenceBadge}
       </div>
 
         )) : (
-      <div className="mt-6 flex flex-wrap items-center gap-4">
+      <div data-testid="smartboard-question-meta" className="mt-6 flex flex-wrap items-center gap-4" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, flexShrink: 0 }}>
         <span
           className="inline-flex items-center justify-center rounded-[1px]"
           style={{
@@ -360,29 +381,27 @@ export default function QuestionSlide({
           {number}
         </span>
         <span
-          className="rounded-[1px] bg-slate-100/70 px-4 py-1 font-semibold dark:bg-slate-800/70"
+          className="shrink-0 whitespace-nowrap rounded-[1px] px-4 py-1 font-semibold"
           style={{
-            fontSize: 22,
-            color: dark ? "#e2e8f0" : "#334155",
+            fontSize: question.type === "mcq" ? 28 : 22,
+            color: dark ? "#ffffff" : "#334155",
+            backgroundColor: dark ? "#1e293b" : "#f1f5f9",
+            border: `1px solid ${dark ? "#64748b" : "#cbd5e1"}`,
           }}
         >
           {typeLabel}
         </span>
-        {question.type !== "mcq" && referenceBadge}
-        {meta?.programName ? (
-          <span className={`font-medium ${muted}`} style={{ fontSize: 24 }}>
-            {meta.programName}
-          </span>
-        ) : null}
+        {referenceBadge}
       </div>
 
         )}
       </div>
 
       <div
+        ref={cqPanelRef}
         data-testid="smartboard-question-panel"
         style={{ color: questionColor }}
-        className={`relative mt-7 ${sideCq ? "col-start-2 row-start-2 min-h-0 overflow-visible pr-2" : `min-h-0 flex-1 ${question.type === "mcq" || showAnswer ? "overflow-y-auto pr-2" : "overflow-hidden"} ${showAnswer ? "max-h-[55%]" : ""}`} ${strong}`}
+        className={`relative ${sideCq ? "mt-2" : "mt-7"} ${sideCq ? "col-start-2 row-start-2 min-h-0 overflow-hidden pr-2" : `min-h-0 flex-1 ${question.type === "mcq" ? "overflow-hidden" : showAnswer ? "overflow-y-auto pr-2" : "overflow-hidden"} ${showAnswer ? "max-h-[55%]" : ""}`} ${strong}`}
         onPointerDown={showAnswer || sideCq ? (event) => event.stopPropagation() : undefined}
       >
         {question.stimulus_text && question.type !== "cq" && question.type !== "mcq" ? (
@@ -401,25 +420,9 @@ export default function QuestionSlide({
         ) : null}
 
         {question.type === "mcq" ? (
-          <div className="relative w-full" style={{ minHeight: mcqContentHeight }}>
-            <div
-              className={`absolute left-1 top-0 flex items-start gap-3 ${mcqUsesLeftColumn ? "h-full w-[57%] overflow-y-auto whitespace-normal pr-4" : "w-[calc(100%_-_8px)] overflow-hidden whitespace-nowrap"}`}
-              style={{ fontSize: questionFontSize, lineHeight: 1.5, fontFamily: questionFontFamily }}
-            >
-              <div className={`smartboard-scalable-media min-w-0 shrink [&_img]:mx-auto [&_img]:my-4 [&_img]:max-h-[420px] [&_img]:max-w-full [&_img]:object-contain ${mcqUsesLeftColumn ? "whitespace-normal" : "overflow-hidden whitespace-nowrap"}`} style={mediaScaleStyle}>
-                {question.stimulus_text ? (
-                  <div
-                    className="smartboard-stimulus smartboard-scalable-media mb-4 bg-transparent p-0 shadow-none"
-                    style={{ ...mediaScaleStyle, color: stimulusColor }}
-                  >
-                    <LatexRenderer text={question.stimulus_text} />
-                  </div>
-                ) : null}
-                <LatexRenderer text={question.question || ""} />
-              </div>
-              {referenceBadge}
-            </div>
-            <div className="absolute right-2 top-[22%] w-[calc(39%_-_8px)] space-y-5 pl-px">
+          <div className={`smartboard-mcq-content w-full ${splitMcq ? "grid grid-cols-[minmax(0,57fr)_minmax(0,39fr)] items-start gap-x-[4%]" : "flow-root"}`} style={{ fontSize: questionFontSize }}>
+            <div className={`min-w-0 space-y-5 pl-px ${splitMcq ? "col-start-2 row-start-1" : "float-right ml-[4%] w-[39%]"}`}
+              style={splitMcq ? undefined : { paddingTop: "1.5em", shapeOutside: "inset(1.5em 0 0 0)" }}>
               {options.map((option, index) => {
                 if (!option) return null;
                 const correct = showAnswer && isCorrectOption(question.correct_answer, index, options);
@@ -432,9 +435,9 @@ export default function QuestionSlide({
                       fontFamily: questionFontFamily,
                       lineHeight: 1.35,
                       color: correct ? mcqCorrectColor : dark ? "#cbd5e1" : mcqOptionTextColor,
-                      borderColor: correct ? mcqCorrectColor : dark ? "rgba(255,255,255,0.18)" : mcqOptionBorderColor,
+                      borderColor: correct ? mcqCorrectColor : dark ? "#94a3b8" : mcqOptionBorderColor,
                       borderStyle: "solid",
-                      borderWidth: 1,
+                      borderWidth: 2,
                       backgroundColor: correct ? `${mcqCorrectColor}1a` : "transparent",
                     }}
                   >
@@ -449,11 +452,28 @@ export default function QuestionSlide({
                 );
               })}
             </div>
+            <div
+              className={`min-w-0 whitespace-normal break-words ${splitMcq ? "col-start-1 row-start-1 flex flex-col items-start gap-3" : "smartboard-mcq-flow-question"}`}
+              style={{ fontSize: questionFontSize, lineHeight: 1.5, fontFamily: questionFontFamily }}
+            >
+              <div className="smartboard-scalable-media min-w-0 w-full whitespace-normal break-words [&_img]:mx-auto [&_img]:my-4 [&_img]:max-h-[420px] [&_img]:max-w-full [&_img]:object-contain" style={mediaScaleStyle}>
+                {question.stimulus_text ? (
+                  <div
+                    className="smartboard-stimulus smartboard-scalable-media mb-4 bg-transparent p-0 shadow-none"
+                    style={{ ...mediaScaleStyle, color: stimulusColor }}
+                  >
+                    <LatexRenderer text={question.stimulus_text} />
+                  </div>
+                ) : null}
+                <LatexRenderer text={question.question || ""} />
+              </div>
+            </div>
+
           </div>
         ) : null}
 
         {question.type === "cq" ? (
-          <div>
+          <div className="smartboard-cq-content">
             {movable("stimulus", <div className="smartboard-stimulus" style={{ color: stimulusColor, fontSize: questionFontSize, lineHeight: 1.5, fontFamily: questionFontFamily }}>
               <LatexRenderer text={creative?.stem || question.stimulus_text || question.question || ""} />
             </div>)}
@@ -461,16 +481,17 @@ export default function QuestionSlide({
               className="mt-6 space-y-4"
             >
               {(creative?.sub_questions || []).map((sub: any, index: number) => (
+                question.cqPartIndex !== undefined && index !== question.cqPartIndex ? null : (
                 <div key={index}>{movable(`sub-${index}`, <div className="flex items-start gap-3" style={{ fontSize: supportingFontSize, lineHeight: 1.4, fontFamily: questionFontFamily }}>
                   <span className="shrink-0 font-semibold">({["ক", "খ", "গ", "ঘ"][index] || ""})</span>
                   <div className="min-w-0 flex-1">
                     <LatexRenderer text={sub?.question || sub?.text || ""} />
                   </div>
                 </div>)}</div>
-              ))}
+              ))) }
               {(!creative?.sub_questions || creative.sub_questions.length === 0) &&
                 ["q_ka", "q_kha", "q_ga", "q_gha"].map((key, index) =>
-                  creative?.[key] ? (
+                  creative?.[key] && (question.cqPartIndex === undefined || index === question.cqPartIndex) ? (
                     <div key={key}>{movable(key, <div className="flex items-start gap-3" style={{ fontSize: supportingFontSize, lineHeight: 1.4, fontFamily: questionFontFamily }}>
                       <span className="shrink-0 font-semibold">({["ক", "খ", "গ", "ঘ"][index]})</span>
                       <div className="min-w-0 flex-1">
@@ -595,6 +616,52 @@ export default function QuestionSlide({
   );
 }
 
+function AnswerSlideContent({ question, number, dark, fontSize, fontFamily, referenceBadge, correctColor, onPageChange }: {
+  question: SmartBoardQuestion; number: number; dark: boolean; fontSize: number; fontFamily: string; referenceBadge: ReactNode; correctColor: string; onPageChange?: (index: number) => void;
+}) {
+  const cq = question.type === "cq";
+  const contextRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const context = contextRef.current;
+    if (!context) return;
+    let disposed = false;
+    const fit = () => { if (!disposed) fitCqSlide(context); };
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    observer?.observe(context);
+    context.addEventListener("load", fit, true);
+    document.fonts?.ready.then(fit);
+    fit();
+    return () => { disposed = true; observer?.disconnect(); context.removeEventListener("load", fit, true); };
+  }, [question.id, fontSize, fontFamily]);
+  const data = question.creative_data || {};
+  const labels = ["ক", "খ", "গ", "ঘ"];
+  const part = question.cqPartIndex;
+  const sub = part === undefined ? null : data.sub_questions?.[part]?.question || data.sub_questions?.[part]?.text || data[["q_ka", "q_kha", "q_ga", "q_gha"][part]];
+  const choices = [question.option_a, question.option_b, question.option_c, question.option_d];
+  return <div data-answer-slide className={`flex min-h-0 flex-1 flex-col pt-3 ${dark ? "smartboard-dark-answer" : ""}`} style={{ color: dark ? "#ffffff" : "#0f172a", fontFamily }}>
+    <div className="mb-3 flex shrink-0 items-center gap-4" style={{ fontSize: 28 }}>
+      <strong>উত্তর — প্রশ্ন {number}{part !== undefined ? ` (${labels[part]})` : ""}</strong>{referenceBadge}
+    </div>
+    <div className={cq ? "grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-10" : "flex min-h-0 flex-1 flex-col gap-4"}>
+      <div ref={contextRef} data-answer-context className={cq ? "col-start-2 row-start-1 min-h-0 overflow-hidden" : "max-h-[38%] shrink-0 overflow-hidden"} style={{ fontSize: Math.max(28, fontSize * 0.75), lineHeight: 1.4 }}>
+        <div className="smartboard-answer-context-content"><LatexRenderer text={cq ? data.stem || question.stimulus_text || question.question : question.question} />
+        {sub && <div className="mt-4" style={{ color: dark ? "#ffff00" : "#0f172a" }}>({labels[part!]}) <LatexRenderer inline text={sub} /></div>}
+        {question.type === "mcq" && <div className="mt-3 grid grid-cols-2 gap-3">{choices.map((option, i) => option ? <div key={i} className="flex gap-2 border px-3 py-2" style={{ borderColor: isCorrectOption(question.correct_answer, i, choices) ? correctColor : "#64748b", backgroundColor: isCorrectOption(question.correct_answer, i, choices) ? `${correctColor}33` : undefined }}>
+          <span>{labels[i]}.</span><LatexRenderer text={option} />{isCorrectOption(question.correct_answer, i, choices) && <span style={{ color: correctColor }}>✓</span>}
+        </div> : null)}</div>}</div>
+      </div>
+      <div className={cq ? "col-start-1 row-start-1 flex min-h-0 flex-col" : "flex min-h-0 flex-1 flex-col border-t pt-3"} style={{ fontSize: Math.max(28, fontSize * (20 / 24)), lineHeight: 1.5 }}>
+        <PaginatedAnswer onPageChange={onPageChange} resetKey={`${question.id}:${fontSize}:${fontFamily}`}>
+          {question.type === "mcq" ? <div>
+            <p className="mb-4 font-bold" style={{ color: correctColor }}>সঠিক উত্তর: {question.correct_answer ? `(${answerLabelBangla(question.correct_answer, choices)})` : "পাওয়া যায়নি"}</p>
+            {question.explanation ? <AnswerBody text={question.explanation} /> : <p>ব্যাখ্যা যুক্ত করা হয়নি।</p>}
+          </div> : <AnswerByType question={question} dark={dark} />}
+        </PaginatedAnswer>
+      </div>
+    </div>
+  </div>;
+}
+
 function AnswerByType({ question, dark }: { question: SmartBoardQuestion; dark: boolean }) {
   const creative = question.creative_data || {};
   const blocks: Array<{ label: string; text: string }> = [];
@@ -602,11 +669,11 @@ function AnswerByType({ question, dark }: { question: SmartBoardQuestion; dark: 
   if (question.type === "cq") {
     const subs: any[] = creative.sub_questions || [];
     subs.forEach((sub, index) => {
-      if (sub?.answer) blocks.push({ label: `${["ক", "খ", "গ", "ঘ"][index] || ""}) `, text: sub.answer });
+      if ((question.cqPartIndex === undefined || index === question.cqPartIndex) && sub?.answer) blocks.push({ label: `${["ক", "খ", "গ", "ঘ"][index] || ""}) `, text: sub.answer });
     });
     if (blocks.length === 0) {
       (["ans_ka", "ans_kha", "ans_ga", "ans_gha"] as const).forEach((key, index) => {
-        if (creative[key]) blocks.push({ label: `${["ক", "খ", "গ", "ঘ"][index]}) `, text: creative[key] });
+        if ((question.cqPartIndex === undefined || index === question.cqPartIndex) && creative[key]) blocks.push({ label: `${["ক", "খ", "গ", "ঘ"][index]}) `, text: creative[key] });
       });
     }
   }
@@ -620,7 +687,7 @@ function AnswerByType({ question, dark }: { question: SmartBoardQuestion; dark: 
     blocks.push({ label: "", text: question.explanation });
   }
 
-  if (blocks.length === 0 && question.explanation) {
+  if (blocks.length === 0 && question.explanation && question.cqPartIndex === undefined) {
     blocks.push({ label: "", text: question.explanation });
   }
 
@@ -706,4 +773,9 @@ function MovablePart({ id, previewOffset, onDragPreview, selectedId, onSelect, e
       <MovablePart id={copyId} selectedId={selectedId} onSelect={onSelect} enabled={enabled} scale={scale} parts={parts} onChange={onChange}>{children}</MovablePart>
     </div>)}
   </div>;
+}
+
+/** Keep print rendering on the same component revision as the live board. */
+export function getQuestionSlideForExport() {
+  return QuestionSlide;
 }

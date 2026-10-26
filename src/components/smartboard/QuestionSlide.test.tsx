@@ -35,13 +35,27 @@ const shortQuestion: SmartBoardQuestion = {
 };
 
 describe("QuestionSlide", () => {
+  it("keeps CQ questions on the right with a blank solution column", () => {
+    render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false} />);
+    expect(screen.getByTestId("smartboard-question-content").className).toContain("grid-cols-[minmax(0,3fr)_minmax(0,2fr)]");
+    expect(screen.getByTestId("smartboard-question-panel").className).toContain("col-start-2");
+  });
+  it("repeats the stimulus but shows only the selected sub-question and answer", () => {
+    render(<QuestionSlide question={{ ...cqQuestion, cqPartIndex: 1 }} number={1} meta={null} showAnswer dark={false} />);
+    expect(screen.getByText(cqQuestion.creative_data.stem)).toBeInTheDocument();
+    expect(screen.getByText("কত সময়ে মাটিতে পৌঁছাবে?")).toBeInTheDocument();
+    expect(screen.queryByText("বস্তুটির প্রাথমিক বেগ কত?")).not.toBeInTheDocument();
+    expect(screen.getByText("(খ)")).toBeInTheDocument();
+    expect(screen.queryByText("শূন্য")).not.toBeInTheDocument();
+    expect(screen.getByText("২ সেকেন্ড")).toBeInTheDocument();
+  });
   it("shows CQ board references and respects their visibility toggle", () => {
     const question = { ...cqQuestion, board_references: [{ board: 'Dhaka', year: 2025 }] };
     const { rerender } = render(<QuestionSlide question={question} number={1} meta={null} showAnswer={false} dark={false} />);
     expect(screen.getByText("Dhaka '2025")).toBeInTheDocument();
     const badgeStyle = getComputedStyle(screen.getByText("Dhaka '2025"));
     for (const edge of ['Top', 'Right', 'Bottom', 'Left']) {
-      expect(badgeStyle.getPropertyValue(`border-${edge.toLowerCase()}-width`)).toBe('2px');
+      expect(badgeStyle.getPropertyValue(`border-${edge.toLowerCase()}-width`)).toBe('1px');
     }
     rerender(<QuestionSlide question={question} number={1} meta={null} showAnswer={false} dark={false} showBoardReferences={false} />);
     expect(screen.queryByText("Dhaka '2025")).not.toBeInTheDocument();
@@ -77,8 +91,8 @@ describe("QuestionSlide", () => {
     expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#0f172a' });
     expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#92400e' });
     rerender(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark />);
-    expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#f1f5f9' });
-    expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#fde047' });
+    expect(screen.getByTestId('smartboard-question-panel')).toHaveStyle({ color: '#ffff00' });
+    expect(container.querySelector('.smartboard-stimulus')).toHaveStyle({ color: '#ffffff' });
   });
   it("copies a stimulus onto the board and removes only its duplicate", () => {
     render(<QuestionSlide question={cqQuestion} number={1} meta={null} showAnswer={false} dark={false} dragEnabled />);

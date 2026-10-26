@@ -203,7 +203,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
             <div>
               <h4 className="font-heading font-bold text-white text-base mb-4">আমাদের সাথে যুক্ত থাকুন:</h4>
               <div className="flex flex-wrap items-center gap-4">
-                <a href="https://facebook.com/proshnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:scale-110 transition-transform">
+                <a href="https://www.facebook.com/prosnolab" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:scale-110 transition-transform">
                   <FaFacebook className="w-7 h-7 text-[#1877F2]" />
                 </a>
                 <a href="https://youtube.com/@proshnolab" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="hover:scale-110 transition-transform">

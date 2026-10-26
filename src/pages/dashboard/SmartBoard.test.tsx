@@ -40,18 +40,54 @@ const renderPage = () =>
   );
 
 describe("SmartBoard page", () => {
+  it("exports MCQ references next to its number and type, outside the question text", async () => {
+    render(<MemoryRouter initialEntries={[{ pathname: "/dashboard/smartboard", state: { smartBoardImport: {
+      questions: [{ id: 77, type: "mcq", question: "Sample MCQ", option_a: "A", option_b: "B", board_references: [{ board: "Dhaka", year: 2025 }] }], meta: {},
+    } } }]}><SmartBoard /></MemoryRouter>);
+    fireEvent.click(screen.getByText("PDF স্লাইড"));
+    fireEvent.click(screen.getByText("PDF ডাউনলোড / প্রিন্ট"));
+    await waitFor(() => expect(printSmartboard).toHaveBeenCalled());
+    const [slides] = vi.mocked(printSmartboard).mock.calls.at(-1)!;
+    const doc = new DOMParser().parseFromString(slides[0], "text/html");
+    const row = doc.querySelector('[data-testid="smartboard-question-meta"]')!;
+    expect(doc.querySelector('.board-pdf-slide[data-board-dark="true"] .smartboard-dark-media')).not.toBeNull();
+    expect(row.textContent).toContain("বহুনির্বাচনী");
+    expect(row.querySelector('[aria-label="প্রশ্নের রেফারেন্স"]')?.textContent).toContain("Dhaka");
+    expect(doc.querySelector('[data-testid="smartboard-question-panel"] [aria-label="প্রশ্নের রেফারেন্স"]')).toBeNull();
+  });
+  it("exports separate answer slides in both and answers-only modes", async () => {
+    render(<MemoryRouter initialEntries={[{ pathname: "/dashboard/smartboard", state: { smartBoardImport: {
+      questions: [{ id: 88, type: "mcq", question: "Question for answer export", option_a: "Correct", option_b: "Other", correct_answer: "a", explanation: "Independent explanation" }], meta: {},
+    } } }]}><SmartBoard /></MemoryRouter>);
+    fireEvent.click(screen.getByText("PDF স্লাইড"));
+    fireEvent.change(screen.getByLabelText("এক্সপোর্টের ধরন"), { target: { value: "both" } });
+    fireEvent.click(screen.getByText("PDF ডাউনলোড / প্রিন্ট"));
+    await waitFor(() => expect(screen.getByText("PDF ডাউনলোড / প্রিন্ট")).not.toBeDisabled());
+    let slides = vi.mocked(printSmartboard).mock.calls.at(-1)![0];
+    expect(slides).toHaveLength(2);
+    expect(slides[0]).not.toContain("data-answer-slide");
+    expect(slides[1]).toContain("data-answer-slide");
+    expect(slides[1]).toContain("Independent explanation");
+    fireEvent.change(screen.getByLabelText("এক্সপোর্টের ধরন"), { target: { value: "answers" } });
+    fireEvent.click(screen.getByText("PDF ডাউনলোড / প্রিন্ট"));
+    await waitFor(() => expect(screen.getByText("PDF ডাউনলোড / প্রিন্ট")).not.toBeDisabled());
+    slides = vi.mocked(printSmartboard).mock.calls.at(-1)![0];
+    expect(slides).toHaveLength(1);
+    expect(slides[0]).toContain("data-answer-slide");
+  });
   it("exports blank and duplicate pages with independent answer and drawing controls", async () => {
     renderPage();
     fireEvent.click(screen.getByTitle("সমাধানের জন্য ফাঁকা পৃষ্ঠা যোগ করুন"));
     fireEvent.click(screen.getByTitle("বর্তমান পৃষ্ঠা ডুপ্লিকেট করুন"));
     fireEvent.click(screen.getByText("PDF স্লাইড"));
-    expect(screen.getByLabelText("উত্তরসহ")).not.toBeChecked();
+    expect(screen.getByLabelText("এক্সপোর্টের ধরন")).toHaveValue("questions");
     expect(screen.getByLabelText("লেখা ও আঁকা দাগসহ")).toBeChecked();
-    fireEvent.click(screen.getByLabelText("উত্তরসহ"));
+    fireEvent.change(screen.getByLabelText("এক্সপোর্টের ধরন"), { target: { value: "both" } });
     fireEvent.click(screen.getByLabelText("লেখা ও আঁকা দাগসহ"));
     fireEvent.click(screen.getByText("PDF ডাউনলোড / প্রিন্ট"));
     await waitFor(() => expect(printSmartboard).toHaveBeenCalled());
-    const [slides] = vi.mocked(printSmartboard).mock.calls.at(-1)!;
+    const [slides, width, height] = vi.mocked(printSmartboard).mock.calls.at(-1)!;
+    expect([width, height]).toEqual([1920, 1080]);
     expect(slides).toHaveLength(2);
     expect(slides.every(slide => !slide.includes('<svg'))).toBe(true);
   });
