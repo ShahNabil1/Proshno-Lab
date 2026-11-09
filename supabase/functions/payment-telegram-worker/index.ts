@@ -13,8 +13,8 @@ Deno.serve(async req=>{
   }
   if(!authorized) return json({error:"Unauthorized"},401);
   const chats=[...new Set((Deno.env.get("TELEGRAM_ADMIN_CHAT_ID")||"").split(",").map(x=>x.trim()).filter(Boolean))];
-  const config={lovableKey:Deno.env.get("LOVABLE_API_KEY")||"",telegramKey:Deno.env.get("TELEGRAM_API_KEY")||""};
-  if(!chats.length||!config.lovableKey||!config.telegramKey) return json({error:"Telegram not configured"},503);
+  const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN")?.trim();
+  if(!chats.length||!botToken) return json({error:"Telegram not configured"},503);
   const {data:events,error}=await admin.rpc("claim_payment_telegram_events");
   if(error) return json({error:"Notification queue unavailable"},503);
   let sent=0,retry=0,skipped=0,token:string|undefined;
@@ -64,7 +64,7 @@ Deno.serve(async req=>{
       const text=paymentTelegramPayload(p,messageEvent);
       for(const chat of chats){
         if(event.delivered_chat_ids?.includes(chat))continue;
-        if(!await deliverPaymentTelegram(text,chat,config))throw Error("Telegram delivery failed");
+        if(!await deliverPaymentTelegram(text,chat,botToken))throw Error("Telegram delivery failed");
         const {error}=await admin.rpc("record_payment_telegram_chat",{event_ref:event.id,lease:event.lease_token,chat});
         if(error)throw Error("Delivery receipt save failed");
       }

@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
 
       - name: Install dependencies
@@ -38,7 +38,7 @@ jobs:
         run: node tests/marketing-dashboard.mjs
 
       - name: Run server conversion and payment checks
-        run: npx --yes deno@2.9.6 test --allow-env tests/custom-package-payments.ts tests/meta-capi.test.ts tests/meta-capi-worker.test.ts tests/payment-telegram-worker.ts tests/payment-checkout-exit.ts
+        run: npx --yes deno@2.9.6 test --allow-env tests/custom-package-payments.ts tests/extract-bulk-questions.ts tests/meta-capi.test.ts tests/meta-capi-worker.test.ts tests/payment-telegram-worker.ts tests/payment-checkout-exit.ts
 
       - name: Check Telegram notification authorization
         run: node tests/notification-security-sql.mjs

@@ -16,10 +16,11 @@ describe("payment Telegram delivery",()=>{
  it("requires Telegram and HTTP success before acknowledging delivery",async()=>{
   vi.stubGlobal("AbortSignal",{timeout:()=>new AbortController().signal});
   try {
-  const config={lovableKey:"test",telegramKey:"test"};
-  for(const [status,body,expected] of [[200,{ok:true},true],[200,{ok:false},false],[502,{error:"unavailable"},false]] as const){
+  const botToken="123:test-token";
+  for(const [status,body,expected] of [[200,{ok:true},true],[200,{ok:false},false],[200,{},false],[502,{ok:true},false]] as const){
    const fetcher=vi.fn(async()=>new Response(JSON.stringify(body),{status}));
-   expect(await deliverPaymentTelegram("test","chat",config,fetcher as typeof fetch)).toBe(expected);
+   expect(await deliverPaymentTelegram("test","chat",botToken,fetcher as typeof fetch)).toBe(expected);
+   expect(fetcher).toHaveBeenCalledWith("https://api.telegram.org/bot123:test-token/sendMessage",expect.objectContaining({method:"POST"}));
   }
   } finally { vi.unstubAllGlobals(); }
  });

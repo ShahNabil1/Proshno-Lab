@@ -22,12 +22,19 @@ export function paymentTelegramPayload(payment: any, event: string) {
     '<a href="https://proshnolab.com/admin/subscriptions">পেমেন্টের বিস্তারিত দেখুন</a>',
   ].join("\n");
 }
-export async function deliverPaymentTelegram(text: string, chatId: string, config: {lovableKey:string;telegramKey:string}, fetcher:typeof fetch=fetch) {
-  const response = await fetcher("https://connector-gateway.lovable.dev/telegram/sendMessage", {
-    method:"POST",headers:{Authorization:`Bearer ${config.lovableKey}`,"X-Connection-Api-Key":config.telegramKey,"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,text,parse_mode:"HTML",disable_web_page_preview:true}),signal:AbortSignal.timeout(10_000),
-  });
-  const data = await response.json().catch(()=>null);
-  // Both transport errors and Telegram's own ok:false must be retried.
-  return response.ok && data !== null && data.ok !== false && data.error === undefined;
+export async function deliverPaymentTelegram(text: string, chatId: string, botToken: string, fetcher: typeof fetch = fetch) {
+  const response = await fetcher(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      link_preview_options: { is_disabled: true },
+    }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!response?.ok) return false;
+  const data = await response.json().catch(() => null);
+  return data?.ok === true;
 }

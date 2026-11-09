@@ -19,11 +19,11 @@ Deno.serve(createNotificationHandler({
   },
   async deliver(text, claim) {
     const chats = [...new Set((Deno.env.get("TELEGRAM_ADMIN_CHAT_ID") || "").split(",").map(s => s.trim()).filter(Boolean))];
-    const config = { lovableKey: Deno.env.get("LOVABLE_API_KEY") || "", telegramKey: Deno.env.get("TELEGRAM_API_KEY") || "" };
-    if (!chats.length || !config.lovableKey || !config.telegramKey) throw Error("Telegram unavailable");
+    const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN")?.trim();
+    if (!chats.length || !botToken) throw Error("Telegram unavailable");
     for (const chat of chats) {
       if (claim?.delivered_chat_ids?.includes(chat)) continue;
-      if (!await deliverPaymentTelegram(text, chat, config)) throw Error("Delivery failed");
+      if (!await deliverPaymentTelegram(text, chat, botToken)) throw Error("Delivery failed");
       if (claim) {
         const { error } = await admin.rpc("record_user_telegram_delivery", {
           notification_ref: claim.id, lease: claim.lease_token, chat,
