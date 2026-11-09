@@ -41,7 +41,7 @@ describe("Telegram notification authorization", () => {
   const {deps,send}=setup();
   expect((await send({event_type:"new_registration",record_id:12,title:"Payment successful",fields:[{label:"Amount",value:500}],link:{url:"https://evil.test"}},"user-token")).status).toBe(200);
   expect(deps.claim).toHaveBeenCalledWith("owner","new_registration",12);
-  const text=deps.deliver.mock.calls[0][0];
+  const text=(deps.deliver.mock.calls as unknown as string[][])[0][0];
   expect(text).toContain("Saved registration"); expect(text).toContain("&lt;saved&gt;");
   expect(text).not.toContain("Payment successful"); expect(text).not.toContain("evil.test");
  });
